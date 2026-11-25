@@ -251,18 +251,33 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
     /// <param name="n">The number of words of the modulus.</param>
     /// <param name="targetBits">The scale of <paramref name="reciprocalMod"/> in bits.</param>
     /// <param name="gridDim">The number of blocks of each launch.</param>
-    /// <param name="blockDim">The number of threads per block, which also sizes the block carries.</param>
+    /// <param name="blockDim">
+    /// The number of threads per block, which also sizes the block carries. Must be a positive multiple of 32 and at
+    /// most 1024, at least 256 when the NTT transform is longer than 65536 points, and small enough for one block of
+    /// the kernel to fit on a multiprocessor of the device (the registers of the kernel can make 1024 too large).
+    /// </param>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// <paramref name="blockDim"/> is 0, exceeds 1024, is not a multiple of 32, is less than 256 when the NTT
+    /// transform is longer than 65536 points, or is too large
+    /// for one block of the kernel to fit on a multiprocessor of the device.
+    /// </exception>
     public void ExecuteModPowNttMegaKernel(
         GpuWorkspace workspace,
         GpuBigUInt targetOperand, GpuBigUInt resultBuffer, GpuBigUInt constant,
         GpuBigUInt reciprocalMod, GpuBigUInt exponent,
         int n, int targetBits, uint gridDim, uint blockDim)
     {
+        ThrowIfInvalidMegaKernelBlockDim(blockDim);
+
         var aActualWords = 2 * n;
         var targetWords = (targetBits + 31) / 32;
 
         var outWords = aActualWords + targetWords;
         var requiredLen = outWords;
+        var transformLength = CooperativeMegaKernelLauncher.TransformLengthFor(requiredLen);
+        ThrowIfStridedColumnBlockDimTooSmall(blockDim, transformLength);
+        ThrowIfModPowBlockDimDoesNotFit(
+            workspace, blockDim, CooperativeMegaKernelLauncher.ComputeMegaKernelSharedMemoryBytes(transformLength));
 
         // The kernel resolves carries in chunks of one launch block (blockDim threads), not of a fixed size.
         using var buffers = new CooperativeMegaKernelLauncher.NttWorkspaceBuffers(
@@ -495,6 +510,93 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         {
             throw new InvalidOperationException(
                 $"The NTT block-carry buffer holds {blockCarryWords} words, but a {maxProductWords}-word product resolved in {chunkSize}-word chunks writes {carryCount} carries.");
+        }
+    }
+
+    /// <summary>
+    /// Throws when <paramref name="blockDim"/> violates the warp-32 and 32-warp shared-memory limits of the
+    /// cooperative mega-kernels.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>GpuBigIntNttKernels.ExecuteResolveNttCarriesBlocked</c> (<c>ResolveOverlapH</c> /
+    /// <c>ComputeBlockCarryScan</c>) and <c>GpuBigIntKernels.DeviceAddSubAlignedParallel</c> use full-warp
+    /// <c>Warp.ShuffleUpSync(0xFFFFFFFFu, ...)</c>, write per-warp carry/overlap state into <c>sharedH[warpId]</c> /
+    /// <c>sharedCarry[warpId]</c> only when <c>laneId == 31</c>, and allocate <c>SharedMemory&lt;uint&gt;(32)</c>
+    /// (at most 32 warps = 1024 threads, scanned across warp 0's 32 lanes).
+    /// </para>
+    /// <para>
+    /// <paramref name="blockDim"/> == 0 divides by zero in <c>NttWorkspaceBuffers</c> and
+    /// <see cref="ThrowIfBlockCarriesTooSmall"/>; a non-multiple of 32 leaves the last warp's slot uninitialized and
+    /// silently corrupts carries across chunk boundaries; and &gt; 1024 overflows the 32-warp shared buffers.
+    /// </para>
+    /// </remarks>
+    internal static void ThrowIfInvalidMegaKernelBlockDim(uint blockDim)
+    {
+        if (blockDim == 0
+            || blockDim > CooperativeMegaKernelLauncher.MaxThreadsPerBlock
+            || blockDim % CooperativeMegaKernelLauncher.WarpSize != 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(blockDim),
+                blockDim,
+                $"MegaKernel blockDim must be a positive multiple of {CooperativeMegaKernelLauncher.WarpSize} " +
+                $"and at most {CooperativeMegaKernelLauncher.MaxThreadsPerBlock}, got {blockDim}.");
+        }
+    }
+
+    /// <summary>
+    /// Minimum <c>blockDim</c> required by <c>TransposeTileBatches</c> (8 warps per 32x32 tile) when the NTT transform
+    /// length exceeds <c>GpuBigIntNttKernels.StridedColumnMaxTransformLength</c>.
+    /// </summary>
+    internal const int StridedColumnMinBlockDim = 256;
+
+    /// <summary>
+    /// Throws when <paramref name="transformLength"/> uses <c>TransposeTileBatches</c> and <paramref name="blockDim"/>
+    /// is smaller than <see cref="StridedColumnMinBlockDim"/>.
+    /// </summary>
+    /// <param name="blockDim">The threads per block requested for the launch.</param>
+    /// <param name="transformLength">The 2-prime NTT transform length.</param>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// <paramref name="transformLength"/> exceeds <c>GpuBigIntNttKernels.StridedColumnMaxTransformLength</c> and
+    /// <paramref name="blockDim"/> is less than <see cref="StridedColumnMinBlockDim"/>.
+    /// </exception>
+    internal static void ThrowIfStridedColumnBlockDimTooSmall(uint blockDim, int transformLength)
+    {
+        if (transformLength > GpuBigIntNttKernels.StridedColumnMaxTransformLength
+            && blockDim < StridedColumnMinBlockDim)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(blockDim),
+                blockDim,
+                $"MegaKernel blockDim must be at least {StridedColumnMinBlockDim} when transformLength " +
+                $"{transformLength} exceeds {GpuBigIntNttKernels.StridedColumnMaxTransformLength}, got {blockDim}.");
+        }
+    }
+
+    /// <summary>
+    /// Throws when not even one block of <paramref name="blockDim"/> threads of the ModPow mega-kernel fits on a
+    /// multiprocessor of the workspace's device, which a cooperative launch rejects (CUDA error 720) only after the
+    /// buffers are rented.
+    /// </summary>
+    /// <param name="workspace">The workspace whose context and device the kernel runs on.</param>
+    /// <param name="blockDim">The threads per block requested for the launch.</param>
+    /// <param name="sharedMemBytes">The dynamic shared memory per block of the launch.</param>
+    /// <exception cref="ArgumentOutOfRangeException">No block of <paramref name="blockDim"/> threads fits.</exception>
+    private static void ThrowIfModPowBlockDimDoesNotFit(GpuWorkspace workspace, uint blockDim, uint sharedMemBytes)
+    {
+        using var scope = new GpuKernelLoader.CudaContextScope(workspace.IsolatedContext.Handle);
+        var hfunc = GpuBigIntDivRemKernels.ResolveModPowNttMegaKernel();
+        CudaException.ThrowIfError(
+            CudaDriverApi.cuOccupancyMaxActiveBlocksPerMultiprocessor(
+                out var blocksPerSm, hfunc, (int)blockDim, sharedMemBytes));
+        if (blocksPerSm < 1)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(blockDim),
+                blockDim,
+                $"No block of {blockDim} threads of the ModPow mega-kernel fits on a multiprocessor of this device " +
+                $"(registers and {sharedMemBytes} bytes of shared memory per block).");
         }
     }
 

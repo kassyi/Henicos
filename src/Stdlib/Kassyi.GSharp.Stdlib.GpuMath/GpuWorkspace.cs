@@ -549,6 +549,49 @@ public class GpuWorkspace : IGpuResourceScope
 
     /// <summary>Records the block size used to launch the ModPow NTT mega-kernel.</summary>
     internal void RecordModPowNttBlockDim(uint blockDim) => Volatile.Write(ref _lastModPowNttBlockDim, blockDim);
+
+    private uint _lastInverseSqrtMegaBlockDim;
+    private uint _lastInverseSqrtMegaGridDim;
+    private uint _lastInverseSqrtMegaSharedMemBytes;
+    private uint _lastReciprocalMegaBlockDim;
+    private uint _lastReciprocalMegaGridDim;
+    private uint _lastReciprocalMegaSharedMemBytes;
+
+    /// <summary>
+    /// Gets the launch shape of the most recent <c>InverseSqrtNewtonRaphsonMegaKernel</c> launch on this workspace,
+    /// which tests read to verify block and grid dimensions.
+    /// </summary>
+    internal BigNum.Providers.Handlers.CooperativeMegaKernelLauncher.LaunchShape LastInverseSqrtMegaLaunchShape =>
+        new(
+            Volatile.Read(ref _lastInverseSqrtMegaBlockDim),
+            Volatile.Read(ref _lastInverseSqrtMegaGridDim),
+            Volatile.Read(ref _lastInverseSqrtMegaSharedMemBytes));
+
+    /// <summary>Records the launch shape used to launch <c>InverseSqrtNewtonRaphsonMegaKernel</c>.</summary>
+    internal void RecordInverseSqrtMegaLaunchShape(uint blockDim, uint gridDim, uint sharedMemBytes)
+    {
+        Volatile.Write(ref _lastInverseSqrtMegaBlockDim, blockDim);
+        Volatile.Write(ref _lastInverseSqrtMegaGridDim, gridDim);
+        Volatile.Write(ref _lastInverseSqrtMegaSharedMemBytes, sharedMemBytes);
+    }
+
+    /// <summary>
+    /// Gets the launch shape of the most recent <c>ReciprocalNewtonRaphsonMegaKernel</c> launch on this workspace,
+    /// which tests read to verify block and grid dimensions.
+    /// </summary>
+    internal BigNum.Providers.Handlers.CooperativeMegaKernelLauncher.LaunchShape LastReciprocalMegaLaunchShape =>
+        new(
+            Volatile.Read(ref _lastReciprocalMegaBlockDim),
+            Volatile.Read(ref _lastReciprocalMegaGridDim),
+            Volatile.Read(ref _lastReciprocalMegaSharedMemBytes));
+
+    /// <summary>Records the launch shape used to launch <c>ReciprocalNewtonRaphsonMegaKernel</c>.</summary>
+    internal void RecordReciprocalMegaLaunchShape(uint blockDim, uint gridDim, uint sharedMemBytes)
+    {
+        Volatile.Write(ref _lastReciprocalMegaBlockDim, blockDim);
+        Volatile.Write(ref _lastReciprocalMegaGridDim, gridDim);
+        Volatile.Write(ref _lastReciprocalMegaSharedMemBytes, sharedMemBytes);
+    }
 }
 
 

@@ -258,4 +258,225 @@ public class ModPowPolyAlgorithmTests : IDisposable
         using var gpuMismatch = new GpuBigUInt(_context, numWords + 1);
         Assert.Throws<ArgumentException>(() => GpuBigIntDivRem.ModPow(gpuMismatch, gpuExp, gpuMod, gpuResult));
     }
+
+    // ExecuteModPowNttMegaKernel must reject invalid blockDim before NttWorkspaceBuffers allocation or kernel launch;
+    // otherwise n = 64 with blockDim = 260 returns a wrong result without throwing.
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:270
+    //         `ThrowIfInvalidMegaKernelBlockDim(blockDim);` -> removed
+    // input: n = 64, targetBits = 96 * 64 + 512, exp = 65537, blockDim = 260
+    [SkippableTheory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(260u)]
+    [InlineData(0u)]
+    [InlineData(31u)]
+    [InlineData(33u)]
+    [InlineData(1025u)]
+    [InlineData(1056u)]
+    public void ExecuteModPowNttMegaKernel_InvalidBlockDim_ThrowsArgumentOutOfRangeException(uint blockDim)
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        const int NumWords = 64;
+        const int TargetBits = 96 * NumWords + 512;
+        var (gpuBase, gpuExp, gpuMod, gpuRecip, gpuResult, _) =
+            CreateModPowNttMegaKernelTestInputs(_context, NumWords, TargetBits, new BigInteger(65537));
+        using (gpuBase)
+        using (gpuExp)
+        using (gpuMod)
+        using (gpuRecip)
+        using (gpuResult)
+        {
+            var beforeStats = _context.GetMemoryStatistics();
+            var handler = new KernelAdvancedMathHandler();
+            var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
+                handler.ExecuteModPowNttMegaKernel(
+                    _context, gpuBase, gpuResult, gpuMod, gpuRecip, gpuExp,
+                    NumWords, TargetBits, gridDim: 1, blockDim: blockDim));
+
+            Assert.Equal("blockDim", exception.ParamName);
+            // mutant: KernelAdvancedMathHandler.cs:270 `ThrowIfInvalidMegaKernelBlockDim(blockDim);` moved after the
+            //         first RentTemp (260u then throws only after renting)
+            var afterStats = _context.GetMemoryStatistics();
+            Assert.Equal(beforeStats.PeakLiveBuffers, afterStats.PeakLiveBuffers);
+            Assert.Equal(beforeStats.DriverAllocations, afterStats.DriverAllocations);
+        }
+    }
+
+    // A block size that passes the warp rules can still be too large for the registers of the ModPow kernel (1024
+    // threads on an sm_86 device): the cooperative launch then fails with CUDA error 720 after the buffers are rented.
+    // The method must reject it with ArgumentOutOfRangeException before renting.
+    // mutant: KernelAdvancedMathHandler.cs:279 `ThrowIfModPowBlockDimDoesNotFit(` call removed (CudaException)
+    // input: n = 64, blockDim = 1024 (skipped on a device where one block of 1024 threads fits)
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.SadPath)]
+    public void ExecuteModPowNttMegaKernel_BlockDimTooLargeForTheKernel_ThrowsBeforeRenting()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        const int NumWords = 64;
+        const int TargetBits = 96 * NumWords + 512;
+        const uint BlockDim = 1024u;
+        var transformLength = CooperativeMegaKernelLauncher.TransformLengthFor(2 * NumWords + (TargetBits + 31) / 32);
+        var sharedMemBytes = CooperativeMegaKernelLauncher.ComputeMegaKernelSharedMemoryBytes(transformLength);
+        int blocksPerSm;
+        using (new GpuKernelLoader.CudaContextScope(_context.IsolatedContext.Handle))
+        {
+            CudaException.ThrowIfError(CudaDriverApi.cuOccupancyMaxActiveBlocksPerMultiprocessor(
+                out blocksPerSm, GpuBigIntDivRemKernels.ResolveModPowNttMegaKernel(), (int)BlockDim, sharedMemBytes));
+        }
+
+        Skip.If(blocksPerSm > 0, "One block of 1024 threads of the ModPow kernel fits on this device.");
+
+        var (gpuBase, gpuExp, gpuMod, gpuRecip, gpuResult, _) =
+            CreateModPowNttMegaKernelTestInputs(_context, NumWords, TargetBits, new BigInteger(65537));
+        using (gpuBase)
+        using (gpuExp)
+        using (gpuMod)
+        using (gpuRecip)
+        using (gpuResult)
+        {
+            var beforeStats = _context.GetMemoryStatistics();
+            var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
+                new KernelAdvancedMathHandler().ExecuteModPowNttMegaKernel(
+                    _context, gpuBase, gpuResult, gpuMod, gpuRecip, gpuExp,
+                    NumWords, TargetBits, gridDim: 1, blockDim: BlockDim));
+
+            Assert.Equal("blockDim", exception.ParamName);
+            var afterStats = _context.GetMemoryStatistics();
+            Assert.Equal(beforeStats.PeakLiveBuffers, afterStats.PeakLiveBuffers);
+            Assert.Equal(beforeStats.DriverAllocations, afterStats.DriverAllocations);
+            Assert.Equal(0u, _context.LastModPowNttBlockDim);
+        }
+    }
+
+    [SkippableTheory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(256u)]
+    [InlineData(96u)]
+    public void ExecuteModPowNttMegaKernel_ValidWarpMultipleBlockDim_MatchesBigIntegerReference(uint blockDim)
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        const int NumWords = 64;
+        const int TargetBits = 96 * NumWords + 512;
+        var (gpuBase, gpuExp, gpuMod, gpuRecip, gpuResult, expected) =
+            CreateModPowNttMegaKernelTestInputs(_context, NumWords, TargetBits, new BigInteger(65537));
+        using (gpuBase)
+        using (gpuExp)
+        using (gpuMod)
+        using (gpuRecip)
+        using (gpuResult)
+        {
+            new KernelAdvancedMathHandler().ExecuteModPowNttMegaKernel(
+                _context, gpuBase, gpuResult, gpuMod, gpuRecip, gpuExp,
+                NumWords, TargetBits, gridDim: 1, blockDim: blockDim);
+
+            Assert.Equal(expected, gpuResult.ToBigInteger());
+            Assert.Equal(blockDim, _context.LastModPowNttBlockDim);
+        }
+    }
+
+    // When m > 65536 (n = 6600 -> m = 131072), TransposeTileBatches requires blockDim >= 256; warp multiples below
+    // 256 must throw ArgumentOutOfRangeException before any NttWorkspaceBuffers or twiddle allocation.
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:278
+    //         `ThrowIfStridedColumnBlockDimTooSmall(blockDim, transformLength);` -> removed
+    // input: n = 6600, targetBits = 96 * 6600 + 512, exp = 3, blockDim = 32, 96, 224
+    [SkippableTheory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(32u)]
+    [InlineData(96u)]
+    [InlineData(224u)]
+    public void ExecuteModPowNttMegaKernel_AboveStridedColumnLimitWithSmallBlockDim_ThrowsArgumentOutOfRangeException(
+        uint blockDim)
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        const int NumWords = 6600;
+        const int TargetBits = 96 * NumWords + 512;
+        using var workspace = new GpuWorkspace(NumWords * 16, GpuExecutionEngine.GSharpAot);
+        var (gpuBase, gpuExp, gpuMod, gpuRecip, gpuResult, _) =
+            CreateModPowNttMegaKernelTestInputs(workspace, NumWords, TargetBits, new BigInteger(3));
+        using (gpuBase)
+        using (gpuExp)
+        using (gpuMod)
+        using (gpuRecip)
+        using (gpuResult)
+        {
+            var beforeStats = workspace.GetMemoryStatistics();
+            var handler = new KernelAdvancedMathHandler();
+            var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
+                handler.ExecuteModPowNttMegaKernel(
+                    workspace, gpuBase, gpuResult, gpuMod, gpuRecip, gpuExp,
+                    NumWords, TargetBits, gridDim: 1, blockDim: blockDim));
+
+            Assert.Equal("blockDim", exception.ParamName);
+            var afterStats = workspace.GetMemoryStatistics();
+            Assert.Equal(beforeStats.PeakLiveBuffers, afterStats.PeakLiveBuffers);
+            Assert.Equal(beforeStats.DriverAllocations, afterStats.DriverAllocations);
+            Assert.Equal(0u, workspace.LastModPowNttBlockDim);
+        }
+    }
+
+    // Boundary check at m = 131072 > 65536: blockDim = 256 meets TransposeTileBatches' 8-warp tile minimum and
+    // matches BigInteger.ModPow.
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:567
+    //         `blockDim < StridedColumnMinBlockDim` -> `blockDim <= StridedColumnMinBlockDim` (256u throws)
+    // input: n = 6600, targetBits = 96 * 6600 + 512, exp = 3, blockDim = 256
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    public void ExecuteModPowNttMegaKernel_AboveStridedColumnLimitWithMinBlockDim_MatchesBigIntegerReference()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        const int NumWords = 6600;
+        const int TargetBits = 96 * NumWords + 512;
+        using var workspace = new GpuWorkspace(NumWords * 16, GpuExecutionEngine.GSharpAot);
+        var (gpuBase, gpuExp, gpuMod, gpuRecip, gpuResult, expected) =
+            CreateModPowNttMegaKernelTestInputs(workspace, NumWords, TargetBits, new BigInteger(3));
+        using (gpuBase)
+        using (gpuExp)
+        using (gpuMod)
+        using (gpuRecip)
+        using (gpuResult)
+        {
+            const uint BlockDim = 256u;
+            new KernelAdvancedMathHandler().ExecuteModPowNttMegaKernel(
+                workspace, gpuBase, gpuResult, gpuMod, gpuRecip, gpuExp,
+                NumWords, TargetBits, gridDim: 1, blockDim: BlockDim);
+
+            Assert.True(expected == gpuResult.ToBigInteger(), "n=6600 blockDim=256 ModPow mismatch");
+            Assert.Equal(BlockDim, workspace.LastModPowNttBlockDim);
+        }
+    }
+
+    private static (
+        GpuBigUInt Base,
+        GpuBigUInt Exp,
+        GpuBigUInt Mod,
+        GpuBigUInt Reciprocal,
+        GpuBigUInt Result,
+        BigInteger Expected)
+        CreateModPowNttMegaKernelTestInputs(
+            GpuWorkspace workspace, int numWords, int targetBits, BigInteger expValue)
+    {
+        var random = new Random(606 + numWords);
+        var modValue = GenerateFullWidthBigInteger(random, numWords * 32) | BigInteger.One;
+        var baseValue = GenerateFullWidthBigInteger(random, numWords * 32) % modValue;
+        var expected = BigInteger.ModPow(baseValue, expValue, modValue);
+        var reciprocalValue = (BigInteger.One << targetBits) / modValue;
+        var targetWords = (targetBits + 31) / 32;
+
+        return (
+            GpuBigUInt.FromBigInteger(workspace, baseValue, numWords),
+            GpuBigUInt.FromBigInteger(workspace, expValue, 1),
+            GpuBigUInt.FromBigInteger(workspace, modValue, numWords),
+            GpuBigUInt.FromBigInteger(workspace, reciprocalValue, targetWords),
+            new GpuBigUInt(workspace, numWords),
+            expected);
+    }
 }

@@ -69,10 +69,10 @@ internal static class CooperativeMegaKernelLauncher
         ctx.CorrectionStatus = workspace.CorrectionStatusProxy;
         ctx.Dimensions.SkipsFloorCorrection = !correctsToFloor;
 
-        GpuBigIntSqrtKernels.LaunchInverseSqrtNewtonRaphsonMegaKernelPtr(
-            ctx,
-            gridDimX: shape.GridDim, blockDimX: shape.BlockDim, sharedMemBytes: shape.SharedMemBytes,
-            hStream: workspace.Stream);
+        LaunchInverseSqrtMegaKernel(
+            workspace,
+            in ctx,
+            gridDimX: shape.GridDim, blockDimX: shape.BlockDim, sharedMemBytes: shape.SharedMemBytes);
         workspace.CorrectionStatus?.MarkPending();
     }
 
@@ -114,10 +114,10 @@ internal static class CooperativeMegaKernelLauncher
             currentProduct, diff, nextIter, carryBuffer);
         ctx.CorrectionStatus = workspace.CorrectionStatusProxy;
 
-        GpuBigIntDivRemKernels.LaunchReciprocalNewtonRaphsonMegaKernelPtr(
-            ctx,
-            gridDimX: shape.GridDim, blockDimX: shape.BlockDim, sharedMemBytes: shape.SharedMemBytes,
-            hStream: workspace.Stream);
+        LaunchReciprocalMegaKernel(
+            workspace,
+            in ctx,
+            gridDimX: shape.GridDim, blockDimX: shape.BlockDim, sharedMemBytes: shape.SharedMemBytes);
         workspace.CorrectionStatus?.MarkPending();
     }
 
@@ -156,7 +156,7 @@ internal static class CooperativeMegaKernelLauncher
     }
 
     // The most threads a block can have on any CUDA device, and so the largest block size the launcher can choose.
-    private const int MaxThreadsPerBlock = 1024;
+    internal const int MaxThreadsPerBlock = 1024;
 
     internal static uint ComputeMegaKernelSharedMemoryBytes(int transformLength)
     {
@@ -494,6 +494,37 @@ internal static class CooperativeMegaKernelLauncher
             UncarriedHigh.Dispose();
             BlockCarries.Dispose();
         }
+    }
+
+    // CUDA warps execute 32 threads in lockstep (at most 32 warps per 1024-thread block).
+    internal const int WarpSize = 32;
+
+    private static void LaunchInverseSqrtMegaKernel(
+        GpuWorkspace workspace,
+        in GpuBigIntSqrtKernels.AotContexts.NewtonRaphson ctx,
+        uint gridDimX,
+        uint blockDimX,
+        uint sharedMemBytes)
+    {
+        workspace.RecordInverseSqrtMegaLaunchShape(blockDimX, gridDimX, sharedMemBytes);
+        GpuBigIntSqrtKernels.LaunchInverseSqrtNewtonRaphsonMegaKernelPtr(
+            ctx,
+            gridDimX: gridDimX, blockDimX: blockDimX, sharedMemBytes: sharedMemBytes,
+            hStream: workspace.Stream);
+    }
+
+    private static void LaunchReciprocalMegaKernel(
+        GpuWorkspace workspace,
+        in GpuBigIntDivRemKernels.AotContexts.NewtonRaphson ctx,
+        uint gridDimX,
+        uint blockDimX,
+        uint sharedMemBytes)
+    {
+        workspace.RecordReciprocalMegaLaunchShape(blockDimX, gridDimX, sharedMemBytes);
+        GpuBigIntDivRemKernels.LaunchReciprocalNewtonRaphsonMegaKernelPtr(
+            ctx,
+            gridDimX: gridDimX, blockDimX: blockDimX, sharedMemBytes: sharedMemBytes,
+            hStream: workspace.Stream);
     }
 
     private sealed class OverrideState(int[] candidates)
