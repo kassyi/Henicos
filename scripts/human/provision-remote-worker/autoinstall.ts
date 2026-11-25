@@ -57,7 +57,8 @@ export function buildAutoinstallUserData(profile: WorkerProfile, pubKey: string)
       throw new Error(`invalid packages entry: ${pkg}`);
     }
   }
-  const packageLines = allPackages.map((pkg) => `    - ${pkg}`);
+  // Quoted, so that a name such as no, yes, null or 123 stays a string in YAML
+  const packageLines = allPackages.map((pkg) => `    - ${JSON.stringify(pkg)}`);
   const setupLines = profile.setupCommands.map((cmd) => {
     const cmdB64 = Buffer.from(cmd, "utf8").toString("base64");
     const curtinCmd = `curtin in-target -- bash -c 'echo ${cmdB64} | base64 -d | bash -euo pipefail'`;

@@ -588,6 +588,8 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void | Promi
       "/var/lib/jobrunner",
       "~/.ssh",
       "/opt/.hidden/ws",
+      "/opt/containerd/bin",
+      "/srv/ftp/pub",
       "~/henicos\u0085",
     ]) {
       assert.strictEqual(

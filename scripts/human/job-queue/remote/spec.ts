@@ -121,8 +121,10 @@ export function isValidRemoteWorkspace(raw: unknown, options?: RemoteWorkspaceOp
   if (root === "var") {
     return second === "lib" && third === provisionerUser && segments.length >= 4;
   }
+  // /opt/<x> and /srv/<x> hold other applications: the provisioner chowns the workspace to the runner and the sync
+  // deletes what it does not know, so only a directory named after the runner qualifies
   if (root !== undefined && DedicatedAbsoluteWorkspaceRoots.has(root)) {
-    return segments.length >= 3;
+    return second === provisionerUser && segments.length >= 3;
   }
   return false;
 }

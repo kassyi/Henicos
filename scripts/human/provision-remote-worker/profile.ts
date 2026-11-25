@@ -248,6 +248,11 @@ export function validateProfile(raw: unknown): WorkerProfile {
         nameservers.push(ns);
       }
     }
+    // A static address has no DHCP to supply DNS: without a nameserver the installer cannot resolve the package
+    // mirror or the setup downloads
+    if (nameservers === undefined || nameservers.length === 0) {
+      throw new Error("network.nameservers needs at least one address when network.dhcp4 is false");
+    }
     network = { dhcp4: false, address: rawNet.address, gateway4: rawNet.gateway4, nameservers };
   } else {
     network = { dhcp4: true };

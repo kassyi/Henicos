@@ -229,6 +229,8 @@ export function runProvisionerSelfTest(exampleProfilePath: string): void {
     "~/.gnupg",
     "~/sub/.hidden",
     "/opt/.hidden/ws",
+    "/opt/containerd/bin",
+    "/srv/ftp/pub",
     "/home/jobrunner/.ssh",
     "~/henicos\u0085",
   ]) {
@@ -456,8 +458,8 @@ export function runProvisionerSelfTest(exampleProfilePath: string): void {
     const userData = buildAutoinstallUserData(profile, fakeKey);
     assert.ok(userData.startsWith("#cloud-config\nautoinstall:\n"));
     assert.ok(userData.includes("name: direct"), "uses hardware-agnostic direct storage layout for bare-metal & VM");
-    assert.ok(userData.includes("    - clang"));
-    assert.ok(userData.includes("    - ninja-build"));
+    assert.ok(userData.includes('    - "clang"'));
+    assert.ok(userData.includes('    - "ninja-build"'));
     assert.ok(userData.includes("jobrunner-harden-worker.sh"));
     const decodedSampleCmds = decodeSetupCommandsFromUserData(userData);
     assert.deepStrictEqual(decodedSampleCmds, profile.setupCommands);
@@ -487,11 +489,11 @@ export function runProvisionerSelfTest(exampleProfilePath: string): void {
       cacheDirs: [".cargo/registry"],
     });
     const rustUserData = buildAutoinstallUserData(rustProfile, fakeKey);
-    assert.ok(rustUserData.includes("    - openssh-server"), "always keeps base OS packages");
-    assert.ok(rustUserData.includes("    - build-essential"));
+    assert.ok(rustUserData.includes('    - "openssh-server"'), "always keeps base OS packages");
+    assert.ok(rustUserData.includes('    - "build-essential"'));
     assert.deepStrictEqual(decodeSetupCommandsFromUserData(rustUserData), ["echo rustup-install"]);
     assert.ok(!rustUserData.includes("dotnet-install.sh"), "non-.NET profile omits .NET setup");
-    assert.ok(!rustUserData.includes("    - clang"), "non-.NET profile omits undeclared packages");
+    assert.ok(!rustUserData.includes('    - "clang"'), "non-.NET profile omits undeclared packages");
     const rustScript = buildHardeningShellScript(rustProfile, fakeKey, true);
     assert.ok(rustScript.includes("/home/$RUNNER_USER/rust-repo"));
     assert.ok(rustScript.includes("/home/$RUNNER_USER/.cargo/registry"));
@@ -623,21 +625,28 @@ export function runProvisionerSelfTest(exampleProfilePath: string): void {
     assert.ok(yamlEdgeMetaData.includes('instance-id: "job-queue-worker-no"'));
     assert.ok(yamlEdgeMetaData.includes('local-hostname: "no"'));
 
-    const noDnsEmptyUserData = buildAutoinstallUserData(
-      validateProfile({ ...sampleRaw, network: { ...sampleNet, nameservers: [] } }),
-      fakeKey,
+    // A static address needs a nameserver: no silent 1.1.1.1 and no silent install without DNS
+    assert.throws(
+      () => validateProfile({ ...sampleRaw, network: { ...sampleNet, nameservers: [] } }),
+      /nameservers needs at least one address/,
     );
-    assert.ok(!noDnsEmptyUserData.includes("nameservers:"));
-    assert.ok(!noDnsEmptyUserData.includes("1.1.1.1"));
-
     const netNoNameservers = { ...sampleNet };
     delete netNoNameservers.nameservers;
-    const noDnsUndefinedUserData = buildAutoinstallUserData(
-      validateProfile({ ...sampleRaw, network: netNoNameservers }),
+    assert.throws(() => validateProfile({ ...sampleRaw, network: netNoNameservers }), /nameservers needs at least one/);
+    const dhcpNoDns = validateProfile({ ...sampleRaw, network: { dhcp4: true } });
+    assert.ok(!buildAutoinstallUserData(dhcpNoDns, fakeKey).includes("1.1.1.1"), "DHCP supplies DNS; no default");
+
+    // Package names are quoted, so that YAML keeps no / yes / null / 123 as strings
+    const yamlPackageUserData = buildAutoinstallUserData(
+      validateProfile({ ...sampleRaw, packages: ["no", "null", "123"] }),
       fakeKey,
     );
-    assert.ok(!noDnsUndefinedUserData.includes("nameservers:"));
-    assert.ok(!noDnsUndefinedUserData.includes("1.1.1.1"));
+    assert.ok(yamlPackageUserData.includes('    - "no"') && yamlPackageUserData.includes('    - "123"'));
+
+    // An existing administrator account is refused; a runner left by an earlier run (no sudo, no adm) passes
+    assert.ok(
+      buildHardeningShellScript(profile, fakeKey, false).includes("refusing pre-existing administrator account"),
+    );
 
     const remotes = buildRemotesLocalJson(profile);
     const ubuntuRemote = remotes.remotes.ubuntu;
