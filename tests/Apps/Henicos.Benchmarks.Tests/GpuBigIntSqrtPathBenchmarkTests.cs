@@ -14,9 +14,8 @@ public class GpuBigIntSqrtPathBenchmarkTests
     // GpuBigIntDivRem.SqrtThroughSqrtFloor passes an (r + 1)-word top slice and marginWords = (r + 1) / 2
     // into CooperativeMegaKernelLauncher.InverseSqrtMega, which computes
     // maxOutWords = 4 * (r + 1) + 3 * ((r + 1) / 2) and calls TransformLengthFor(maxOutWords).
-    // The width formula is a copy of the one in InverseSqrtMega (CooperativeMegaKernelLauncher.cs), and the
-    // benchmark's MegaKernelTransformLength repeats it: this test checks the margin and the rounding of the library
-    // and that the listed widths sit on the boundaries; a change of the width formula in InverseSqrtMega is not seen.
+    // This closed form is written out on purpose; the benchmark's MegaKernelTransformLength calls the launcher's own
+    // InverseSqrtMegaProductWords, so a change of the width formula in InverseSqrtMega makes the two disagree here.
     private static int ClosedFormTransformLength(int rootWords)
     {
         var maxOutWords = 4 * (rootWords + 1) + 3 * ((rootWords + 1) / 2);

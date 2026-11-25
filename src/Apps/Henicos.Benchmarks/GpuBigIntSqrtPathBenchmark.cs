@@ -87,28 +87,47 @@ public class GpuBigIntSqrtPathBenchmark : IDisposable
 
     /// <summary>
     /// Computes the mega-kernel 2-prime NTT transform length <c>M</c> for a root of <paramref name="rootWords"/>
-    /// words using <c>GpuMath</c>'s margin and transform-length helpers.
+    /// words with the helpers <c>GpuMath</c> itself uses: <c>SqrtFloor</c> passes the top <c>r + 1</c> words and
+    /// <c>SqrtFloorMarginWords(r)</c> margin words to <c>InverseSqrtMega</c>.
     /// </summary>
     internal static int MegaKernelTransformLength(int rootWords)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(rootWords, 1);
         var marginWords = GpuBigIntDivRem.SqrtFloorMarginWords(rootWords);
-        var maxOutWords = 4 * (rootWords + 1) + 3 * marginWords;
+        var maxOutWords = CooperativeMegaKernelLauncher.InverseSqrtMegaProductWords(rootWords + 1, marginWords);
         return CooperativeMegaKernelLauncher.TransformLengthFor(maxOutWords);
     }
 
     [GlobalSetup]
     public void Setup()
     {
-        _scope = new GpuKernelLoader.CudaContextScope();
-        var workspace = new GpuWorkspace(Math.Max(4096, 2 * RootWords));
-        workspace.SqrtPrecisionDoublingThresholdWords = ThresholdWordsFor(MegaKernel);
-        _workspace = workspace;
+        try
+        {
+            _scope = new GpuKernelLoader.CudaContextScope();
+            var workspace = new GpuWorkspace(Math.Max(4096, 2 * RootWords));
+            workspace.SqrtPrecisionDoublingThresholdWords = ThresholdWordsFor(MegaKernel);
+            _workspace = workspace;
 
-        // Seeded random operand of 2 * RootWords words with its top bit set, so the root fills RootWords words.
-        var random = new Random(2225);
-        _operand = new GpuBigUInt(workspace, RandomWords(random, 2 * RootWords));
-        _result = new GpuBigUInt(workspace, RootWords);
+            // Seeded random operand of 2 * RootWords words with its top bit set, so the root fills RootWords words.
+            var random = new Random(2225);
+            _operand = new GpuBigUInt(workspace, RandomWords(random, 2 * RootWords));
+            _result = new GpuBigUInt(workspace, RootWords);
+
+            // One run before the measurement proves that the threshold selects the path this case is named after.
+            var doublingRunsBefore = workspace.InverseSqrtDoublingRuns;
+            Sqrt();
+            var ranDoubling = workspace.InverseSqrtDoublingRuns != doublingRunsBefore;
+            if (ranDoubling == MegaKernel)
+            {
+                throw new InvalidOperationException(
+                    $"MegaKernel={MegaKernel} at {RootWords} root words ran the other inverse square root path.");
+            }
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            Dispose();
+            throw;
+        }
     }
 
     [GlobalCleanup]
@@ -122,7 +141,7 @@ public class GpuBigIntSqrtPathBenchmark : IDisposable
         GpuBigIntDivRem.Sqrt(Buffer(_operand), Buffer(_result));
         CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(workspace.Stream));
 
-        global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
+        GpuKernelLoader.ThrowIfDeviceError();
     }
 
     public void Dispose()
