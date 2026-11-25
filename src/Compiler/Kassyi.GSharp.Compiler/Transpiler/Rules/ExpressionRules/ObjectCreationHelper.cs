@@ -92,90 +92,10 @@ internal static class ObjectCreationHelper
             .FirstOrDefault(static c => c.Parameters.Length == 0);
     }
 
-    // How `new T(args)` reaches the device
-    private enum StructCreationKind
-    {
-        // A user constructor with a body, or a primary constructor: __gsharp_ctor_...(args) (StructConstructorEmitter)
-        Factory,
-
-        // A constructor that the dialect YAML maps to a function: <mapped>(args) (Vector3(float), ...)
-        Mapped,
-
-        // Aggregate initialization T{args}: no arguments, or a constructor whose parameters are the members in order
-        Braces,
-
-        // Neither: reported (GSH0003), since T{args} would store the arguments in the members in order (#499)
-        Unsupported
-    }
-
     private static StructCreationKind Classify(ITypeSymbol typeSymbol, IMethodSymbol? constructor,
-        ref TranspileContext context, out string mappedFunction)
-    {
-        mappedFunction = string.Empty;
-        if (constructor != null &&
-            StructConstructorEmitter.IsEmittedStructConstructor(constructor, context.Query.SemanticModel.Compilation))
-        {
-            return StructCreationKind.Factory;
-        }
-
-        // The implicit parameterless constructor is default(T): no initializer or body runs
-        if (constructor is null or { Parameters.Length: 0, IsImplicitlyDeclared: true })
-        {
-            return StructCreationKind.Braces;
-        }
-
-        if (context.Emitter.Dialect.TryMapIntrinsic(constructor, out mappedFunction))
-        {
-            return StructCreationKind.Mapped;
-        }
-
-        // A declared parameterless constructor whose body is not here (another assembly without a record) is not
-        // positional, so it is Unsupported: T{} would skip the body and the field initializers (#609)
-        return IsPositionalConstructor(typeSymbol, constructor)
-            ? StructCreationKind.Braces
-            : StructCreationKind.Unsupported;
-    }
-
-    // [WHY] A constructor from metadata has no body to emit, so T{args} is right only where G# knows the meaning: the
-    // component constructors of the vector types (System.Numerics.Vector2/3/4, Kassyi.GSharp.Core.Float3 ...), whose
-    // parameters are the fields in order; Nullable<T>(T), which the C++ constructor of the device type takes; and a
-    // span over a pointer and a length, or over an array, which the C++ constructors of GSharpArray take.
-    private static bool IsPositionalConstructor(ITypeSymbol typeSymbol, IMethodSymbol constructor)
-    {
-        var parameters = constructor.Parameters;
-        if (typeSymbol.IsSystemNumericsVector() && typeSymbol is INamedTypeSymbol vectorType)
-        {
-            var index = 0;
-            foreach (var member in StructAbiMembers.Get(vectorType))
-            {
-                if (index >= parameters.Length || !parameters[index].Type.IsEqualTo(member.Type))
-                {
-                    return false;
-                }
-
-                index++;
-            }
-
-            return index == parameters.Length;
-        }
-
-        if (typeSymbol.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
-        {
-            return parameters.Length == 1;
-        }
-
-        if (typeSymbol.IsArrayLikeType())
-        {
-            return parameters switch
-            {
-                [{ Type: IPointerTypeSymbol }, { Type.SpecialType: SpecialType.System_Int32 }] => true,
-                [var source] => source.Type.IsArrayLikeType(),
-                _ => false
-            };
-        }
-
-        return false;
-    }
+        ref TranspileContext context, out string mappedFunction) =>
+        StructCreationClassifier.Classify(typeSymbol, constructor, context.Query.SemanticModel.Compilation,
+            context.Emitter.Dialect, out mappedFunction);
 
     // constructor 'System.Numerics.Vector3(System.ReadOnlySpan<float>)' without a device equivalent
     private static string DescribeUnsupportedConstructor(ITypeSymbol typeSymbol, IMethodSymbol constructor)
@@ -333,21 +253,14 @@ internal static class ObjectCreationHelper
     private static bool IsInParameterOrder(IMethodSymbol constructor, ArgumentListSyntax? argumentList)
     {
         var arguments = argumentList?.Arguments ?? default;
-        if (arguments.Count != constructor.Parameters.Length)
-        {
-            return false;
-        }
-
         var matched = ArgumentMatchingHelper.MatchArgumentsToParameters(arguments, constructor);
-        for (var i = 0; i < matched.Length; i++)
+        var ordinals = new int[arguments.Count];
+        for (var i = 0; i < ordinals.Length; i++)
         {
-            if (matched[i] != arguments[i])
-            {
-                return false;
-            }
+            ordinals[i] = Array.IndexOf(matched, arguments[i]);
         }
 
-        return true;
+        return StructCreationClassifier.IsInParameterOrder(constructor.Parameters.Length, ordinals);
     }
 
     // Whether each written argument goes to a later parameter than the one before it: the call can pass the arguments
@@ -355,19 +268,13 @@ internal static class ObjectCreationHelper
     private static bool IsWrittenInParameterOrder(SeparatedSyntaxList<ArgumentSyntax> arguments,
         ArgumentSyntax?[] matched)
     {
-        var previous = -1;
-        foreach (var argument in arguments)
+        var ordinals = new int[arguments.Count];
+        for (var i = 0; i < ordinals.Length; i++)
         {
-            var index = IndexOfParameter(matched, argument);
-            if (index < previous)
-            {
-                return false;
-            }
-
-            previous = index;
+            ordinals[i] = IndexOfParameter(matched, arguments[i]);
         }
 
-        return true;
+        return StructCreationClassifier.IsWrittenInParameterOrder(ordinals);
     }
 
     private static int IndexOfParameter(ArgumentSyntax?[] matched, ArgumentSyntax argument)

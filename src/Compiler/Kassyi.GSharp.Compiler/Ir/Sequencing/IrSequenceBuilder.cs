@@ -52,13 +52,14 @@ internal sealed class IrSequenceBuilder
         Spill(operand, operand.Type, RefKind.None, DeclaredFormOf(declaredAs), operand.Category);
 
     /// <summary>
-    /// Declares a reference to the location <paramref name="location"/> names and returns a read of it in the place of
-    /// the location.
+    /// Declares a reference (<paramref name="refKind"/>: <see cref="RefKind.Ref"/>, or <see cref="RefKind.In"/> for a
+    /// read-only one) to the location <paramref name="location"/> names and returns a read of it in the place of the
+    /// location.
     /// </summary>
-    public IrVariableReference SpillReference(IrExpression location)
+    public IrVariableReference SpillReference(IrExpression location, RefKind refKind = RefKind.Ref)
     {
         var initializer = AsLocation(location);
-        return Spill(initializer, initializer.Type, RefKind.Ref, IrDeclaredTypeForm.Deduced, location.Category);
+        return Spill(initializer, initializer.Type, refKind, IrDeclaredTypeForm.Deduced, location.Category);
     }
 
     /// <summary>
