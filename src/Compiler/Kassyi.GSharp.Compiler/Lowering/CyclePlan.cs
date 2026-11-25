@@ -400,7 +400,9 @@ internal static class CyclePlanner
             .DescendantNodesAndSelf(static n => n is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax))
             .AsStackEnumerable()
             .OfType<StatementSyntax>()
-            .All(members, static (statement, set) => set.Contains(StatementFlow.EntryOf(statement)));
+            .All(members, static (statement, set) =>
+                // The flow graph has one node for a label and its statement
+                statement.Parent is LabeledStatementSyntax || set.Contains(StatementFlow.EntryOf(statement)));
     }
 
     // Whether control can reach the end of the statement; a form that is not sure answers true (no gate is placed)
