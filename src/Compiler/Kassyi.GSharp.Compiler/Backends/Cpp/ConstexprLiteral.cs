@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.Literals;
+namespace Kassyi.GSharp.Compiler.Backends.Cpp;
 
 /// <summary>
 /// Formats a constant value as both a C++ literal and a C# literal, independent of the current culture: a

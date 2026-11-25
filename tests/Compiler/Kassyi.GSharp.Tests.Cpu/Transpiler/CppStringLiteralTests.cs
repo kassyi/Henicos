@@ -1,6 +1,6 @@
 using System;
 using Kassyi.GSharp.Compiler;
-using Kassyi.GSharp.Compiler.Transpiler.Helpers.Literals;
+using Kassyi.GSharp.Compiler.Backends.Cpp;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
