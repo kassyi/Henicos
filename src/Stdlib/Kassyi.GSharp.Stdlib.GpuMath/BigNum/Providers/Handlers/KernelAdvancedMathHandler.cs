@@ -253,20 +253,14 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
     /// <param name="gridDim">The number of blocks of each launch.</param>
     /// <param name="blockDim">
     /// The number of threads per block, which also sizes the block carries. Must be a positive multiple of 32 and at
-    /// most 1024, and at least 256 when the NTT transform length exceeds
-    /// <c>GpuBigIntNttKernels.StridedColumnMaxTransformLength</c> (65536).
+    /// most 1024, at least 256 when the NTT transform is longer than 65536 points, and small enough for one block of
+    /// the kernel to fit on a multiprocessor of the device (the registers of the kernel can make 1024 too large).
     /// </param>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// <paramref name="blockDim"/> is 0, exceeds 1024, is not a multiple of 32, or is less than 256 when the NTT
-    /// transform length exceeds <c>GpuBigIntNttKernels.StridedColumnMaxTransformLength</c> (65536).
+    /// <paramref name="blockDim"/> is 0, exceeds 1024, is not a multiple of 32, is less than 256 when the NTT
+    /// transform is longer than 65536 points, or is too large
+    /// for one block of the kernel to fit on a multiprocessor of the device.
     /// </exception>
-    /// <remarks>
-    /// <c>ExecuteResolveNttCarriesBlocked</c> and <c>DeviceAddSubAlignedParallel</c> exchange warp state only on
-    /// <c>laneId == 31</c> via full-warp shuffles and use 32-warp shared buffers
-    /// (<c>SharedMemory&lt;uint&gt;(32)</c>), so <paramref name="blockDim"/> must be a positive multiple of 32 not
-    /// exceeding 1024. When the NTT transform length exceeds <c>GpuBigIntNttKernels.StridedColumnMaxTransformLength</c>
-    /// (65536), <c>TransposeTileBatches</c> additionally requires <paramref name="blockDim"/> to be at least 256.
-    /// </remarks>
     public void ExecuteModPowNttMegaKernel(
         GpuWorkspace workspace,
         GpuBigUInt targetOperand, GpuBigUInt resultBuffer, GpuBigUInt constant,
@@ -282,6 +276,8 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         var requiredLen = outWords;
         var transformLength = CooperativeMegaKernelLauncher.TransformLengthFor(requiredLen);
         ThrowIfStridedColumnBlockDimTooSmall(blockDim, transformLength);
+        ThrowIfModPowBlockDimDoesNotFit(
+            workspace, blockDim, CooperativeMegaKernelLauncher.ComputeMegaKernelSharedMemoryBytes(transformLength));
 
         // The kernel resolves carries in chunks of one launch block (blockDim threads), not of a fixed size.
         using var buffers = new CooperativeMegaKernelLauncher.NttWorkspaceBuffers(
@@ -575,6 +571,32 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
                 blockDim,
                 $"MegaKernel blockDim must be at least {StridedColumnMinBlockDim} when transformLength " +
                 $"{transformLength} exceeds {GpuBigIntNttKernels.StridedColumnMaxTransformLength}, got {blockDim}.");
+        }
+    }
+
+    /// <summary>
+    /// Throws when not even one block of <paramref name="blockDim"/> threads of the ModPow mega-kernel fits on a
+    /// multiprocessor of the workspace's device, which a cooperative launch rejects (CUDA error 720) only after the
+    /// buffers are rented.
+    /// </summary>
+    /// <param name="workspace">The workspace whose context and device the kernel runs on.</param>
+    /// <param name="blockDim">The threads per block requested for the launch.</param>
+    /// <param name="sharedMemBytes">The dynamic shared memory per block of the launch.</param>
+    /// <exception cref="ArgumentOutOfRangeException">No block of <paramref name="blockDim"/> threads fits.</exception>
+    private static void ThrowIfModPowBlockDimDoesNotFit(GpuWorkspace workspace, uint blockDim, uint sharedMemBytes)
+    {
+        using var scope = new GpuKernelLoader.CudaContextScope(workspace.IsolatedContext.Handle);
+        var hfunc = GpuBigIntDivRemKernels.ResolveModPowNttMegaKernel();
+        CudaException.ThrowIfError(
+            CudaDriverApi.cuOccupancyMaxActiveBlocksPerMultiprocessor(
+                out var blocksPerSm, hfunc, (int)blockDim, sharedMemBytes));
+        if (blocksPerSm < 1)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(blockDim),
+                blockDim,
+                $"No block of {blockDim} threads of the ModPow mega-kernel fits on a multiprocessor of this device " +
+                $"(registers and {sharedMemBytes} bytes of shared memory per block).");
         }
     }
 
