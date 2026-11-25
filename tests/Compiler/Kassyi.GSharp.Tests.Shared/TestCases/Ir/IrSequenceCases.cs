@@ -87,6 +87,38 @@ public static class Forms
     public static void CreationOutOfOrder(int a, int b, Cell2[] r) { r[0] = new Cell2(b: a, a: b); }
     public static void CreationInOrder(int a, int b, Cell2[] r) { r[0] = new Cell2(a, b); }
     public static void CreationInterfere(int x, Cell2[] r) { r[0] = new Cell2(Bump(ref x), x); }
+    [GpuDeviceFunction]
+    public static int AddTo(this ref int a, int b) { a += b; return a; }
+    [GpuDeviceFunction]
+    public static int Plus(this in int a, int b) => a + b;
+    public static void ExtensionRefReceiver(int i, int[] r) { r[0] = r[i].AddTo(Bump(ref i)); }
+    public static void ExtensionInReceiver(int i, int[] r) { r[0] = r[i].Plus(Bump(ref i)); }
+}
+
+public struct CellIn
+{
+    public int A;
+    public int B;
+
+    public CellIn(in int a, int b)
+    {
+        A = a;
+        B = b;
+    }
+}
+
+// An unconverted rvalue passed to an in parameter: the syntax path binds it by reference (auto&&), the IR copies it
+// into a value temporary; both read it before the later argument writes x
+public static class InRvalueForms
+{
+    public static int Bump(ref int x) { x += 1; return x; }
+    [GpuDeviceFunction]
+    public static int ReadFirst(in int a, int b) => a + b;
+    [GpuDeviceFunction]
+    public static int PlusIn(this in int a, int b) => a + b;
+    public static void CallInRvalue(int x, int[] r) { r[0] = ReadFirst(x + 0, Bump(ref x)); }
+    public static void ExtensionInRvalue(int x, int[] r) { r[0] = (x + 0).PlusIn(Bump(ref x)); }
+    public static void CreationInRvalue(int x, CellIn[] r) { r[0] = new CellIn(x + 0, Bump(ref x)); }
 }
 
 public struct Cell3

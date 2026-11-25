@@ -237,6 +237,35 @@ public class IrSequenceCallsTests
         Assert.Empty(SequencesOf(sequenced.Body));
     }
 
+    [Theory]
+    [InlineData("CallInRvalue")]
+    [InlineData("ExtensionInRvalue")]
+    [InlineData("CreationInRvalue")]
+    [Scenario(TestScenario.Boundary)]
+    public void Sequence_UnconvertedRvalueToInParameter_CopiesWhereTheSyntaxPathBindsAReference(string name)
+    {
+        const string type = "IrSequenceCases.InRvalueForms";
+        var (_, sequenced) = Run(name, Forms, type);
+        var declarations = DeclarationsOf(Assert.Single(SequencesOf(sequenced.Body)));
+
+        Assert.Equal(2, declarations.Length);
+        AssertNamedInt(declarations[0]);
+        AssertNamedInt(declarations[1]);
+
+        // The known difference: the same two temporaries, the first one a reference on the syntax path
+        var compilation = IrTestCases.Compile(Forms);
+        var declaration = compilation.GetTypeByMetadataName(type)?.GetMembers(name).OfType<IMethodSymbol>().Single()
+                              .DeclaringSyntaxReferences.Single().GetSyntax() as MethodDeclarationSyntax ??
+                          throw new InvalidOperationException($"{name} is missing.");
+        var old = IrSequenceTemporaries.OfSyntaxPath(declaration, compilation.GetSemanticModel(declaration.SyntaxTree));
+        var ir = IrSequenceTemporaries.Of(sequenced);
+        Assert.Equal(ir.Firsts.ToArray(), old.Firsts.ToArray());
+        Assert.Equal(new[] { (0, IrSequenceDeclarationForm.Ref), (1, IrSequenceDeclarationForm.Named) },
+            old.Declarations.ToArray());
+        Assert.Equal(new[] { (0, IrSequenceDeclarationForm.Named), (1, IrSequenceDeclarationForm.Named) },
+            ir.Declarations.ToArray());
+    }
+
     // The call of <name> in the method
     private static IrCall OuterCall(IrMethod method, string name) =>
         IrNodeChildren.DescendantsAndSelf(method.Body).OfType<IrCall>().First(call => call.Method.Name == name);
