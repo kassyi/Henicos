@@ -195,6 +195,16 @@ function writeGlobalUsingsFile(projDir, usingsToPromote, dryRun) {
 // Main Workflow
 // =============================================================================
 
+function isCompilerSubNamespace(directive) {
+  const target = directive.includes("=")
+    ? directive.slice(directive.indexOf("=") + 1).trim()
+    : directive.trim();
+  return (
+    target === "Kassyi.GSharp.Compiler" ||
+    target.startsWith("Kassyi.GSharp.Compiler.")
+  );
+}
+
 function processProject(csprojPath, { threshold, dryRun }) {
   const projDir = dirname(csprojPath);
   const projName = basename(projDir);
@@ -205,7 +215,7 @@ function processProject(csprojPath, { threshold, dryRun }) {
   const { usingCounts, allGlobalUsings } = calculateProjectUsingFrequencies(csFiles);
   const usingsToPromote = new Set(
     Array.from(usingCounts.entries())
-      .filter(([_, count]) => count >= threshold)
+      .filter(([u, count]) => count >= threshold && !isCompilerSubNamespace(u))
       .map(([u]) => u)
   );
 
