@@ -194,14 +194,12 @@ internal sealed record CompilerLayerGraph(
 
             foreach (var target in targets)
             {
-                if (forbiddenTypes.Contains(target))
+                var isForbidden = forbiddenTypes.Contains(target);
+                if (isForbidden && !tier1Types.Contains(current))
                 {
-                    if (!tier1Types.Contains(current))
-                    {
-                        edges.Add(FormatEdge(current, target, treeInfos));
-                    }
+                    edges.Add(FormatEdge(current, target, treeInfos));
                 }
-                else if (!IsExcludedStateMachineType(target, treeInfos) && visited.Add(target))
+                else if (!isForbidden && !IsExcludedStateMachineType(target, treeInfos) && visited.Add(target))
                 {
                     queue.Enqueue(target);
                 }
@@ -364,18 +362,9 @@ internal sealed record CompilerLayerGraph(
             builder.Append(part.Name);
             if (part.TypeParameters.Length > 0)
             {
-                builder.Append('<');
-                for (var p = 0; p < part.TypeParameters.Length; p++)
-                {
-                    if (p > 0)
-                    {
-                        builder.Append(", ");
-                    }
-
-                    builder.Append(part.TypeParameters[p].Name);
-                }
-
-                builder.Append('>');
+                builder.Append('<')
+                    .AppendJoin(", ", part.TypeParameters.Select(static parameter => parameter.Name))
+                    .Append('>');
             }
         }
 
