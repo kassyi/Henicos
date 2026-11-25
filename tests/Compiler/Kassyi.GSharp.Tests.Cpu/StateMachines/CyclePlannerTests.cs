@@ -153,6 +153,20 @@ public class CyclePlannerTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
+    public void Plan_LabeledStatementInBranchThatOnlyGoesBack_ElseIsGate()
+    {
+        var body = ParseBlock("L: Split(); if (c) { M: n++; if (n > 100) goto M; goto L; } else { Split(); }");
+        var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        var cycle = plan.Find(body.Statements, FindLoopRegion(body.Statements, "L"));
+
+        Assert.NotNull(cycle);
+        var ifStatement = Assert.IsType<IfStatementSyntax>(body.Statements[1]);
+        var elseBlock = Assert.IsType<BlockSyntax>(ifStatement.Else!.Statement); // Parsed from the literal above: else exists
+        Assert.True(plan.IsGateStatement(cycle, elseBlock.Statements[0]));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
     public void Plan_ElseOfABranchThatFallsThrough_IsNotGate()
     {
         var body = ParseBlock("L: Split(); if (c) { if (d) goto L; } else { Split(); } Split();");

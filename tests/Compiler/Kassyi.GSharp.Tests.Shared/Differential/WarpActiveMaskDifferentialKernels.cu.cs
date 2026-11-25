@@ -1982,4 +1982,31 @@ public static partial class WarpActiveMaskDifferentialKernels
 
         result[t + 96] = (uint)n;
     }
+
+    // The same loop with a label inside the branch that only goes back, which is one flow node with its statement
+    [GpuKernel]
+    public static void GotoLoopLeftByElseOfLabeledBackOnlyBranchKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * (4 + n)] = Warp.ActiveMask();
+        if (((t >> n) & 1) != 0 && n < u + 2)
+        {
+        M:
+            n++;
+            if (n > u + 100)
+            {
+                goto M;
+            }
+
+            goto L1;
+        }
+        else
+        {
+            result[t + 32 * n] = Warp.ActiveMask();
+        }
+
+        result[t + 96] = (uint)n;
+    }
 }
