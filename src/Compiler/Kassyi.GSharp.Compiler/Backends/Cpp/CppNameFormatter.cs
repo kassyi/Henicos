@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Transpiler;
+namespace Kassyi.GSharp.Compiler.Backends.Cpp;
 
 /// <summary>
 /// Formats Roslyn symbols and namespaces into safe, collision-free C++ identifiers and fully-qualified names.
@@ -6,15 +6,18 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 internal static class CppNameFormatter
 {
     /// <summary>
-    /// Appends the C++ name of a type without its template arguments: the encoded global name for a user struct
-    /// (see <see cref="GlobalCppNames"/>), and the legacy <c>A_B_C</c> spelling that the prelude uses
+    /// Appends the C++ name of a type without its template arguments: the encoded global name when
+    /// <paramref name="tryGetUserTypeName"/> returns one, and the legacy <c>A_B_C</c> spelling that the prelude uses
     /// for other types (<c>System_Nullable</c>, shared memory).
     /// </summary>
-    public static ref readonly SourceWriter AppendFullyQualifiedCppName(this in SourceWriter writer, ISymbol symbol)
+    public static ref readonly SourceWriter AppendFullyQualifiedCppName(
+        this in SourceWriter writer,
+        ISymbol symbol,
+        Func<INamedTypeSymbol, string?>? tryGetUserTypeName = null)
     {
-        if (symbol is INamedTypeSymbol type && GlobalCppNames.IsEmittedUserType(type))
+        if (symbol is INamedTypeSymbol type && tryGetUserTypeName?.Invoke(type) is { } userTypeName)
         {
-            writer.Append(GlobalCppNames.GetTypeName(type));
+            writer.Append(userTypeName);
             return ref writer;
         }
 
@@ -25,10 +28,14 @@ internal static class CppNameFormatter
     /// Returns the name used in the <c>#ifndef</c> guard of an emitted struct. The guard covers the definition, so the
     /// template arguments are not part of it.
     /// </summary>
-    public static string GetIncludeGuardName(INamedTypeSymbol structSymbol)
+    public static string GetIncludeGuardName(
+        INamedTypeSymbol structSymbol,
+        Func<INamedTypeSymbol, string?>? tryGetUserTypeName = null)
     {
         using var writer = new SourceWriter();
-        writer.Append("__GSHARP_STRUCT_").AppendFullyQualifiedCppName(structSymbol).Append("__");
+        writer.Append("__GSHARP_STRUCT_")
+            .AppendFullyQualifiedCppName(structSymbol, tryGetUserTypeName)
+            .Append("__");
         return writer.ToString();
     }
 

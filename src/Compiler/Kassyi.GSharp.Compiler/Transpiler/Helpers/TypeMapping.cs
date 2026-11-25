@@ -10,7 +10,7 @@ internal static class TypeMapping
 {
     /// <summary>
     /// Whether <paramref name="type"/> has a direct C++ type representation that can be emitted by
-    /// <see cref="Dialects.ITranspilerDialect.AppendType"/> for declarations, rather than using C++ type deduction (<c>auto</c>).
+    /// <see cref="Backends.Cpp.CppTypeWriter.AppendType"/> for declarations, rather than using C++ type deduction (<c>auto</c>).
     /// </summary>
     public static bool HasDirectCppType(ITypeSymbol? type)
     {

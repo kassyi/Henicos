@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Backends.Cpp;
+
 namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 
 /// <summary>
@@ -24,14 +26,6 @@ internal static class DivisorCheck
             : null;
 
     /// <summary>Writes <c>,&lt;site&gt;</c>, the last argument of the helper, when there is a site.</summary>
-    public static void AppendSiteArgument(SourceWriter writer, NullCheckSite? site)
-    {
-        if (site is not { } value)
-        {
-            return;
-        }
-
-        writer.Append(',');
-        ArrayNullCheck.AppendSite(writer, value);
-    }
+    public static void AppendSiteArgument(SourceWriter writer, NullCheckSite? site) =>
+        NullCheckSiteWriter.AppendSiteArgument(writer, site);
 }

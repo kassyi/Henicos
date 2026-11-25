@@ -37,7 +37,7 @@ internal static class ArrayNullCheck
     private const string LinqSourceTrapKind = "LinqSourceNull";
 
     // Between the text of an error and the place it names, in a method without an error site table
-    private const string PlaceSeparator = " at ";
+    private const string PlaceSeparator = NullCheckSiteWriter.PlaceSeparator;
 
     /// <summary>Whether a read through <paramref name="receiver"/> needs the null check.</summary>
     public static bool NeedsCheck(ExpressionSyntax receiver, SemanticModel semanticModel) =>
@@ -371,16 +371,8 @@ internal static class ArrayNullCheck
     /// device function, which has no table.
     /// </summary>
     internal static NullCheckSite PlanSite(Location location, string? place, string message, string trapKind,
-        Compilation compilation, ErrorSiteTable? table, string? currentMemberName)
-    {
-        if (table is null)
-        {
-            return new NullCheckSite(0u, message + PlaceSeparator + (place ?? SourcePlace.Format(location)));
-        }
-
-        var memberName = ErrorSiteTable.GetSourceMemberName(location, compilation) ?? currentMemberName ?? "";
-        return new NullCheckSite(table.Register(location, memberName, message, trapKind), "");
-    }
+        Compilation compilation, ErrorSiteTable? table, string? currentMemberName) =>
+        NullCheckSiteWriter.PlanSite(location, place, message, trapKind, compilation, table, currentMemberName);
 
     /// <summary>
     /// <see cref="PlanSite(ExpressionSyntax, string, string, string, ref TranspileContext)"/> with the parts of the
@@ -406,16 +398,8 @@ internal static class ArrayNullCheck
         PlanSite(location, null, SiteMessage, TrapKind, compilation, table, currentMemberName);
 
     /// <summary>Writes <c>&lt;site&gt;u</c> for a registered site, otherwise the message as a string literal.</summary>
-    internal static void AppendSite(SourceWriter writer, NullCheckSite site)
-    {
-        if (site.SiteId != 0u)
-        {
-            writer.Append($"{site.SiteId}u");
-            return;
-        }
-
-        CppStringLiteral.Append(writer, site.Message);
-    }
+    internal static void AppendSite(SourceWriter writer, NullCheckSite site) =>
+        NullCheckSiteWriter.AppendSite(writer, site);
 
     // Whether type is System.Index or System.Range
     internal static bool IsIndexOrRangeType(ITypeSymbol? type) =>
@@ -454,10 +438,3 @@ internal static class ArrayNullCheck
         }
     }
 }
-
-/// <summary>
-/// Where a failing array null check reports (<see cref="ArrayNullCheck.PlanSite(ExpressionSyntax, ref TranspileContext)"/>):
-/// a site of the kernel's error site table (<paramref name="SiteId"/>, never 0), or <paramref name="Message"/>, which
-/// names the place, when the method has no table.
-/// </summary>
-internal readonly record struct NullCheckSite(uint SiteId, string Message);

@@ -1,6 +1,5 @@
 # Direct references from Ir/ (excluding Ir/Linear/IrStateMachine*), Semantics/, Dialects/, and Backends/
 # to types or extension methods declared in Transpiler/ or Lowering/.
-- "ITranspilerDialect (Dialects/ITranspilerDialect.cs) -> TranspileContext (Transpiler/TranspileContext.cs)"
 - "IrAccessorDecider (Ir/Decisions/IrAccessorDecider.cs) -> PropertyAccessorCall (Transpiler/Rules/ExpressionRules/PropertyAccessorCall.cs)"
 - "IrArgumentCheck (Ir/Decisions/IrArgumentCheck.cs) -> ArgumentCheckKind (Transpiler/Helpers/NullChecks/ArgumentNullCheck.cs)"
 - "IrArgumentSequencing (Ir/Sequencing/IrArgumentSequencing.cs) -> ArgumentCheckKind (Transpiler/Helpers/NullChecks/ArgumentNullCheck.cs)"
@@ -72,14 +71,3 @@
 - "IrSplitMarks (Ir/Splitting/IrSplitMarks.cs) -> RemovedCalls (Transpiler/RemovedCalls.cs)"
 - "IrStayInPlace (Ir/Splitting/IrStayInPlace.cs) -> StackArrayLocals (Transpiler/Helpers/StackArrays/StackArrayLocals.cs)"
 - "IrTraps (Ir/Classifying/IrTraps.cs) -> IntegerSemantics (Transpiler/Helpers/Numeric/IntegerSemantics.cs)"
-- "WmmaTypeSyntaxHelper (Dialects/WmmaTypeSyntaxHelper.cs) -> Emitter (Transpiler/Emitter.cs)"
-- "WmmaTypeSyntaxHelper (Dialects/WmmaTypeSyntaxHelper.cs) -> TranspileContext (Transpiler/TranspileContext.cs)"
-- "YamlDialectBase (Dialects/YamlDialectBase.cs) -> CppNameFormatter (Transpiler/CppNameFormatter.cs)"
-- "YamlDialectBase (Dialects/YamlDialectBase.cs) -> Emitter (Transpiler/Emitter.cs)"
-- "YamlDialectBase (Dialects/YamlDialectBase.cs) -> GlobalCppNames (Transpiler/GlobalCppNames.cs)"
-- "YamlDialectBase (Dialects/YamlDialectBase.cs) -> Query (Transpiler/Query.cs)"
-- "YamlDialectBase (Dialects/YamlDialectBase.cs) -> Reporter (Transpiler/Reporter.cs)"
-- "YamlDialectBase (Dialects/YamlDialectBase.cs) -> SharedMemoryStorageType (Transpiler/Helpers/Locals/SharedMemoryStorageType.cs)"
-- "YamlDialectBase (Dialects/YamlDialectBase.cs) -> StructOrdering (Transpiler/StructOrdering.cs)"
-- "YamlDialectBase (Dialects/YamlDialectBase.cs) -> StructTypeSubstitution (Transpiler/StructTypeSubstitution.cs)"
-- "YamlDialectBase (Dialects/YamlDialectBase.cs) -> TranspileContext (Transpiler/TranspileContext.cs)"
