@@ -32,6 +32,9 @@ internal static class IrCallSequencing
         }
 
         var shape = ShapeOf(call, context);
+
+        // A mapped call out of parameter order spills every argument, as BeginCall does. The first parameter is 0 for
+        // every mapping today (all static); an extension form would count from its receiver
         var spillAll = shape.IsMapped &&
                        !StructCreationClassifier.IsInParameterOrder(call.Arguments.Length - shape.FirstParameter,
                            IrArgumentSequencing.ParameterOrdinalsOf(call.Arguments, shape.Operands,

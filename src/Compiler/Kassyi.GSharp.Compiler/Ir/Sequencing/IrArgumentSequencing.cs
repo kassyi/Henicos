@@ -213,7 +213,9 @@ internal static class IrArgumentSequencing
             _ => !IrNonNullProof.IsProvenStruct(argument.Value, context)
         };
 
-    // Whether an argument up to last interferes with the receiver, which the sequence would evaluate after it
+    // Whether an argument up to last interferes with the receiver, which the sequence would evaluate after it. As in
+    // EvaluationOrder.InterferesWithReceiver; no call reaches it yet: the calls the pass sequences with an instance
+    // receiver are written by other rules, and the BCL mappings are static
     private static bool InterferesWithReceiver(IrExpression receiver, ExpressionEffects[] effects, int last,
         IrSequenceContext context)
     {
