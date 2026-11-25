@@ -21,7 +21,7 @@ public class CompilerLayerArchitectureTests(ITestOutputHelper output)
 
     [Fact]
     [Category(TestCategory.Compiler)]
-    [Scenario(TestScenario.SadPath)]
+    [Scenario(TestScenario.HappyPath)]
     public void CompilerLayers_DirectReferences_MatchExpected()
     {
         var graph = s_layerGraph.Value;
@@ -38,7 +38,7 @@ public class CompilerLayerArchitectureTests(ITestOutputHelper output)
 
     [Fact]
     [Category(TestCategory.Compiler)]
-    [Scenario(TestScenario.SadPath)]
+    [Scenario(TestScenario.HappyPath)]
     public void CompilerLayers_IndirectReferences_MatchExpected()
     {
         var graph = s_layerGraph.Value;
@@ -82,7 +82,6 @@ public class CompilerLayerArchitectureTests(ITestOutputHelper output)
 
         if (expectedExists && added.Length == 0 && removed.Length == 0)
         {
-            Assert.True(expectedExists);
             return;
         }
 
@@ -281,16 +280,10 @@ public class CompilerLayerArchitectureTests(ITestOutputHelper output)
                 return;
             }
 
+            // Binding every body again for its diagnostics doubles the run time; the walker binds each name anyway and
+            // reports the ones that do not bind, which is what a missing source or generated file shows up as
             var model = compilation.GetSemanticModel(tree);
-            foreach (var diagnostic in model.GetDiagnostics())
-            {
-                if (diagnostic.Severity == DiagnosticSeverity.Error)
-                {
-                    compilationErrorList.Add(FormatDiagnostic(diagnostic));
-                }
-            }
-
-            var walker = new ReferenceCollectorWalker(model, frozenForbiddenBySimpleName, typeReferences);
+            var walker = new ReferenceCollectorWalker(model, frozenForbiddenBySimpleName, typeReferences, compilationErrorList);
             walker.Visit(tree.GetRoot());
         }
 
@@ -457,7 +450,10 @@ public class CompilerLayerArchitectureTests(ITestOutputHelper output)
             return LayerKind.Forbidden;
         }
 
-        if (relative.StartsWith("Ir/Linear/IrStateMachine", StringComparison.OrdinalIgnoreCase))
+        // The state machine of Ir/Linear is deleted with the syntax path; named one by one so that a new helper file
+        // beside it is still checked
+        if (relative is "Ir/Linear/IrStateMachine.cs" or "Ir/Linear/IrStateMachineBuilder.cs" or
+            "Ir/Linear/IrStateMachineExit.cs")
         {
             return LayerKind.Tier1ExcludedStateMachine;
         }
@@ -579,7 +575,8 @@ public class CompilerLayerArchitectureTests(ITestOutputHelper output)
     private sealed class ReferenceCollectorWalker(
         SemanticModel model,
         Dictionary<string, ImmutableArray<INamedTypeSymbol>> forbiddenBySimpleName,
-        Dictionary<INamedTypeSymbol, HashSet<INamedTypeSymbol>> typeReferences)
+        Dictionary<INamedTypeSymbol, HashSet<INamedTypeSymbol>> typeReferences,
+        List<string> unboundNames)
         : CSharpSyntaxWalker(SyntaxWalkerDepth.Node)
     {
         private readonly List<INamedTypeSymbol> _fileStaticOrAliasTargets = [];
@@ -699,6 +696,8 @@ public class CompilerLayerArchitectureTests(ITestOutputHelper output)
                 return;
             }
 
+            var span = node.GetLocation().GetLineSpan();
+            unboundNames.Add($"unbound name '{node.Identifier.ValueText}' ({span.Path}:{span.StartLinePosition.Line + 1})");
             if (forbiddenBySimpleName.TryGetValue(node.Identifier.ValueText, out var candidates))
             {
                 foreach (var candidate in candidates)
@@ -765,6 +764,13 @@ public class CompilerLayerArchitectureTests(ITestOutputHelper output)
                     VisitTypeSymbol(parameter.Type);
                     return;
                 case IMethodSymbol method:
+                    // The value a call hands over counts as a use of its type even when no name spells it
+                    VisitTypeSymbol(method.ReturnType);
+                    foreach (var parameter in method.Parameters)
+                    {
+                        VisitTypeSymbol(parameter.Type);
+                    }
+
                     method = method.ReducedFrom ?? method;
                     if (method.ContainingType is not null)
                     {
@@ -777,16 +783,29 @@ public class CompilerLayerArchitectureTests(ITestOutputHelper output)
                     }
 
                     return;
-                case IPropertySymbol or IFieldSymbol or IEventSymbol:
-                    if (symbol.ContainingType is not null)
-                    {
-                        VisitTypeSymbol(symbol.ContainingType);
-                    }
-
+                case IPropertySymbol property:
+                    VisitTypeSymbol(property.Type);
+                    VisitContainingType(property);
+                    return;
+                case IFieldSymbol field:
+                    VisitTypeSymbol(field.Type);
+                    VisitContainingType(field);
+                    return;
+                case IEventSymbol eventSymbol:
+                    VisitTypeSymbol(eventSymbol.Type);
+                    VisitContainingType(eventSymbol);
                     return;
                 case ITypeSymbol typeSymbol:
                     VisitTypeSymbol(typeSymbol);
                     return;
+            }
+        }
+
+        private void VisitContainingType(ISymbol member)
+        {
+            if (member.ContainingType is not null)
+            {
+                VisitTypeSymbol(member.ContainingType);
             }
         }
 
@@ -877,7 +896,9 @@ public class CompilerLayerArchitectureTests(ITestOutputHelper output)
                 return true;
             }
 
-            if (node is IdentifierNameSyntax { IsVar: true })
+            // var, and the contextual keywords of a type constraint, which bind to no type
+            if (node is IdentifierNameSyntax { IsVar: true } or IdentifierNameSyntax { IsNotNull: true } or
+                IdentifierNameSyntax { IsUnmanaged: true })
             {
                 return true;
             }

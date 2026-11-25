@@ -43,8 +43,8 @@ Script conventions and the catalog of agent scripts are in [agent-scripts.md](..
     `Numeric/`, `Literals/`, `StackArrays/`, `Calls/`, `Locals/`, `ResumeLocals/`), or `Transpiler/Helpers/` itself for
     emission helpers used across features; rule-local emission belongs next to its rule under `Transpiler/Rules/`. Do not
     add new language decisions to `Transpiler/Helpers/` or `Transpiler/Rules/`. `GlobalUsings.cs` opens
-    `Kassyi.GSharp.Compiler.Semantics`; add no other `Kassyi.GSharp.Compiler.*` namespace to it
-    (`scripts/agent/update_usings.js` never promotes one). `CompilerLayerArchitectureTests` counts references by symbol,
+    `Kassyi.GSharp.Compiler.Semantics` once its first type exists; add no new `Kassyi.GSharp.Compiler.*` namespace to it
+    beyond that (`scripts/agent/update_usings.js` never promotes one). `CompilerLayerArchitectureTests` counts references by symbol,
     so a global using does not hide a layer violation from it.
   - Generator plumbing: `Helpers/`.
 - Then add a row to this file in the same change.

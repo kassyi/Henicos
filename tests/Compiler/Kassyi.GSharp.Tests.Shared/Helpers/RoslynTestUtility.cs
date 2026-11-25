@@ -368,14 +368,7 @@ public static class RoslynTestUtility
             }
         }
 
-        var nativeApiDir = Path.Combine(intermediateDir, "GeneratedNativeApi");
-        if (Directory.Exists(nativeApiDir))
-        {
-            foreach (var file in Directory.EnumerateFiles(nativeApiDir, "*.g.cs", SearchOption.AllDirectories))
-            {
-                pathSet.Add(Path.GetFullPath(file));
-            }
-        }
+        // GeneratedNativeApi is not read: the compiler project removes it from its Compile items
 
         var sortedPaths = pathSet.Order(StringComparer.Ordinal).ToArray();
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview, preprocessorSymbols: ["GSHARP_COMPILER"]);
