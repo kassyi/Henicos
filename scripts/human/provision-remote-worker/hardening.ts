@@ -2,7 +2,11 @@
 // nproc limits, and UID-scoped UFW egress block.
 
 import * as path from "node:path";
-import { RemoteWorkspaceMarkerFile } from "../job-queue/remote/spec.ts";
+import {
+  isValidRelativeCacheDir,
+  isValidRemoteWorkspace,
+  RemoteWorkspaceMarkerFile,
+} from "../job-queue/remote/spec.ts";
 import type { WorkerProfile } from "./profile.ts";
 
 export function buildSshdMatchConfig(profile: WorkerProfile): string {
@@ -37,6 +41,20 @@ export function buildLimitsConfig(profile: WorkerProfile): string {
  * `runnerUser`, pins its root-owned authorized_keys & sshd Match User block, and installs UID-scoped egress blocking.
  */
 export function buildHardeningShellScript(profile: WorkerProfile, pubKey: string, migrateCache: boolean): string {
+  if (typeof pubKey !== "string" || !/^[\x20-\x7E\t]+$/.test(pubKey)) {
+    throw new Error("SSH public key contains unsupported or control characters");
+  }
+  if (!isValidRemoteWorkspace(profile.workspace, { provisionerRunnerUser: profile.runnerUser })) {
+    throw new Error(`unsafe workspace for hardening script: ${profile.workspace}`);
+  }
+  for (const cacheDir of profile.cacheDirs) {
+    if (!isValidRelativeCacheDir(cacheDir)) {
+      throw new Error(`unsafe cacheDirs entry for hardening script: ${cacheDir}`);
+    }
+  }
+  if (!profile.blockAllEgress && (!Array.isArray(profile.blockedLanCidrs) || profile.blockedLanCidrs.length === 0)) {
+    throw new Error("blockedLanCidrs must not be empty when blockAllEgress is false");
+  }
   const sshdConf = buildSshdMatchConfig(profile);
   const limitsConf = buildLimitsConfig(profile);
   const ipv4RejectLines = profile.blockAllEgress
@@ -58,22 +76,26 @@ export function buildHardeningShellScript(profile: WorkerProfile, pubKey: string
       ].join("\n");
 
   const workspaceRel = profile.workspace.startsWith("~/") ? profile.workspace.slice(2).replace(/\/+$/, "") : "";
-  const absWorkspace = profile.workspace.replace(/\/+$/, "") || "/";
+  const absWorkspace = profile.workspace.replace(/\/+$/, "");
   const runnerWorkspaceExpr = workspaceRel !== "" ? `/home/$RUNNER_USER/${workspaceRel}` : absWorkspace;
   const adminWorkspaceExpr = workspaceRel !== "" ? `/home/$ADMIN_USER/${workspaceRel}` : "";
+  const runnerStopParent = workspaceRel !== "" ? '"/home/$RUNNER_USER"' : '""';
   const migrateCacheLines: string[] = [];
   if (migrateCache) {
     if (adminWorkspaceExpr !== "") {
       migrateCacheLines.push(
         "# 6. Migrate existing warm build workspace from admin user if runner workspace does not exist yet",
         `if [ ! -d "${runnerWorkspaceExpr}" ] && [ -d "${adminWorkspaceExpr}" ]; then`,
+        `  reject_symlink_parents "${runnerWorkspaceExpr}" ${runnerStopParent}`,
+        `  reject_if_symlink "${adminWorkspaceExpr}"`,
         `  mkdir -p "$(dirname "${runnerWorkspaceExpr}")"`,
         `  chown_runner_parents "$(dirname "${runnerWorkspaceExpr}")"`,
         `  cp -a "${adminWorkspaceExpr}" "${runnerWorkspaceExpr}"`,
         `  rm -rf "${runnerWorkspaceExpr}/.claude/worktrees"`,
         `  rm -rf "${runnerWorkspaceExpr}/.job-queue-manifest.digest"`,
         `  rm -rf "${runnerWorkspaceExpr}/.job-queue-manifest.sha256"`,
-        `  chown -R "$RUNNER_USER:$RUNNER_USER" "${runnerWorkspaceExpr}"`,
+        `  reject_if_symlink "${runnerWorkspaceExpr}"`,
+        `  chown -hR "$RUNNER_USER:$RUNNER_USER" "${runnerWorkspaceExpr}"`,
         "fi",
       );
     }
@@ -82,10 +104,13 @@ export function buildHardeningShellScript(profile: WorkerProfile, pubKey: string
       const runnerParent = parentRel !== "." ? `/home/$RUNNER_USER/${parentRel}` : "/home/$RUNNER_USER";
       migrateCacheLines.push(
         `if [ ! -d "/home/$RUNNER_USER/${cacheDir}" ] && [ -d "/home/$ADMIN_USER/${cacheDir}" ]; then`,
+        `  reject_symlink_parents "/home/$RUNNER_USER/${cacheDir}" "/home/$RUNNER_USER"`,
+        `  reject_if_symlink "/home/$ADMIN_USER/${cacheDir}"`,
         `  mkdir -p "${runnerParent}"`,
         `  chown_runner_parents "${runnerParent}"`,
         `  cp -a "/home/$ADMIN_USER/${cacheDir}" "/home/$RUNNER_USER/${cacheDir}"`,
-        `  chown -R "$RUNNER_USER:$RUNNER_USER" "/home/$RUNNER_USER/${cacheDir}"`,
+        `  reject_if_symlink "/home/$RUNNER_USER/${cacheDir}"`,
+        `  chown -hR "$RUNNER_USER:$RUNNER_USER" "/home/$RUNNER_USER/${cacheDir}"`,
         "fi",
       );
     }
@@ -98,12 +123,35 @@ export function buildHardeningShellScript(profile: WorkerProfile, pubKey: string
     `ADMIN_USER=${JSON.stringify(profile.adminUser)}`,
     `RUNNER_USER=${JSON.stringify(profile.runnerUser)}`,
     "",
+    "reject_if_symlink() {",
+    '  local target="$1"',
+    '  if [ -L "$target" ]; then',
+    '    echo "ERROR: refusing symlink path: $target" >&2',
+    "    exit 1",
+    "  fi",
+    "}",
+    "",
+    "reject_symlink_parents() {",
+    '  local cur="$1"',
+    '  local stop="${2:-}"',
+    '  while [ "$cur" != "$stop" ] && [ "$cur" != "/" ] && [ "$cur" != "." ]; do',
+    '    reject_if_symlink "$cur"',
+    '    cur=$(dirname "$cur")',
+    "  done",
+    '  if [ -n "$stop" ]; then',
+    '    reject_if_symlink "$stop"',
+    "  fi",
+    "}",
+    "",
     "chown_runner_parents() {",
     '  local dir="$1"',
     '  local home_dir="/home/$RUNNER_USER"',
     '  while [ "$dir" != "$home_dir" ] && [ "$dir" != "/" ] && [ "$dir" != "." ]; do',
     '    case "$dir" in',
-    '      "$home_dir"/*) chown "$RUNNER_USER:$RUNNER_USER" "$dir" ;;',
+    '      "$home_dir"/*)',
+    '        reject_if_symlink "$dir"',
+    '        chown -h "$RUNNER_USER:$RUNNER_USER" "$dir"',
+    "        ;;",
     "      *) break ;;",
     "    esac",
     '    dir=$(dirname "$dir")',
@@ -114,19 +162,31 @@ export function buildHardeningShellScript(profile: WorkerProfile, pubKey: string
     '# (no sudo, password disabled with "*" so pubkey SSH works, 0750 home)',
     'if ! id -u "$RUNNER_USER" >/dev/null 2>&1; then',
     '  useradd -m -s /bin/bash "$RUNNER_USER"',
+    "else",
+    '  EXISTING_UID=$(id -u "$RUNNER_USER")',
+    '  EXISTING_HOME=$(getent passwd "$RUNNER_USER" | cut -d: -f6)',
+    '  if [ "$EXISTING_UID" -lt 1000 ] || [ "$EXISTING_UID" -ge 65534 ] || [ "$EXISTING_HOME" != "/home/$RUNNER_USER" ]; then',
+    '    echo "ERROR: refusing pre-existing system or non-standard user $RUNNER_USER (uid=$EXISTING_UID home=$EXISTING_HOME)" >&2',
+    "    exit 1",
+    "  fi",
     "fi",
     'usermod -U "$RUNNER_USER" >/dev/null 2>&1 || true',
     'usermod -p "*" "$RUNNER_USER"',
-    "for grp in sudo adm systemd-journal docker lxd; do",
+    "for grp in sudo adm systemd-journal docker lxd disk shadow; do",
     '  if id -nG "$RUNNER_USER" | tr " " "\\n" | grep -qx "$grp"; then',
     '    gpasswd -d "$RUNNER_USER" "$grp" >/dev/null 2>&1 || true',
     "  fi",
     "done",
+    'reject_if_symlink "/home/$RUNNER_USER"',
     'chmod 0750 "/home/$RUNNER_USER"',
-    'if [ -d "/home/$ADMIN_USER" ]; then chmod 0750 "/home/$ADMIN_USER"; fi',
+    'if [ -d "/home/$ADMIN_USER" ]; then',
+    '  reject_if_symlink "/home/$ADMIN_USER"',
+    '  chmod 0750 "/home/$ADMIN_USER"',
+    "fi",
     "",
     "# 2. Install root-owned authorized_keys (runner cannot modify its own SSH keys)",
     "install -d -m 0755 -o root -g root /etc/ssh/authorized_keys",
+    'reject_if_symlink "/etc/ssh/authorized_keys/$RUNNER_USER"',
     "cat <<'__GSHARP_PUBKEY__' > \"/etc/ssh/authorized_keys/$RUNNER_USER\"",
     pubKey,
     "__GSHARP_PUBKEY__",
@@ -136,11 +196,28 @@ export function buildHardeningShellScript(profile: WorkerProfile, pubKey: string
     "",
     "# 3. Lock down sshd for runner user",
     "install -d -m 0755 /etc/ssh/sshd_config.d",
-    "cat <<'__GSHARP_SSHD__' > /etc/ssh/sshd_config.d/90-jobrunner.conf",
+    'SSHD_CONF="/etc/ssh/sshd_config.d/90-jobrunner.conf"',
+    'SSHD_BACKUP=""',
+    'if [ -e "$SSHD_CONF" ] || [ -L "$SSHD_CONF" ]; then',
+    "  SSHD_BACKUP=$(mktemp)",
+    '  cp -p "$SSHD_CONF" "$SSHD_BACKUP"',
+    "fi",
+    "cat <<'__GSHARP_SSHD__' > \"$SSHD_CONF\"",
     sshdConf.trimEnd(),
     "__GSHARP_SSHD__",
-    "chmod 0644 /etc/ssh/sshd_config.d/90-jobrunner.conf",
-    "sshd -t",
+    'chmod 0644 "$SSHD_CONF"',
+    "if ! sshd -t; then",
+    '  echo "ERROR: sshd -t failed; rolling back $SSHD_CONF" >&2',
+    '  if [ -n "$SSHD_BACKUP" ]; then',
+    '    mv -f "$SSHD_BACKUP" "$SSHD_CONF"',
+    "  else",
+    '    rm -f "$SSHD_CONF"',
+    "  fi",
+    "  exit 1",
+    "fi",
+    'if [ -n "$SSHD_BACKUP" ]; then',
+    '  rm -f "$SSHD_BACKUP"',
+    "fi",
     "systemctl reload ssh 2>/dev/null || systemctl reload sshd 2>/dev/null || true",
     "",
     "# 4. Configure nproc fork-bomb guard",
@@ -231,11 +308,15 @@ export function buildHardeningShellScript(profile: WorkerProfile, pubKey: string
     "fi",
     "",
     ...migrateCacheLines,
+    'rm -rf "/home/$RUNNER_USER/.ssh"',
+    `reject_symlink_parents "${runnerWorkspaceExpr}" ${runnerStopParent}`,
     `mkdir -p "${runnerWorkspaceExpr}"`,
     `chown_runner_parents "$(dirname "${runnerWorkspaceExpr}")"`,
-    `chown "$RUNNER_USER:$RUNNER_USER" "${runnerWorkspaceExpr}"`,
+    `reject_if_symlink "${runnerWorkspaceExpr}"`,
+    `chown -h "$RUNNER_USER:$RUNNER_USER" "${runnerWorkspaceExpr}"`,
+    `reject_if_symlink "${runnerWorkspaceExpr}/${RemoteWorkspaceMarkerFile}"`,
     `: > "${runnerWorkspaceExpr}/${RemoteWorkspaceMarkerFile}"`,
-    `chown "$RUNNER_USER:$RUNNER_USER" "${runnerWorkspaceExpr}/${RemoteWorkspaceMarkerFile}"`,
+    `chown -h "$RUNNER_USER:$RUNNER_USER" "${runnerWorkspaceExpr}/${RemoteWorkspaceMarkerFile}"`,
     'echo "PROVISION_OK runner=$RUNNER_USER uid=$RUNNER_UID"',
     "",
   ].join("\n");

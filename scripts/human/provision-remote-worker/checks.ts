@@ -8,6 +8,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import type { QueueConfig } from "../job-queue/config.ts";
 import { buildSshArgs, remoteSpecsFromConfig, RemoteWorkspaceMarkerFile } from "../job-queue/remote/spec.ts";
+import { gitBashPath } from "../job-queue/shell.ts";
 import { buildAutoinstallMetaData, buildAutoinstallUserData } from "./autoinstall.ts";
 import { CliUsageError, main, parseArgs } from "./cli.ts";
 import { buildHardeningShellScript, buildSshdMatchConfig } from "./hardening.ts";
@@ -73,10 +74,41 @@ export function runProvisionerSelfTest(exampleProfilePath: string): void {
 
   assert.throws(() => validateProfile({ ...sampleRaw, runnerUser: "root" }));
   assert.throws(() => validateProfile({ ...sampleRaw, runnerUser: sampleRaw.adminUser }));
+  for (const reservedUser of [
+    "ubuntu",
+    "sshd",
+    "root",
+    "_apt",
+    "_rpc",
+    "systemd-network",
+    "systemd-custom",
+    "daemon",
+    "nobody",
+    "www-data",
+    "admin",
+    "cloud-init",
+  ]) {
+    assert.throws(
+      () => validateProfile({ ...sampleRaw, adminUser: "ops", runnerUser: reservedUser }),
+      `rejects reserved/system runnerUser ${reservedUser}`,
+    );
+  }
+  assert.strictEqual(
+    validateProfile({ ...sampleRaw, adminUser: "ubuntu", runnerUser: "jobrunner" }).adminUser,
+    "ubuntu",
+  );
   assert.throws(() => validateProfile({ ...sampleRaw, blockedLanCidrs: ["not-a-cidr"] }));
   assert.throws(() => validateProfile({ ...sampleRaw, blockedLanCidrs: ["999.0.0.1/24"] }));
   assert.throws(() => validateProfile({ ...sampleRaw, blockedLanCidrs: ["192.0.2.1/33"] }));
+  assert.throws(() => validateProfile({ ...sampleRaw, blockedLanCidrs: "192.168.0.0/16" }));
+  assert.throws(() => validateProfile({ ...sampleRaw, blockAllEgress: false, blockedLanCidrs: [] }));
+  assert.strictEqual(validateProfile({ ...sampleRaw, blockAllEgress: true, blockedLanCidrs: [] }).blockAllEgress, true);
+  assert.strictEqual(
+    validateProfile({ ...sampleRaw, blockedLanCidrs: ["0.0.0.0/0", "10.0.0.0/08"] }).blockedLanCidrs.length,
+    2,
+  );
   assert.throws(() => validateProfile({ ...sampleRaw, network: { ...sampleNet, gateway4: "999.999.999.999" } }));
+  assert.throws(() => validateProfile({ ...sampleRaw, network: { ...sampleNet, gateway4: "0.0.0.0" } }));
   assert.throws(() =>
     validateProfile({
       ...sampleRaw,
@@ -86,10 +118,76 @@ export function runProvisionerSelfTest(exampleProfilePath: string): void {
   assert.throws(() => validateProfile({ ...sampleRaw, network: { ...sampleNet, nameservers: ["not-an-ip"] } }));
   assert.throws(() => validateProfile({ ...sampleRaw, network: { ...sampleNet, nameservers: [123] } }));
   assert.throws(() => validateProfile({ ...sampleRaw, network: { ...sampleNet, nameservers: "1.1.1.1" } }));
+  for (const unspecIp of ["0.0.0.0", "::", "::0", "0:0:0:0:0:0:0:0", "::ffff:0.0.0.0", "::ffff:0:0"]) {
+    assert.throws(
+      () => validateProfile({ ...sampleRaw, network: { ...sampleNet, nameservers: [unspecIp] } }),
+      `rejects unspecified nameserver ${unspecIp}`,
+    );
+  }
   assert.throws(() => validateProfile({ ...sampleRaw, connectHost: "-oProxyCommand=evil" }));
   assert.throws(() => validateProfile({ ...sampleRaw, packages: ["clang; rm -rf /"] }));
+  for (const badPkg of ["ufw-", "openssh-server-", "g++-", "clang+", "g+++"]) {
+    assert.throws(() => validateProfile({ ...sampleRaw, packages: [badPkg] }), `rejects invalid package ${badPkg}`);
+  }
+  assert.deepStrictEqual(validateProfile({ ...sampleRaw, packages: ["g++", "g++-13", "clang"] }).packages, [
+    "g++",
+    "g++-13",
+    "clang",
+  ]);
   assert.throws(() => validateProfile({ ...sampleRaw, setupCommands: ["echo ok\nrm -rf /"] }));
-  assert.throws(() => validateProfile({ ...sampleRaw, cacheDirs: ["../etc"] }));
+  for (const badCacheDir of [
+    ".",
+    "./",
+    "./foo",
+    "foo/.",
+    "foo/./bar",
+    "..",
+    "../etc",
+    "foo/..",
+    "",
+    "/",
+    "///",
+    "/tmp/cache",
+    "/var/cache",
+    "foo//bar",
+    ".nuget//packages",
+    "~/cache",
+    "-rf",
+    "foo/-rf",
+    " .nuget/packages",
+    ".nuget/packages\n",
+    ".ssh",
+    ".ssh/keys",
+    ".gnupg",
+    ".aws",
+    ".kube",
+    ".docker",
+    ".pki",
+    ".netrc",
+    ".git-credentials",
+    ".npmrc",
+    ".pypirc",
+    ".config",
+    ".local",
+    ".hidden",
+    "sub/.ssh",
+    ".nuget/.ssh",
+    ".cargo/.hidden",
+    ".cargo",
+    ".nuget",
+  ]) {
+    assert.throws(
+      () => validateProfile({ ...sampleRaw, cacheDirs: [badCacheDir] }),
+      `rejects unsafe cacheDir ${JSON.stringify(badCacheDir)}`,
+    );
+  }
+  assert.deepStrictEqual(
+    validateProfile({
+      ...sampleRaw,
+      cacheDirs: ["caches/nuget", ".m2/repository", ".nuget/packages", ".cargo/registry"],
+    }).cacheDirs,
+    ["caches/nuget", ".m2/repository", ".nuget/packages", ".cargo/registry"],
+  );
   for (const badWorkspace of [
     "~",
     "/",
@@ -110,13 +208,44 @@ export function runProvisionerSelfTest(exampleProfilePath: string): void {
     "~/a/-rf",
     "~/a//b",
     "~/henicos\n",
+    "/etc",
+    "/etc/ssh",
+    "/usr",
+    "/usr/local",
+    "/root",
+    "/root/ws",
+    "/var/log/ws",
+    "/var/lib/dpkg/ws",
+    "/var/lib/jobrunner",
+    "/opt",
+    "/opt/henicos",
+    "/srv",
+    "/srv/henicos",
+    "/home/ubuntu/ws",
+    "/home/jobrunner",
+    "//",
+    "//etc/ssh",
+    "~/.ssh",
+    "~/.gnupg",
+    "~/sub/.hidden",
+    "/opt/.hidden/ws",
+    "/home/jobrunner/.ssh",
+    "~/henicos\u0085",
   ]) {
     assert.throws(
       () => validateProfile({ ...sampleRaw, workspace: badWorkspace }),
       `rejects unsafe workspace ${JSON.stringify(badWorkspace)}`,
     );
   }
-  for (const goodWorkspace of ["~/henicos", "~/sub/henicos", "~/my..repo", "/srv/henicos", "/home/jobrunner/henicos"]) {
+  for (const goodWorkspace of [
+    "~/henicos",
+    "~/sub/henicos",
+    "~/my..repo",
+    "/srv/jobrunner/henicos",
+    "/opt/jobrunner/henicos",
+    "/home/jobrunner/henicos",
+    "/var/lib/jobrunner/henicos",
+  ]) {
     assert.strictEqual(validateProfile({ ...sampleRaw, workspace: goodWorkspace }).workspace, goodWorkspace);
   }
 
@@ -158,8 +287,41 @@ export function runProvisionerSelfTest(exampleProfilePath: string): void {
         sshPublicKey: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAITestKey\0extra",
       }),
     );
+    for (const badCommentKey of [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAITestKey \u0085\u0085ssh-rsa AAAAB3NzaC1yc2E",
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAITestKey test\u0085\u0085",
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAITestKey test\u2028extra",
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAITestKey test\x7f",
+    ]) {
+      assert.throws(
+        () => resolvePublicKey({ ...profile, sshPublicKey: badCommentKey }),
+        `rejects pubkey with control/NEL chars: ${JSON.stringify(badCommentKey)}`,
+      );
+    }
+    assert.throws(() =>
+      buildAutoinstallUserData(
+        profile,
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAITestKey \u0085\u0085ssh-rsa AAAAB3NzaC1yc2E",
+      ),
+    );
+    assert.throws(() =>
+      buildHardeningShellScript(
+        profile,
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAITestKey \u0085\u0085ssh-rsa AAAAB3NzaC1yc2E",
+        false,
+      ),
+    );
     fs.writeFileSync(keyFile, `${fakeKey}\nssh-rsa AAAAB3NzaC1yc2EAAAAAEVIL\n`, "utf8");
     assert.throws(() => resolvePublicKey({ ...profile, sshPublicKey: "", sshPublicKeyPath: keyFile }));
+
+    assert.throws(() => buildHardeningShellScript({ ...profile, workspace: "/etc/ssh" }, fakeKey, false));
+    assert.throws(() => buildHardeningShellScript({ ...profile, workspace: "~/.ssh" }, fakeKey, false));
+    assert.throws(() => buildHardeningShellScript({ ...profile, cacheDirs: [".ssh"] }, fakeKey, true));
+    assert.throws(() => buildHardeningShellScript({ ...profile, cacheDirs: ["."] }, fakeKey, true));
+    assert.throws(() =>
+      buildHardeningShellScript({ ...profile, blockAllEgress: false, blockedLanCidrs: [] }, fakeKey, false),
+    );
+    assert.throws(() => buildAutoinstallUserData({ ...profile, packages: ["ufw-"] }, fakeKey));
 
     const sshd = buildSshdMatchConfig(profile);
     assert.ok(sshd.includes("Match User jobrunner"));
@@ -170,16 +332,46 @@ export function runProvisionerSelfTest(exampleProfilePath: string): void {
 
     const script = buildHardeningShellScript(profile, fakeKey, true);
     assert.ok(script.includes('chown root:root "/etc/ssh/authorized_keys/$RUNNER_USER"'));
+    assert.ok(script.includes('chown -h "$RUNNER_USER:$RUNNER_USER" "$dir"'));
+    assert.ok(script.includes('chown -h "$RUNNER_USER:$RUNNER_USER" "/home/$RUNNER_USER/henicos"'));
+    assert.ok(script.includes('chown -hR "$RUNNER_USER:$RUNNER_USER" "/home/$RUNNER_USER/henicos"'));
+    assert.ok(script.includes('chown -hR "$RUNNER_USER:$RUNNER_USER" "/home/$RUNNER_USER/.nuget/packages"'));
+    assert.ok(script.includes('[ -L "$target" ]'));
     assert.ok(script.includes("--uid-owner ${RUNNER_UID} -j REJECT --reject-with icmp-port-unreachable"));
     assert.ok(script.includes("ufw6-before-output -m owner --uid-owner ${RUNNER_UID} -j REJECT"));
     assert.ok(script.includes("BEGIN GSHARP-JOBRUNNER-ISOLATION"));
     assert.ok(script.includes("/home/$RUNNER_USER/henicos"));
     assert.ok(
       script.includes(`: > "/home/$RUNNER_USER/henicos/${RemoteWorkspaceMarkerFile}"`) &&
-        script.includes(`chown "$RUNNER_USER:$RUNNER_USER" "/home/$RUNNER_USER/henicos/${RemoteWorkspaceMarkerFile}"`),
+        script.includes(
+          `chown -h "$RUNNER_USER:$RUNNER_USER" "/home/$RUNNER_USER/henicos/${RemoteWorkspaceMarkerFile}"`,
+        ),
       "creates and chowns workspace marker file",
     );
     assert.ok(script.includes("/home/$RUNNER_USER/.nuget/packages"));
+    assert.ok(
+      script.lastIndexOf('rm -rf "/home/$RUNNER_USER/.ssh"') > script.indexOf("/home/$RUNNER_USER/.nuget/packages"),
+      "removes runner .ssh after cache migration",
+    );
+    assert.ok(script.includes("for grp in sudo adm systemd-journal docker lxd disk shadow; do"));
+    assert.ok(
+      script.includes("EXISTING_UID") &&
+        script.includes("-lt 1000") &&
+        script.includes("-ge 65534") &&
+        script.includes("EXISTING_HOME"),
+      "rejects pre-existing system or non-standard runner accounts",
+    );
+    const sshdSectionStart = script.indexOf("# 3. Lock down sshd for runner user");
+    const reloadIdx = script.indexOf("systemctl reload ssh");
+    const sshdSection = script.slice(sshdSectionStart, reloadIdx);
+    assert.ok(
+      sshdSection.includes("mktemp") &&
+        sshdSection.includes("if ! sshd -t; then") &&
+        sshdSection.includes("mv -f") &&
+        sshdSection.includes("rm -f") &&
+        sshdSection.includes("exit 1"),
+      "rolls back 90-jobrunner.conf when sshd -t fails",
+    );
     assert.ok(script.includes("Match all"));
     assert.ok(script.includes("[ ! -f /etc/ufw/before.rules ]"), "fails when /etc/ufw/before.rules is absent");
     assert.ok(
@@ -311,8 +503,141 @@ export function runProvisionerSelfTest(exampleProfilePath: string): void {
     const decodedLegacyCmds = decodeSetupCommandsFromUserData(legacyUserData);
     assert.ok(decodedLegacyCmds.some((c) => c.includes("dotnet-install.sh --channel 9.0")));
 
+    const bashBin = gitBashPath();
+    const canRunBash =
+      (process.platform !== "win32" || bashBin !== "bash") &&
+      spawnSync(bashBin, ["-c", "command -v dirname mktemp cp mv rm chmod install >/dev/null"], {
+        windowsHide: true,
+      }).status === 0;
+    if (canRunBash) {
+      const syntaxRes = spawnSync(bashBin, ["-n"], { input: script, encoding: "utf8", windowsHide: true });
+      assert.strictEqual(syntaxRes.status, 0, syntaxRes.stderr);
+
+      // Item 3 runtime test: symlink rejection & chown -h behavior
+      const symHelpersStart = script.indexOf("reject_if_symlink()");
+      const symHelpersEnd = script.indexOf("# 1. Create dedicated unprivileged runner user");
+      assert.ok(symHelpersStart >= 0 && symHelpersEnd > symHelpersStart);
+      const symHelpers = script.slice(symHelpersStart, symHelpersEnd);
+
+      const symBase = path.join(tmpRoot, "sym-probe");
+      const symHome = path.join(symBase, "home");
+      const symOutside = path.join(symBase, "outside");
+      const symRealSub = path.join(symHome, "real_sub");
+      const symLinkSub = path.join(symHome, "link_sub");
+      fs.mkdirSync(symRealSub, { recursive: true });
+      fs.mkdirSync(symOutside, { recursive: true });
+      fs.symlinkSync(symOutside, symLinkSub, process.platform === "win32" ? "junction" : "dir");
+      const symHomePosix = symHome.replace(/\\/g, "/");
+      const symPrelude = [
+        "set -euo pipefail",
+        'RUNNER_USER="jobrunner"',
+        "chown() {",
+        '  echo "CHOWN:$*"',
+        "}",
+        symHelpers.replace('local home_dir="/home/$RUNNER_USER"', `local home_dir="${symHomePosix}"`),
+      ].join("\n");
+
+      const badParentRes = spawnSync(
+        bashBin,
+        ["-c", `${symPrelude}\nreject_symlink_parents "${symHomePosix}/link_sub/ws" "${symHomePosix}"`],
+        {
+          encoding: "utf8",
+          windowsHide: true,
+        },
+      );
+      assert.notStrictEqual(badParentRes.status, 0, "reject_symlink_parents fails on symlink ancestor");
+      assert.ok(!badParentRes.stdout.includes("CHOWN:"), "does not invoke chown on symlink ancestor");
+
+      const badChownRes = spawnSync(bashBin, ["-c", `${symPrelude}\nchown_runner_parents "${symHomePosix}/link_sub"`], {
+        encoding: "utf8",
+        windowsHide: true,
+      });
+      assert.notStrictEqual(badChownRes.status, 0, "chown_runner_parents refuses symlink dir");
+      assert.ok(!badChownRes.stdout.includes("CHOWN:"), "does not invoke chown on symlink dir");
+
+      const goodChownRes = spawnSync(
+        bashBin,
+        ["-c", `${symPrelude}\nchown_runner_parents "${symHomePosix}/real_sub"`],
+        {
+          encoding: "utf8",
+          windowsHide: true,
+        },
+      );
+      assert.strictEqual(goodChownRes.status, 0, goodChownRes.stderr);
+      assert.ok(goodChownRes.stdout.includes("CHOWN:-h jobrunner:jobrunner "), "uses chown -h on real dir");
+
+      // Item 4 runtime test: sshd -t rollback on failure (prior file restored, absent file deleted, pass writes config)
+      const sshdBlockStart = script.indexOf("# 3. Lock down sshd for runner user");
+      const sshdBlockEnd = script.indexOf("# 4. Configure nproc fork-bomb guard");
+      assert.ok(sshdBlockStart >= 0 && sshdBlockEnd > sshdBlockStart);
+      const sshdDir = path.join(tmpRoot, "sshd-test");
+      fs.mkdirSync(sshdDir, { recursive: true });
+      const sshdDirPosix = sshdDir.replace(/\\/g, "/");
+      const sshdBlock = script.slice(sshdBlockStart, sshdBlockEnd).replaceAll("/etc/ssh/sshd_config.d", sshdDirPosix);
+      const sshdConfFile = path.join(sshdDir, "90-jobrunner.conf");
+
+      const runSshdBlock = (sshdExit: number): { status: number | null; stdout: string } => {
+        const harness = [
+          "set -euo pipefail",
+          `sshd() { return ${sshdExit}; }`,
+          'systemctl() { echo "SYSTEMCTL:$*"; }',
+          sshdBlock,
+        ].join("\n");
+        const res = spawnSync(bashBin, ["-c", harness], { encoding: "utf8", windowsHide: true });
+        return { status: res.status, stdout: res.stdout };
+      };
+
+      fs.writeFileSync(sshdConfFile, "# prior\n", "utf8");
+      const failExisting = runSshdBlock(255);
+      assert.notStrictEqual(failExisting.status, 0, "sshd -t failure exits non-zero");
+      assert.strictEqual(fs.readFileSync(sshdConfFile, "utf8"), "# prior\n", "restores prior 90-jobrunner.conf");
+      assert.ok(!failExisting.stdout.includes("SYSTEMCTL:"), "does not reload sshd on failure");
+
+      fs.unlinkSync(sshdConfFile);
+      const failAbsent = runSshdBlock(255);
+      assert.notStrictEqual(failAbsent.status, 0, "sshd -t failure exits non-zero when no prior file");
+      assert.ok(!fs.existsSync(sshdConfFile), "removes broken 90-jobrunner.conf when absent previously");
+      assert.ok(!failAbsent.stdout.includes("SYSTEMCTL:"), "does not reload sshd on failure");
+
+      const passSshd = runSshdBlock(0);
+      assert.strictEqual(passSshd.status, 0, "sshd -t pass exits 0");
+      assert.ok(fs.readFileSync(sshdConfFile, "utf8").includes("Match User jobrunner"), "writes Match User config");
+      assert.ok(passSshd.stdout.includes("SYSTEMCTL:reload ssh"), "reloads sshd on pass");
+    }
+
     const metaData = buildAutoinstallMetaData(profile);
-    assert.ok(metaData.includes("local-hostname: ubuntu-server"));
+    assert.ok(metaData.includes('local-hostname: "ubuntu-server"'));
+    assert.ok(metaData.includes('instance-id: "job-queue-worker-ubuntu-server"'));
+
+    const yamlEdgeProfile = validateProfile({
+      ...sampleRaw,
+      hostname: "no",
+      adminUser: "null",
+      timezone: "123",
+    });
+    const yamlEdgeUserData = buildAutoinstallUserData(yamlEdgeProfile, fakeKey);
+    assert.ok(yamlEdgeUserData.includes('  timezone: "123"'));
+    assert.ok(yamlEdgeUserData.includes('    hostname: "no"'));
+    assert.ok(yamlEdgeUserData.includes('    username: "null"'));
+    const yamlEdgeMetaData = buildAutoinstallMetaData(yamlEdgeProfile);
+    assert.ok(yamlEdgeMetaData.includes('instance-id: "job-queue-worker-no"'));
+    assert.ok(yamlEdgeMetaData.includes('local-hostname: "no"'));
+
+    const noDnsEmptyUserData = buildAutoinstallUserData(
+      validateProfile({ ...sampleRaw, network: { ...sampleNet, nameservers: [] } }),
+      fakeKey,
+    );
+    assert.ok(!noDnsEmptyUserData.includes("nameservers:"));
+    assert.ok(!noDnsEmptyUserData.includes("1.1.1.1"));
+
+    const netNoNameservers = { ...sampleNet };
+    delete netNoNameservers.nameservers;
+    const noDnsUndefinedUserData = buildAutoinstallUserData(
+      validateProfile({ ...sampleRaw, network: netNoNameservers }),
+      fakeKey,
+    );
+    assert.ok(!noDnsUndefinedUserData.includes("nameservers:"));
+    assert.ok(!noDnsUndefinedUserData.includes("1.1.1.1"));
 
     const remotes = buildRemotesLocalJson(profile);
     const ubuntuRemote = remotes.remotes.ubuntu;
