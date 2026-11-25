@@ -104,13 +104,19 @@ public class MegaKernelNttShapeTests
         { 4096, 1, 1024, [1024, 768, 512, 256], 1024 },
         // One candidate (a test override): it is also the largest that fits.
         { 512, 48, 768, [768], 768 },
+        // Ascending candidates: must keep the smallest matching candidate (256), not overwrite upward to 1024.
+        { 512, 48, 1024, [256, 512, 768, 1024], 256 },
+        // largestFitting caps the choice even when a larger candidate satisfies M <= 2 * SMs * c.
+        { 2048, 1, 768, [1024, 768, 512, 256], 768 },
     };
 
     // Every block keeps its rows in one batch while M <= 2 * SMs * c: below that a larger block only waits longer at
     // each barrier, above it a larger block runs fewer batches.
-    // mutant: CooperativeMegaKernelLauncher.cs ChooseBlockDim `transformLength <= 2L * ...` -> `<` (input 24576)
-    // mutant: `2L * deviceSmCount` -> `1L * deviceSmCount` (input 16384)
-    // mutant: `candidate < chosen` -> `candidate > chosen` (input 512, 48)
+    // mutant: CooperativeMegaKernelLauncher.cs:287 `transformLength <= 2L * ...` -> `<` (input 24576)
+    // mutant: CooperativeMegaKernelLauncher.cs:287 `2L * deviceSmCount` -> `1L * deviceSmCount` (input 16384)
+    // mutant: CooperativeMegaKernelLauncher.cs:287 `candidate < chosen` -> `candidate > chosen` (input 512, 48)
+    // mutant: CooperativeMegaKernelLauncher.cs:287 `candidate < chosen &&` -> removed
+    //         (inputs 512 with [256, 512, 768, 1024]; 2048, 1, 768)
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(BlockSizeRuleCases))]

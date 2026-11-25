@@ -48,4 +48,96 @@ public class NttBlockCarriesGuardTests
         Assert.Throws<InvalidOperationException>(() =>
             KernelAdvancedMathHandler.ThrowIfBlockCarriesTooSmall(blockCarryWords, maxProductWords, chunkSize));
     }
+
+    // Mega-kernel carry and add/sub scans exchange state across 32-thread warps and 32-warp shared buffers, so every
+    // positive multiple of 32 up to 1024 threads per block is accepted.
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:540-542
+    //   `blockDim > CooperativeMegaKernelLauncher.MaxThreadsPerBlock`
+    //   -> `blockDim >= CooperativeMegaKernelLauncher.MaxThreadsPerBlock` (1024u throws)
+    [Theory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(32u)]
+    [InlineData(64u)]
+    [InlineData(96u)]
+    [InlineData(256u)]
+    [InlineData(512u)]
+    [InlineData(768u)]
+    [InlineData(1024u)]
+    public void ThrowIfInvalidMegaKernelBlockDim_ValidWarpMultiples_DoesNotThrow(uint blockDim)
+    {
+        var exception = Record.Exception(() =>
+            KernelAdvancedMathHandler.ThrowIfInvalidMegaKernelBlockDim(blockDim));
+
+        Assert.Null(exception);
+    }
+
+    // Zero, non-multiples of 32, and values above 1024 threads per block break chunk sizing or warp-32 shared scans
+    // and must throw ArgumentOutOfRangeException before allocating NTT workspace buffers.
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:540-542
+    //   `blockDim % CooperativeMegaKernelLauncher.WarpSize != 0` -> removed (260u, 31u, 33u do not throw)
+    [Theory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(0u)]
+    [InlineData(1u)]
+    [InlineData(31u)]
+    [InlineData(33u)]
+    [InlineData(260u)]
+    [InlineData(1023u)]
+    [InlineData(1025u)]
+    [InlineData(1056u)]
+    [InlineData(uint.MaxValue)]
+    public void ThrowIfInvalidMegaKernelBlockDim_InvalidBlockDims_ThrowsArgumentOutOfRangeException(uint blockDim)
+    {
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            KernelAdvancedMathHandler.ThrowIfInvalidMegaKernelBlockDim(blockDim));
+
+        Assert.Equal("blockDim", exception.ParamName);
+    }
+
+    // Up to StridedColumnMaxTransformLength (65536), strided column NTT accepts blockDim < 256; above 65536,
+    // TransposeTileBatches accepts blockDim >= 256.
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:570
+    //   `transformLength > GpuBigIntNttKernels.StridedColumnMaxTransformLength` -> `>=` (65536 with 32u throws)
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:571
+    //   `blockDim < StridedColumnMinBlockDim` -> `<= StridedColumnMinBlockDim` (131072 with 256u throws)
+    [Theory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(65536, 32u)]
+    [InlineData(65536, 96u)]
+    [InlineData(65536, 224u)]
+    [InlineData(65536, 256u)]
+    [InlineData(131072, 256u)]
+    [InlineData(131072, 512u)]
+    [InlineData(131072, 768u)]
+    [InlineData(131072, 1024u)]
+    public void ThrowIfStridedColumnBlockDimTooSmall_ValidBlockDimForTransformLength_DoesNotThrow(
+        int transformLength, uint blockDim)
+    {
+        var exception = Record.Exception(() =>
+            KernelAdvancedMathHandler.ThrowIfStridedColumnBlockDimTooSmall(blockDim, transformLength));
+
+        Assert.Null(exception);
+    }
+
+    // Above StridedColumnMaxTransformLength (65536), TransposeTileBatches moves 32x32 tiles with 8 warps (256
+    // threads), so blockDim < 256 must throw ArgumentOutOfRangeException before allocating NTT workspace buffers.
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:571
+    //   `blockDim < StridedColumnMinBlockDim` -> removed (32u, 96u, 224u at 131072 do not throw)
+    [Theory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(131072, 32u)]
+    [InlineData(131072, 96u)]
+    [InlineData(131072, 224u)]
+    public void ThrowIfStridedColumnBlockDimTooSmall_SmallBlockDimAboveLimit_ThrowsArgumentOutOfRangeException(
+        int transformLength, uint blockDim)
+    {
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            KernelAdvancedMathHandler.ThrowIfStridedColumnBlockDimTooSmall(blockDim, transformLength));
+
+        Assert.Equal("blockDim", exception.ParamName);
+    }
 }
