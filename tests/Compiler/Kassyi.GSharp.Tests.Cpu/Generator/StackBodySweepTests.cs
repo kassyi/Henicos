@@ -9,7 +9,10 @@ namespace Kassyi.GSharp.Tests.Cpu.Generator;
 // Every kernel and device function of the shared test sources with Warp.ActiveMask() put in front of its body, built
 // with the managed stack model: the stack form of each writes the body lowered for the stacks (the state machine's
 // passes up to its reconvergence regions), and none of those forms may hold a C# error. The shared compilation has
-// errors of its own (types of the test projects it does not reference); only the errors inside a stack form count
+// errors of its own (types of the test projects it does not reference); only the errors inside a stack form count.
+// The run of the generator over the whole corpus holds about 2 GB, so the test runs one after another with the other
+// whole-corpus tests.
+[Collection(TestCollections.CorpusScan)]
 [Category(TestCategory.Compiler)]
 [TestTarget(ExecutionTarget.CpuExecution)]
 public class StackBodySweepTests
