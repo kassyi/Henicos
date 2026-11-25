@@ -1,4 +1,6 @@
 #nullable enable
+using System.Runtime.InteropServices;
+
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
 // Properties checked here (property-test-design §1), for the switch between the mega-kernel and the precision doubling
@@ -160,6 +162,51 @@ public class GpuBigIntSqrtDoublingThresholdTests
 
         Assert.Throws<ArgumentOutOfRangeException>(() => { ctx.SqrtPrecisionDoublingThresholdWords = -1; });
         Assert.Equal(before, ctx.SqrtPrecisionDoublingThresholdWords);
+    }
+
+    // A root of 400000 words transforms 2^23 = 2048 x 4096 points (N1 != N2) in the mega-kernel, through the
+    // transposes, with rows of 2048 and 4096 points (longer than twice any block). The mega-kernel and the precision
+    // doubling (whose products use the 3-prime transform, another implementation) give the same words, and the root
+    // is the floor.
+    // mutant: GpuBigIntNttKernels.cu.cs ExecuteForwardNtt
+    //         `TransposeTiles(buffer, temporaryBuffer, length2, length1)` -> `(..., length1, length2)`
+    [SkippableFact]
+    [Category(TestCategory.Stress)]
+    [Scenario(TestScenario.Boundary)]
+    public void Sqrt_RootOf400000Words_MegaKernelAndPrecisionDoublingAgree()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        const int RootWords = 400000;
+        const int OperandWords = 2 * RootWords;
+        var random = new Random(2225);
+        var operandWords = new uint[OperandWords];
+        for (var i = 0; i < OperandWords; i++)
+        {
+            operandWords[i] = (uint)random.NextInt64(0, 1L << 32);
+        }
+
+        operandWords[OperandWords - 1] |= 0x8000_0000u;
+
+        var roots = new uint[2][];
+        int[] thresholds = [int.MaxValue, 0];
+        for (var path = 0; path < thresholds.Length; path++)
+        {
+            using var ctx = new GpuWorkspace(OperandWords * 8, GpuExecutionEngine.GSharpAot);
+            ctx.SqrtPrecisionDoublingThresholdWords = thresholds[path];
+            using var operand = new GpuBigUInt(ctx, operandWords);
+            using var result = new GpuBigUInt(ctx, OperandWords);
+            GpuBigIntDivRem.Sqrt(operand, result);
+            roots[path] = result.ToHostArray();
+        }
+
+        // The two paths agree word for word.
+        Assert.Equal(roots[1], roots[0]);
+
+        // r^2 <= a < (r + 1)^2, with a built from the words the test holds.
+        var a = new BigInteger(MemoryMarshal.AsBytes(operandWords.AsSpan()), isUnsigned: true, isBigEndian: false);
+        var r = new BigInteger(MemoryMarshal.AsBytes(roots[0].AsSpan()), isUnsigned: true, isBigEndian: false);
+        Assert.True(r * r <= a, "the root exceeds the square root");
+        Assert.True(a < (r + 1) * (r + 1), "the root is below the floor");
     }
 
     // A new workspace starts at the documented default of 45 root words, the largest root whose mega-kernel transforms

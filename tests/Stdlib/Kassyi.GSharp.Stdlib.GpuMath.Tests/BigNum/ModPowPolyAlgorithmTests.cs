@@ -88,20 +88,49 @@ public class ModPowPolyAlgorithmTests : IDisposable
     // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs
     //   NttWorkspaceBuffers `ChunkSize = carryChunkSize;` -> `ChunkSize = 1024;` (the #606 allocation)
     //   input: numWords 100 and 200 (ThrowIfBlockCarriesTooSmall throws before the launch)
-    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.ModPow.cu.cs:99
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.ModPow.cu.cs:88
     //   `int numBlocks = (numWordsResult + chunkSize - 1) / chunkSize;` -> `int numBlocks = 1;`
     //   input: numWords 200 (the carry out of the second chunk is lost and the result differs from BigInteger.ModPow)
+    // The ModPow mega-kernel runs one block of 256 threads. numWords 99 transforms 1024 points as one shared-memory
+    // row, whose 512 butterflies each thread takes two of; numWords 100 and 200 transform 2048 points as 32 x 64,
+    // whose rows of 32 points the block batches 16 at a time (four batches) and whose rows of 64 points 8 at a time;
+    // numWords 3270 transforms 2^15 = 128 x 256 points (N1 != N2, column read).
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntNttKernels.cu.cs:377
+    //   `args.ColumnStride = args.Grid.N2;` -> `args.Grid.N1`
+    //   input: numWords 3270
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntNttKernels.SharedRow.cu.cs:80
+    //   `firstRow + slot * GridDimension.X` -> `firstRow + slot`
+    //   input: numWords 3270
     [SkippableTheory]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
     [InlineData(99)]
     [InlineData(100)]
     [InlineData(200)]
+    [InlineData(3270)]
     public void ModPow_NttPathCarryChunksOfLaunchBlock_MatchesBigIntegerReference(int numWords)
     {
         CudaCapability.EnsureGpuAvailable();
+        AssertModPowNttMatchesBigIntegerReference(numWords);
+    }
 
-        using var workspace = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
+    // 6600 words transforms 2^17 = 256 x 512 points (N1 != N2) on one block of 256 threads through the transposes.
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntNttKernels.cu.cs:425 / :469
+    //   `TransposeTiles(buffer, temporaryBuffer, length2, length1);` -> `(..., length1, length2)`
+    //   input: numWords 6600
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Category(TestCategory.Stress)]
+    [Scenario(TestScenario.Boundary)]
+    public void ModPow_NttPathThroughTransposes_MatchesBigIntegerReference()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        AssertModPowNttMatchesBigIntegerReference(6600);
+    }
+
+    private static void AssertModPowNttMatchesBigIntegerReference(int numWords)
+    {
+        using var workspace = new GpuWorkspace(Math.Max(4096, numWords * 16), GpuExecutionEngine.GSharpAot);
         // Send numWords-word operands to the NTT MegaKernel (ModPowNttHostController) instead of the zero-sync loop.
         workspace.PolyAlgorithmThreshold = numWords * 32;
 

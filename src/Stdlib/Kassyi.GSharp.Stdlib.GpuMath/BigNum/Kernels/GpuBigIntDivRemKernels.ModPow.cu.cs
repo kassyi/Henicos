@@ -43,18 +43,7 @@ public static partial class GpuBigIntDivRemKernels
         int numWordsA, int numWordsB, int numWordsResult)
     {
         var m = core.Ntt.TransformLength;
-        int n2 = 1;
-        while (n2 * n2 < m)
-        {
-            n2 *= 2;
-        }
-
-        int n1 = m / n2;
-        if (m <= 512)
-        {
-            n1 = m;
-            n2 = 1;
-        }
+        var grid = GpuBigIntNttKernels.CreateNttGridContext(m);
 
         var nttScratch = core.Workspace.NttScratch;
 
@@ -65,7 +54,7 @@ public static partial class GpuBigIntDivRemKernels
         var baseNtt = new DualNtt
         {
             TemporaryBuffer = nttScratch.TmpBuf,
-            Grid = new NttGridContext { M = m, N1 = n1, N2 = n2 }
+            Grid = grid
         };
 
         var forwardA = baseNtt;

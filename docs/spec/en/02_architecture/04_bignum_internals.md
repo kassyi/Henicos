@@ -227,6 +227,45 @@ flowchart LR
 - **Error bounds**: `|D| < 2^(32 dw - 1)` in every stage (at least 24 bits to spare), `|Y_K - floor(x* 2^(32 p_K - E))| <= 1` and `|x~ - floor(x*)| <= 1`, proved for `w >= 2` under the initial-guess error of at most `5·2^-32` (provable, about `2^-29.678`) with `x0 <= x*`.
 - **Contract**: the approximate inverse square root returns `x~ - 1`, so its result stays at most `ApproximateInverseSqrtMaxError` below the floor and never above it, as the mega-kernel's does. `SqrtFloor` then corrects its estimate to the exact floor either way.
 
+### Cooperative Mega-Kernel NTT
+
+The Newton mega-kernels (`InverseSqrtNewtonRaphsonMegaKernel`, `ReciprocalNewtonRaphsonMegaKernel`,
+`ModPowNttMegaKernel`) multiply with a 2-prime NTT of `M` points, the power of two that holds twice the words of the
+product, inside one cooperative launch of `G` blocks of `B` threads (`G <= ` SM count). `GpuBigIntNttKernels` runs it in
+one of three shapes:
+
+| `M` | Shape | Grid syncs per transform |
+| :- | :- | -: |
+| `<= SharedRowMaxTransformLength` (1024) | One shared-memory row, on one block | 1 |
+| `<= StridedColumnMaxTransformLength` (`2^16`) | `N1 x N2` (row-major, `N2` the smallest power of two with `N2^2 >= M`): the `N2` columns of length `N1` in place, then the `N1` rows of length `N2` | 2 |
+| larger | The same split with two transposes through `TemporaryBuffer` around the rows of length `N1` | 4 |
+
+- **Rows in batches**: `ExecuteNttSharedRow` gives each butterfly one thread, so a block holds
+  `rowsPerBatch = max(1, floor(B / (L / 2)))` rows of `L` points at once and synchronizes once per batch instead of once
+  per row. Block `b` takes rows `b + kG`, `k = 0 .. ceil((rows - b) / G) - 1`; the last batch of a block may be short.
+  Each row is computed exactly as alone, so the result does not depend on `B` or `G`.
+- **Columns in place**: row `x` of the first forward pass (the last inverse pass) is column `x` of the buffer, element
+  `e` at `x + e * N2` (`NumberTheoreticTransform.ColumnStride`). This places the same values in the same words as
+  transposing, transforming row `x` and transposing back, without the two transposes and their two grid syncs.
+- **Tiles in batches**: the transposes (`GpuBigIntFermatKernels.TransposeTileBatches`) move one `32 x 32` tile with every
+  256 threads, so a block moves `min(3, B / 256)` tiles at once. Three, not four: four tiles take 16.5 KB of static
+  shared memory, and with the 34048 bytes of rows of a `2^25`-point transform a block would need more than the 48 KB it
+  gets without opting in. The transpose is called through a function that is not inlined (`TransposeTiles`): inlined,
+  it takes the mega-kernels past 64 registers per thread.
+- **The limits are measured** (both are constants, so another GPU changes one number):
+  - up to 1024 points one row on one SM is faster than the split with blocks of 512 threads or more, and above 1024 the
+    split is faster at every block size;
+  - up to `2^16` points reading the columns in place is faster than transposing them, and from `2^17` transposing is
+    faster, at every block size of 512 threads or more.
+- **Shared memory**: the launcher passes `(R + R / 32) * 4 + 256` bytes of dynamic shared memory with
+  `R = max(2 * 1024, L)` (`L` the longest row: `M` up to 1024 points, else `max(N1, N2)`), the most any block size
+  up to 1024 threads asks for, since the size is fixed before the block size is chosen: 8704 bytes up to `2^22` points,
+  17152 at `2^23` and `2^24`, 34048 at `2^25`. The kernels add 13072 bytes of static shared memory (12672 bytes for the tiles and 400 bytes of other buffers).
+- **Registers**: a block of 1024 threads fits an SM only with at most 64 registers per thread (56 for the inverse square
+  root and the reciprocal). The occupancy test (`MegaKernelOccupancyTests`) asks the driver whether each mega-kernel
+  fits with 1024 threads (ModPow with its 256) at the least and the most shared memory, since the launcher otherwise
+  takes 768 threads without a word.
+
 ### Execution Strategy & Memory Management
 
 When `.Evaluate()` is called, the expression tree is executed using an optimized plan managed by `GpuWorkspace`.
