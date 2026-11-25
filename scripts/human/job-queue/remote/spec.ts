@@ -28,30 +28,130 @@ export const RemoteMetadataFiles = [
   RemoteWorkspaceMarkerFile,
 ] as const;
 
-const WorkspaceSafePattern = /^(?:~\/[A-Za-z0-9_./-]+|\/[A-Za-z0-9_./-]+)$/;
+export interface SafePosixPathOptions {
+  /** Rejects segments starting with `.` (`.ssh`, `.gnupg`, `.hidden`). `.` and `..` are always rejected. */
+  readonly rejectDotPrefixedSegments?: boolean;
+  /** Root segments exempted when `rejectDotPrefixedSegments` is true (e.g., `.nuget`, `.cargo`). */
+  readonly allowedLeadingDotSegments?: ReadonlySet<string>;
+}
+
+export interface RemoteWorkspaceOptions {
+  /**
+   * Provisioner mode (root `chown`): rejects dot-prefixed segments and restricts absolute paths to dedicated parents
+   * (`/home/<runnerUser>/<seg+>`, `/var/lib/<runnerUser>/<seg+>`, `/opt/<parent>/<seg+>`, `/srv/<parent>/<seg+>`).
+   */
+  readonly provisionerRunnerUser?: string;
+}
+
+const SafePosixCharsPattern = /^[A-Za-z0-9_./-]+$/;
+const DedicatedAbsoluteWorkspaceRoots = new Set(["opt", "srv"]);
+
+export const AllowedCacheDotRoots: ReadonlySet<string> = new Set([
+  ".nuget",
+  ".cargo",
+  ".dotnet",
+  ".rustup",
+  ".m2",
+  ".gradle",
+  ".npm",
+  ".yarn",
+  ".pnpm-store",
+  ".cache",
+  ".ccache",
+  ".vcpkg",
+]);
+
+/**
+ * Splits a relative POSIX path body into validated segments: requires safe ASCII characters `[A-Za-z0-9_./-]`,
+ * rejects empty segments (`//`), `.`, `..`, `-`-prefixed segments, and optionally dot-prefixed segments.
+ */
+export function parseSafePosixSegments(body: string, options: SafePosixPathOptions = {}): string[] | null {
+  const stripped = body.replace(/\/+$/, "");
+  if (stripped === "" || !SafePosixCharsPattern.test(stripped)) {
+    return null;
+  }
+  const segments = stripped.split("/");
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i] as string;
+    if (seg === "" || seg === "." || seg === ".." || seg.startsWith("-")) {
+      return null;
+    }
+    if (options.rejectDotPrefixedSegments && seg.startsWith(".")) {
+      if (i !== 0 || !options.allowedLeadingDotSegments?.has(seg)) {
+        return null;
+      }
+    }
+  }
+  return segments;
+}
 
 /**
  * Validates a remote workspace POSIX path: requires `~/subdir...` (>= 1 segment) or `/a/b...` (>= 2 segments),
  * safe ASCII path characters without control chars or backslashes, and no `.`, `..`, empty, or `-`-prefixed segments.
+ * When `options.provisionerRunnerUser` is set, also rejects dot-prefixed segments and limits absolute paths to
+ * dedicated parents (`/home/<runnerUser>/...`, `/var/lib/<runnerUser>/...`, `/opt/<parent>/...`, `/srv/<parent>/...`).
  */
-export function isValidRemoteWorkspace(raw: unknown): boolean {
-  if (typeof raw !== "string" || /[\u0000-\u001f\u007f\\]/.test(raw)) {
+export function isValidRemoteWorkspace(raw: unknown, options?: RemoteWorkspaceOptions): boolean {
+  if (typeof raw !== "string" || /[\u0000-\u001f\u007f-\u009f\\]/.test(raw)) {
     return false;
   }
   const trimmed = raw.trim();
-  if (!WorkspaceSafePattern.test(trimmed)) {
-    return false;
-  }
   const isHomeRel = trimmed.startsWith("~/");
-  const body = (isHomeRel ? trimmed.slice(2) : trimmed.slice(1)).replace(/\/+$/, "");
-  if (body === "") {
+  if (!isHomeRel && !trimmed.startsWith("/")) {
     return false;
   }
-  const segments = body.split("/");
-  if (segments.length < (isHomeRel ? 1 : 2)) {
+  const body = isHomeRel ? trimmed.slice(2) : trimmed.slice(1);
+  const provisionerUser = options?.provisionerRunnerUser;
+  const segments = parseSafePosixSegments(body, {
+    rejectDotPrefixedSegments: provisionerUser !== undefined,
+  });
+  if (segments === null) {
     return false;
   }
-  return segments.every((seg) => seg !== "" && seg !== "." && seg !== ".." && !seg.startsWith("-"));
+  if (isHomeRel) {
+    return segments.length >= 1;
+  }
+  if (provisionerUser === undefined) {
+    return segments.length >= 2;
+  }
+  const [root, second, third] = segments;
+  if (root === "home") {
+    return second === provisionerUser && segments.length >= 3;
+  }
+  if (root === "var") {
+    return second === "lib" && third === provisionerUser && segments.length >= 4;
+  }
+  // /opt/<x> and /srv/<x> hold other applications: the provisioner chowns the workspace to the runner and the sync
+  // deletes what it does not know, so only a directory named after the runner qualifies
+  if (root !== undefined && DedicatedAbsoluteWorkspaceRoots.has(root)) {
+    return second === provisionerUser && segments.length >= 3;
+  }
+  return false;
+}
+
+/**
+ * Validates a relative `cacheDirs` path using `parseSafePosixSegments`: rejects whitespace padding, control chars,
+ * leading `/` or `~`, `.`, `..`, `//`, `-`-prefixed segments, sensitive dot-directories (`.ssh`, `.gnupg`, etc.),
+ * and bare single-segment dot-roots (e.g. `.cargo`, `.nuget`), while allowing toolchain subdirs like `.nuget/packages`.
+ */
+export function isValidRelativeCacheDir(raw: unknown): boolean {
+  if (typeof raw !== "string" || raw !== raw.trim() || /[\u0000-\u001f\u007f-\u009f\\]/.test(raw)) {
+    return false;
+  }
+  if (raw === "" || raw.startsWith("/") || raw.startsWith("~")) {
+    return false;
+  }
+  const segments = parseSafePosixSegments(raw, {
+    rejectDotPrefixedSegments: true,
+    allowedLeadingDotSegments: AllowedCacheDotRoots,
+  });
+  if (segments === null) {
+    return false;
+  }
+  if ((segments[0]?.startsWith(".") ?? false) && segments.length < 2) {
+    return false;
+  }
+  return true;
 }
 
 /** Mandatory OpenSSH hardening and dead-connection keepalive flags enforced on every remote SSH invocation. */

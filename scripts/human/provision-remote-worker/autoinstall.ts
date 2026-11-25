@@ -1,7 +1,7 @@
 // Target Generator: Ubuntu 24.04 Subiquity Autoinstall `user-data` & `meta-data` from `WorkerProfile`.
 
 import { buildHardeningShellScript } from "./hardening.ts";
-import type { WorkerProfile } from "./profile.ts";
+import { isValidPackageName, type WorkerProfile } from "./profile.ts";
 
 const BaseAutoinstallPackages = [
   "openssh-server",
@@ -16,10 +16,14 @@ const BaseAutoinstallPackages = [
 ] as const;
 
 export function buildAutoinstallUserData(profile: WorkerProfile, pubKey: string): string {
+  if (typeof pubKey !== "string" || !/^[\x20-\x7E\t]+$/.test(pubKey)) {
+    throw new Error("SSH public key contains unsupported or control characters");
+  }
   const net = profile.network;
-  const nameservers =
-    net.dhcp4 === false && net.nameservers && net.nameservers.length > 0 ? net.nameservers : ["1.1.1.1"];
-  const nameserverItems = nameservers.map((ns) => JSON.stringify(ns)).join(", ");
+  const nameserverLines =
+    net.dhcp4 === false && net.nameservers !== undefined && net.nameservers.length > 0
+      ? ["        nameservers:", `          addresses: [${net.nameservers.map((ns) => JSON.stringify(ns)).join(", ")}]`]
+      : [];
   const networkBlock =
     net.dhcp4 === false
       ? [
@@ -34,8 +38,7 @@ export function buildAutoinstallUserData(profile: WorkerProfile, pubKey: string)
           "        routes:",
           "          - to: default",
           `            via: ${JSON.stringify(net.gateway4)}`,
-          "        nameservers:",
-          `          addresses: [${nameserverItems}]`,
+          ...nameserverLines,
         ].join("\n")
       : [
           "  network:",
@@ -49,7 +52,13 @@ export function buildAutoinstallUserData(profile: WorkerProfile, pubKey: string)
 
   const hardeningB64 = Buffer.from(buildHardeningShellScript(profile, pubKey, false), "utf8").toString("base64");
   const allPackages = [...new Set([...BaseAutoinstallPackages, ...profile.packages])];
-  const packageLines = allPackages.map((pkg) => `    - ${pkg}`);
+  for (const pkg of allPackages) {
+    if (!isValidPackageName(pkg)) {
+      throw new Error(`invalid packages entry: ${pkg}`);
+    }
+  }
+  // Quoted, so that a name such as no, yes, null or 123 stays a string in YAML
+  const packageLines = allPackages.map((pkg) => `    - ${JSON.stringify(pkg)}`);
   const setupLines = profile.setupCommands.map((cmd) => {
     const cmdB64 = Buffer.from(cmd, "utf8").toString("base64");
     const curtinCmd = `curtin in-target -- bash -c 'echo ${cmdB64} | base64 -d | bash -euo pipefail'`;
@@ -65,7 +74,7 @@ export function buildAutoinstallUserData(profile: WorkerProfile, pubKey: string)
     "autoinstall:",
     "  version: 1",
     "  locale: en_US.UTF-8",
-    `  timezone: ${profile.timezone}`,
+    `  timezone: ${JSON.stringify(profile.timezone)}`,
     "  keyboard:",
     "    layout: us",
     "  storage:",
@@ -73,8 +82,8 @@ export function buildAutoinstallUserData(profile: WorkerProfile, pubKey: string)
     "      name: direct",
     networkBlock,
     "  identity:",
-    `    hostname: ${profile.hostname}`,
-    `    username: ${profile.adminUser}`,
+    `    hostname: ${JSON.stringify(profile.hostname)}`,
+    `    username: ${JSON.stringify(profile.adminUser)}`,
     '    # Password disabled ("*"): SSH key login works, password login impossible',
     '    password: "*"',
     "  ssh:",
@@ -92,5 +101,8 @@ export function buildAutoinstallUserData(profile: WorkerProfile, pubKey: string)
 }
 
 export function buildAutoinstallMetaData(profile: WorkerProfile): string {
-  return `instance-id: job-queue-worker-${profile.hostname}\nlocal-hostname: ${profile.hostname}\n`;
+  return (
+    `instance-id: ${JSON.stringify(`job-queue-worker-${profile.hostname}`)}\n` +
+    `local-hostname: ${JSON.stringify(profile.hostname)}\n`
+  );
 }

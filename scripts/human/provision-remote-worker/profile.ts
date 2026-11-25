@@ -4,7 +4,7 @@ import * as fs from "node:fs";
 import * as net from "node:net";
 import * as os from "node:os";
 import * as path from "node:path";
-import { isValidRemoteWorkspace } from "../job-queue/remote/spec.ts";
+import { isValidRelativeCacheDir, isValidRemoteWorkspace } from "../job-queue/remote/spec.ts";
 
 export interface StaticNetworkConfig {
   readonly dhcp4: false;
@@ -46,9 +46,99 @@ const UserPattern = /^[a-z_][a-z0-9_-]{0,31}$/;
 const HostPattern = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const CidrPattern = /^(?:\d{1,3}\.){3}\d{1,3}\/\d{1,2}$/;
 const KeyTypes = "(?:ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp(?:256|384|521)|sk-ssh-ed25519@openssh\\.com)";
-const PubKeyPattern = new RegExp(`^${KeyTypes}[ \\t]+[A-Za-z0-9+/=]+(?:[ \\t]+[^\\r\\n\\0]+)?$`);
-const PackageNamePattern = /^[a-z0-9][a-z0-9.+_-]{0,63}$/;
-const RelativeCacheDirPattern = /^[A-Za-z0-9_.][A-Za-z0-9_./-]*$/;
+const PubKeyPattern = new RegExp(`^${KeyTypes}[ \\t]+[A-Za-z0-9+/=]+(?:[ \\t]+[\\x20-\\x7E]+)?$`);
+const PackageNamePattern = /^(?:g\+\+|[a-z0-9](?:[a-z0-9.+_-]{0,62}[a-z0-9._])?)$/;
+
+const ReservedRunnerUsers: ReadonlySet<string> = new Set([
+  "root",
+  "ubuntu",
+  "sshd",
+  "daemon",
+  "bin",
+  "sys",
+  "sync",
+  "games",
+  "man",
+  "lp",
+  "mail",
+  "news",
+  "uucp",
+  "proxy",
+  "www-data",
+  "backup",
+  "list",
+  "irc",
+  "gnats",
+  "nobody",
+  "systemd-network",
+  "systemd-resolve",
+  "systemd-timesync",
+  "systemd-coredump",
+  "systemd-oom",
+  "messagebus",
+  "syslog",
+  "uuidd",
+  "tss",
+  "tcpdump",
+  "landscape",
+  "fwupd-refresh",
+  "polkitd",
+  "avahi",
+  "dhcpcd",
+  "chrony",
+  "admin",
+  "cloud-init",
+]);
+
+export function isValidPackageName(pkg: string): boolean {
+  return PackageNamePattern.test(pkg);
+}
+
+function isUnspecifiedIp(ip: string): boolean {
+  if (ip === "0.0.0.0") {
+    return true;
+  }
+  if (net.isIPv6(ip)) {
+    const zoneIdx = ip.indexOf("%");
+    const bare = (zoneIdx >= 0 ? ip.slice(0, zoneIdx) : ip).toLowerCase();
+    const [head, tail] = bare.split("::", 2);
+    const parseSide = (side: string): number[] => {
+      if (side === "") {
+        return [];
+      }
+      const parts = side.split(":");
+      const last = parts[parts.length - 1];
+      if (last !== undefined && last.includes(".")) {
+        const octets = last.split(".").map((n) => Number(n));
+        parts.pop();
+        const nums = parts.map((h) => parseInt(h, 16));
+        nums.push(((octets[0] ?? 0) << 8) | (octets[1] ?? 0), ((octets[2] ?? 0) << 8) | (octets[3] ?? 0));
+        return nums;
+      }
+      return parts.map((h) => parseInt(h, 16));
+    };
+    const headNums = parseSide(head ?? "");
+    const tailNums = tail !== undefined ? parseSide(tail) : [];
+    const zeroCount = 8 - headNums.length - tailNums.length;
+    if (zeroCount < 0) {
+      return false;
+    }
+    const hextets = [...headNums, ...new Array<number>(zeroCount).fill(0), ...tailNums];
+    const allZero = hextets.every((h) => h === 0);
+    const v4MappedZero =
+      hextets.length === 8 &&
+      hextets[0] === 0 &&
+      hextets[1] === 0 &&
+      hextets[2] === 0 &&
+      hextets[3] === 0 &&
+      hextets[4] === 0 &&
+      hextets[5] === 0xffff &&
+      hextets[6] === 0 &&
+      hextets[7] === 0;
+    return allZero || v4MappedZero;
+  }
+  return false;
+}
 
 const DefaultBlockedLanCidrs = ["192.168.0.0/16", "10.0.0.0/8", "172.16.0.0/12", "169.254.0.0/16"] as const;
 
@@ -96,8 +186,13 @@ export function validateProfile(raw: unknown): WorkerProfile {
   if (typeof raw.runnerUser !== "string" || !UserPattern.test(raw.runnerUser)) {
     throw new Error("runnerUser must be a valid Linux username");
   }
-  if (raw.runnerUser === "root" || raw.runnerUser === raw.adminUser) {
-    throw new Error("runnerUser must be distinct from root and adminUser");
+  if (
+    raw.runnerUser.startsWith("_") ||
+    raw.runnerUser.startsWith("systemd-") ||
+    ReservedRunnerUsers.has(raw.runnerUser) ||
+    raw.runnerUser === raw.adminUser
+  ) {
+    throw new Error("runnerUser must be a dedicated non-system username distinct from adminUser");
   }
   if (typeof raw.cpus !== "number" || !Number.isInteger(raw.cpus) || raw.cpus < 1) {
     throw new Error("cpus must be a positive integer");
@@ -118,11 +213,18 @@ export function validateProfile(raw: unknown): WorkerProfile {
   if (typeof maxProcesses !== "number" || !Number.isInteger(maxProcesses) || maxProcesses < 128) {
     throw new Error("maxProcesses must be an integer >= 128");
   }
-  const blockedLanCidrs = Array.isArray(raw.blockedLanCidrs) ? raw.blockedLanCidrs : [...DefaultBlockedLanCidrs];
+  if (raw.blockedLanCidrs !== undefined && !Array.isArray(raw.blockedLanCidrs)) {
+    throw new Error("blockedLanCidrs must be an array of IPv4 CIDRs");
+  }
+  const blockedLanCidrs = raw.blockedLanCidrs !== undefined ? raw.blockedLanCidrs : [...DefaultBlockedLanCidrs];
   for (const cidr of blockedLanCidrs) {
     if (typeof cidr !== "string" || !isValidIpv4Cidr(cidr)) {
       throw new Error(`invalid blockedLanCidrs entry: ${String(cidr)}`);
     }
+  }
+  const blockAllEgress = raw.blockAllEgress !== false;
+  if (!blockAllEgress && blockedLanCidrs.length === 0) {
+    throw new Error("blockedLanCidrs must not be empty when blockAllEgress is false");
   }
   const rawNet = isPlainObject(raw.network) ? raw.network : { dhcp4: true };
   let network: WorkerNetworkConfig;
@@ -130,7 +232,7 @@ export function validateProfile(raw: unknown): WorkerProfile {
     if (typeof rawNet.address !== "string" || !isValidIpv4Cidr(rawNet.address)) {
       throw new Error("network.address (CIDR) is required when network.dhcp4 is false");
     }
-    if (typeof rawNet.gateway4 !== "string" || !net.isIPv4(rawNet.gateway4)) {
+    if (typeof rawNet.gateway4 !== "string" || !net.isIPv4(rawNet.gateway4) || isUnspecifiedIp(rawNet.gateway4)) {
       throw new Error("network.gateway4 is required when network.dhcp4 is false");
     }
     let nameservers: string[] | undefined;
@@ -140,20 +242,25 @@ export function validateProfile(raw: unknown): WorkerProfile {
       }
       nameservers = [];
       for (const ns of rawNet.nameservers) {
-        if (typeof ns !== "string" || net.isIP(ns) === 0) {
+        if (typeof ns !== "string" || net.isIP(ns) === 0 || isUnspecifiedIp(ns)) {
           throw new Error(`invalid network.nameservers entry: ${String(ns)}`);
         }
         nameservers.push(ns);
       }
+    }
+    // A static address has no DHCP to supply DNS: without a nameserver the installer cannot resolve the package
+    // mirror or the setup downloads
+    if (nameservers === undefined || nameservers.length === 0) {
+      throw new Error("network.nameservers needs at least one address when network.dhcp4 is false");
     }
     network = { dhcp4: false, address: rawNet.address, gateway4: rawNet.gateway4, nameservers };
   } else {
     network = { dhcp4: true };
   }
   const workspaceRaw = raw.workspace === undefined || raw.workspace === "" ? "~/workspace" : raw.workspace;
-  if (!isValidRemoteWorkspace(workspaceRaw)) {
+  if (!isValidRemoteWorkspace(workspaceRaw, { provisionerRunnerUser: raw.runnerUser })) {
     throw new Error(
-      'workspace must be a safe ~/subdir or /a/b POSIX path without ".", "..", control characters, or leading "-" segments',
+      'workspace must be a safe ~/subdir or dedicated /home/<runnerUser>/..., /var/lib/<runnerUser>/..., /opt/<parent>/..., or /srv/<parent>/... POSIX path without ".", "..", dot-prefixed, or leading "-" segments',
     );
   }
   const workspace = (workspaceRaw as string).trim();
@@ -163,7 +270,7 @@ export function validateProfile(raw: unknown): WorkerProfile {
       throw new Error("packages must be an array of apt package names");
     }
     for (const pkg of raw.packages) {
-      if (typeof pkg !== "string" || !PackageNamePattern.test(pkg)) {
+      if (typeof pkg !== "string" || !isValidPackageName(pkg)) {
         throw new Error(`invalid packages entry: ${String(pkg)}`);
       }
       packages.push(pkg);
@@ -193,10 +300,10 @@ export function validateProfile(raw: unknown): WorkerProfile {
       throw new Error("cacheDirs must be an array of relative directory paths");
     }
     for (const dir of raw.cacheDirs) {
-      if (typeof dir !== "string" || !RelativeCacheDirPattern.test(dir) || dir.includes("..")) {
+      if (!isValidRelativeCacheDir(dir)) {
         throw new Error(`invalid cacheDirs entry: ${String(dir)}`);
       }
-      cacheDirs.push(dir.replace(/\/+$/, ""));
+      cacheDirs.push((dir as string).replace(/\/+$/, ""));
     }
   }
 
@@ -214,7 +321,7 @@ export function validateProfile(raw: unknown): WorkerProfile {
     maxProcesses,
     sshPublicKey: typeof raw.sshPublicKey === "string" ? raw.sshPublicKey.trim() : "",
     sshPublicKeyPath: typeof raw.sshPublicKeyPath === "string" ? raw.sshPublicKeyPath : "~/.ssh/id_ed25519.pub",
-    blockAllEgress: raw.blockAllEgress !== false,
+    blockAllEgress,
     blockedLanCidrs: blockedLanCidrs as string[],
     packages,
     setupCommands,
