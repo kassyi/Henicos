@@ -467,8 +467,8 @@ export function loadLocalRemotesConfig(
  * - Missing config: returns defaults with status "missing".
  * - Invalid config: in `run` mode warns and exits with UsageExitCode (2); in all other modes warns and falls back to
  *   defaults.
- * - When `stateDir` is provided and no explicit `--config` / `JOB_QUEUE_CONFIG` override was given, `remotes` come
- *   strictly from `<stateDir>/remotes.local.json` (untrusted checkout `remotes` in job-queue.config.json are ignored).
+ * - When `stateDir` is provided and `JOB_QUEUE_CONFIG` is not set, `remotes` come strictly from
+ *   `<stateDir>/remotes.local.json` (untrusted `remotes` in job-queue.config.json are ignored, even with `--config`).
  */
 export function loadConfig(options: LoadConfigOptions): LoadedConfig {
   const fromDirectory = options.fromDirectory ?? path.dirname(EntryScript);

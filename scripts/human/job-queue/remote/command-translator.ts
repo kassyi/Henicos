@@ -5,7 +5,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { KeepBuildServersWarmVariable, type ShellName } from "../constants.ts";
-import { rawWords, segmentParts } from "../command-reader.ts";
+import { rawWords, readCommandLine, segmentParts } from "../command-reader.ts";
 import type { PathPlace } from "../estimate-key.ts";
 import type { CollectPathSpec } from "./artifact-collector.ts";
 import { EmptyRemoteRules, type ResolvedRemoteRules } from "./rules.ts";
@@ -41,6 +41,7 @@ export interface TranslateOptions {
 /** Lightweight Strategy encapsulating shell-dialect syntax differences (PowerShell / POSIX sh / cmd). */
 interface ShellDialect {
   readonly supportsSingleQuote: boolean;
+  readonly rejectsPercent: boolean;
   matchLeadingEnv(text: string): { key: string; value: string; consumed: number } | null;
   matchInlineEnvStatement(text: string): { key: string; value: string } | null;
 }
@@ -51,6 +52,7 @@ const PosixLeadingEnv = /^export\s+([A-Za-z_]\w*)=(?:'([^']*)'|"([^"$`\\]*)"|([^
 
 const PwshDialect: ShellDialect = {
   supportsSingleQuote: true,
+  rejectsPercent: false,
   matchLeadingEnv(text) {
     const m = PwshLeadingEnv.exec(text);
     return m !== null ? { key: m[1] as string, value: m[2] ?? m[3] ?? m[4] ?? "", consumed: m[0].length } : null;
@@ -63,6 +65,7 @@ const PwshDialect: ShellDialect = {
 
 const PosixDialect: ShellDialect = {
   supportsSingleQuote: true,
+  rejectsPercent: false,
   matchLeadingEnv(text) {
     const m = PosixLeadingEnv.exec(text);
     return m !== null ? { key: m[1] as string, value: m[2] ?? m[3] ?? m[4] ?? "", consumed: m[0].length } : null;
@@ -72,6 +75,7 @@ const PosixDialect: ShellDialect = {
 
 const CmdDialect: ShellDialect = {
   supportsSingleQuote: false,
+  rejectsPercent: true,
   matchLeadingEnv: () => null,
   matchInlineEnvStatement: () => null,
 };
@@ -89,26 +93,50 @@ const BaseNonPathValueOptions = new Set(["-e", "--environment"]);
 const BasePathExtensions = new Set(["js", "ts", "json", "yml", "yaml"]);
 const BaseAllowedPrograms = new Set(["node", "echo"]);
 const BroadRepoDirs = new Set([".", "src", "tests", "docs", "tools", "scripts", ".github", ".agents"]);
-const MsbuildSwitchPattern = new RegExp(
-  [
-    String.raw`^\/[A-Za-z][A-Za-z0-9_-]*[:=]`,
-    String.raw`^\/(?:${[
-      "nologo",
-      "m",
-      "maxcpucount",
-      "tl",
-      "bl",
-      "noconlog",
-      "noconsolelogger",
-      "noautorsp",
-      "restore",
-      "t",
-      "warnaserror",
-      "nowarn",
-    ].join("|")})$`,
-  ].join("|"),
+const ForbiddenCollectPrefixes = [
+  ".git",
+  ".vs",
+  ".vscode",
+  ".claude",
+  ".agents",
+  ".github",
+  "scripts",
+  "node_modules",
+  "docs/spec",
+] as const;
+const ForbiddenCollectSegments = new Set([".git", "bin", "obj", "node_modules"]);
+const VerifiedSnapshotPattern = /\.verified\.[^/]+$/i;
+const WindowsReservedDevice = /^(?:con|prn|aux|nul|com[0-9\u00b2\u00b3\u00b9]|lpt[0-9\u00b2\u00b3\u00b9])(?:\.|$)/i;
+const MsbuildBareSwitchPattern = new RegExp(
+  String.raw`^\/(?:${[
+    "nologo",
+    "m",
+    "maxcpucount",
+    "tl",
+    "bl",
+    "noconlog",
+    "noconsolelogger",
+    "noautorsp",
+    "restore",
+    "t",
+    "warnaserror",
+    "nowarn",
+  ].join("|")})$`,
   "i",
 );
+const CompositeValueNonPathOptions = new Set(["-p", "--property", "-l", "--logger"]);
+
+function hasLeadingDashSegment(relPosix: string): boolean {
+  return relPosix.split("/").some((seg) => seg.startsWith("-"));
+}
+
+function hasWindowsReservedSegment(rawPath: string): boolean {
+  return rawPath.split(/[\\/]/).some((seg) => seg !== "" && WindowsReservedDevice.test(seg.replace(/:$/, "")));
+}
+
+function hasUnsafeDriveOrQuote(token: string): boolean {
+  return token.includes('"') || token.includes("'") || (!/^[A-Za-z]:[\\/]/.test(token) && /[A-Za-z]:[\\/]/.test(token));
+}
 
 function normKey(p: string): string {
   const resolved = path.resolve(p);
@@ -117,7 +145,9 @@ function normKey(p: string): string {
 
 function isInside(root: string, target: string): boolean {
   const rel = path.relative(normKey(root), normKey(target));
-  return rel === "" || (!rel.startsWith("..") && !path.isAbsolute(rel));
+  return (
+    rel === "" || (rel !== ".." && !rel.startsWith(`..${path.sep}`) && !rel.startsWith("../") && !path.isAbsolute(rel))
+  );
 }
 
 function relativePosix(root: string, absolute: string): string {
@@ -174,11 +204,16 @@ function resolveArgPath(token: string, cwd: string): string {
   return path.resolve(cwd, token);
 }
 
-function looksLikePath(token: string, cwd: string, extraExtensions: ReadonlySet<string>): boolean {
-  if (token === "" || token.startsWith("-") || MsbuildSwitchPattern.test(token)) {
+function looksLikePath(
+  token: string,
+  cwd: string,
+  extraExtensions: ReadonlySet<string>,
+  allowMsbuildBareSwitch = true,
+): boolean {
+  if (token === "" || token.startsWith("-") || (allowMsbuildBareSwitch && MsbuildBareSwitchPattern.test(token))) {
     return false;
   }
-  if (/^[A-Za-z]:[\\/]/.test(token) || token.includes("\\") || token.includes("/")) {
+  if (/[A-Za-z]:[\\/]/.test(token) || token.includes("\\") || token.includes("/")) {
     return true;
   }
   const dot = token.lastIndexOf(".");
@@ -232,7 +267,7 @@ function splitStatements(command: string, dialect: ShellDialect): { op: "&&" | "
         quote = "";
       } else if (ch === "\n" || ch === "\r") {
         return null;
-      } else if (quote === '"' && (ch === "`" || (ch === "$" && next === "("))) {
+      } else if (quote === '"' && (ch === "`" || ch === "$" || (dialect.rejectsPercent && ch === "%"))) {
         return null;
       }
     } else if (ch === '"' || (ch === "'" && dialect.supportsSingleQuote)) {
@@ -252,7 +287,17 @@ function splitStatements(command: string, dialect: ShellDialect): { op: "&&" | "
       }
       prevOp = ";";
       start = i + 1;
-    } else if (ch === "|" || ch === "<" || ch === "`" || ch === "(" || ch === ")" || ch === "\n" || ch === "\r") {
+    } else if (
+      ch === "|" ||
+      ch === "<" ||
+      ch === "`" ||
+      ch === "(" ||
+      ch === ")" ||
+      ch === "$" ||
+      (dialect.rejectsPercent && ch === "%") ||
+      ch === "\n" ||
+      ch === "\r"
+    ) {
       return null;
     }
   }
@@ -297,13 +342,9 @@ function classifyOption(
 }
 
 function splitInlineOption(token: string): { option: string; sep: string; value: string } | null {
-  const longMatch = /^(--[A-Za-z][A-Za-z0-9-]*)([:=])(.*)$/.exec(token);
-  if (longMatch !== null) {
-    return { option: longMatch[1] as string, sep: longMatch[2] as string, value: longMatch[3] as string };
-  }
-  const shortMatch = /^(-[A-Za-z][A-Za-z0-9-]*)=(.*)$/.exec(token);
-  if (shortMatch !== null) {
-    return { option: shortMatch[1] as string, sep: "=", value: shortMatch[2] as string };
+  const match = /^(--?[A-Za-z][A-Za-z0-9-]*|\/[A-Za-z][A-Za-z0-9_-]*)([:=])(.*)$/.exec(token);
+  if (match !== null) {
+    return { option: match[1] as string, sep: match[2] as string, value: match[3] as string };
   }
   return null;
 }
@@ -322,6 +363,9 @@ function registerPathWorktree(
   placesMap: ReadonlyMap<string, PathPlace>,
   worktrees: Set<string>,
 ): boolean {
+  if (hasUnsafeDriveOrQuote(token)) {
+    return false;
+  }
   const abs = resolveArgPath(token, currentCwd);
   const place = placesMap.get(normKey(abs));
   if (place !== undefined) {
@@ -362,16 +406,68 @@ function parseSegEnv(rawEnv: string, shell: ShellName): Record<string, string> |
   return segEnv;
 }
 
-function isInlinePathOption(
-  kind: OptionKind,
-  program: string,
+function stripMatchingQuotes(value: string): { quote: string; inner: string } {
+  if (
+    value.length >= 2 &&
+    ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))
+  ) {
+    return { quote: value.charAt(0), inner: value.slice(1, -1) };
+  }
+  return { quote: "", inner: value };
+}
+
+function transformCommaList(
+  text: string,
+  cwd: string,
+  extraExtensions: ReadonlySet<string>,
+  visitPath: (candidate: string) => string | null,
+): string | null {
+  const parts = text.split(",");
+  const out: string[] = [];
+  for (const part of parts) {
+    const leading = /^\s*/.exec(part)?.[0] ?? "";
+    const trailing = /\s*$/.exec(part)?.[0] ?? "";
+    const trimmed = part.slice(leading.length, part.length - trailing.length);
+    const eq = trimmed.indexOf("=");
+    if (eq >= 0) {
+      const lhs = transformCommaList(trimmed.slice(0, eq), cwd, extraExtensions, visitPath);
+      const rhs = transformCommaList(trimmed.slice(eq + 1), cwd, extraExtensions, visitPath);
+      if (lhs === null || rhs === null) {
+        return null;
+      }
+      out.push(`${leading}${lhs}=${rhs}${trailing}`);
+      continue;
+    }
+    const { quote, inner } = stripMatchingQuotes(trimmed);
+    if (looksLikePath(inner, cwd, extraExtensions, false)) {
+      const next = visitPath(inner);
+      if (next === null) {
+        return null;
+      }
+      out.push(`${leading}${quote}${next}${quote}${trailing}`);
+    } else {
+      out.push(part);
+    }
+  }
+  return out.join(",");
+}
+
+function transformCompositeValue(
   value: string,
   cwd: string,
-  rules: ResolvedRemoteRules,
-): boolean {
-  return (
-    kind === "path" || (kind === "unknown" && program !== "echo" && looksLikePath(value, cwd, rules.pathExtensions))
-  );
+  extraExtensions: ReadonlySet<string>,
+  visitPath: (candidate: string) => string | null,
+): string | null {
+  const segments = value.split(";");
+  const out: string[] = [];
+  for (const seg of segments) {
+    const transformed = transformCommaList(seg, cwd, extraExtensions, visitPath);
+    if (transformed === null) {
+      return null;
+    }
+    out.push(transformed);
+  }
+  return out.join(";");
 }
 
 function validateStatementArgs(
@@ -383,14 +479,27 @@ function validateStatementArgs(
   worktrees: Set<string>,
 ): boolean {
   const subcommand = (args[0] ?? "").toLowerCase();
+  const checkComposite = (val: string): boolean =>
+    transformCompositeValue(val, currentCwd, rules.pathExtensions, (cand) =>
+      registerPathWorktree(cand, currentCwd, placesMap, worktrees) ? cand : null,
+    ) !== null;
   let prevOption = "";
+  let afterDoubleDash = false;
   for (const token of args) {
-    if (token === "--") {
-      break;
+    if (!afterDoubleDash && token === "--") {
+      afterDoubleDash = true;
+      prevOption = "";
+      continue;
     }
-    if (prevOption !== "") {
+    if (program !== "echo" && token.startsWith("@")) {
+      return false;
+    }
+    if (!afterDoubleDash && prevOption !== "") {
       const prevKind = classifyOption(rules, program, subcommand, prevOption);
       if (prevKind === "non-path") {
+        if (CompositeValueNonPathOptions.has(prevOption) && !checkComposite(token)) {
+          return false;
+        }
         prevOption = "";
         continue;
       }
@@ -404,27 +513,35 @@ function validateStatementArgs(
     }
     const inline = splitInlineOption(token);
     if (inline !== null) {
-      const kind = classifyOption(rules, program, subcommand, inline.option.toLowerCase());
-      if (kind === "path" && inline.value === "") {
-        return false;
+      const optLower = inline.option.toLowerCase();
+      const kind = afterDoubleDash ? "unknown" : classifyOption(rules, program, subcommand, optLower);
+      if (kind === "path") {
+        if (inline.value === "" || !registerPathWorktree(inline.value, currentCwd, placesMap, worktrees)) {
+          return false;
+        }
+      } else if ((kind === "unknown" && program !== "echo") || CompositeValueNonPathOptions.has(optLower)) {
+        if (!checkComposite(inline.value)) {
+          return false;
+        }
       }
-      if (
-        isInlinePathOption(kind, program, inline.value, currentCwd, rules) &&
-        !registerPathWorktree(inline.value, currentCwd, placesMap, worktrees)
-      ) {
+      prevOption = "";
+      continue;
+    }
+    if (program !== "echo" && token.includes("=")) {
+      if (!checkComposite(token)) {
         return false;
       }
       prevOption = "";
       continue;
     }
-    if (program !== "echo" && looksLikePath(token, currentCwd, rules.pathExtensions)) {
+    if (program !== "echo" && looksLikePath(token, currentCwd, rules.pathExtensions, !afterDoubleDash)) {
       if (!registerPathWorktree(token, currentCwd, placesMap, worktrees)) {
         return false;
       }
       prevOption = "";
       continue;
     }
-    prevOption = token.startsWith("-") ? token.toLowerCase() : "";
+    prevOption = !afterDoubleDash && token.startsWith("-") ? token.toLowerCase() : "";
   }
   return true;
 }
@@ -473,11 +590,24 @@ function parseAndValidateStatements(
       if (parsed.length > 0 || unquoted.length !== 2) {
         return null;
       }
-      currentCwd = resolveArgPath(unquoted[1] as string, currentCwd);
-      const wt = findWorktreeRoot(currentCwd);
-      if (wt === "") {
+      const target = unquoted[1] as string;
+      if (target === "" || target.startsWith("-") || target.startsWith("~")) {
         return null;
       }
+      const nextCwd = resolveArgPath(target, currentCwd);
+      let wt = "";
+      try {
+        if (!fs.statSync(nextCwd).isDirectory()) {
+          return null;
+        }
+        wt = findWorktreeRoot(nextCwd);
+        if (wt === "" || !isInside(fs.realpathSync.native(wt), fs.realpathSync.native(nextCwd))) {
+          return null;
+        }
+      } catch {
+        return null;
+      }
+      currentCwd = nextCwd;
       worktrees.add(wt);
       continue;
     }
@@ -535,11 +665,18 @@ function translatePathArg(
   collectAsDir: boolean,
   addCollect: (rel: string, kind: "file" | "dir") => boolean,
 ): string | null {
+  if (hasUnsafeDriveOrQuote(rawPath)) {
+    return null;
+  }
   const abs = resolveArgPath(rawPath, cwd);
   if (!isInside(targetWorktree, abs)) {
     return null;
   }
-  if (collectAsDir && !addCollect(relativePosix(targetWorktree, abs), "dir")) {
+  const wtRel = relativePosix(targetWorktree, abs);
+  if (hasLeadingDashSegment(wtRel)) {
+    return null;
+  }
+  if (collectAsDir && !addCollect(wtRel, "dir")) {
     return null;
   }
   return path.relative(remoteBaseDir, abs).split(path.sep).join("/") || ".";
@@ -553,19 +690,34 @@ function translateArgsToPosix(
   addCollect: (rel: string, kind: "file" | "dir") => boolean,
 ): string[] | null {
   const subcommand = (stmt.args[0] ?? "").toLowerCase();
+  const translateComposite = (val: string): string | null =>
+    transformCompositeValue(val, stmt.cwd, rules.pathExtensions, (cand) =>
+      translatePathArg(cand, stmt.cwd, targetWorktree, remoteBaseDir, false, addCollect),
+    );
   const translated: string[] = [];
   let prevOption = "";
+  let afterDoubleDash = false;
 
   for (let i = 0; i < stmt.args.length; i++) {
     const token = stmt.args[i] as string;
-    if (token === "--") {
-      translated.push("--", ...stmt.args.slice(i + 1));
-      break;
+    if (!afterDoubleDash && token === "--") {
+      translated.push("--");
+      afterDoubleDash = true;
+      prevOption = "";
+      continue;
     }
-    if (prevOption !== "") {
+    if (!afterDoubleDash && prevOption !== "") {
       const prevKind = classifyOption(rules, stmt.program, subcommand, prevOption);
       if (prevKind === "non-path") {
-        translated.push(token);
+        if (CompositeValueNonPathOptions.has(prevOption)) {
+          const next = translateComposite(token);
+          if (next === null) {
+            return null;
+          }
+          translated.push(next);
+        } else {
+          translated.push(token);
+        }
         prevOption = "";
         continue;
       }
@@ -589,8 +741,8 @@ function translateArgsToPosix(
     const inline = splitInlineOption(token);
     if (inline !== null) {
       const optLower = inline.option.toLowerCase();
-      const kind = classifyOption(rules, stmt.program, subcommand, optLower);
-      if (isInlinePathOption(kind, stmt.program, inline.value, stmt.cwd, rules)) {
+      const kind = afterDoubleDash ? "unknown" : classifyOption(rules, stmt.program, subcommand, optLower);
+      if (kind === "path") {
         const rel = translatePathArg(
           inline.value,
           stmt.cwd,
@@ -603,13 +755,28 @@ function translateArgsToPosix(
           return null;
         }
         translated.push(`${inline.option}${inline.sep}${rel}`);
+      } else if ((kind === "unknown" && stmt.program !== "echo") || CompositeValueNonPathOptions.has(optLower)) {
+        const next = translateComposite(inline.value);
+        if (next === null) {
+          return null;
+        }
+        translated.push(`${inline.option}${inline.sep}${next}`);
       } else {
         translated.push(token);
       }
       prevOption = "";
       continue;
     }
-    if (stmt.program !== "echo" && looksLikePath(token, stmt.cwd, rules.pathExtensions)) {
+    if (stmt.program !== "echo" && token.includes("=")) {
+      const next = translateComposite(token);
+      if (next === null) {
+        return null;
+      }
+      translated.push(next);
+      prevOption = "";
+      continue;
+    }
+    if (stmt.program !== "echo" && looksLikePath(token, stmt.cwd, rules.pathExtensions, !afterDoubleDash)) {
       const rel = translatePathArg(token, stmt.cwd, targetWorktree, remoteBaseDir, false, addCollect);
       if (rel === null) {
         return null;
@@ -619,7 +786,7 @@ function translateArgsToPosix(
       continue;
     }
     translated.push(token);
-    prevOption = token.startsWith("-") ? token.toLowerCase() : "";
+    prevOption = !afterDoubleDash && token.startsWith("-") ? token.toLowerCase() : "";
   }
   return translated;
 }
@@ -634,17 +801,37 @@ function rewriteRedirections(
 ): string[] | null {
   const outRedirs: string[] = [];
   for (const redir of redirections) {
-    if (/^[12*]?&\d$/.test(redir) || redir === "2>&1") {
+    if (redir === "2>&1" || ((shell === "pwsh" || shell === "powershell") && redir === "*>&1")) {
       outRedirs.push("2>&1");
       continue;
+    }
+    if ((shell === "bash" || shell === "sh") && /^[12]>&[12]$/.test(redir)) {
+      outRedirs.push(redir);
+      continue;
+    }
+    if (/^[0-9&*]?>>?\s*&/.test(redir)) {
+      return null;
     }
     const m = /^([12&*]?)(>>?)\s*(.+)$/.exec(redir);
     if (m === null) {
       return null;
     }
     const fd = m[1] === "*" ? "&" : (m[1] ?? "");
+    const op = m[2] as string;
     const targetToken = unquoteToken(m[3] as string, shell);
-    if (targetToken === null) {
+    if (targetToken === null || targetToken === "" || targetToken.startsWith("&")) {
+      return null;
+    }
+    if (targetToken === "/dev/null" && (shell === "bash" || shell === "sh")) {
+      outRedirs.push(`${fd}${op} /dev/null`);
+      continue;
+    }
+    const isWindowsShell = shell === "cmd" || shell === "pwsh" || shell === "powershell";
+    if (isWindowsShell && /^nul:?$/i.test(targetToken)) {
+      outRedirs.push(`${fd}${op} /dev/null`);
+      continue;
+    }
+    if (hasWindowsReservedSegment(targetToken)) {
       return null;
     }
     const abs = resolveArgPath(targetToken, cwd);
@@ -652,7 +839,7 @@ function rewriteRedirections(
       return null;
     }
     const rel = path.relative(remoteBaseDir, abs).split(path.sep).join("/");
-    outRedirs.push(`${fd}${m[2] as string} ${bashQuote(rel)}`);
+    outRedirs.push(`${fd}${op} ${bashQuote(rel)}`);
   }
   return outRedirs;
 }
@@ -713,6 +900,14 @@ export function translateForRemote(command: string, options: TranslateOptions): 
   if (leading.rest === "") {
     return null;
   }
+  const line = readCommandLine(leading.rest);
+  if (line === null) {
+    if (options.shell !== "cmd") {
+      return null;
+    }
+  } else if (line.piped || line.expands.some(Boolean)) {
+    return null;
+  }
   const statements = splitStatements(leading.rest, dialect);
   if (statements === null) {
     return null;
@@ -734,11 +929,32 @@ export function translateForRemote(command: string, options: TranslateOptions): 
 
   const collectMap = new Map<string, CollectPathSpec>();
   const addCollect = (rel: string, kind: "file" | "dir"): boolean => {
-    const clean = path.posix.normalize(rel).replace(/\/+$/, "");
-    if (clean === "" || clean === "." || clean.startsWith("..")) {
+    const clean = path.posix
+      .normalize(rel)
+      .replace(/^(?:\.\/)+/, "")
+      .replace(/\/+$/, "");
+    if (
+      clean === "" ||
+      clean === "." ||
+      clean === ".." ||
+      clean.startsWith("../") ||
+      clean.startsWith("/") ||
+      hasLeadingDashSegment(clean) ||
+      hasWindowsReservedSegment(clean)
+    ) {
       return false;
     }
-    if (kind === "dir" && BroadRepoDirs.has(clean.toLowerCase())) {
+    const lower = clean.toLowerCase();
+    if (kind === "dir" && BroadRepoDirs.has(lower)) {
+      return false;
+    }
+    if (ForbiddenCollectPrefixes.some((p) => lower === p || lower.startsWith(`${p}/`))) {
+      return false;
+    }
+    if (lower.split("/").some((seg) => ForbiddenCollectSegments.has(seg))) {
+      return false;
+    }
+    if (kind === "file" && VerifiedSnapshotPattern.test(clean)) {
       return false;
     }
     collectMap.set(`${kind}:${clean}`, { path: clean, kind });

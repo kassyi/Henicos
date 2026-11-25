@@ -4,6 +4,7 @@ import * as fs from "node:fs";
 import * as net from "node:net";
 import * as os from "node:os";
 import * as path from "node:path";
+import { isValidRemoteWorkspace } from "../job-queue/remote/spec.ts";
 
 export interface StaticNetworkConfig {
   readonly dhcp4: false;
@@ -47,7 +48,6 @@ const CidrPattern = /^(?:\d{1,3}\.){3}\d{1,3}\/\d{1,2}$/;
 const KeyTypes = "(?:ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp(?:256|384|521)|sk-ssh-ed25519@openssh\\.com)";
 const PubKeyPattern = new RegExp(`^${KeyTypes}[ \\t]+[A-Za-z0-9+/=]+(?:[ \\t]+[^\\r\\n\\0]+)?$`);
 const PackageNamePattern = /^[a-z0-9][a-z0-9.+_-]{0,63}$/;
-const WorkspacePattern = /^(?:~\/[A-Za-z0-9_./-]+|\/[A-Za-z0-9_./-]+)$/;
 const RelativeCacheDirPattern = /^[A-Za-z0-9_.][A-Za-z0-9_./-]*$/;
 
 const DefaultBlockedLanCidrs = ["192.168.0.0/16", "10.0.0.0/8", "172.16.0.0/12", "169.254.0.0/16"] as const;
@@ -150,11 +150,13 @@ export function validateProfile(raw: unknown): WorkerProfile {
   } else {
     network = { dhcp4: true };
   }
-  const workspace =
-    typeof raw.workspace === "string" && raw.workspace.trim() !== "" ? raw.workspace.trim() : "~/workspace";
-  if (!WorkspacePattern.test(workspace) || workspace.includes("..")) {
-    throw new Error('workspace must be a safe ~/... or /... POSIX path without ".."');
+  const workspaceRaw = raw.workspace === undefined || raw.workspace === "" ? "~/workspace" : raw.workspace;
+  if (!isValidRemoteWorkspace(workspaceRaw)) {
+    throw new Error(
+      'workspace must be a safe ~/subdir or /a/b POSIX path without ".", "..", control characters, or leading "-" segments',
+    );
   }
+  const workspace = (workspaceRaw as string).trim();
   const packages: string[] = [];
   if (raw.packages !== undefined) {
     if (!Array.isArray(raw.packages)) {

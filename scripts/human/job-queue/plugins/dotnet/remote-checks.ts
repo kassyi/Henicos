@@ -12,7 +12,7 @@ import { translateForRemote } from "../../remote/command-translator.ts";
 import { EmptyRemoteRules } from "../../remote/rules.ts";
 import { isExcludedSyncPath } from "../../remote/syncer.ts";
 import dotnetPlugin from "./plugin.ts";
-import { DotnetCrashSummaryRule, parseSequenceXmlInProgress } from "./remote.ts";
+import { DotnetCrashSummaryRule, MaxSequenceXmlBytes, parseSequenceXmlInProgress } from "./remote.ts";
 
 export async function checkDotnetRemoteOffload(assert: AssertModule, dotnetOnlyHost: PluginHost): Promise<void> {
   assert.strictEqual(dotnetOnlyHost.plugins[0]?.name, dotnetPlugin.name);
@@ -159,6 +159,22 @@ export async function checkDotnetRemoteOffload(assert: AssertModule, dotnetOnlyH
       "</TestSequence>",
     ].join("");
     assert.deepStrictEqual(parseSequenceXmlInProgress(xml), ["B.NativeCrash"]);
+    assert.deepStrictEqual(
+      parseSequenceXmlInProgress(
+        '<TestSequence Name="NotATest" Completed="False" /><Test Name="Open" Completed="False">',
+      ),
+      [],
+      "ignores <TestSequence> and non-self-closing <Test>",
+    );
+    const redosStart = Date.now();
+    assert.deepStrictEqual(parseSequenceXmlInProgress("<Test ".repeat(80000)), []);
+    const elapsedMs = Date.now() - redosStart;
+    assert.ok(elapsedMs < 500, `parseSequenceXmlInProgress 80000 unclosed tags took ${elapsedMs}ms (< 500ms)`);
+    assert.deepStrictEqual(
+      parseSequenceXmlInProgress(`<Test Name="Oversized.Crash" Completed="False" />${" ".repeat(MaxSequenceXmlBytes)}`),
+      [],
+      "rejects Sequence_*.xml exceeding MaxSequenceXmlBytes",
+    );
 
     const transport = new FakeRemoteTransport(makeRemote({ workspace: "~/repo" }));
     transport.binaryHandler = () => makeFrame(seqPath, xml);

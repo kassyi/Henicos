@@ -60,23 +60,52 @@ export const DotnetReceivedArtifactRule: RemoteFailureArtifactRule = {
   cleanBeforeRun: true,
 };
 
+// The largest Sequence_*.xml the collector pulls back (MaxSingleArtifactBytes of remote/artifact-collector.ts): a
+// full Tests.Cpu run writes about 4 MiB, and the parse is linear, so a lower cap would drop the names of a crash.
+export const MaxSequenceXmlBytes = 16 * 1024 * 1024;
+
+function isWordCharCode(code: number): boolean {
+  return (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || (code >= 48 && code <= 57) || code === 95;
+}
+
 /**
  * Extracts test names that did not complete (native SIGSEGV/SIGABRT or OOM crash) from VSTest `--blame`
- * `Sequence_*.xml` contents.
+ * `Sequence_*.xml` contents in O(n) time without regex backtracking.
  */
 export function parseSequenceXmlInProgress(xml: string): string[] {
+  if (xml.length > MaxSequenceXmlBytes) {
+    return [];
+  }
   const crashed: string[] = [];
-  const tagPattern = /<Test\b([^>]*)\/>/g;
-  let match: RegExpExecArray | null;
-  while ((match = tagPattern.exec(xml)) !== null) {
-    const attrs = match[1] as string;
-    const completed = /\bCompleted="([^"]*)"/i.exec(attrs)?.[1]?.toLowerCase();
-    if (completed === "false") {
-      const name = /\bName="([^"]+)"/i.exec(attrs)?.[1];
-      if (name !== undefined && name !== "") {
-        crashed.push(name);
+  let pos = 0;
+  while (pos < xml.length) {
+    const start = xml.indexOf("<Test", pos);
+    if (start < 0) {
+      break;
+    }
+    const afterTag = start + 5;
+    if (afterTag >= xml.length) {
+      break;
+    }
+    if (isWordCharCode(xml.charCodeAt(afterTag))) {
+      pos = afterTag;
+      continue;
+    }
+    const gt = xml.indexOf(">", afterTag);
+    if (gt < 0) {
+      break;
+    }
+    if (gt > afterTag && xml.charCodeAt(gt - 1) === 47) {
+      const attrs = xml.slice(afterTag, gt - 1);
+      const completed = /\bCompleted="([^"]*)"/i.exec(attrs)?.[1]?.toLowerCase();
+      if (completed === "false") {
+        const name = /\bName="([^"]+)"/i.exec(attrs)?.[1];
+        if (name !== undefined && name !== "") {
+          crashed.push(name);
+        }
       }
     }
+    pos = gt + 1;
   }
   return crashed;
 }

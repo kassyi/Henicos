@@ -9,6 +9,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { replaceFile } from "../history.ts";
 import { prefix } from "../system.ts";
+import { sanitizeRemoteLogText } from "./artifact-collector.ts";
 import {
   bashQuote,
   bashWorkspaceExpr,
@@ -16,6 +17,7 @@ import {
   RemoteManifestDigestFile,
   RemoteManifestSha256File,
   RemoteMetadataFiles,
+  RemoteWorkspaceMarkerFile,
 } from "./spec.ts";
 import type { RemoteTransport } from "./transport.ts";
 
@@ -83,7 +85,13 @@ function allExcludedPrefixes(rules?: RemoteSyncRules): string[] {
   if (rules?.excludePrefixes !== undefined) {
     for (const p of rules.excludePrefixes) {
       const normalized = path.posix.normalize(p).replace(/\/+$/, "");
-      if (normalized !== "" && normalized !== "." && !normalized.startsWith("..") && !normalized.startsWith("/")) {
+      if (
+        normalized !== "" &&
+        normalized !== "." &&
+        normalized !== ".." &&
+        !normalized.startsWith("../") &&
+        !normalized.startsWith("/")
+      ) {
         const withSlash = `${normalized}/`;
         if (!out.includes(withSlash)) {
           out.push(withSlash);
@@ -133,7 +141,7 @@ export function buildRemoteFindPruneExpr(rules?: RemoteSyncRules, extraRootFiles
 
 /** True when a worktree-relative POSIX path should be excluded from remote source sync. */
 export function isExcludedSyncPath(relPosix: string, rules?: RemoteSyncRules): boolean {
-  if (relPosix === "" || relPosix.startsWith("..") || relPosix.startsWith("/")) {
+  if (relPosix === "" || relPosix === ".." || relPosix.startsWith("../") || relPosix.startsWith("/")) {
     return true;
   }
   for (const p of allExcludedPrefixes(rules)) {
@@ -229,7 +237,7 @@ export function parseRemoteSha256Output(stdout: string, _rules?: RemoteSyncRules
     if (escaped) {
       rel = rel.replace(/\\([\\n])/g, (_, ch: string) => (ch === "n" ? "\n" : "\\"));
     }
-    if (rel !== "" && !rel.startsWith("..") && !rel.startsWith("/")) {
+    if (rel !== "" && rel !== ".." && !rel.startsWith("../") && !rel.startsWith("/")) {
       files[rel] = sha;
     }
   }
@@ -338,6 +346,20 @@ export function collectLocalManifest(
   return files;
 }
 
+function buildWorkspacePrepLines(): string[] {
+  return [
+    `if [ ! -f "$WS/${RemoteWorkspaceMarkerFile}" ]; then`,
+    '  if [ ! -d "$WS" ] || [ -z "$(ls -A "$WS" 2>/dev/null)" ]; then',
+    '    mkdir -p -- "$WS"',
+    `    : > "$WS/${RemoteWorkspaceMarkerFile}"`,
+    "  else",
+    `    echo "refusing to use non-empty remote workspace without ${RemoteWorkspaceMarkerFile}; re-run provision-remote-worker.js --apply or create the marker file" >&2`,
+    "    exit 1",
+    "  fi",
+    "fi",
+  ];
+}
+
 /** Cohesive workspace synchronizer operating strictly over `RemoteTransport` (Port). */
 export class WorkspaceSyncer {
   private readonly transport: RemoteTransport;
@@ -369,7 +391,7 @@ export class WorkspaceSyncer {
     const script = [
       "set -euo pipefail",
       `WS=${ws}`,
-      `mkdir -p "$WS"`,
+      ...buildWorkspacePrepLines(),
       `cd "$WS"`,
       `find . ${this.pruneExpr} | xargs -0 -r sha256sum`,
     ].join("\n");
@@ -396,7 +418,7 @@ export class WorkspaceSyncer {
     const guard =
       expectedRemoteDigest !== undefined
         ? [
-            `if [ "$(cat ${RemoteManifestDigestFile} 2>/dev/null || true)" != ${quotedDigest} ]; then`,
+            `if [ "$(cat -- ${RemoteManifestDigestFile} 2>/dev/null || true)" != ${quotedDigest} ]; then`,
             "  exit 254",
             "fi",
           ].join("\n")
@@ -409,16 +431,17 @@ export class WorkspaceSyncer {
         [
           "set -euo pipefail",
           `WS=${ws}`,
-          `mkdir -p "$WS"`,
+          ...buildWorkspacePrepLines(),
           `exec 9>"$WS/${RemoteLockFile}"`,
           "flock 9",
           `cd "$WS"`,
+          `if [ ! -f ${RemoteWorkspaceMarkerFile} ]; then exit 1; fi`,
           guard,
           "IFS= read -r DEL_BYTES",
           `if [ "$DEL_BYTES" -gt 0 ]; then ${delCmd}; fi`,
           "IFS= read -r MANIFEST_BYTES",
           `if [ "$MANIFEST_BYTES" -gt 0 ]; then ${manCmd}; else : > ${RemoteManifestSha256File}.tmp; fi`,
-          diff.toUpload.length > 0 ? "tar -xf -" : "",
+          diff.toUpload.length > 0 ? "tar -xmf -" : "",
           `mv -f ${RemoteManifestSha256File}.tmp ${RemoteManifestSha256File}`,
           `printf '%s\\n' ${bashQuote(diff.localDigest)} > ${RemoteManifestDigestFile}`,
         ]
@@ -458,7 +481,7 @@ export class WorkspaceSyncer {
     const applied = await this.applyDelta(worktree, diff, sha256ManifestText, undefined, signal);
     if (!applied.ok) {
       const target = `${this.transport.spec.name} (${this.transport.spec.host})`;
-      prefix(`remote sync to ${target} failed: ${applied.error ?? "unknown"}`);
+      prefix(`remote sync to ${target} failed: ${sanitizeRemoteLogText(applied.error ?? "unknown")}`);
       return null;
     }
     saveRemoteManifestCache(this.remoteCachePath, localManifest);
@@ -507,7 +530,7 @@ export class WorkspaceSyncer {
           deleted = res.deleted;
         } else if (!applied.ok) {
           const target = `${this.transport.spec.name} (${this.transport.spec.host})`;
-          prefix(`remote sync to ${target} failed: ${applied.error ?? "unknown"}`);
+          prefix(`remote sync to ${target} failed: ${sanitizeRemoteLogText(applied.error ?? "unknown")}`);
           return { ok: false, error: applied.error ?? "unknown" };
         } else {
           uploaded = diff.toUpload.length;

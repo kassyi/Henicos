@@ -2,6 +2,7 @@
 // nproc limits, and UID-scoped UFW egress block.
 
 import * as path from "node:path";
+import { RemoteWorkspaceMarkerFile } from "../job-queue/remote/spec.ts";
 import type { WorkerProfile } from "./profile.ts";
 
 export function buildSshdMatchConfig(profile: WorkerProfile): string {
@@ -233,6 +234,8 @@ export function buildHardeningShellScript(profile: WorkerProfile, pubKey: string
     `mkdir -p "${runnerWorkspaceExpr}"`,
     `chown_runner_parents "$(dirname "${runnerWorkspaceExpr}")"`,
     `chown "$RUNNER_USER:$RUNNER_USER" "${runnerWorkspaceExpr}"`,
+    `: > "${runnerWorkspaceExpr}/${RemoteWorkspaceMarkerFile}"`,
+    `chown "$RUNNER_USER:$RUNNER_USER" "${runnerWorkspaceExpr}/${RemoteWorkspaceMarkerFile}"`,
     'echo "PROVISION_OK runner=$RUNNER_USER uid=$RUNNER_UID"',
     "",
   ].join("\n");

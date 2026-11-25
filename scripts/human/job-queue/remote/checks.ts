@@ -3,6 +3,8 @@
 // & config validation, FakeRemoteTransport E2E (sync -> exit-254 auto-heal retry -> crash attribution -> sentinel
 // -> exit 124 -> AbortSignal -> plugin-driven remote-reset), plus merged artifact, translator, and executor checks.
 
+import { spawnSync } from "node:child_process";
+import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -11,6 +13,7 @@ import { RunHistory } from "../history.ts";
 import { PluginApiVersion, type QueuePlugin } from "../plugin-api.ts";
 import { PluginHost } from "../plugin-host.ts";
 import { Scheduler, type Estimate, type SchedulerJob } from "../scheduler.ts";
+import { gitBashPath } from "../shell.ts";
 import { RemoteArtifactChecks } from "./artifact-checks.ts";
 import {
   captureStderr,
@@ -25,7 +28,13 @@ import { buildResetScript, resetWorker } from "./control.ts";
 import { RemoteExecutorChecks } from "./executor-checks.ts";
 import { buildExecScript, RemoteRunner } from "./runner.ts";
 import { RemoteServerChecks } from "./server-checks.ts";
-import { buildSshArgs, fitsRemote } from "./spec.ts";
+import {
+  buildSshArgs,
+  fitsRemote,
+  isValidRemoteWorkspace,
+  RemoteMetadataFiles,
+  RemoteWorkspaceMarkerFile,
+} from "./spec.ts";
 import {
   buildRemoteFindPruneExpr,
   diffManifests,
@@ -33,6 +42,7 @@ import {
   isExcludedSyncPath,
   manifestDigest,
   parseRemoteSha256Output,
+  WorkspaceSyncer,
 } from "./syncer.ts";
 import { RemoteTranslatorChecks } from "./translator-checks.ts";
 
@@ -241,11 +251,16 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void | Promi
         remoteRules: rules,
         eofToken: "__EOF_TEST__",
       });
-      assert.ok(execScript.includes("find tests -name '*.actual.txt' -delete"));
-      assert.ok(execScript.includes("find CrashDir -name 'crash_*.txt' -delete"));
+      assert.ok(execScript.includes("find -- ./tests -name '*.actual.txt' -delete"));
+      assert.ok(execScript.includes("find -- ./CrashDir -name 'crash_*.txt' -delete"));
+      assert.ok(execScript.includes("cat -- .job-queue-manifest.digest"));
+      assert.ok(execScript.includes(`if [ ! -f "$WS/${RemoteWorkspaceMarkerFile}" ]; then exit 254; fi`));
       assert.ok(execScript.includes("__EOF_TEST__"));
 
       const resetScript = buildResetScript("~/demo", true, rules);
+      assert.ok(resetScript.includes(`if [ -d "$WS" ] && [ -f "$WS/${RemoteWorkspaceMarkerFile}" ]; then`));
+      assert.ok(resetScript.includes('find -- "$WS"'));
+      assert.ok(resetScript.includes('find -- "$WS"/tests'));
       assert.ok(resetScript.includes('ENVIRON["PROC_REGEX"]'));
       assert.ok(resetScript.includes("demo-runner"));
       assert.ok(resetScript.includes("clang\\+\\+"));
@@ -291,6 +306,18 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void | Promi
       });
       assert.strictEqual(interactiveAttempt, 2, "retried once after exit 254 integrity mismatch");
       assert.strictEqual(transport.uploadCalls.length, 2, "initial sync + clean resync after 254");
+      assert.ok(
+        transport.uploadCalls.every((call) => call.remoteCommand.includes("tar -xmf -")),
+        "sync extraction passes -m so extracted files receive current mtime",
+      );
+      assert.ok(
+        transport.uploadCalls.every((call) => call.remoteCommand.includes('mkdir -p -- "$WS"')),
+        "sync creates workspace with --",
+      );
+      assert.ok(
+        transport.uploadCalls.every((call) => call.remoteCommand.includes(RemoteWorkspaceMarkerFile)),
+        "sync enforces workspace marker file",
+      );
       assert.ok(
         transport.interactiveCalls.every((s) => s.includes("sha256sum --quiet -c .job-queue-manifest.sha256")),
         "verifyIntegrity remains true on exit-254 retry",
@@ -346,6 +373,81 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void | Promi
         assert.strictEqual(timedOutRes.code, 124);
         assert.strictEqual(timedOutRes.timedOut, true);
       });
+
+      // B2: exit 254 AFTER execStartToken is the command's own exit code (never retried or resynced)
+      const uploadsBefore254 = sentinelTransport.uploadCalls.length;
+      let postStart254Attempts = 0;
+      sentinelTransport.interactiveHandler = (script, callbacks) => {
+        postStart254Attempts++;
+        if (postStart254Attempts === 1) {
+          const token = /__JQ_START_[0-9a-f]+__/.exec(script)?.[0];
+          if (token !== undefined) {
+            callbacks.onStdout(Buffer.from(`${token}\ncommand output before 254\n`, "utf8"));
+          }
+          return { code: 254, signaled: false };
+        }
+        return { code: 0, signaled: false };
+      };
+      let capturedOut = "";
+      const origStdoutWrite = process.stdout.write;
+      process.stdout.write = ((chunk: string | Uint8Array) => {
+        capturedOut += typeof chunk === "string" ? chunk : Buffer.from(chunk).toString("utf8");
+        return true;
+      }) as typeof process.stdout.write;
+      let postStart254Log = "";
+      try {
+        postStart254Log = await captureStderr(async () => {
+          const afterStart254 = await sentinelRunner.execute(
+            { worktree: wt, remoteCwdRel: "", bashCommand: "echo test", env: {}, collectPaths: [] },
+            () => {},
+            localManifest,
+          );
+          assert.strictEqual(afterStart254.code, 254, "254 after sentinel is command exit code, not retried");
+          assert.strictEqual(afterStart254.transportFailed, undefined);
+        });
+      } finally {
+        process.stdout.write = origStdoutWrite;
+      }
+      assert.strictEqual(postStart254Attempts, 1, "must not retry exit 254 after command started");
+      assert.strictEqual(
+        sentinelTransport.uploadCalls.length,
+        uploadsBefore254,
+        "must not resync after post-start 254",
+      );
+      assert.strictEqual(capturedOut, "command output before 254\n", "forwards command stdout before 254");
+      assert.ok(!postStart254Log.includes("workspace integrity mismatch detected"));
+
+      // NB1: crashedTests from remote crash summaries and sync errors are sanitized before terminal stderr output
+      sentinelTransport.interactiveHandler = (script, callbacks) => {
+        const token = /__JQ_START_[0-9a-f]+__/.exec(script)?.[0];
+        if (token !== undefined) {
+          callbacks.onStdout(Buffer.from(`${token}\n`, "utf8"));
+        }
+        return { code: 1, signaled: false };
+      };
+      sentinelTransport.binaryHandler = () =>
+        makeFrame("CrashDir/crash_1.txt", "\x1b]52;c;ZXZpbA==\x07Suite.Evil\x1b[31m\n");
+      const crashSanitizedLog = await captureStderr(async () => {
+        const crashRes = await sentinelRunner.execute(
+          { worktree: wt, remoteCwdRel: "", bashCommand: "echo test", env: {}, collectPaths: [] },
+          () => {},
+          localManifest,
+        );
+        assert.strictEqual(crashRes.code, 1);
+      });
+      assert.ok(crashSanitizedLog.includes("Suite.Evil"));
+      assert.ok(!crashSanitizedLog.includes("\x1b"));
+      assert.ok(!crashSanitizedLog.includes("\x07"));
+      assert.ok(!crashSanitizedLog.includes("52;c;"));
+
+      const errSyncTransport = new FakeRemoteTransport(makeRemote({ workspace: "~/demo" }));
+      errSyncTransport.uploadHandler = () => ({ code: 1, stderr: "\x1b]52;c;ZXZpbA==\x07sync failed\r\n" });
+      const errSyncer = new WorkspaceSyncer(errSyncTransport, {}, stateDir);
+      const syncErrLog = await captureStderr(async () => {
+        await errSyncer.resyncClean(wt, localManifest, formatSha256Manifest(localManifest));
+      });
+      assert.ok(syncErrLog.includes("sync failed"));
+      assert.ok(!syncErrLog.includes("\x1b") && !syncErrLog.includes("\x07") && !syncErrLog.includes("52;c;"));
 
       // Offline remote-reset via FakeRemoteTransport clears local manifest cache and parses RESET_OK
       transport.execHandler = () => ({ code: 0, stdout: "RESET_OK killed=3 mem_mb=4096\n", stderr: "" });
@@ -440,6 +542,52 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void | Promi
     rejectRemote({ host: "-oProxyCommand=evil" }, "host leading dash");
     rejectRemote({ workspace: "-rf" }, "workspace leading dash");
     rejectRemote({ workspace: " --x" }, "workspace trimmed leading dash");
+    for (const badWorkspace of [
+      "~",
+      "/",
+      "~/",
+      "///",
+      "~user",
+      "~user/",
+      "~user/henicos",
+      "~/.",
+      "~/..",
+      "~/./a",
+      "~/a/.",
+      "~/a/..",
+      "~/../etc",
+      "/.",
+      "/..",
+      "/a/..",
+      "/tmp",
+      "henicos",
+      "~/a//b",
+      "~/a$b",
+      "~/a\\b",
+      "~/henicos\n",
+      "~/a/-rf",
+    ]) {
+      assert.strictEqual(isValidRemoteWorkspace(badWorkspace), false, `rejects ${JSON.stringify(badWorkspace)}`);
+      rejectRemote({ workspace: badWorkspace }, `workspace ${JSON.stringify(badWorkspace)}`);
+    }
+    for (const goodWorkspace of [
+      "~/henicos",
+      "~/sub/henicos",
+      "~/my..repo",
+      "/srv/henicos",
+      "/home/jobrunner/henicos",
+    ]) {
+      assert.strictEqual(isValidRemoteWorkspace(goodWorkspace), true, `accepts ${goodWorkspace}`);
+    }
+    const trimmedConfig = validateConfig({
+      version: 1,
+      entry: "scripts/human/job-queue.js",
+      plugins: [],
+      remotes: {
+        ubuntu: { host: "ubuntu-server.lan", workspace: "  ~/henicos  ", cpus: 4, memoryMb: 6144 },
+      },
+    });
+    assert.strictEqual(trimmedConfig.remotes?.ubuntu?.workspace, "~/henicos");
     rejectRemote({ slots: 2 }, "slots: 2");
     for (const sshOptions of [
       ["-o", "ProxyCommand=evil"],
@@ -497,6 +645,133 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void | Promi
     const spec = makeRemote();
     assert.strictEqual(fitsRemote(makeJob(1, { gpu: true }), { spec, probe: null }, [], 1000), false);
     assert.strictEqual(fitsRemote(makeJob(1, { gpuTurn: true }), { spec, probe: null }, [], 1000), false);
+  },
+
+  async remoteWorkspaceMarkerAndIntegrityScriptChecks(assert: AssertModule): Promise<void> {
+    assert.ok(RemoteMetadataFiles.includes(RemoteWorkspaceMarkerFile));
+    const pruneWithMarker = buildRemoteFindPruneExpr({}, RemoteMetadataFiles);
+    assert.ok(pruneWithMarker.includes(`-path './${RemoteWorkspaceMarkerFile}'`));
+
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-marker-integ-"));
+    try {
+      const wt = path.join(tmp, "wt");
+      const stateDir = path.join(tmp, "state");
+      fs.mkdirSync(path.join(wt, "tests", "Snap"), { recursive: true });
+      fs.mkdirSync(stateDir, { recursive: true });
+      const caseContent = "class Case {}";
+      const caseSha = crypto.createHash("sha256").update(caseContent, "utf8").digest("hex");
+      const localManifest = { "tests/Snap/Case.cs": caseSha };
+
+      const transport = new FakeRemoteTransport(makeRemote({ workspace: "~/demo" }));
+      let capturedFetchScript = "";
+      transport.execHandler = (script) => {
+        capturedFetchScript = script;
+        return { code: 0, stdout: "", stderr: "" };
+      };
+      const runner = new RemoteRunner(transport, stateDir);
+      await captureStderr(async () => {
+        await runner.execute(
+          { worktree: wt, remoteCwdRel: "", bashCommand: "echo hi", env: {}, collectPaths: [] },
+          () => {},
+          localManifest,
+        );
+      });
+      assert.ok(capturedFetchScript.includes(RemoteWorkspaceMarkerFile));
+      assert.ok(capturedFetchScript.includes('mkdir -p -- "$WS"'));
+      const execScript = transport.interactiveCalls[0] ?? "";
+      assert.ok(execScript.includes("sha256sum --quiet -c .job-queue-manifest.sha256"));
+
+      const bashBin = gitBashPath();
+      const canRunBash =
+        (process.platform !== "win32" || bashBin !== "bash") &&
+        spawnSync(bashBin, ["-c", "command -v sha256sum find awk cmp sort mktemp tr ls >/dev/null"], {
+          windowsHide: true,
+        }).status === 0;
+      if (!canRunBash) {
+        return;
+      }
+
+      // B4: Git Bash execution of buildResetScript & fetchRemoteManifest marker guards
+      const markerHome = path.join(tmp, "marker-home");
+      const unmarkedWs = path.join(markerHome, "demo");
+      fs.mkdirSync(path.join(unmarkedWs, "bin"), { recursive: true });
+      fs.writeFileSync(path.join(unmarkedWs, ".bashrc"), "# keep\n");
+      fs.writeFileSync(path.join(unmarkedWs, "bin", "keep.txt"), "keep");
+      const stubEnv = { ...process.env, HOME: markerHome.replace(/\\/g, "/") };
+      const resetScript = buildResetScript("~/demo", true);
+      const resetUnmarked = spawnSync(bashBin, ["-c", `ps() { :; }; fuser() { :; }\n${resetScript}`], {
+        env: stubEnv,
+        windowsHide: true,
+      });
+      assert.strictEqual(resetUnmarked.status, 0);
+      assert.ok(fs.existsSync(path.join(unmarkedWs, ".bashrc")), "reset preserves .bashrc in unmarked workspace");
+      assert.ok(fs.existsSync(path.join(unmarkedWs, "bin", "keep.txt")), "reset preserves bin/ in unmarked workspace");
+
+      const fetchUnmarked = spawnSync(bashBin, ["-c", capturedFetchScript], { env: stubEnv, windowsHide: true });
+      assert.notStrictEqual(fetchUnmarked.status, 0, "syncer refuses non-empty workspace without marker");
+      assert.ok(fs.existsSync(path.join(unmarkedWs, ".bashrc")));
+      assert.ok(fs.existsSync(path.join(unmarkedWs, "bin", "keep.txt")));
+
+      fs.writeFileSync(path.join(unmarkedWs, RemoteWorkspaceMarkerFile), "");
+      fs.writeFileSync(path.join(unmarkedWs, ".job-queue-manifest.digest"), "abc");
+      const resetMarked = spawnSync(bashBin, ["-c", `ps() { :; }; fuser() { :; }\n${resetScript}`], {
+        env: stubEnv,
+        windowsHide: true,
+      });
+      assert.strictEqual(resetMarked.status, 0);
+      assert.ok(!fs.existsSync(path.join(unmarkedWs, "bin", "keep.txt")), "reset cleans marked workspace");
+      assert.ok(!fs.existsSync(path.join(unmarkedWs, ".job-queue-manifest.digest")));
+      assert.ok(fs.existsSync(path.join(unmarkedWs, RemoteWorkspaceMarkerFile)), "reset keeps marker file");
+
+      const freshHome = path.join(tmp, "fresh-home");
+      fs.mkdirSync(freshHome, { recursive: true });
+      const fetchFresh = spawnSync(bashBin, ["-c", capturedFetchScript], {
+        env: { ...process.env, HOME: freshHome.replace(/\\/g, "/") },
+        windowsHide: true,
+      });
+      assert.strictEqual(fetchFresh.status, 0, fetchFresh.stderr?.toString("utf8"));
+      assert.ok(fs.existsSync(path.join(freshHome, "demo", RemoteWorkspaceMarkerFile)));
+
+      // NB3b: execute real buildExecScript pre-exec integrity check under Git Bash (clean=0, extra/mod/del=254)
+      const splitIdx = execScript.indexOf("\nset +e\n");
+      assert.ok(splitIdx > 0, "execScript contains set +e boundary");
+      const preExecScript = `flock() { :; }\n${execScript.slice(0, splitIdx)}\nexit 0\n`;
+
+      const integHome = path.join(tmp, "integ-home");
+      const wsDir = path.join(integHome, "demo");
+      fs.mkdirSync(path.join(wsDir, "tests", "Snap", "bin", "Debug"), { recursive: true });
+      fs.mkdirSync(path.join(wsDir, "tmp"), { recursive: true });
+      fs.writeFileSync(path.join(wsDir, RemoteWorkspaceMarkerFile), "");
+      fs.writeFileSync(path.join(wsDir, "tests", "Snap", "Case.cs"), caseContent, "utf8");
+      fs.writeFileSync(path.join(wsDir, "tests", "Snap", "bin", "Debug", "Case.dll"), "dll", "utf8");
+      fs.writeFileSync(path.join(wsDir, "tmp", "ignored.txt"), "ignored", "utf8");
+      fs.writeFileSync(path.join(wsDir, "tests", "Snap", "run.log"), "log", "utf8");
+      fs.writeFileSync(path.join(wsDir, ".job-queue-manifest.sha256"), formatSha256Manifest(localManifest), "utf8");
+      fs.writeFileSync(path.join(wsDir, ".job-queue-manifest.digest"), `${manifestDigest(localManifest)}\n`, "utf8");
+
+      const runPreExec = (): number | null =>
+        spawnSync(bashBin, ["-c", preExecScript], {
+          env: { ...process.env, HOME: integHome.replace(/\\/g, "/") },
+          windowsHide: true,
+        }).status;
+
+      assert.strictEqual(runPreExec(), 0, "clean workspace with excluded build outputs passes integrity check");
+
+      const extraFile = path.join(wsDir, "tests", "Snap", "Extra.cs");
+      fs.writeFileSync(extraFile, "class Extra {}", "utf8");
+      assert.strictEqual(runPreExec(), 254, "extra non-excluded file fails integrity check with 254");
+      fs.unlinkSync(extraFile);
+      assert.strictEqual(runPreExec(), 0);
+
+      fs.writeFileSync(path.join(wsDir, "tests", "Snap", "Case.cs"), "class Tampered {}", "utf8");
+      assert.strictEqual(runPreExec(), 254, "modified file fails integrity check with 254");
+      fs.writeFileSync(path.join(wsDir, "tests", "Snap", "Case.cs"), caseContent, "utf8");
+
+      fs.unlinkSync(path.join(wsDir, "tests", "Snap", "Case.cs"));
+      assert.strictEqual(runPreExec(), 254, "deleted file fails integrity check with 254");
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
   },
 
   ...RemoteArtifactChecks,
