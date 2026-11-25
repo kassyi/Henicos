@@ -53,7 +53,8 @@ const QueueEnvVarsToStrip = [
 
 // Measured serial times on a Windows 11 host with an NVIDIA GPU (default options, 2026-11).
 // The serial total is ~32h. The parallel check lanes take ~17h, bound by mutate-compiler; the GPU lane alone takes
-// ~15h. A parallel run on 2026-11-24, in which six steps failed early, took 13h18m.
+// ~15h. A parallel run on 2026-11-24, in which six steps failed (mutate-compiler after 8h43m instead of 16h50m),
+// took 13h18m.
 const allSteps = [
   'bench-generator', // 1m56s
   'bench-compute', // 1m05s
