@@ -745,7 +745,8 @@ public class CyclePlannerTests
 
         Assert.NotNull(cycle1);
         Assert.Single(cycle1.BackJumps);
-        Assert.False(cycle1.NeedsLatch);
+        // The split in the early exit block is outside the cycle and before every gate, so the inner loop needs a latch
+        Assert.True(cycle1.NeedsLatch);
     }
 
     [Fact]

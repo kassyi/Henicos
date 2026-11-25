@@ -2842,4 +2842,49 @@ public static partial class WarpActiveMaskDifferentialKernels
         result[t + 128] = Warp.ActiveMask();
         result[t + 160] = (uint)n;
     }
+
+    // A goto loop left inside a for loop whose body always breaks: the lanes that leave after n back gotos call
+    // together with every lane of the warp, as the loop around the call runs once for each of them
+    [GpuKernel]
+    public static void GotoLoopLeftInsideForLoopWithBreakKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        for (int i = 0; i <= u; i++)
+        {
+            if (((t >> n) & 1) != 0 && n < 2)
+            {
+                n++;
+                goto L1;
+            }
+
+            result[t + 32 * n] = Warp.ActiveMask();
+            break;
+        }
+
+        result[t + 96] = (uint)n;
+    }
+
+    // The same goto loop left inside a do loop that runs once because its condition is the constant false
+    [GpuKernel]
+    public static void GotoLoopLeftInsideConstantFalseDoLoopKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        do
+        {
+            if (((t >> n) & 1) != 0 && n < 2)
+            {
+                n++;
+                goto L1;
+            }
+
+            result[t + 32 * n] = Warp.ActiveMask();
+        }
+        while (false);
+
+        result[t + 96] = (uint)n;
+    }
 }
