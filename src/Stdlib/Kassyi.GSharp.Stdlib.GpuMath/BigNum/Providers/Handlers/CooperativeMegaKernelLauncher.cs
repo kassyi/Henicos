@@ -38,7 +38,7 @@ internal static class CooperativeMegaKernelLauncher
     {
         var n = targetOperand.NumWords;
         var marginBits = marginWords * 32;
-        var maxOutWords = 4 * n + 3 * marginWords;
+        var maxOutWords = InverseSqrtMegaProductWords(n, marginWords);
 
         var shape = PrepareLaunchShape(
             workspace,
@@ -246,6 +246,13 @@ internal static class CooperativeMegaKernelLauncher
     /// </summary>
     private static OverrideCacheKey OverrideKey(GpuWorkspace workspace, IntPtr hfunc, uint sharedMemBytes) =>
         (hfunc, CudaModuleCache.CurrentContextId, workspace.DeviceOrdinal, sharedMemBytes, CudaModuleCache.Generation);
+
+    /// <summary>
+    /// The widest product of the inverse square root mega-kernel, in words, for an operand of
+    /// <paramref name="numberOfWords"/> words and <paramref name="marginWords"/> margin words.
+    /// </summary>
+    internal static int InverseSqrtMegaProductWords(int numberOfWords, int marginWords) =>
+        4 * numberOfWords + 3 * marginWords;
 
     /// <summary>
     /// The transform length for a product of <paramref name="requiredLen"/> words: the power of two that holds its
