@@ -96,6 +96,7 @@ Some C# definitions cost time on the GPU: bounds checks and division-by-zero che
   [`Gpu.NotNull`](../03_bcl_api/gpu_class/NotNull.md) to check once, and a local initialized from the call and never
   assigned afterwards is read without a check.
 - Removing the remaining checks for speed is explicit: you write a marker, in the same way `[SkipLocalsInit]` turns off zero-initialization in C#. `Gpu.SyncGrid(GridSyncMode.Fast)` is such a marker for the check that a grid barrier makes before a block arrives (§6.3).
+- Every such marker of G# has one form: an overload of the API you already call, with an enum argument whose value says what you give up. The default call keeps the full contract, and the overloads of the same name show you that an escape exists. When the API belongs to .NET (`MathF`), G# adds the overload as a C# 14 static extension member of that type; a marker that applies to a whole kernel is an enum argument of its attribute. Markers that C# itself defines (`[SkipLocalsInit]`, `unchecked`) work as C# defines them.
 
 ## 6.5 The CPU paths
 

@@ -37,6 +37,7 @@ Every design, compiler change and new diagnostic follows it. The full user-facin
 
 - Bounds checks and division-by-zero checks are on by default and removed where the compiler proves them unnecessary (as the .NET JIT does).
 - Turning off the rest for speed takes an explicit marker the user writes (the same idea as `[SkipLocalsInit]`).
+- **The form of such a marker** (anything that turns off or weakens a default: a check, a stronger contract, accuracy) is an overload of the same API that takes an enum argument whose value names what is given up, as in `Warp.ActiveMask(ActiveMaskScope.AnyIteration)`. Never a differently named API, a `bool` argument or a build property: a user who only sees the default name must find the escape among its overloads. When the default API belongs to the BCL, the overload is a C# 14 static extension member of that type (`MathF.Exp(x, MathAccuracy.Fast)`). A marker for a whole declaration rather than a call is an enum argument of that declaration's attribute (`[GpuKernel(SharedMemoryLimit.Oversized)]`). Outside this rule: markers C# defines (`[SkipLocalsInit]`, `unchecked`), markers that add meaning (§1.3), APIs with no default counterpart (`Gpu.Unsafe`), settings that add checks, and hints that do not change results. Existing markers in another form are listed in #2338 and are changed, not copied.
 
 ## 5. The CPU paths
 
