@@ -10,6 +10,8 @@
 //   skipped.
 //   The test host heap is capped at 8 GB (GSharpTestHeapHardLimit, in bytes; set it to override), so a mutant that
 //   allocates without bound fails its tests instead of exhausting memory.
+//   VSTest waits 600 s instead of 90 s for its test host and for Stryker to connect (VSTEST_CONNECTION_TIMEOUT, in
+//   seconds; set it to override): on a loaded machine a 90 s wait ended a nine-hour run with an unhandled exception.
 'use strict';
 
 const fs = require('fs');
@@ -18,6 +20,7 @@ const { spawnSync } = require('child_process');
 
 const repoRoot = path.resolve(__dirname, '..', '..');
 const defaultHeapLimit = '8589934592';
+const defaultVsTestConnectionTimeoutSeconds = '600';
 const markerName = 'run-started';
 const reportRelativePath = path.join('reports', 'mutation-report.json');
 
@@ -117,7 +120,12 @@ function main() {
   const outputDir = defaultOutputDir;
 
   const heapLimit = process.env.GSharpTestHeapHardLimit || defaultHeapLimit;
-  const env = { ...process.env, GSharpTestHeapHardLimit: heapLimit };
+  const vsTestConnectionTimeout = process.env.VSTEST_CONNECTION_TIMEOUT || defaultVsTestConnectionTimeoutSeconds;
+  const env = {
+    ...process.env,
+    GSharpTestHeapHardLimit: heapLimit,
+    VSTEST_CONNECTION_TIMEOUT: vsTestConnectionTimeout,
+  };
 
   const strykerArgs = [
     'stryker',
@@ -142,6 +150,7 @@ function main() {
     process.stdout.write(`  Phase: ${options.phase}\n`);
     process.stdout.write(`  Directory: ${targetDir}\n`);
     process.stdout.write(`  GSharpTestHeapHardLimit: ${heapLimit}\n`);
+    process.stdout.write(`  VSTEST_CONNECTION_TIMEOUT: ${vsTestConnectionTimeout}\n`);
     process.stdout.write(`  Restore command: dotnet tool restore (in ${repoRoot})\n`);
     process.stdout.write(`  Build command: dotnet build ${relativeDir} (in ${repoRoot})\n`);
     process.stdout.write(`  Stryker command: dotnet ${strykerArgs.join(' ')}\n`);
