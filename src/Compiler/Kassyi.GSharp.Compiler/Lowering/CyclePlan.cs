@@ -10,7 +10,8 @@ internal sealed record Cycle(
     JumpRegion Region,
     ImmutableHashSet<FlowNode> Members,
     ImmutableArray<GotoStatementSyntax> BackJumps,
-    bool NeedsLatch);
+    bool NeedsLatch,
+    ImmutableHashSet<StatementSyntax>? BranchGates = null);
 
 /// <summary>
 /// Planned natural-loop cycles for <see cref="ReconvergenceInserter"/>, keyed by the first statement node and last
@@ -51,7 +52,11 @@ internal sealed class CyclePlan
     public bool IsGateStatement(Cycle cycle, StatementSyntax statement) =>
         _flow != null &&
         !cycle.Members.Contains(StatementFlow.EntryOf(statement)) &&
-        _flow.TryGetListPosition(statement, out var list, out var index) &&
+        (IsSerialGate(cycle, _flow, statement) || (cycle.BranchGates?.Contains(statement) ?? false));
+
+    // The statement right after a latch statement in the same list
+    private bool IsSerialGate(Cycle cycle, StatementFlow flow, StatementSyntax statement) =>
+        flow.TryGetListPosition(statement, out var list, out var index) &&
         index > 0 &&
         IsLatchStatement(cycle, list[index - 1]);
 
@@ -75,7 +80,7 @@ internal static class CyclePlanner
     {
         var flow = StatementFlow.Build(body, constantCondition);
         var cycles = new Dictionary<CyclePlan.CycleKey, Cycle>();
-        WalkList(body.Statements, flow, holdsSplitPoint, cycles);
+        WalkList(body.Statements, flow, holdsSplitPoint, constantCondition, cycles);
         return new CyclePlan(flow, cycles);
     }
 
@@ -83,17 +88,18 @@ internal static class CyclePlanner
         SyntaxList<StatementSyntax> statements,
         StatementFlow flow,
         Func<StatementSyntax, bool> holdsSplitPoint,
+        Func<ExpressionSyntax, bool?> constantCondition,
         Dictionary<CyclePlan.CycleKey, Cycle> cycles)
     {
         var plan = JumpRegionPlanner.Plan(statements, holdsSplitPoint);
         if (plan.Rejected.IsEmpty)
         {
-            PlanListCycles(statements, plan, flow, cycles);
+            PlanListCycles(statements, plan, flow, constantCondition, cycles);
         }
 
         foreach (var statement in statements)
         {
-            WalkStatement(statement, flow, holdsSplitPoint, cycles);
+            WalkStatement(statement, flow, holdsSplitPoint, constantCondition, cycles);
         }
     }
 
@@ -101,6 +107,7 @@ internal static class CyclePlanner
         StatementSyntax statement,
         StatementFlow flow,
         Func<StatementSyntax, bool> holdsSplitPoint,
+        Func<ExpressionSyntax, bool?> constantCondition,
         Dictionary<CyclePlan.CycleKey, Cycle> cycles)
     {
         while (statement is LabeledStatementSyntax labeled)
@@ -111,33 +118,33 @@ internal static class CyclePlanner
         switch (statement)
         {
             case BlockSyntax block:
-                WalkList(block.Statements, flow, holdsSplitPoint, cycles);
+                WalkList(block.Statements, flow, holdsSplitPoint, constantCondition, cycles);
                 break;
             case CheckedStatementSyntax checkedStatement:
-                WalkList(checkedStatement.Block.Statements, flow, holdsSplitPoint, cycles);
+                WalkList(checkedStatement.Block.Statements, flow, holdsSplitPoint, constantCondition, cycles);
                 break;
             case UnsafeStatementSyntax unsafeStatement:
-                WalkList(unsafeStatement.Block.Statements, flow, holdsSplitPoint, cycles);
+                WalkList(unsafeStatement.Block.Statements, flow, holdsSplitPoint, constantCondition, cycles);
                 break;
             case IfStatementSyntax ifStatement:
-                WalkStatement(ifStatement.Statement, flow, holdsSplitPoint, cycles);
+                WalkStatement(ifStatement.Statement, flow, holdsSplitPoint, constantCondition, cycles);
                 if (ifStatement.Else is { } elseClause)
                 {
-                    WalkStatement(elseClause.Statement, flow, holdsSplitPoint, cycles);
+                    WalkStatement(elseClause.Statement, flow, holdsSplitPoint, constantCondition, cycles);
                 }
 
                 break;
             case WhileStatementSyntax whileStatement:
-                WalkStatement(whileStatement.Statement, flow, holdsSplitPoint, cycles);
+                WalkStatement(whileStatement.Statement, flow, holdsSplitPoint, constantCondition, cycles);
                 break;
             case DoStatementSyntax doStatement:
-                WalkStatement(doStatement.Statement, flow, holdsSplitPoint, cycles);
+                WalkStatement(doStatement.Statement, flow, holdsSplitPoint, constantCondition, cycles);
                 break;
             case ForStatementSyntax forStatement:
-                WalkStatement(forStatement.Statement, flow, holdsSplitPoint, cycles);
+                WalkStatement(forStatement.Statement, flow, holdsSplitPoint, constantCondition, cycles);
                 break;
             case CommonForEachStatementSyntax forEachStatement:
-                WalkStatement(forEachStatement.Statement, flow, holdsSplitPoint, cycles);
+                WalkStatement(forEachStatement.Statement, flow, holdsSplitPoint, constantCondition, cycles);
                 break;
             case SwitchStatementSyntax switchStatement:
                 var sectionPlans = new JumpRegionPlan[switchStatement.Sections.Count];
@@ -153,12 +160,12 @@ internal static class CyclePlanner
                     var sectionStatements = switchStatement.Sections[s].Statements;
                     if (crossSectionRejected.IsEmpty && sectionPlans[s].Rejected.IsEmpty)
                     {
-                        PlanListCycles(sectionStatements, sectionPlans[s], flow, cycles);
+                        PlanListCycles(sectionStatements, sectionPlans[s], flow, constantCondition, cycles);
                     }
 
                     foreach (var sectionStatement in sectionStatements)
                     {
-                        WalkStatement(sectionStatement, flow, holdsSplitPoint, cycles);
+                        WalkStatement(sectionStatement, flow, holdsSplitPoint, constantCondition, cycles);
                     }
                 }
 
@@ -170,6 +177,7 @@ internal static class CyclePlanner
         SyntaxList<StatementSyntax> statements,
         JumpRegionPlan plan,
         StatementFlow flow,
+        Func<ExpressionSyntax, bool?> constantCondition,
         Dictionary<CyclePlan.CycleKey, Cycle> cycles)
     {
         if (statements.Count == 0 || statements[0].Parent is not { } owner)
@@ -213,7 +221,9 @@ internal static class CyclePlanner
 
             backJumps = liveBackJumps.ToImmutable();
 
-            if (!HasOnlyAllowedParents(backJumps, members, flow, owner))
+            var branchGates = FindBranchGates(members, backJumps, constantCondition);
+            if (!HasOnlyAllowedParents(backJumps, members, flow, owner) ||
+                !HasAllowedAncestorsForAll(branchGates, owner))
             {
                 continue;
             }
@@ -229,8 +239,117 @@ internal static class CyclePlanner
                 region,
                 members,
                 backJumps,
-                NeedsLatch: false);
+                NeedsLatch: false,
+                BranchGates: branchGates);
         }
+    }
+
+    // The first statement of one branch of a latch if whose other branch only goes back: lanes leave the loop there
+    private static ImmutableHashSet<StatementSyntax> FindBranchGates(
+        ImmutableHashSet<FlowNode> members,
+        ImmutableArray<GotoStatementSyntax> backJumps,
+        Func<ExpressionSyntax, bool?> constantCondition)
+    {
+        var gates = ImmutableHashSet.CreateBuilder<StatementSyntax>();
+        foreach (var member in members)
+        {
+            if (member.Kind != FlowNodeKind.Statement ||
+                member.Syntax is not IfStatementSyntax { Else: { } elseClause } ifStatement ||
+                !CyclePlan.HasBackJumpInside(backJumps, ifStatement))
+            {
+                continue;
+            }
+
+            if (IsBackOnlyBranch(ifStatement.Statement, members, constantCondition) &&
+                FirstStatementOf(elseClause.Statement) is { } elseFirst)
+            {
+                gates.Add(elseFirst);
+            }
+
+            if (IsBackOnlyBranch(elseClause.Statement, members, constantCondition) &&
+                FirstStatementOf(ifStatement.Statement) is { } thenFirst)
+            {
+                gates.Add(thenFirst);
+            }
+        }
+
+        return gates.ToImmutable();
+    }
+
+    private static StatementSyntax? FirstStatementOf(StatementSyntax branch) =>
+        branch is BlockSyntax block ? (block.Statements.Count == 0 ? null : block.Statements[0]) : branch;
+
+    // A branch that is not empty, cannot fall through, and whose statements are all in the loop
+    private static bool IsBackOnlyBranch(
+        StatementSyntax branch,
+        ImmutableHashSet<FlowNode> members,
+        Func<ExpressionSyntax, bool?> constantCondition)
+    {
+        if (branch is BlockSyntax { Statements.Count: 0 } || CanFallThrough(branch, constantCondition))
+        {
+            return false;
+        }
+
+        return branch
+            .DescendantNodesAndSelf(static n => n is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax))
+            .AsStackEnumerable()
+            .OfType<StatementSyntax>()
+            .All(members, static (statement, set) => set.Contains(StatementFlow.EntryOf(statement)));
+    }
+
+    // Whether control can reach the end of the statement; a form that is not sure answers true (no gate is placed)
+    private static bool CanFallThrough(StatementSyntax statement, Func<ExpressionSyntax, bool?> constantCondition)
+    {
+        switch (statement)
+        {
+            case GotoStatementSyntax or BreakStatementSyntax or ContinueStatementSyntax or ReturnStatementSyntax
+                or ThrowStatementSyntax:
+                return false;
+            case BlockSyntax block:
+                return block.Statements.Count == 0 || CanFallThrough(block.Statements[^1], constantCondition);
+            case CheckedStatementSyntax checkedStatement:
+                return CanFallThrough(checkedStatement.Block, constantCondition);
+            case UnsafeStatementSyntax unsafeStatement:
+                return CanFallThrough(unsafeStatement.Block, constantCondition);
+            case LabeledStatementSyntax labeled:
+                return CanFallThrough(labeled.Statement, constantCondition);
+            case IfStatementSyntax ifStatement:
+                return ifStatement.Else == null ||
+                       CanFallThrough(ifStatement.Statement, constantCondition) ||
+                       CanFallThrough(ifStatement.Else.Statement, constantCondition);
+            case WhileStatementSyntax whileStatement:
+                return constantCondition(whileStatement.Condition) != true || HasOwnBreak(whileStatement.Statement);
+            case DoStatementSyntax doStatement:
+                return constantCondition(doStatement.Condition) != true || HasOwnBreak(doStatement.Statement);
+            case ForStatementSyntax forStatement:
+                return (forStatement.Condition != null && constantCondition(forStatement.Condition) != true) ||
+                       HasOwnBreak(forStatement.Statement);
+            default:
+                return true;
+        }
+    }
+
+    // A break of the loop itself, not of a loop or switch inside its body
+    private static bool HasOwnBreak(StatementSyntax body) =>
+        body
+            .DescendantNodesAndSelf(static n => n is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax
+                or WhileStatementSyntax or DoStatementSyntax or ForStatementSyntax or CommonForEachStatementSyntax
+                or SwitchStatementSyntax))
+            .AsStackEnumerable()
+            .OfType<BreakStatementSyntax>()
+            .Any();
+
+    private static bool HasAllowedAncestorsForAll(ImmutableHashSet<StatementSyntax> statements, SyntaxNode owner)
+    {
+        foreach (var statement in statements)
+        {
+            if (!HasAllowedAncestors(statement, owner))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static HashSet<LabeledStatementSyntax> CollectLabelGroup(

@@ -478,6 +478,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
     private StatementSyntax RewriteEmbedded(StatementSyntax statement)
     {
         var statements = ImmutableArray.CreateBuilder<StatementSyntax>();
+        EmitGateBefore(statements, statement);
         AddRewritten(statements, statement, endsThread: false);
         return statements.Count == 1 ? statements[0] : SyntaxFactory.Block(statements);
     }
