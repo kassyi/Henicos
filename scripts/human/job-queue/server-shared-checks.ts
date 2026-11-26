@@ -662,24 +662,29 @@ export async function checkRebindShareReason(assert: AssertModule): Promise<void
     );
     await end(again1, 0, assert);
 
-    const req2 = turnRequest("B", { share: "shared", shareReason: "list:0" });
-    const second = await connectRaw(port);
-    second.send(req2);
-    const q2 = await second.until("queued");
-    assert.ok((await second.until("granted")) !== null);
-    second.close();
-    await second.closed;
-    const again2 = await connectRaw(port);
-    // Spread req2 with share: "exclusive" keeping old shareReason ("list:0"): must replace with "rebind"
-    again2.send({ ...req2, id: Number(q2?.id), share: "exclusive" });
-    const regranted2 = await again2.until("granted", 3000);
-    assert.ok(regranted2 !== null && !("share" in regranted2));
-    assert.strictEqual(
-      describeJob(server.find(Number(q2?.id)) as NonNullable<ReturnType<JobServer["find"]>>).shareReason,
-      "rebind",
-      "rebind replaces stale shared reason with rebind when unchanged",
-    );
-    await end(again2, 0, assert);
+    // The reason it sends counts, the one it had included; without one it is "rebind"
+    for (const [command, sent, expected] of [
+      ["B", "list:0", "list:0"],
+      ["B2", undefined, "rebind"],
+    ] as const) {
+      const req2 = turnRequest(command, { share: "shared", shareReason: "list:0" });
+      const second = await connectRaw(port);
+      second.send(req2);
+      const q2 = await second.until("queued");
+      assert.ok((await second.until("granted")) !== null);
+      second.close();
+      await second.closed;
+      const again2 = await connectRaw(port);
+      again2.send({ ...req2, id: Number(q2?.id), share: "exclusive", shareReason: sent });
+      const regranted2 = await again2.until("granted", 3000);
+      assert.ok(regranted2 !== null && !("share" in regranted2));
+      assert.strictEqual(
+        describeJob(server.find(Number(q2?.id)) as NonNullable<ReturnType<JobServer["find"]>>).shareReason,
+        expected,
+        `rebind with the reason ${sent ?? "omitted"}`,
+      );
+      await end(again2, 0, assert);
+    }
 
     // Waiting rebind: disconnected while waiting behind an exclusive blocker, it registers again as exclusive and its
     // grant line logs the new reason

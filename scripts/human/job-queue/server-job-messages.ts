@@ -95,8 +95,7 @@ function rebind(
     // connection dropped): what it asks for now counts. The use of the resource is counted from the running turns on
     // every grant, so a running turn stops counting as shared at once.
     job.share = "exclusive";
-    const incoming = shareReasonField(message, "exclusive");
-    job.shareReason = incoming !== undefined && incoming !== job.shareReason ? incoming : "rebind";
+    job.shareReason = shareReasonField(message, "exclusive") ?? "rebind";
     server.log(`re-bind ${formatJobId(job.id)}: counted as an exclusive turn, as it asks`);
   }
   const incomingRemote = message.type === "adopt" ? remoteField(message) : job.remote;
