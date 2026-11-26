@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Transpiler;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>
 /// The decision of <see cref="CallTargetClassifier.Classify"/>: the kind of the target and, for a failure, the text of

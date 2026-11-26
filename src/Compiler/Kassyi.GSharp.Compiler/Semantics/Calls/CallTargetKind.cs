@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Transpiler;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>What a call in GPU code, or a method group it names, calls on the device.</summary>
 internal enum CallTargetKind

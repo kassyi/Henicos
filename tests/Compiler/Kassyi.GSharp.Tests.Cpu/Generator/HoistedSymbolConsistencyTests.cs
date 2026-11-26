@@ -1,6 +1,7 @@
 using Kassyi.GSharp.Compiler.Analysis;
 using Kassyi.GSharp.Compiler.Extensions;
 using Kassyi.GSharp.Compiler.Lowering;
+using Kassyi.GSharp.Compiler.Semantics;
 using Kassyi.GSharp.Compiler.Transpiler;
 using Kassyi.GSharp.Compiler.Transpiler.Helpers;
 using Kassyi.GSharp.Tests.Shared.Helpers;

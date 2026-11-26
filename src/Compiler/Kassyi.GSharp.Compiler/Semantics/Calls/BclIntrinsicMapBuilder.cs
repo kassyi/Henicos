@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Transpiler;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>Discovers assembly attributes and builds immutable mappings from BCL methods to CUDA intrinsic functions.</summary>
 internal static class BclIntrinsicMapBuilder

@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Kassyi.GSharp.Compiler;
 using Kassyi.GSharp.Compiler.Dialects;
+using Kassyi.GSharp.Compiler.Semantics;
 using Kassyi.GSharp.Compiler.Transpiler;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Mapping = (Microsoft.CodeAnalysis.IMethodSymbol Method, string CudaIntrinsicName, string CastFirstArgumentTo);
