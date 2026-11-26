@@ -28,7 +28,7 @@ import {
 } from "./offload-probe.ts";
 
 const require = createRequire(import.meta.url);
-const { remoteOffloadOf } = require("./target-dialect.js") as TargetDialectModule;
+const { dialectOf, remoteOffloadOf, stripXmlComments } = require("./target-dialect.js") as TargetDialectModule;
 
 export function baseRunOptions(command: string, defaultTestMemoryMb = 0): RunOptions {
   return {
@@ -805,6 +805,15 @@ export async function checkHenicosOffloadProbe(assert: AssertModule, repoRoot: s
       "<Project><PropertyGroup><!-- <GSharpRemoteOffload>local</GSharpRemoteOffload> --></PropertyGroup></Project>",
     );
     assert.strictEqual(remoteOffloadOf(commentedCsproj), null, "XML comments must be ignored");
+    // A comment rebuilt from the pieces of a removed one is removed too (both readers share stripXmlComments)
+    const rebuiltCsproj = path.join(tempDir, "Rebuilt.csproj");
+    fs.writeFileSync(
+      rebuiltCsproj,
+      "<Project><!<!-- -->-- <GSharpRemoteOffload>local</GSharpRemoteOffload><GSharpTargetDialect>Cuda</GSharpTargetDialect> --></Project>",
+    );
+    assert.strictEqual(remoteOffloadOf(rebuiltCsproj), null, "rebuilt comment hides the marker");
+    assert.strictEqual(dialectOf(rebuiltCsproj), null, "rebuilt comment hides the dialect");
+    assert.strictEqual(stripXmlComments("a<!-- x -->b<!-- y -->c"), "abc");
     assert.strictEqual(remoteOffloadOf(path.join(tempDir, "Missing.csproj")), null);
   } finally {
     removeDirectory(tempDir);

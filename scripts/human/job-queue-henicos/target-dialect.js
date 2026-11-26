@@ -35,6 +35,23 @@ function testProjectFiles(testsDir) {
 }
 
 /**
+ * Removes XML comments, repeating until nothing changes so that a comment rebuilt from the pieces of removed ones
+ * (`<!<!-- -->-- x -->`) is removed too.
+ * @param {string} text - MSBuild XML text.
+ * @returns {string}
+ */
+function stripXmlComments(text) {
+  let current = text;
+  for (;;) {
+    const next = current.replace(/<!--[\s\S]*?-->/g, "");
+    if (next === current) {
+      return current;
+    }
+    current = next;
+  }
+}
+
+/**
  * Reads a csproj file (ignoring XML comments) and extracts its GSharpTargetDialect.
  * Returns "cpu" or "cuda" (lowercase), or null if undefined, unreadable, or another dialect.
  * @param {string} projectFile - Absolute or relative path to .csproj.
@@ -42,7 +59,7 @@ function testProjectFiles(testsDir) {
  */
 function dialectOf(projectFile) {
   try {
-    const content = fs.readFileSync(projectFile, "utf8").replace(/<!--[\s\S]*?-->/g, "");
+    const content = stripXmlComments(fs.readFileSync(projectFile, "utf8"));
     const match = /<GSharpTargetDialect(?:\s[^>]*)?>\s*(Cpu|Cuda)\s*<\/GSharpTargetDialect>/i.exec(content);
     return match ? match[1].toLowerCase() : null;
   } catch {
@@ -58,7 +75,7 @@ function dialectOf(projectFile) {
  */
 function remoteOffloadOf(projectFile) {
   try {
-    const content = fs.readFileSync(projectFile, "utf8").replace(/<!--[\s\S]*?-->/g, "");
+    const content = stripXmlComments(fs.readFileSync(projectFile, "utf8"));
     const match = /<GSharpRemoteOffload(?:\s[^>]*)?>\s*([^\s<]+)\s*<\/GSharpRemoteOffload>/i.exec(content);
     return match ? match[1].toLowerCase() : null;
   } catch {
@@ -67,6 +84,7 @@ function remoteOffloadOf(projectFile) {
 }
 
 module.exports = {
+  stripXmlComments,
   testProjectFiles,
   dialectOf,
   remoteOffloadOf,

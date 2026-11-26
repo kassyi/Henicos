@@ -25,6 +25,7 @@ export interface TestProjectEntry {
 }
 
 export interface TargetDialectModule {
+  stripXmlComments(text: string): string;
   testProjectFiles(testsDir: string): TestProjectEntry[];
   dialectOf(projectFile: string): "cpu" | "cuda" | null;
   remoteOffloadOf(projectFile: string): string | null;
