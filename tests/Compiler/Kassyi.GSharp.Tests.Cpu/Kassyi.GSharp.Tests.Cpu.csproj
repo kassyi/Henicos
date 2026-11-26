@@ -24,6 +24,10 @@
     <DefineConstants>$(DefineConstants);GSHARP_MANAGED_STACK</DefineConstants>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(GSharpNativeBarrierModel)' == 'Stack'">
+    <DefineConstants>$(DefineConstants);GSHARP_NATIVE_STACK</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <CompilerVisibleProperty Include="GSharpTargetDialect" />
     <Compile Remove="..\Kassyi.GSharp.Tests.Shared\TestCases\**\*.cs" />
@@ -80,5 +84,9 @@
 
   <ItemGroup Condition="'$(GSharpNativeBarrierModel)' != ''">
     <AssemblyMetadata Include="GSharpNativeBarrierModel" Value="$(GSharpNativeBarrierModel)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(GSharpManagedBarrierModel)' != ''">
+    <AssemblyMetadata Include="GSharpManagedBarrierModel" Value="$(GSharpManagedBarrierModel)" />
   </ItemGroup>
 </Project>

@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Compiler.Aot;
+using Kassyi.GSharp.Compiler.Models;
 
 namespace Kassyi.GSharp.Compiler;
 
@@ -28,12 +29,16 @@ internal static class NativeStackTranslator
         if (obstacle == NativeStackObstacle.StackBodyLowering &&
             NativeStackEligibility.StackBodyFailure(methodSymbol, plan.Declaration, plan.SemanticModel) is { } reason)
         {
-            return stateMachine with { Source = StackBodyFailureComment(reason) + cppSource };
+            return stateMachine with
+            {
+                Source = StackBodyFailureComment(reason) + cppSource,
+                NativeFallback = CreateFallback(methodSymbol, obstacle)
+            };
         }
 
         if (obstacle != NativeStackObstacle.None)
         {
-            return stateMachine;
+            return stateMachine with { NativeFallback = CreateFallback(methodSymbol, obstacle) };
         }
 
         try
@@ -61,10 +66,18 @@ internal static class NativeStackTranslator
     public static DeviceCppText ForDeviceFunction(NativeStackContext context, in MethodEmissionPlan plan,
         MethodDeclarationSyntax methodDeclaration, DeviceCppText stateMachine)
     {
-        if (!context.OnStacks || plan.Kind != MethodEmissionKind.SuspendingDeviceFunction ||
-            !NativeStackEligibility.CanRunOnStack(plan.Declaration, plan.SemanticModel))
+        if (!context.OnStacks || plan.Kind != MethodEmissionKind.SuspendingDeviceFunction)
         {
             return stateMachine;
+        }
+
+        var obstacle = NativeStackEligibility.ClassifyDeviceFunction(plan.Declaration, plan.SemanticModel);
+        if (obstacle != NativeStackObstacle.None)
+        {
+            var fallback = context.TargetSymbol is IMethodSymbol methodSymbol
+                ? CreateFallback(methodSymbol, obstacle)
+                : default;
+            return stateMachine with { NativeFallback = fallback };
         }
 
         var signature = "";
@@ -101,6 +114,11 @@ internal static class NativeStackTranslator
                 AppendOnNewLine(stateMachine.Body, body), includes, errorSites)
             : stateMachine;
     }
+
+    private static StateMachineFallback CreateFallback(IMethodSymbol method, NativeStackObstacle obstacle) =>
+        StateMachineReason.ForNative(obstacle) is { } reason
+            ? new StateMachineFallback(KernelHostNames.GetMessageName(method), reason)
+            : default;
 
     private static string InternalError(Exception ex) =>
         $"/*\n{ex}\n*/\n#error \"Internal Compiler Error: Check comments for details\"\n";
