@@ -138,6 +138,36 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath | TestScenario.Boundary)]
+    public void Count_FloatTakeAfterWherePredicateThrowsAfterWindow_CountsWindow()
+    {
+        long[] a = [1, 2, 3];
+        long[] b = [1, 1, 1];
+        BigInteger[] p = [1, 1, -4];
+        using var arrA = CreateFloatArray(a);
+        using var arrB = CreateFloatArray(b);
+        using var arrP = CreateArray(p);
+        using var zero = CreateScalar(0);
+
+        // The predicate square root of the float Where fails at element 2 after element 0 already filled Take(1).
+        // mutant: FloatVectorWhereExpression.EvaluateDirect without BeginOperand(0) (InvalidOperationException)
+        var expected = Outcome(() => Enumerable.Range(0, a.Length)
+            .Select(i => b[i] == 0 ? throw new DivideByZeroException() : a[i] / b[i])
+            .Zip(p.Select(IsqrtContract))
+            .Where(static t => t.Second > 0)
+            .Take(1)
+            .Count());
+        Assert.Equal((1, null), expected);
+
+        using var filtered = arrA.AsVectorizedEnumerable()
+            .ZipDivide(arrB.AsVectorizedEnumerable())
+            .Where(arrP.AsVectorizedEnumerable().SelectSqrt().IsGreaterThan(zero))
+            .Take(1);
+        Assert.Equal(expected, Outcome(() => filtered.Count(_context)));
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath | TestScenario.Boundary)]
     public void Count_TakeAfterWherePredicateThrowsAfterWindow_CountsWindow()
     {
         BigInteger[] a = [1, 2, 3];
@@ -500,7 +530,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
-    public void Count_ExternalNodeUnderTakeAfterWhere_ThrowsAsMain()
+    public void Count_ExternalNodeUnderTakeAfterWhere_ThrowsFromTheWholeEvaluation()
     {
         BigInteger[] a = [1, 2, 3];
         BigInteger[] b = [1, 0, 3];

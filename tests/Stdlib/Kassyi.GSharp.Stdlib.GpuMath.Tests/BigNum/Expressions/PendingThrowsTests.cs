@@ -145,7 +145,7 @@ public class PendingThrowsTests
 
         var closed = PendingThrows.CloseSpace();
 
-        // mutant: PendingThrows.PopSpace not restoring _best from _outer
+        // mutant: PendingThrows.PopSpace not restoring _current from _outer
         Assert.Equal(1, closed.Index);
         Assert.Same(b, closed.Exception);
         Assert.Equal(5, scope.Instance.MinIndex);
@@ -223,7 +223,7 @@ public class PendingThrowsTests
         PendingThrows.TryRecord(7, a);
         PendingThrows.TryRecord(2, b);
 
-        // mutant: PendingThrows.RecordedOnInterrupt returning _best.Exception while a space is open
+        // mutant: PendingThrows.RecordedOnInterrupt returning _current.Best.Exception while a space is open
         Assert.Same(a, scope.Instance.RecordedOnInterrupt);
     }
 
@@ -239,7 +239,7 @@ public class PendingThrowsTests
         PendingThrows.TryRecord(7, a);
         PendingThrows.TryRecord(2, b);
 
-        // mutant: PendingThrows.RecordedOnInterrupt returning _first when all spaces are closed
+        // mutant: PendingThrows.RecordedOnInterrupt returning FirstOpen() when all spaces are closed
         Assert.Same(b, scope.Instance.RecordedOnInterrupt);
 
         PendingThrows.OpenSpace();
@@ -264,7 +264,7 @@ public class PendingThrowsTests
         PendingThrows.TryRecord(1, a);
         PendingThrows.CloseSpace();
 
-        // mutant: PendingThrows._first stored scope-wide instead of per space frame
+        // mutant: PendingThrows.Space.First kept once per scope instead of once per space
         PendingThrows.OpenSpace();
         Assert.Null(scope.Instance.RecordedOnInterrupt);
 
