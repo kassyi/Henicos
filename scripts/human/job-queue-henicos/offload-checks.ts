@@ -19,6 +19,7 @@ import { buildRemoteFindPruneExpr, isExcludedSyncPath } from "../job-queue/remot
 import { FakeHost, FakeScheduler, until } from "../job-queue/self-test-client.ts";
 import { removeDirectory } from "../job-queue/self-test-support.ts";
 import type { ListResult } from "./name-filter.ts";
+import type { OffloadSourceProbe } from "./offload-sources.ts";
 import {
   buildOffloadListJobArgs,
   checkHenicosOffload,
@@ -910,6 +911,11 @@ export async function checkHenicosOffloadProbe(assert: AssertModule, repoRoot: s
     options: {},
     log: () => {},
   };
+  // The list logic below runs as for a project whose sources name TestPlatform.Windows and whose build is fresh
+  const listSources: OffloadSourceProbe = {
+    scan: () => ({ kind: "windows-tests", newestInputMs: 0 }),
+    assemblyTimes: () => [1],
+  };
   const calls: string[][] = [];
   let nextResult: ListResult | Error = noMatch;
   const fakeRunner: OffloadListRunner = (args) => {
@@ -919,11 +925,19 @@ export async function checkHenicosOffloadProbe(assert: AssertModule, repoRoot: s
 
   // Option A: just test-sanitized
   assert.strictEqual(
-    (await checkHenicosOffload("just test-sanitized", { remoteForced: false, places: {} }, ctx, fakeRunner)).offload,
+    (
+      await checkHenicosOffload(
+        "just test-sanitized",
+        { remoteForced: false, places: {} },
+        ctx,
+        fakeRunner,
+        listSources,
+      )
+    ).offload,
     "local",
   );
   assert.deepStrictEqual(
-    await checkHenicosOffload("just test-sanitized", { remoteForced: true, places: {} }, ctx, fakeRunner),
+    await checkHenicosOffload("just test-sanitized", { remoteForced: true, places: {} }, ctx, fakeRunner, listSources),
     { offload: "allow" },
   );
   assert.strictEqual(
@@ -933,6 +947,7 @@ export async function checkHenicosOffloadProbe(assert: AssertModule, repoRoot: s
         { remoteForced: true, places: {} },
         ctx,
         fakeRunner,
+        listSources,
       )
     ).offload,
     "local",
@@ -946,6 +961,7 @@ export async function checkHenicosOffloadProbe(assert: AssertModule, repoRoot: s
     { remoteForced: false, places: {} },
     ctx,
     fakeRunner,
+    listSources,
   );
   assert.deepStrictEqual(allowRes, { offload: "allow" });
   assert.strictEqual(calls.length, 1);
@@ -965,6 +981,7 @@ export async function checkHenicosOffloadProbe(assert: AssertModule, repoRoot: s
     { remoteForced: false, places: {} },
     ctx,
     fakeRunner,
+    listSources,
   );
   assert.strictEqual(winMatch.offload, "local");
   assert.ok(winMatch.reason?.includes("Platform=Windows"));
@@ -976,6 +993,7 @@ export async function checkHenicosOffloadProbe(assert: AssertModule, repoRoot: s
     { remoteForced: false, places: {} },
     ctx,
     fakeRunner,
+    listSources,
   );
   assert.strictEqual(errRes.offload, "local");
   assert.ok(errRes.reason?.includes("spawn failed"));
@@ -989,7 +1007,7 @@ export async function checkHenicosOffloadProbe(assert: AssertModule, repoRoot: s
     `dotnet test ${genProj} -p:VSTestTestCaseFilter=Name~A`,
     `dotnet test ${genProj} -- RunConfiguration.TestCaseFilter=Name~A`,
   ]) {
-    const res = await checkHenicosOffload(badCmd, { remoteForced: false, places: {} }, ctx, fakeRunner);
+    const res = await checkHenicosOffload(badCmd, { remoteForced: false, places: {} }, ctx, fakeRunner, listSources);
     assert.strictEqual(res.offload, "local", `unreadable filter must stay local: ${badCmd}`);
   }
   assert.strictEqual(
@@ -1016,6 +1034,7 @@ export async function checkHenicosOffloadProbe(assert: AssertModule, repoRoot: s
     { remoteForced: false, places: {} },
     ctx,
     compoundRunner,
+    listSources,
   );
   assert.strictEqual(compoundRes.offload, "local");
   assert.strictEqual(stepIdx, 2);
@@ -1034,7 +1053,13 @@ export async function checkHenicosOffloadProbe(assert: AssertModule, repoRoot: s
     `dotnet build tests/Compiler/Kassyi.GSharp.Tests.Cuda && dotnet test ${collectProj}`,
     `dotnet build Henicos.slnx && dotnet test ${collectProj}`,
   ]) {
-    const res = await checkHenicosOffload(blockedBuildCmd, { remoteForced: false, places: {} }, ctx, buildProbeRunner);
+    const res = await checkHenicosOffload(
+      blockedBuildCmd,
+      { remoteForced: false, places: {} },
+      ctx,
+      buildProbeRunner,
+      listSources,
+    );
     assert.strictEqual(res.offload, "local", `compound blocked build must stay local: ${blockedBuildCmd}`);
     assert.ok(res.reason !== undefined && res.reason !== "" && !/[\r\n]/.test(res.reason));
   }
@@ -1044,6 +1069,7 @@ export async function checkHenicosOffloadProbe(assert: AssertModule, repoRoot: s
     { remoteForced: false, places: {} },
     ctx,
     buildProbeRunner,
+    listSources,
   );
   assert.deepStrictEqual(allowedCompoundBuild, { offload: "allow" });
   assert.strictEqual(buildProbeCalls, 1);

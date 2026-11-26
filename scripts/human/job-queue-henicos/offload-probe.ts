@@ -6,6 +6,7 @@ import { createRequire } from "node:module";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { EntryScript } from "../job-queue/constants.ts";
+import { CheckOffloadTimeoutMs } from "../job-queue/plugin-host.ts";
 import {
   errorMessage,
   isTrivialStep,
@@ -26,12 +27,28 @@ import {
   stepExcludesGpuExecution,
 } from "./budgets.ts";
 import { assembliesOf, ListTimeoutMs, type ListResult } from "./name-filter.ts";
+import { realSourceProbe, type OffloadSourceProbe } from "./offload-sources.ts";
 
 const require = createRequire(import.meta.url);
 const { dialectOf, remoteOffloadOf } = require("./target-dialect.js") as TargetDialectModule;
 
+/** How long one list may run, and the signal that stops it when the host gave up waiting. */
+export interface OffloadListLimits {
+  readonly timeoutMs: number;
+  readonly signal?: AbortSignal;
+}
+
 /** Runs a `--list-tests` command argv through `job-queue.js run --local`; replaceable in self-tests. */
-export type OffloadListRunner = (listArgs: readonly string[], context: ClientContext) => Promise<ListResult>;
+export type OffloadListRunner = (
+  listArgs: readonly string[],
+  context: ClientContext,
+  limits: OffloadListLimits,
+) => Promise<ListResult>;
+
+/** Kept free of the host's checkOffload limit, so that the last list is stopped before the host stops waiting. */
+export const OffloadCheckMarginMs = 5_000;
+/** A list with less time than this left is not started: the job runs locally. */
+export const MinListMs = 1_000;
 
 const DotnetStepValueOptions = new Set([
   "-c",
@@ -198,6 +215,12 @@ function applyInlineDotnetOpt(state: MutableDotnetStep, word: string, stepCwd: s
     state.forwardedBuildOpts.push("-r", val);
     return "matched";
   }
+  const inlineTarget = /^(-a|--arch|--os)[:=](.+)$/i.exec(word);
+  if (inlineTarget !== null) {
+    // The target architecture and OS pick the output folder the list must read
+    state.forwardedBuildOpts.push((inlineTarget[1] as string).toLowerCase(), inlineTarget[2] ?? "");
+    return "matched";
+  }
   const inlineOut = /^(?:-o|--output)[:=](.+)$/i.exec(word);
   if (inlineOut !== null) {
     const resolved = resolveStepPath(inlineOut[1] ?? "", stepCwd);
@@ -240,6 +263,8 @@ function applySpaceDotnetOpt(state: MutableDotnetStep, lower: string, val: strin
   } else if (lower === "-r" || lower === "--runtime") {
     state.runtime = val.toLowerCase();
     state.forwardedBuildOpts.push("-r", val);
+  } else if (lower === "-a" || lower === "--arch" || lower === "--os") {
+    state.forwardedBuildOpts.push(lower, val);
   } else if (lower === "-o" || lower === "--output") {
     const resolved = resolveStepPath(val, stepCwd);
     state.output = process.platform === "win32" ? resolved.toLowerCase() : resolved;
@@ -619,26 +644,51 @@ export function buildOffloadListJobArgs(listArgs: readonly string[], shell: Shel
   return [EntryScript, "run", "--local", "--shell", shell, "--", ...listArgs];
 }
 
-/** Runs `dotnet test --no-build --list-tests` via `job-queue.js run --local --shell <shell> -- ...`. */
-export const runOffloadListJob: OffloadListRunner = (listArgs, context) =>
-  new Promise((resolve) => {
-    const args = buildOffloadListJobArgs(listArgs, context.shell);
-    const child = spawn(process.execPath, args, {
-      cwd: context.cwd,
-      env: { ...context.env, DOTNET_CLI_UI_LANGUAGE: "en" },
+/**
+ * Runs `node <args>` and collects its stdout; stops its process tree when `limits.timeoutMs` (at most
+ * `ListTimeoutMs`) passes or `limits.signal` aborts, which then ends with exit code null or the code of the kill.
+ */
+export function runStoppableNode(
+  args: readonly string[],
+  cwd: string,
+  env: NodeJS.ProcessEnv,
+  limits: OffloadListLimits,
+): Promise<ListResult> {
+  return new Promise((resolve) => {
+    if (limits.signal?.aborted === true) {
+      resolve({ exitCode: null, output: "" });
+      return;
+    }
+    const child = spawn(process.execPath, [...args], {
+      cwd,
+      env,
       stdio: ["ignore", "pipe", "ignore"],
       detached: process.platform !== "win32",
     });
     const chunks: Buffer[] = [];
     child.stdout.on("data", (chunk: Buffer) => chunks.push(chunk));
-    const timer = setTimeout(() => ProcessTable.killTree(child.pid), ListTimeoutMs);
+    // Killing the queued client's tree ends the list job with it (its record ends when the client goes away)
+    const stop = (): void => ProcessTable.killTree(child.pid);
+    const timer = setTimeout(stop, Math.min(limits.timeoutMs, ListTimeoutMs));
+    limits.signal?.addEventListener("abort", stop, { once: true });
     const end = (exitCode: number | null): void => {
       clearTimeout(timer);
+      limits.signal?.removeEventListener("abort", stop);
       resolve({ exitCode, output: Buffer.concat(chunks).toString("utf8") });
     };
     child.on("error", () => end(null));
     child.on("close", (code) => end(code));
   });
+}
+
+/** Runs `dotnet test --no-build --list-tests` via `job-queue.js run --local --shell <shell> -- ...`. */
+export const runOffloadListJob: OffloadListRunner = (listArgs, context, limits) =>
+  runStoppableNode(
+    buildOffloadListJobArgs(listArgs, context.shell),
+    context.cwd,
+    { ...context.env, DOTNET_CLI_UI_LANGUAGE: "en" },
+    limits,
+  );
 
 /**
  * Fail-closed verdict for `Platform=Windows` `--list-tests` probe output:
@@ -695,7 +745,9 @@ export async function checkHenicosOffload(
   request: OffloadCheckRequest,
   context: ClientContext,
   run: OffloadListRunner = runOffloadListJob,
+  sources: OffloadSourceProbe = realSourceProbe,
 ): Promise<OffloadAnswer> {
+  const deadline = Date.now() + (request.timeoutMs ?? CheckOffloadTimeoutMs) - OffloadCheckMarginMs;
   const baseCwd = context.cwd !== "" ? context.cwd : context.worktree;
   const parsed = parseOffloadCommand(command, baseCwd);
   if (parsed.kind === "just-sanitized") {
@@ -743,6 +795,27 @@ export async function checkHenicosOffload(
         reason: `project ${target.name} is marked local (GSharpRemoteOffload=local)`,
       };
     }
+    // No source names TestPlatform.Windows: no Windows-only test to list, the next step decides
+    const scan = sources.scan(target.projectFile);
+    if (scan.kind === "local") {
+      return { offload: "local", reason: scan.reason };
+    }
+    if (scan.kind === "no-windows-tests") {
+      continue;
+    }
+    // The list reads the built assembly as it is: a build older than the sources may miss a new Windows-only test
+    const builtTimes = sources.assemblyTimes({
+      projectFile: target.projectFile,
+      config: step.config,
+      output: step.output,
+      artifactsPath: step.artifactsPath,
+    });
+    if (builtTimes.length === 0) {
+      return { offload: "local", reason: `no built assembly of ${target.name} for the Platform=Windows check` };
+    }
+    if (builtTimes.some((time) => time < scan.newestInputMs)) {
+      return { offload: "local", reason: `build output older than sources (${target.name})` };
+    }
     const windowsFilter = combineFilterWithWindowsPlatform(step.filters, step.unreadableFilter);
     if (windowsFilter === null) {
       return { offload: "local", reason: "cannot safely combine --filter with Platform=Windows check" };
@@ -759,9 +832,18 @@ export async function checkHenicosOffload(
       "--filter",
       windowsFilter,
     ];
+    // Each list gets the time left of the whole check, so that several test steps never outlast the host's limit
+    const remainingMs = deadline - Date.now();
+    if (remainingMs < MinListMs) {
+      return { offload: "local", reason: "Platform=Windows test list ran out of time" };
+    }
     let result: ListResult;
     try {
-      result = await run(listArgs, context);
+      result = await run(
+        listArgs,
+        context,
+        request.signal !== undefined ? { timeoutMs: remainingMs, signal: request.signal } : { timeoutMs: remainingMs },
+      );
     } catch (error) {
       return {
         offload: "local",

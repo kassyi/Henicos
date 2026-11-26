@@ -375,11 +375,22 @@ can never be compiled or executed by a subsequent local build):
     `auto` runs (`job-queue.js run -- just test-sanitized`) execute locally on Windows (MSVC ASan) with a 1-line reason.
     Passing `--remote` explicitly (as `long-checks.js` `sanitized-linux` does, without custom `--filter` or `--no-build`)
     is permitted by `checkOffload` to run Linux ASan+UBSan on the remote Ubuntu worker.
--   **Async `checkOffload` (`Platform=Windows` probe)**: Remaining offload-eligible `dotnet test` commands run
+-   **Async `checkOffload` (`Platform=Windows` probe)**: For each remaining offload-eligible `dotnet test` step,
+    `offload-sources.ts` first scans the project's `*.cs` (its folder without `bin/` and `obj/`, plus the files a
+    `Directory.Build.*` between the folder and the repository root compiles in) for `TestPlatform.Windows`. With no
+    match the step needs no list. A project file that compiles sources itself (`<Compile Include=`) or imports a
+    shared project (`.projitems`), a link in the folder, an unreadable file, an unresolvable compile item, or more
+    than 5000 files / 64 MB keeps the job local. With a match, the built `<project>.dll` (the configuration's folder
+    under `bin/`, or `-o` / `--artifacts-path`) must be no older than the newest of those sources, the project's
+    `*.csproj` and the `Directory.Build.props` / `Directory.Build.targets` / `Directory.Packages.props` up to the
+    root (`build output older than sources` otherwise, also when no assembly is built); then the step runs
     `dotnet test <csproj> --no-build --list-tests --filter "(<expr>)&Platform=Windows"` (or `Platform=Windows` when
-    unfiltered) as a `--local` CPU job before connecting. Any matching `Platform=Windows` test, unreadable filter
-    (`--filter:...`, multiple `--filter`, empty `--filter`, `TestCaseFilter`), unbuilt assembly, timeout, or error fails
-    closed to local execution.
+    unfiltered; `-c`, `-f`, `-r`, `-a` / `--arch`, `--os`, `-o`, `--artifacts-path` and `-p:` are passed on) as a
+    `--local` CPU job before connecting. Any matching `Platform=Windows` test, unreadable filter (`--filter:...`,
+    multiple `--filter`, empty `--filter`, `TestCaseFilter`), timeout, or error fails closed to local execution. The
+    lists of all steps share the host's `checkOffload` limit (`timeoutMs` in the request, 180 s, less 5 s): each list
+    gets the time left, none starts with less than 1 s left, and the list job is killed at its limit or when the
+    host aborts the request's `signal` (a lost race).
 
 ## Compatibility
 

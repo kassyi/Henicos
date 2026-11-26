@@ -18,6 +18,7 @@ import { shortCommand } from "../job-queue/view.ts";
 import { selectsCategory } from "../job-queue/plugins/dotnet/plugin.ts";
 import { cpuOnlyTestProjects, parseBudgets, testMemoryMb } from "./budgets.ts";
 import { checkNameFilter } from "./name-filter-checks.ts";
+import { checkHenicosOffloadSources } from "./offload-source-checks.ts";
 import {
   checkHenicosEnvAllowlist,
   checkHenicosOffloadProbe,
@@ -570,5 +571,6 @@ export async function checks(assert: AssertModule): Promise<void> {
   checkOffloadClassification(assert, host, loaded.configRoot);
   checkHenicosEnvAllowlist(assert, host, loaded.configRoot);
   await checkHenicosOffloadProbe(assert, loaded.configRoot);
+  await checkHenicosOffloadSources(assert, loaded.configRoot);
   await checkNameFilter(assert);
 }
