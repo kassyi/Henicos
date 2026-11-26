@@ -682,9 +682,9 @@ StackWarp:
     MatchAnySync: { Value: __gsharp_stack_warp_match_any_sync, Prelude: StackThreads.hpp, Managed: ManagedGpuContext.StackWarp.cs }
     MatchAllSync: { Value: __gsharp_stack_warp_match_all_sync, Prelude: StackThreads.hpp, Managed: ManagedGpuContext.StackWarp.cs }
     SyncWarp: { Value: __gsharp_stack_warp_syncwarp, Prelude: StackThreads.hpp, Managed: ManagedGpuContext.StackWarp.cs }
-    ActiveMask: __gsharp_stack_warp_active_mask
+    ActiveMask: { Value: __gsharp_stack_warp_active_mask, Prelude: StackThreads.hpp, Managed: ManagedGpuContext.StackWarp.cs }
     # The reconvergence regions of a method that reaches Warp.ActiveMask() (ReconvergenceInserter): enter, leave by a
     # jump, and arrive at the end, wait for the other lanes and pass it, in one call
-    RegionEnter: __gsharp_stack_warp_region_enter
-    RegionLeave: __gsharp_stack_warp_region_leave
-    Reconverge: __gsharp_stack_warp_reconverge
+    RegionEnter: { Value: __gsharp_stack_warp_region_enter, Prelude: StackThreads.hpp, Managed: ManagedGpuContext.StackWarp.cs }
+    RegionLeave: { Value: __gsharp_stack_warp_region_leave, Prelude: StackThreads.hpp, Managed: ManagedGpuContext.StackWarp.cs }
+    Reconverge: { Value: __gsharp_stack_warp_reconverge, Prelude: StackThreads.hpp, Managed: ManagedGpuContext.StackWarp.cs }

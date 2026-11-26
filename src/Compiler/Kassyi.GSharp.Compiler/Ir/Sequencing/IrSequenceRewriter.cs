@@ -24,8 +24,26 @@ internal sealed class IrSequenceRewriter(IrSequenceContext context) : IrRewriter
         IrAssignment assignment => VisitSimpleAssignment(assignment),
         IrCompoundAssignment compound => VisitCompound(compound),
         IrIncrement increment => VisitIncrement(increment),
+        IrStructCreation creation => VisitCreation(creation),
         _ => base.VisitExpression(expression)
     };
+
+    /// <inheritdoc />
+    public override IrExpression VisitCall(IrCall call)
+    {
+        var plan = IrCallSequencing.Plan(call, _context);
+        var rewritten = base.VisitCall(call) as IrCall ??
+                        throw new InvalidOperationException("A call was rewritten into another node.");
+        return plan.IsSequenced ? IrCallSequencing.Apply(call, plan, rewritten, _context) : rewritten;
+    }
+
+    private IrExpression VisitCreation(IrStructCreation creation)
+    {
+        var plan = IrStructCreationSequencing.Plan(creation, _context);
+        var rewritten = base.VisitExpression(creation) as IrStructCreation ??
+                        throw new InvalidOperationException("A struct creation was rewritten into another node.");
+        return plan.IsSequenced ? IrStructCreationSequencing.Apply(creation, plan, rewritten) : rewritten;
+    }
 
     private IrExpression VisitBinary(IrBinary binary)
     {

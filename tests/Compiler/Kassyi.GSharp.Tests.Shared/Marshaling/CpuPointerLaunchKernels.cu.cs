@@ -40,6 +40,7 @@ public struct PointerLaunchHolder
 public static partial class CpuPointerLaunchKernels
 {
     // Every scalar kind, each at its own output index: a wrong width or a swapped argument moves a value
+    // The parameter list is the subject of this test: verifies per-scalar C-ABI width and argument slot marshaling across bool, char, and 8/16/32/64-bit scalars.
     [GpuKernel]
     public static void ScalarsKernel(bool flag, char letter, sbyte s8, byte u8, short s16, ushort u16, int s32,
         uint u32, long s64, ulong u64, PointerLaunchLevel level, float f32, double f64, long[] integers,
@@ -65,6 +66,7 @@ public static partial class CpuPointerLaunchKernels
         reals[1] = f64;
     }
 
+    // The parameter list is the subject of this test: verifies ref/out scalar pointer marshaling alongside a trailing array parameter via CpuPointerLaunch.
     [GpuKernel]
     public static void RefAndOutKernel(ref int counter, out long big, ref bool flag, ref char letter, int[] data)
     {

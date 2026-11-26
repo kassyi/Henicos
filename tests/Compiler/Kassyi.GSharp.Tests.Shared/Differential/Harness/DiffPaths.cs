@@ -80,13 +80,6 @@ public static partial class DiffPaths
     public static bool IsCudaCheckedBuild { get; } = ResolveIsCudaCheckedBuild();
 
     /// <summary>
-    /// The skip reason of the tests that capture a launch into a CUDA graph, in the checked build. The fix of the issue
-    /// removes every skip that names this constant.
-    /// </summary>
-    public const string GraphCaptureInCheckedBuild =
-        "#2239: the checked launcher synchronizes the stream after the launch, which a capturing stream refuses.";
-
-    /// <summary>
     /// Returns the execution paths on which runtime checks are expected to fire.
     /// When <paramref name="checkedBuildOnlyOnCuda"/> is <see langword="true"/> (e.g. for <c>[GpuUnchecked]</c> kernels),
     /// <see cref="DiffPath.Cuda"/> is included only when <see cref="IsCudaCheckedBuild"/> is <see langword="true"/>.

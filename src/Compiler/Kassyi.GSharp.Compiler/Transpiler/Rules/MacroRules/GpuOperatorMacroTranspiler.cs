@@ -35,7 +35,7 @@ internal static class GpuOperatorMacroTranspiler
             // operand first: a block of statements
             using (context.Emitter.Writer.Scope())
             {
-                return AppendExpansion(assignment.Left, -1, macro, assignment, ref context);
+                return AppendExpansion(assignment.Left, MacroResultSlot.None, macro, assignment, ref context);
             }
         }
 
@@ -61,7 +61,7 @@ internal static class GpuOperatorMacroTranspiler
                 sequence.Return();
             }
 
-            AppendCall(call, arguments, temps, -1, assignment, ref context);
+            AppendCall(call, arguments, temps, MacroResultSlot.None, assignment, ref context);
         }
 
         context.Emitter.Writer.AppendLine(";");
@@ -69,31 +69,32 @@ internal static class GpuOperatorMacroTranspiler
     }
 
     // { auto __gsharp_seq_0 = <operand>; <T> __gsharp_seq_1{}; <inner target>(&__gsharp_seq_1, <inner operands>); <target>(<result>, __gsharp_seq_0, __gsharp_seq_1); }
-    // The call of <macro> with <result> (or the temporary <resultTemp>) as the result, after its operands: each operator
-    // macro among them is computed into a temporary of its own, and the operands before the last one that interferes
-    // with a later one (an inner call included) are evaluated into temporaries, in the C# order (EvaluationOrder)
-    private static bool AppendExpansion(ExpressionSyntax? result, int resultTemp, OperatorMacro macro,
-        AssignmentExpressionSyntax assignment, ref TranspileContext context)
+    // The call of <macro> with <result> (or <resultSlot>, the temporary or the declared variable that receives the result)
+    // as the result, after its operands: each operator macro among them is computed into a temporary of its own, and
+    // the operands before the last one that interferes with a later one (an inner call included) are evaluated into
+    // temporaries, in the C# order (EvaluationOrder)
+    private static bool AppendExpansion(ExpressionSyntax? result, MacroResultSlot resultSlot, OperatorMacro macro,
+        SyntaxNode site, ref TranspileContext context)
     {
         if (macro.Test != null)
         {
-            return AppendConditional(result, resultTemp, macro, assignment, ref context);
+            return AppendConditional(result, resultSlot, macro, site, ref context);
         }
 
-        if (!TryPrepareCall(result, macro, assignment, ref context, out var call))
+        if (!TryPrepareCall(result, macro, site, ref context, out var call))
         {
             return false;
         }
 
         var model = context.Query.SemanticModel;
-        var effects = GetOperandEffects(call, macro, assignment, model);
+        var effects = GetOperandEffects(call, macro, site, model);
         var arguments = PlanArguments(call, macro, effects, EvaluationOrder.LastSpilledOperand(effects), model);
-        if (!DeclareOperandTemps(arguments, MacroCall.OperandRoles.Length, assignment, ref context, out var temps))
+        if (!DeclareOperandTemps(arguments, MacroCall.OperandRoles.Length, site, ref context, out var temps))
         {
             return false;
         }
 
-        AppendCall(call, arguments, temps, resultTemp, assignment, ref context);
+        AppendCall(call, arguments, temps, resultSlot, site, ref context);
         context.Emitter.Writer.AppendLine(";");
         return true;
     }
@@ -102,17 +103,17 @@ internal static class GpuOperatorMacroTranspiler
     // if(<test>(__gsharp_seq_1)) { <target>=__gsharp_seq_1; }
     // else { <right temporaries> <target>(<result>, __gsharp_seq_1, <right>); }
     // A && or || over <macro> (OperatorMacroCallPlanner.PlanConditional): the left operand is evaluated once and
-    // tested, and the target is called with the right operand only when the test fails. <result> or the temporary
-    // <resultTemp> receives the left operand or the target's result
-    private static bool AppendConditional(ExpressionSyntax? result, int resultTemp, OperatorMacro macro,
-        AssignmentExpressionSyntax assignment, ref TranspileContext context)
+    // tested, and the target is called with the right operand only when the test fails. <result> or <resultSlot> (the
+    // temporary or the declared variable that receives the result) receives the left operand or the target's result
+    private static bool AppendConditional(ExpressionSyntax? result, MacroResultSlot resultSlot, OperatorMacro macro,
+        SyntaxNode site, ref TranspileContext context)
     {
-        if (!TryPrepareCall(result, macro, assignment, ref context, out var call))
+        if (!TryPrepareCall(result, macro, site, ref context, out var call))
         {
             return false;
         }
 
-        var effects = GetOperandEffects(call, macro, assignment, context.Query.SemanticModel);
+        var effects = GetOperandEffects(call, macro, site, context.Query.SemanticModel);
         var plan = PlanConditional(call, macro, effects);
         int[] temps = [-1, -1, -1, -1];
         if (plan.SpillsTarget && result != null)
@@ -120,24 +121,24 @@ internal static class GpuOperatorMacroTranspiler
             temps[(int)MacroOperandRole.Result] = EvaluationOrder.DeclareTemp(ref context, result, reference: true);
         }
 
-        if (!TryDeclareLeftOperand(call, macro, assignment, ref context, out temps[(int)MacroOperandRole.Left]))
+        if (!TryDeclareLeftOperand(call, macro, site, ref context, out temps[(int)MacroOperandRole.Left]))
         {
             return false;
         }
 
-        AppendTest(result, resultTemp, plan, temps, ref context);
+        AppendTest(result, resultSlot, plan, temps, ref context);
         var writer = context.Emitter.Writer;
         writer.AppendLine("else");
         using (writer.Scope())
         {
             if (call.Right.Expression is { } right &&
-                !TryDeclareNestedTemp(right, macro, assignment, ref context, out temps[(int)MacroOperandRole.Right]))
+                !TryDeclareNestedTemp(right, macro, site, ref context, out temps[(int)MacroOperandRole.Right]))
             {
                 return false;
             }
 
             var arguments = PlanArguments(call, macro, null, -1, context.Query.SemanticModel);
-            AppendCall(call, arguments, temps, resultTemp, assignment, ref context);
+            AppendCall(call, arguments, temps, resultSlot, site, ref context);
             writer.AppendLine(";");
         }
 
@@ -147,10 +148,10 @@ internal static class GpuOperatorMacroTranspiler
     // <T> __gsharp_seq_<n> = <left>; the left operand of a && or || into the temporary <temp>: an operator macro
     // computed into its own temporary, or the value of the operand
     private static bool TryDeclareLeftOperand(in MacroCall call, OperatorMacro macro,
-        AssignmentExpressionSyntax assignment, ref TranspileContext context, out int temp)
+        SyntaxNode site, ref TranspileContext context, out int temp)
     {
         var left = call.Left.Expression ?? throw new InvalidOperationException("A && or || has a left operand.");
-        if (!TryDeclareNestedTemp(left, macro, assignment, ref context, out temp))
+        if (!TryDeclareNestedTemp(left, macro, site, ref context, out temp))
         {
             return false;
         }
@@ -166,9 +167,9 @@ internal static class GpuOperatorMacroTranspiler
 
     // if(<test>(__gsharp_seq_1)) { <target>=__gsharp_seq_1; }
     // The test of the left operand in its temporary (temps[Left]) and the assignment of it to the target
-    // (temps[Result], the temporary <resultTemp> or <result>) when the test holds
-    private static void AppendTest(ExpressionSyntax? result, int resultTemp, in MacroConditionalPlan plan, int[] temps,
-        ref TranspileContext context)
+    // (temps[Result], <resultSlot>, or <result>) when the test holds
+    private static void AppendTest(ExpressionSyntax? result, MacroResultSlot resultSlot, in MacroConditionalPlan plan,
+        int[] temps, ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
         writer.Append("if");
@@ -185,7 +186,7 @@ internal static class GpuOperatorMacroTranspiler
         writer.AppendLine();
         using (writer.Scope())
         {
-            AppendTarget(result, temps[(int)MacroOperandRole.Result], resultTemp, ref context);
+            AppendTarget(result, temps[(int)MacroOperandRole.Result], resultSlot, ref context);
             writer.Append("=");
             EvaluationOrder.AppendTempName(writer, temps[(int)MacroOperandRole.Left]);
             writer.AppendLine(";");
@@ -206,14 +207,20 @@ internal static class GpuOperatorMacroTranspiler
         return temp;
     }
 
-    // The target that receives the result: its reference <targetTemp>, the temporary <resultTemp> of an inner operator
-    // macro (<result> is null), or <result> itself
-    private static void AppendTarget(ExpressionSyntax? result, int targetTemp, int resultTemp,
+    // The target that receives the result: its reference <targetTemp>, <resultSlot> (the temporary or the declared
+    // variable that receives the result when <result> is null), or <result> itself
+    private static void AppendTarget(ExpressionSyntax? result, int targetTemp, MacroResultSlot resultSlot,
         ref TranspileContext context)
     {
-        if (result is null || targetTemp >= 0)
+        if (result is null)
         {
-            EvaluationOrder.AppendTempName(context.Emitter.Writer, result is null ? resultTemp : targetTemp);
+            resultSlot.Append(ref context);
+            return;
+        }
+
+        if (targetTemp >= 0)
+        {
+            EvaluationOrder.AppendTempName(context.Emitter.Writer, targetTemp);
             return;
         }
 
@@ -223,9 +230,9 @@ internal static class GpuOperatorMacroTranspiler
     // The call of <macro> (OperatorMacroCallPlanner.TryPrepareCall); a context variable that cannot be found fails the
     // transpilation with the message the analyzer reports as well
     private static bool TryPrepareCall(ExpressionSyntax? result, OperatorMacro macro,
-        AssignmentExpressionSyntax assignment, ref TranspileContext context, out MacroCall call)
+        SyntaxNode site, ref TranspileContext context, out MacroCall call)
     {
-        if (OperatorMacroCallPlanner.TryPrepareCall(result, macro, assignment, context.Query.SemanticModel, out call,
+        if (OperatorMacroCallPlanner.TryPrepareCall(result, macro, site, context.Query.SemanticModel, out call,
                 out var failure))
         {
             return true;
@@ -233,7 +240,7 @@ internal static class GpuOperatorMacroTranspiler
 
         if (failure != null)
         {
-            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, assignment, failure);
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, site, failure);
         }
 
         return false;
@@ -244,7 +251,7 @@ internal static class GpuOperatorMacroTranspiler
     // <operand passed by reference>; or auto __gsharp_seq_<n> = <operand>; (-1 in <temps>, indexed by MacroOperandRole:
     // emitted in place)
     private static bool DeclareOperandTemps(ImmutableArray<MacroArgument> arguments, int operandCount,
-        AssignmentExpressionSyntax assignment, ref TranspileContext context, out int[] temps)
+        SyntaxNode site, ref TranspileContext context, out int[] temps)
     {
         temps = new int[operandCount];
         temps.AsSpan().Fill(-1);
@@ -253,7 +260,7 @@ internal static class GpuOperatorMacroTranspiler
             switch (argument)
             {
                 case { Kind: MacroArgumentKind.NestedOperand, Nested.Inner: var inner }:
-                    if (!DeclareNestedTemp(inner, assignment, ref context, out temps[(int)argument.Role]))
+                    if (!DeclareNestedTemp(inner, site, ref context, out temps[(int)argument.Role]))
                     {
                         return false;
                     }
@@ -272,16 +279,16 @@ internal static class GpuOperatorMacroTranspiler
     // <T> __gsharp_seq_<n>{}; and the expansion of the operator macro that <operand> is, which computes it into that
     // temporary <temp>; -1 when the operand is not an operator macro
     private static bool TryDeclareNestedTemp(ExpressionSyntax operand, OperatorMacro macro,
-        AssignmentExpressionSyntax assignment, ref TranspileContext context, out int temp)
+        SyntaxNode site, ref TranspileContext context, out int temp)
     {
         temp = -1;
         return !macro.TryGetNested(operand, out var inner) || inner.ResultType is null ||
-               DeclareNestedTemp(inner, assignment, ref context, out temp);
+               DeclareNestedTemp(inner, site, ref context, out temp);
     }
 
     // <T> __gsharp_seq_<n>{}; and the expansion of the inner operator macro <inner>, which computes it into that
     // temporary <temp>
-    private static bool DeclareNestedTemp(OperatorMacro inner, AssignmentExpressionSyntax assignment,
+    private static bool DeclareNestedTemp(OperatorMacro inner, SyntaxNode site,
         ref TranspileContext context, out int temp)
     {
         var innerType = inner.ResultType ?? throw new InvalidOperationException("An inner operator macro has a type.");
@@ -291,13 +298,13 @@ internal static class GpuOperatorMacroTranspiler
         writer.Append(' ');
         EvaluationOrder.AppendTempName(writer, temp);
         writer.AppendLine("{};");
-        return AppendExpansion(null, temp, inner, assignment, ref context);
+        return AppendExpansion(null, MacroResultSlot.FromTemp(temp), inner, site, ref context);
     }
 
     // <target>(<context>, <result>, <operands>): the arguments of the plan in parameter order, each operand in place or
-    // its temporary, and for the result of an inner operator macro its temporary <resultTemp>
+    // its temporary, and for the result when <result> is null its <resultSlot> (the temporary or the declared variable)
     private static void AppendCall(in MacroCall call, ImmutableArray<MacroArgument> arguments, int[]? temps,
-        int resultTemp, AssignmentExpressionSyntax assignment, ref TranspileContext context)
+        MacroResultSlot resultSlot, SyntaxNode site, ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
 
@@ -308,29 +315,29 @@ internal static class GpuOperatorMacroTranspiler
             foreach (var argument in arguments)
             {
                 AppendSeparator(argument.Parameter.Ordinal, ref context);
-                AppendArgument(call, argument, temps, resultTemp, assignment, ref context);
+                AppendArgument(call, argument, temps, resultSlot, site, ref context);
             }
         }
     }
 
-    // One argument of the plan: the context variable, an operand in place or its temporary, or the temporary
-    // <resultTemp> of an inner operator macro, passed to its ref or out result parameter
-    private static void AppendArgument(in MacroCall call, in MacroArgument argument, int[]? temps, int resultTemp,
-        AssignmentExpressionSyntax assignment, ref TranspileContext context)
+    // One argument of the plan: the context variable, an operand in place or its temporary, or <resultSlot> (the
+    // temporary or the declared variable that receives the result), passed to its ref or out result parameter
+    private static void AppendArgument(in MacroCall call, in MacroArgument argument, int[]? temps,
+        MacroResultSlot resultSlot, SyntaxNode site, ref TranspileContext context)
     {
         switch (argument)
         {
             case { Kind: MacroArgumentKind.Context }:
                 var variable = call.ContextVariable ??
                                throw new InvalidOperationException("A context argument has a variable.");
-                AppendContextArgument(variable, argument.Parameter, assignment, ref context);
+                AppendContextArgument(variable, argument.Parameter, site, ref context);
                 break;
             case { Operand: { } operand }:
                 AppendOperand(operand, temps?[(int)argument.Role] ?? -1, argument, ref context);
                 break;
             default:
                 context.Emitter.Writer.Append('&');
-                EvaluationOrder.AppendTempName(context.Emitter.Writer, resultTemp);
+                resultSlot.Append(ref context);
                 break;
         }
     }
@@ -363,14 +370,14 @@ internal static class GpuOperatorMacroTranspiler
 
     // The context variable as RoslynToCudaVisitor.VisitIdentifierName and RefSyntaxHelper emit a reference to it
     private static void AppendContextArgument(ISymbol variable, IParameterSymbol parameter,
-        AssignmentExpressionSyntax assignment, ref TranspileContext context)
+        SyntaxNode site, ref TranspileContext context)
     {
         var model = context.Query.SemanticModel;
         var writer = context.Emitter.Writer;
 
         // [WHY] Lowering moves a local that lives across a barrier into the state machine frame and rewrites every
         // reference to it; the call is not one of those references, so it copies one of them.
-        if (FindLoweredReference(assignment, variable, model) is { } reference)
+        if (FindLoweredReference(site, variable, model) is { } reference)
         {
             if (IsPassedByReference(parameter) && RefSyntaxHelper.NeedsAddressOf(reference, model))
             {
@@ -413,6 +420,50 @@ internal static class GpuOperatorMacroTranspiler
         if (parameterIndex > 0)
         {
             context.Emitter.Writer.Append(',');
+        }
+    }
+
+    // The slot that receives an operator macro's result when there is no assignment target expression: a sequence
+    // temporary index (stored 1-based so default is None) or a declared local variable.
+    private readonly struct MacroResultSlot
+    {
+        private readonly int _tempPlusOne;
+        private readonly VariableDeclaratorSyntax? _declarator;
+
+        private MacroResultSlot(int tempPlusOne, VariableDeclaratorSyntax? declarator)
+        {
+            _tempPlusOne = tempPlusOne;
+            _declarator = declarator;
+        }
+
+        public static MacroResultSlot None => default;
+
+        public static MacroResultSlot FromTemp(int temp)
+        {
+            if (temp < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(temp));
+            }
+
+            return new MacroResultSlot(temp + 1, null);
+        }
+
+        public static MacroResultSlot FromDeclarator(VariableDeclaratorSyntax declarator) => new(0, declarator);
+
+        public void Append(ref TranspileContext context)
+        {
+            if (_declarator != null)
+            {
+                CppNameResolver.AppendDeclaredName(_declarator, _declarator.Identifier, ref context);
+                return;
+            }
+
+            if (_tempPlusOne <= 0)
+            {
+                throw new InvalidOperationException("An operator macro result slot has no temporary or declarator.");
+            }
+
+            EvaluationOrder.AppendTempName(context.Emitter.Writer, _tempPlusOne - 1);
         }
     }
 }

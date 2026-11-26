@@ -2,8 +2,8 @@
 // and the state file show it.
 
 import type { CommandKeys, PathPlace } from "./estimate-key.ts";
-import type { JobView, Outcome } from "./protocol.ts";
-import type { SchedulerJob } from "./scheduler.ts";
+import type { JobView, Outcome, QuarantineSummary } from "./protocol.ts";
+import { Scheduler, type SchedulerJob } from "./scheduler.ts";
 import type { Connection } from "./server-connection.ts";
 import type { JobFacts } from "./server-job-state.ts";
 import type { JobServer } from "./server.ts";
@@ -49,9 +49,12 @@ export interface ServerJob extends SchedulerJob, JobFacts {
   /** The command's exit code from "done"; null when the client did not send one (protocol 2, or no "done"). */
   exitCode: number | null;
   cancelPending: boolean;
+  /** Quarantine summary attached when remote artifacts were pulled or `--results-directory` redirected. */
+  quarantine?: QuarantineSummary;
 }
 
 export function describeJob(job: ServerJob): JobView {
+  const estimate = Scheduler.estimateOf(job);
   return {
     id: job.id,
     weight: job.weight,
@@ -66,8 +69,8 @@ export function describeJob(job: ServerJob): JobView {
     command: job.command,
     queuedAt: job.queuedAt,
     grantedAt: job.grantedAt || null,
-    typicalMs: job.estimate ? job.estimate.typicalMs : null,
-    estimateFrom: job.estimate?.from ?? "none",
+    typicalMs: estimate ? estimate.typicalMs : null,
+    estimateFrom: estimate?.from ?? "none",
     pin: job.pin,
     before: job.before,
     after: job.after,
@@ -77,6 +80,8 @@ export function describeJob(job: ServerJob): JobView {
     ...(job.resource !== undefined ? { resource: job.resource } : {}),
     ...(job.share === "shared" ? { share: "shared" as const } : {}),
     ...(job.turn !== null ? { turn: job.turn } : {}),
+    ...(job.remote !== undefined ? { remote: job.remote } : {}),
+    ...(job.offload !== undefined ? { offload: job.offload } : {}),
   };
 }
 

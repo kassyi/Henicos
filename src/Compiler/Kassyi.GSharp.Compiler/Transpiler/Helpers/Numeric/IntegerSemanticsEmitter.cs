@@ -1,4 +1,5 @@
 using System.Buffers;
+using Kassyi.GSharp.Compiler.Backends.Cpp;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.Numeric;
@@ -106,7 +107,7 @@ internal static class IntegerSemanticsEmitter
             context.Visitor.Visit(left.UnwrapParentheses());
             context.Emitter.Writer.Append(',');
             context.Visitor.Visit(right.UnwrapParentheses());
-            DivisorCheck.AppendSiteArgument(context.Emitter.Writer, site);
+            NullCheckSiteWriter.AppendSiteArgument(context.Emitter.Writer, site);
         }
     }
 
@@ -328,7 +329,7 @@ internal static class IntegerSemanticsEmitter
                 context.Visitor.Visit(value.UnwrapParentheses());
             }
 
-            DivisorCheck.AppendSiteArgument(writer, plan.Site);
+            NullCheckSiteWriter.AppendSiteArgument(writer, plan.Site);
         }
     }
 

@@ -86,6 +86,7 @@ public static partial class InternalNameCollisionKernels
     }
 
     // Kernel parameters share a scope with the locals of the generated host launchers.
+    // The parameter list is the subject of this test: parameter names (_gsharp_contexts, _gsharp_total_blocks, _b_idx, _t_idx, _ctxtid, _cudaCtxScope, etc.) directly test launcher-local collision avoidance.
     [GpuKernel]
     public static void LauncherLocalNamedParametersKernel(int[] data, int _gsharp_contexts, int _gsharp_total_blocks,
         int _gsharp_threads_per_block, int _gsharp_total_threads, int _gsharp_launch_error, int _b_idx, int _t_idx,

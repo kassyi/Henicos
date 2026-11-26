@@ -253,7 +253,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
     public async Task SharedPreludeHeader_CurrentPrelude_MatchesVerifiedSnapshot()
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
-        var src = @"using Kassyi.GSharp.Core; partial class Dummy { [GpuKernel] public static void Kernel() {} }";
+        var src = RoslynTestUtility.ReadTestCase("Generator/SharedPreludeHeaderDummy.cs");
         var compilation = RoslynTestUtility.CreateCompilation(src).WithAssemblyName("DummyCompilation");
 
         var generator = new GpuKernelGenerator();
@@ -329,35 +329,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
     public void GeneratedWrappersAndStateMachines_CompilerPass_ProducesZeroCSharpWarnings()
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
-        const string src = """
-            #nullable enable
-            using Kassyi.GSharp.Core;
-            namespace TestNs;
-            public partial class WarningCheckKernels
-            {
-                [GpuDeviceFunction]
-                public static int SyncHelper(int x)
-                {
-                    Gpu.SyncThreads();
-                    if (false)
-                    {
-                        return -1;
-                    }
-                    return x + 1;
-                }
-
-                [GpuKernel]
-                public static void TestKernel(int[]? values, int[] output)
-                {
-                    int unused = 0;
-                    var f = float.NaN;
-                    if (f != f && values != null)
-                    {
-                        output[0] = SyncHelper(values[0]);
-                    }
-                }
-            }
-            """;
+        var src = RoslynTestUtility.ReadTestCase("Generator/WarningCheckKernels.cs");
         var compilation = RoslynTestUtility.CreateCompilationAt("WarningCheckKernels.cu.cs", src);
         compilation = compilation
             .WithAssemblyName("WarningCheckCompilation")

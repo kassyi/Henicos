@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 
-using K = Kassyi.GSharp.Tests.Shared.Differential.ArrayRangeParamNameKernels;
-
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
@@ -61,8 +59,8 @@ public sealed class ArrayRangeParamNameDifferentialTests
 
     private static DifferentialCase Create(int call, bool inDeviceFunction) =>
         new(DiffKernelNames.Of(
-            typeof(K),
-            inDeviceFunction ? nameof(K.ArrayRangeDeviceFunctionKernel) : nameof(K.ArrayRangeCallKernel),
+            typeof(ArrayRangeParamNameKernels),
+            inDeviceFunction ? nameof(ArrayRangeParamNameKernels.ArrayRangeDeviceFunctionKernel) : nameof(ArrayRangeParamNameKernels.ArrayRangeCallKernel),
             s_callNames[call]))
         {
             Shape = LaunchShapes.SingleThread(),
@@ -78,12 +76,12 @@ public sealed class ArrayRangeParamNameDifferentialTests
             {
                 if (inDeviceFunction)
                 {
-                    K.LaunchArrayRangeDeviceFunctionKernel(
+                    ArrayRangeParamNameKernels.LaunchArrayRangeDeviceFunctionKernel(
                         b.Get<int>("a"), b.Get<int>("s"), call, b.Get<int>("o"), gridDimX: s.GridX, blockDimX: s.BlockX);
                 }
                 else
                 {
-                    K.LaunchArrayRangeCallKernel(
+                    ArrayRangeParamNameKernels.LaunchArrayRangeCallKernel(
                         b.Get<int>("a"), b.Get<int>("s"), call, b.Get<int>("o"), gridDimX: s.GridX, blockDimX: s.BlockX);
                 }
             },

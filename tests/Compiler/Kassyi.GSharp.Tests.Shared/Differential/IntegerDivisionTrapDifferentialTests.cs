@@ -21,13 +21,9 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [Collection(TestCollections.DeviceExclusive)]
 public class IntegerDivisionTrapDifferentialTests
 {
-    internal static readonly DifferentialCase s_int32Divide = new(
-        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.Int32DivideKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1],
-        OracleExceptions = OracleExceptionMode.MatchOracle,
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_int32Divide = DiffCases.Create(
+        IntegerTrapAndCheckedDifferentialKernels.LaunchInt32DivideKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             int[] nonZeroDenoms = [1, -1, 2, -2, 3, -7, 16, 31, 127, -128, int.MaxValue, int.MinValue];
@@ -54,23 +50,15 @@ public class IntegerDivisionTrapDifferentialTests
                 .In("denoms", denoms, readOnly: true)
                 .Out<int>("dst", rows, ["i_div"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchInt32DivideKernel(
-            b.Get<int>("nums"),
-            b.Get<int>("denoms"),
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        firstInputName: "nums",
+        secondInputName: "denoms",
+        seeds: [0, 1],
+        oracleExceptions: OracleExceptionMode.MatchOracle);
 
-    internal static readonly DifferentialCase s_int32Remainder = new(
-        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.Int32RemainderKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1],
-        OracleExceptions = OracleExceptionMode.MatchOracle,
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_int32Remainder = DiffCases.Create(
+        IntegerTrapAndCheckedDifferentialKernels.LaunchInt32RemainderKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             int[] nonZeroDenoms = [1, -1, 2, -2, 3, -7, 16, 31, 127, -128, int.MaxValue, int.MinValue];
@@ -97,23 +85,15 @@ public class IntegerDivisionTrapDifferentialTests
                 .In("denoms", denoms, readOnly: true)
                 .Out<int>("dst", rows, ["i_rem"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchInt32RemainderKernel(
-            b.Get<int>("nums"),
-            b.Get<int>("denoms"),
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        firstInputName: "nums",
+        secondInputName: "denoms",
+        seeds: [0, 1],
+        oracleExceptions: OracleExceptionMode.MatchOracle);
 
-    internal static readonly DifferentialCase s_uint32Divide = new(
-        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.UInt32DivideKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1],
-        OracleExceptions = OracleExceptionMode.MatchOracle,
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_uint32Divide = DiffCases.Create(
+        IntegerTrapAndCheckedDifferentialKernels.LaunchUInt32DivideKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             uint[] nonZeroDenoms = [1u, 2u, 3u, 7u, 16u, 255u, 65535u, uint.MaxValue];
@@ -135,23 +115,15 @@ public class IntegerDivisionTrapDifferentialTests
                 .In("denoms", denoms, readOnly: true)
                 .Out<uint>("dst", rows, ["u_div"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchUInt32DivideKernel(
-            b.Get<uint>("nums"),
-            b.Get<uint>("denoms"),
-            b.Get<uint>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        firstInputName: "nums",
+        secondInputName: "denoms",
+        seeds: [0, 1],
+        oracleExceptions: OracleExceptionMode.MatchOracle);
 
-    internal static readonly DifferentialCase s_uint32Remainder = new(
-        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.UInt32RemainderKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1],
-        OracleExceptions = OracleExceptionMode.MatchOracle,
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_uint32Remainder = DiffCases.Create(
+        IntegerTrapAndCheckedDifferentialKernels.LaunchUInt32RemainderKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             uint[] nonZeroDenoms = [1u, 2u, 3u, 7u, 16u, 255u, 65535u, uint.MaxValue];
@@ -173,23 +145,15 @@ public class IntegerDivisionTrapDifferentialTests
                 .In("denoms", denoms, readOnly: true)
                 .Out<uint>("dst", rows, ["u_rem"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchUInt32RemainderKernel(
-            b.Get<uint>("nums"),
-            b.Get<uint>("denoms"),
-            b.Get<uint>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        firstInputName: "nums",
+        secondInputName: "denoms",
+        seeds: [0, 1],
+        oracleExceptions: OracleExceptionMode.MatchOracle);
 
-    internal static readonly DifferentialCase s_int64Divide = new(
-        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.Int64DivideKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1],
-        OracleExceptions = OracleExceptionMode.MatchOracle,
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_int64Divide = DiffCases.Create(
+        IntegerTrapAndCheckedDifferentialKernels.LaunchInt64DivideKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             long[] nonZeroDenoms =
@@ -220,23 +184,15 @@ public class IntegerDivisionTrapDifferentialTests
                 .In("denoms", denoms, readOnly: true)
                 .Out<long>("dst", rows, ["l_div"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchInt64DivideKernel(
-            b.Get<long>("nums"),
-            b.Get<long>("denoms"),
-            b.Get<long>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        firstInputName: "nums",
+        secondInputName: "denoms",
+        seeds: [0, 1],
+        oracleExceptions: OracleExceptionMode.MatchOracle);
 
-    internal static readonly DifferentialCase s_uint64Divide = new(
-        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.UInt64DivideKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1],
-        OracleExceptions = OracleExceptionMode.MatchOracle,
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_uint64Divide = DiffCases.Create(
+        IntegerTrapAndCheckedDifferentialKernels.LaunchUInt64DivideKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             ulong[] nonZeroDenoms = [1UL, 2UL, 3UL, 7UL, 16UL, 255UL, 65535UL, ulong.MaxValue];
@@ -258,23 +214,15 @@ public class IntegerDivisionTrapDifferentialTests
                 .In("denoms", denoms, readOnly: true)
                 .Out<ulong>("dst", rows, ["ul_div"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchUInt64DivideKernel(
-            b.Get<ulong>("nums"),
-            b.Get<ulong>("denoms"),
-            b.Get<ulong>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        firstInputName: "nums",
+        secondInputName: "denoms",
+        seeds: [0, 1],
+        oracleExceptions: OracleExceptionMode.MatchOracle);
 
-    internal static readonly DifferentialCase s_int16CompoundDivide = new(
-        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.Int16CompoundDivideKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1],
-        OracleExceptions = OracleExceptionMode.MatchOracle,
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_int16CompoundDivide = DiffCases.CreateRows<short, short, short>(
+        IntegerTrapAndCheckedDifferentialKernels.LaunchInt16CompoundDivideKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             short[] nonZeroDenoms = [1, -1, 2, -2, 7, -13, 127, -127];
@@ -301,23 +249,15 @@ public class IntegerDivisionTrapDifferentialTests
                 .In("denoms", denoms, readOnly: true)
                 .Out<short>("dst", rows, ["s_compound_div"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchInt16CompoundDivideKernel(
-            b.Get<short>("nums"),
-            b.Get<short>("denoms"),
-            b.Get<short>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        firstInputName: "nums",
+        secondInputName: "denoms",
+        seeds: [0, 1],
+        oracleExceptions: OracleExceptionMode.MatchOracle);
 
-    internal static readonly DifferentialCase s_sbyteCompoundRemainder = new(
-        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.SByteCompoundRemainderKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1],
-        OracleExceptions = OracleExceptionMode.MatchOracle,
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_sbyteCompoundRemainder = DiffCases.CreateRows<sbyte, sbyte, sbyte>(
+        IntegerTrapAndCheckedDifferentialKernels.LaunchSByteCompoundRemainderKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             sbyte[] nonZeroDenoms = [1, -1, 2, -2, 7, -13, 127, -127];
@@ -344,15 +284,11 @@ public class IntegerDivisionTrapDifferentialTests
                 .In("denoms", denoms, readOnly: true)
                 .Out<sbyte>("dst", rows, ["sb_compound_rem"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchSByteCompoundRemainderKernel(
-            b.Get<sbyte>("nums"),
-            b.Get<sbyte>("denoms"),
-            b.Get<sbyte>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        firstInputName: "nums",
+        secondInputName: "denoms",
+        seeds: [0, 1],
+        oracleExceptions: OracleExceptionMode.MatchOracle);
 
     [SkippableFact]
     public void IntegerDivision_Int32_MatchesTheOracleOnEveryPath() =>

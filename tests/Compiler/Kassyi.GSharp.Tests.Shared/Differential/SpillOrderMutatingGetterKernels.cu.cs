@@ -3,6 +3,19 @@ using Kassyi.GSharp.Tests.Shared.Syntax;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
+public struct OperatorMacroOperands
+{
+    // OperatorMacroContextValue wraps a non-readonly uint[], so GpuReadOnly cannot be applied here.
+    public uint[] Left;
+    public uint[] Right;
+}
+
+public struct OperatorMacroResults
+{
+    public uint[] Result;
+    public uint[] Calls;
+}
+
 /// <summary>
 /// Differential test kernels for #1000 (ref conditional expressions targeting value parameters across barriers),
 /// #944 ([GpuOperatorMacro] mutating an implicit ref value parameter across barriers), and F14 (unsafe blocks
@@ -85,29 +98,29 @@ public static unsafe partial class SpillOrderMutatingGetterKernels
     [GpuKernel]
     public static void OperatorMacroOnKernelValueParameterAcrossBarrierKernel(
         OperatorMacroContextState bigCtx,
-        uint[] left,
-        uint[] right,
-        uint[] result,
-        uint[] calls)
+        OperatorMacroOperands operands,
+        OperatorMacroResults results)
     {
-        OperatorMacroContextValue a = left;
-        OperatorMacroContextValue b = right;
-        OperatorMacroContextValue c = result;
+        OperatorMacroContextValue a = operands.Left;
+        OperatorMacroContextValue b = operands.Right;
+        OperatorMacroContextValue c = results.Result;
 
         c = a + b;
         Gpu.SyncThreads();
-        calls[0] = bigCtx.Calls;
+        results.Calls[0] = bigCtx.Calls;
     }
 
     // #944: [GpuOperatorMacro] implicitly passing suspending device function value parameter by ref before Gpu.SyncThreads()
     [GpuKernel]
     public static void OperatorMacroOnDeviceValueParameterAcrossBarrierKernel(
         OperatorMacroContextState bigCtx,
-        uint[] left,
-        uint[] right,
-        uint[] result,
-        uint[] calls)
+        OperatorMacroOperands operands,
+        OperatorMacroResults results)
     {
+        var left = operands.Left;
+        var right = operands.Right;
+        var result = results.Result;
+        var calls = results.Calls;
         calls[0] = OperatorMacroAcrossBarrierDevice(bigCtx, left, right, result);
     }
 

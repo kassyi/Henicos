@@ -49,7 +49,8 @@ internal sealed class WhereDeviceState : IDisposable
         int wordsPerElement,
         int elementOffset,
         int? elementCount,
-        out DeviceElementCount count)
+        out DeviceElementCount count,
+        out GpuBigUIntArrayView scan)
         where TKind : IVectorCompactKind<TResult>
         where TResult : struct, allows ref struct
     {
@@ -57,7 +58,7 @@ internal sealed class WhereDeviceState : IDisposable
         var inputCount = DeviceCounted.Combine(sourceCount, predicates.Count);
 
         // 1. The scan of the predicates gives each selected element its position, and its total is the count
-        var scan = ScanFlags(workspace, predicates.Flags.DevicePointer, capacity, inputCount);
+        scan = ScanFlags(workspace, predicates.Flags.DevicePointer, capacity, inputCount);
 
         // 2. The selected elements move to their positions (all components in one launch)
         var selected = TKind.Selected(Cache, workspace, capacity, wordsPerElement);
@@ -66,6 +67,81 @@ internal sealed class WhereDeviceState : IDisposable
 
         count = Count(capacity).SkipFirst(elementOffset).TakeFirst(evalCount);
         return TKind.Slice(selected, elementOffset, evalCount);
+    }
+
+    /// <summary>
+    /// Closes the source and predicate index spaces opened by <see cref="IIndexSpaceBoundary.BeginOperand"/>, drops the
+    /// failures C# never reaches, picks the earlier remaining one in C# order (source before predicate at the same
+    /// input index), translates it into the requested window, and records it if it falls inside the window.
+    /// </summary>
+    /// <remarks>
+    /// C# pairs the source with the predicate as <c>Zip</c> does: element <c>i</c> evaluates the source first, then the
+    /// predicate, and the pairing ends at the first input without an element <c>i</c>. So a source element runs up to
+    /// and including the predicate's length (at that index the source still runs before the predicate ends), and a
+    /// predicate element only below the source's length. The lengths are read only when a failure was recorded.
+    /// </remarks>
+    public void RecordTranslated(
+        GpuWorkspace workspace,
+        DeviceElementCount sourceCount,
+        DeviceElementCount predicateCount,
+        scoped GpuBigUIntArrayView scan,
+        int offset,
+        int evalCount)
+    {
+        var fromSource = PendingThrows.CloseSpace();
+        var fromPredicate = PendingThrows.CloseSpace();
+        if (fromSource.Exception is null && fromPredicate.Exception is null)
+        {
+            return;
+        }
+
+        var sourceLength = sourceCount.Read(workspace);
+        var predicateLength = predicateCount.Read(workspace);
+        if (fromSource.Index > predicateLength)
+        {
+            fromSource = PendingThrows.Recorded.Empty;
+        }
+
+        if (fromPredicate.Index >= sourceLength)
+        {
+            fromPredicate = PendingThrows.Recorded.Empty;
+        }
+
+        var recorded = fromSource.Exception is not null && fromSource.Index <= fromPredicate.Index
+            ? fromSource
+            : fromPredicate;
+        var inputLength = Math.Min(sourceLength, predicateLength);
+        if (recorded.Exception is { } exception
+            && TranslateRecorded(workspace, recorded.Index, inputLength, scan, offset, evalCount) is { } index)
+        {
+            PendingThrows.RecordOrThrow(index, exception);
+        }
+    }
+
+    /// <summary>
+    /// Maps an input element index to the requested output window
+    /// [<paramref name="offset"/>, <paramref name="offset"/> + <paramref name="evalCount"/>), clamping skipped
+    /// elements to 0 and returning <see langword="null"/> past the window.
+    /// </summary>
+    public int? TranslateRecorded(
+        GpuWorkspace workspace,
+        int index,
+        int inputLength,
+        scoped GpuBigUIntArrayView scan,
+        int offset,
+        int evalCount)
+    {
+        var n = inputLength;
+        var mapped = index < n
+            ? workspace.Provider.ReadWord(scan.DevicePointer, index, workspace.Stream)
+            : workspace.Provider.ReadWord(_count.DevicePointer, 0, workspace.Stream);
+        var j = checked((int)mapped) - offset;
+        if (j < 0)
+        {
+            j = 0;
+        }
+
+        return j >= evalCount ? null : j;
     }
 
     /// <summary>

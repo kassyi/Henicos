@@ -1,6 +1,12 @@
+using Microsoft.CodeAnalysis.Operations;
+
 namespace Kassyi.GSharp.Compiler.Diagnostics.Host;
 
-/// <summary>Roslyn analyzer that prohibits direct variable declarations or assignments of GpuBigIntExpr without .Value.</summary>
+/// <summary>
+/// Roslyn analyzer that reports <see cref="GSharpDiagnostics.GpuBigIntExprDirectAssignment"/> (GSH0005) when a
+/// <c>GpuBigIntExpr</c> local is discarded without being evaluated or disposed, or when a <c>GpuBigIntExpr</c> is
+/// assigned directly to a non-local target such as a field.
+/// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class GpuBigIntExprAnalyzer : DiagnosticAnalyzer
 {
@@ -12,63 +18,125 @@ public class GpuBigIntExprAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(compilationContext =>
+        context.RegisterCompilationStartAction(static compilationContext =>
         {
-            var type1 = compilationContext.Compilation.GetTypeByMetadataName(
-                "Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions.GpuBigIntExpr");
-            var type2 = compilationContext.Compilation.GetTypeByMetadataName(
-                "Kassyi.GSharp.Stdlib.GpuMath.Expressions.GpuBigIntExpr");
-            var type3 = compilationContext.Compilation.GetTypeByMetadataName(
-                "Kassyi.GSharp.GpuBigInt.Expressions.GpuBigIntExpr");
-
-            if (type1 is null && type2 is null && type3 is null)
+            if (GpuBigIntExprTypes.TryGet(compilationContext.Compilation, out var types))
             {
-                return;
+                compilationContext.RegisterOperationBlockAction(context => AnalyzeOperationBlock(context, types));
             }
-
-            compilationContext.RegisterSyntaxNodeAction(ctx => AnalyzeVariableDeclaration(ctx, type1, type2, type3),
-                SyntaxKind.VariableDeclarator);
-            compilationContext.RegisterSyntaxNodeAction(ctx => AnalyzeAssignment(ctx, type1, type2, type3),
-                SyntaxKind.SimpleAssignmentExpression);
         });
     }
 
-    private void AnalyzeVariableDeclaration(SyntaxNodeAnalysisContext context, INamedTypeSymbol? t1,
-        INamedTypeSymbol? t2, INamedTypeSymbol? t3)
+    private static void AnalyzeOperationBlock(OperationBlockAnalysisContext context, GpuBigIntExprTypes types)
     {
-        var declarator = (VariableDeclaratorSyntax)context.Node;
-
-        if (context.SemanticModel.GetDeclaredSymbol<ILocalSymbol>(declarator) is { } symbol &&
-            IsGpuBigIntExpr(symbol.Type, t1, t2, t3))
+        GpuBigIntExprLocals? locals = null;
+        foreach (var block in context.OperationBlocks)
         {
-            context.ReportDiagnostic(GSharpDiagnostics.GpuBigIntExprDirectAssignment, declarator);
+            foreach (var operation in block.DescendantsAndSelf())
+            {
+                if (operation is ISimpleAssignmentOperation assignment)
+                {
+                    ReportNonLocalAssignment(context, assignment, types);
+                }
+                else
+                {
+                    CollectLocal(operation, types, ref locals);
+                }
+            }
+        }
+
+        if (locals is null)
+        {
+            return;
+        }
+
+        foreach (var block in context.OperationBlocks)
+        {
+            foreach (var operation in block.DescendantsAndSelf())
+            {
+                if (operation is ILocalReferenceOperation reference &&
+                    locals.IsTracked(reference.Local) &&
+                    !locals.IsKept(reference.Local) &&
+                    GpuBigIntExprUses.KeepsValue(reference, locals))
+                {
+                    locals.Keep(reference.Local);
+                }
+            }
+        }
+
+        locals.PropagateKept();
+        locals.ReportDropped(context);
+    }
+
+    // Records a GpuBigIntExpr local that a declarator, an out variable or a pattern declares
+    private static void CollectLocal(IOperation operation, GpuBigIntExprTypes types, ref GpuBigIntExprLocals? locals)
+    {
+        switch (operation)
+        {
+            // A foreach variable is a copy of an element that the collection owns
+            case IVariableDeclaratorOperation { Parent: not IForEachLoopOperation } declarator
+                when types.Matches(declarator.Symbol.Type):
+                locals ??= new GpuBigIntExprLocals(types);
+                locals.Track(declarator.Symbol);
+                if (!declarator.Symbol.IsRef)
+                {
+                    locals.Declare(declarator.Symbol, declarator.Syntax.GetLocation());
+                    if (GpuBigIntExprUses.IsUsingResource(declarator))
+                    {
+                        locals.Keep(declarator.Symbol);
+                    }
+                }
+
+                break;
+
+            case IDeclarationExpressionOperation
+            {
+                Expression: ILocalReferenceOperation { Local: var outLocal }
+            } declaration
+                when !outLocal.IsRef && types.Matches(outLocal.Type):
+                locals ??= new GpuBigIntExprLocals(types);
+                if (locals.Track(outLocal))
+                {
+                    locals.Declare(outLocal, declaration.Syntax.GetLocation());
+                }
+
+                break;
+
+            case IDeclarationPatternOperation { DeclaredSymbol: ILocalSymbol { IsRef: false } patternLocal }
+                when types.Matches(patternLocal.Type):
+                (locals ??= new GpuBigIntExprLocals(types)).Track(patternLocal);
+                break;
+
+            case IRecursivePatternOperation { DeclaredSymbol: ILocalSymbol { IsRef: false } patternLocal }
+                when types.Matches(patternLocal.Type):
+                (locals ??= new GpuBigIntExprLocals(types)).Track(patternLocal);
+                break;
         }
     }
 
-    private void AnalyzeAssignment(SyntaxNodeAnalysisContext context, INamedTypeSymbol? t1, INamedTypeSymbol? t2,
-        INamedTypeSymbol? t3)
+    private static void ReportNonLocalAssignment(OperationBlockAnalysisContext context,
+        ISimpleAssignmentOperation assignment, GpuBigIntExprTypes types)
     {
-        var assignment = (AssignmentExpressionSyntax)context.Node;
-        var targetType = context.SemanticModel.GetTypeSymbol(assignment.Left);
-
-        // Prevent assignments where the target evaluates to GpuBigIntExpr
-        if (targetType != null && IsGpuBigIntExpr(targetType, t1, t2, t3))
+        if (types.Matches(assignment.Target.Type) &&
+            assignment.Target is not ILocalReferenceOperation &&
+            assignment.Target is not IPropertyReferenceOperation { Property.Name: "Value" } &&
+            assignment.Target is not IParameterReferenceOperation { Parameter.RefKind: RefKind.Out or RefKind.Ref })
         {
-            context.ReportDiagnostic(GSharpDiagnostics.GpuBigIntExprDirectAssignment, assignment);
+            context.ReportDiagnostic(Diagnostic.Create(
+                GSharpDiagnostics.GpuBigIntExprDirectAssignment,
+                assignment.Syntax.GetLocation(),
+                GetAssignmentTargetName(assignment.Target)));
         }
     }
 
-    private static bool IsGpuBigIntExpr(ITypeSymbol type, INamedTypeSymbol? t1, INamedTypeSymbol? t2,
-        INamedTypeSymbol? t3)
+    private static string GetAssignmentTargetName(IOperation target) => target switch
     {
-        if (type is not INamedTypeSymbol namedType)
-        {
-            return false;
-        }
-
-        var originalDef = namedType.OriginalDefinition;
-        return originalDef.IsEqualTo(t1) ||
-               originalDef.IsEqualTo(t2) ||
-               originalDef.IsEqualTo(t3);
-    }
+        IFieldReferenceOperation field => field.Field.Name,
+        IPropertyReferenceOperation property => property.Property.Name,
+        IParameterReferenceOperation parameter => parameter.Parameter.Name,
+        IArrayElementReferenceOperation arrayElement => GetAssignmentTargetName(arrayElement.ArrayReference) + "[]",
+        IEventReferenceOperation eventRef => eventRef.Event.Name,
+        IDiscardOperation => "_",
+        _ => target.Type?.Name ?? "GpuBigIntExpr"
+    };
 }

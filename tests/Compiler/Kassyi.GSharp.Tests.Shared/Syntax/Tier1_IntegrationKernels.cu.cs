@@ -22,6 +22,21 @@ public struct Tier1CustomStruct
     public bool BoolVal;
 }
 
+public struct Tier1IntegrationInputs
+{
+    [GpuReadOnly]
+    public int[] Integers;
+    [GpuReadOnly]
+    public float[] Singles;
+    public Tier1CustomStruct Config;
+}
+
+public struct Tier1IntegrationOutputs
+{
+    public float[] Results;
+    public ulong[] GlobalCounter;
+}
+
 public static partial class Tier1IntegrationKernels
 {
     [GpuDeviceFunction]
@@ -51,14 +66,17 @@ public static partial class Tier1IntegrationKernels
 
     [GpuKernel]
     public static void AllInOneKernel(
-        int[] intInput,
-        float[] floatInput,
-        float[] results,
-        Tier1CustomStruct config,
-        ulong[] globalCounter,
+        Tier1IntegrationInputs inputs,
+        Tier1IntegrationOutputs outputs,
         int count,
         int dynamicSharedSize)
     {
+        int[] intInput = inputs.Integers;
+        float[] floatInput = inputs.Singles;
+        Tier1CustomStruct config = inputs.Config;
+        float[] results = outputs.Results;
+        ulong[] globalCounter = outputs.GlobalCounter;
+
         // SYN-94: Macro DSL
         Gpu.GridStrideLoop(count, tid =>
         {

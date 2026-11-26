@@ -155,6 +155,7 @@ public static partial class CppIdentifierRenameKernels
 
     // Locals and shared memory that live across a barrier are hoisted into the CPU context struct. The parameters share
     // the CPU launcher's scope, which declares bx, tx, ctx and anyActive itself.
+    // The parameter list is the subject of this test: parameter names (bx, tx, ctx, anyActive) directly test collision renaming against CPU launcher locals.
     [GpuKernel]
     public static void BarrierHoistedNamesKernel(int[] data, int bx, int tx, int ctx, int anyActive)
     {

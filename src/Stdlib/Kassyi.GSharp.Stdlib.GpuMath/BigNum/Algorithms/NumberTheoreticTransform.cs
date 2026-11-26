@@ -30,4 +30,10 @@ public struct NumberTheoreticTransform
     public int MaxBlocks;
     /// <summary>The current transform stage length L.</summary>
     public int CurrentL;
+    /// <summary>
+    /// 0 when the rows are contiguous: element <c>e</c> of row <c>r</c> is at <c>r * CurrentL + e</c>. Otherwise the
+    /// rows are the columns of a row-major matrix with this many columns: element <c>e</c> of row <c>r</c> is at
+    /// <c>r + e * ColumnStride</c>.
+    /// </summary>
+    public int ColumnStride;
 }

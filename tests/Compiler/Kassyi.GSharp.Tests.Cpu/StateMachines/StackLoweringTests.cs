@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kassyi.GSharp.Compiler.Analysis;
 using Kassyi.GSharp.Compiler.Extensions;
 using Kassyi.GSharp.Compiler.Lowering;
 using Kassyi.GSharp.Compiler.Transpiler;
@@ -191,6 +192,23 @@ public class StackLoweringTests
         var copy = plan;
 
         Assert.Same(plan.StackBody, copy.StackBody);
+    }
+
+    // The native stack eligibility lowers the body first; a new plan of the same method writes that same body
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void StackBody_AfterTheNativeStackEligibility_IsLoweredOnce()
+    {
+        var (_, plan) = CreatePlans(["TestCases", "StateMachines", "ReconvergenceCases.cs"])
+            .Single(static entry => entry.Name == "IfKernel");
+        var symbol = plan.Symbol ?? throw new InvalidOperationException("IfKernel has no symbol.");
+
+        NativeStackEligibility.Classify(symbol, plan.Declaration, plan.SemanticModel);
+        var eligibilityBody = StackBodies.Get(plan.Declaration, plan.SemanticModel, symbol, isDeviceFunction: false);
+        var newPlan = MethodEmissionPlan.Create(plan.Declaration, plan.SemanticModel, isKernel: true);
+
+        Assert.Same(eligibilityBody.Body, newPlan.StackBody);
+        Assert.NotNull(eligibilityBody.Body);
     }
 
     // The plans of the kernels and the device functions that a state machine lowers, by name, with their stack bodies

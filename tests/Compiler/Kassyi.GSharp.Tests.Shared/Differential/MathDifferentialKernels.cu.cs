@@ -5,6 +5,119 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
+public struct SingleMaxMinClampInputs
+{
+    [GpuReadOnly] public float[] LeftValues;
+    [GpuReadOnly] public float[] RightValues;
+    [GpuReadOnly] public float[] Minimums;
+    [GpuReadOnly] public float[] Maximums;
+}
+
+public struct DoubleMaxMinClampInputs
+{
+    [GpuReadOnly] public double[] LeftValues;
+    [GpuReadOnly] public double[] RightValues;
+    [GpuReadOnly] public double[] Minimums;
+    [GpuReadOnly] public double[] Maximums;
+}
+
+public struct MixedFloatMaxMinInputs
+{
+    [GpuReadOnly] public float[] SingleValues;
+    [GpuReadOnly] public double[] DoubleValues;
+    [GpuReadOnly] public int[] IntegerValues;
+}
+
+public struct Int32MathInputs
+{
+    [GpuReadOnly] public int[] LeftValues;
+    [GpuReadOnly] public int[] RightValues;
+    [GpuReadOnly] public short[] Signed16Values;
+    [GpuReadOnly] public sbyte[] Signed8Values;
+    [GpuReadOnly] public int[] Minimums;
+    [GpuReadOnly] public int[] Maximums;
+}
+
+public struct SingleOperandPair
+{
+    [GpuReadOnly] public float[] LeftValues;
+    [GpuReadOnly] public float[] RightValues;
+}
+
+public struct DoubleOperandPair
+{
+    [GpuReadOnly] public double[] LeftValues;
+    [GpuReadOnly] public double[] RightValues;
+}
+
+public struct TranscendentalSingleSpecialInputs
+{
+    [GpuReadOnly] public float[] GeneralValues;
+    [GpuReadOnly] public float[] LogValues;
+    [GpuReadOnly] public float[] PowerBases;
+    [GpuReadOnly] public float[] PowerExponents;
+}
+
+public struct TranscendentalDoubleSpecialInputs
+{
+    [GpuReadOnly] public double[] GeneralValues;
+    [GpuReadOnly] public double[] LogValues;
+    [GpuReadOnly] public double[] PowerBases;
+    [GpuReadOnly] public double[] PowerExponents;
+}
+
+public struct FloatComparisonInputs
+{
+    public SingleOperandPair SingleOperands;
+    public DoubleOperandPair DoubleOperands;
+    [GpuReadOnly] public int[] IntegerValues;
+}
+
+public struct FloatComparisonResults
+{
+    public byte[] Comparisons;
+    public double[] RoundedValues;
+}
+
+public struct MulAddSingleInputs
+{
+    [GpuReadOnly] public float[] Multiplicands;
+    [GpuReadOnly] public float[] Multipliers;
+    [GpuReadOnly] public float[] Addends;
+}
+
+public struct SingleTranscendentalInputs
+{
+    [GpuReadOnly] public float[] TrigArguments;
+    [GpuReadOnly] public float[] ExpArguments;
+    [GpuReadOnly] public float[] LogArguments;
+    [GpuReadOnly] public float[] PowerBases;
+    [GpuReadOnly] public float[] PowerExponents;
+}
+
+public struct DoubleTranscendentalInputs
+{
+    [GpuReadOnly] public double[] TrigArguments;
+    [GpuReadOnly] public double[] ExpArguments;
+    [GpuReadOnly] public double[] LogArguments;
+    [GpuReadOnly] public double[] PowerBases;
+    [GpuReadOnly] public double[] PowerExponents;
+}
+
+public struct PromotedSingleTranscendentalInputs
+{
+    [GpuReadOnly] public float[] Arguments;
+    [GpuReadOnly] public float[] Exponents;
+}
+
+public struct FastMathInputs
+{
+    [GpuReadOnly] public float[] Values;
+    [GpuReadOnly] public float[] ExpArguments;
+    [GpuReadOnly] public float[] UnitLogArguments;
+    [GpuReadOnly] public float[] WideLogArguments;
+}
+
 /// <summary>
 /// Differential kernels for <see cref="Math"/>, <see cref="MathF"/>, <see cref="FastMath"/>,
 /// <see cref="BitOperations"/>, <see cref="float"/> and <see cref="double"/> intrinsics mapped in
@@ -306,13 +419,19 @@ public static partial class MathDifferentialKernels
     }
 
     [GpuKernel]
-    public static void SingleMaxMinClampMatrixKernel(float[] a, float[] b, float[] min, float[] max, float[] r)
+    public static void SingleMaxMinClampMatrixKernel(SingleMaxMinClampInputs inputs, float[] results)
     {
         int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (t >= a.Length)
+        if (t >= inputs.LeftValues.Length)
         {
             return;
         }
+
+        var a = inputs.LeftValues;
+        var b = inputs.RightValues;
+        var min = inputs.Minimums;
+        var max = inputs.Maximums;
+        var r = results;
 
         int o = t * 9;
         r[o] = Math.Max(a[t], b[t]);
@@ -327,13 +446,19 @@ public static partial class MathDifferentialKernels
     }
 
     [GpuKernel]
-    public static void DoubleMaxMinClampMatrixKernel(double[] a, double[] b, double[] min, double[] max, double[] r)
+    public static void DoubleMaxMinClampMatrixKernel(DoubleMaxMinClampInputs inputs, double[] results)
     {
         int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (t >= a.Length)
+        if (t >= inputs.LeftValues.Length)
         {
             return;
         }
+
+        var a = inputs.LeftValues;
+        var b = inputs.RightValues;
+        var min = inputs.Minimums;
+        var max = inputs.Maximums;
+        var r = results;
 
         int o = t * 7;
         r[o] = Math.Max(a[t], b[t]);
@@ -346,13 +471,19 @@ public static partial class MathDifferentialKernels
     }
 
     [GpuKernel]
-    public static void MixedFloatMaxMinMatrixKernel(float[] f, double[] d, int[] iv, float[] rf, double[] rd)
+    public static void MixedFloatMaxMinMatrixKernel(MixedFloatMaxMinInputs inputs, float[] singleResults, double[] doubleResults)
     {
         int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (t >= f.Length)
+        if (t >= inputs.SingleValues.Length)
         {
             return;
         }
+
+        var f = inputs.SingleValues;
+        var d = inputs.DoubleValues;
+        var iv = inputs.IntegerValues;
+        var rf = singleResults;
+        var rd = doubleResults;
 
         int of = t * 4;
         rf[of] = Math.Max(f[t], iv[t]);
@@ -372,13 +503,21 @@ public static partial class MathDifferentialKernels
     }
 
     [GpuKernel]
-    public static void Int32MathMatrixKernel(int[] a, int[] b, short[] s, sbyte[] sb, int[] min, int[] max, int[] r)
+    public static void Int32MathMatrixKernel(Int32MathInputs inputs, int[] results)
     {
         int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (t >= a.Length)
+        if (t >= inputs.LeftValues.Length)
         {
             return;
         }
+
+        var a = inputs.LeftValues;
+        var b = inputs.RightValues;
+        var s = inputs.Signed16Values;
+        var sb = inputs.Signed8Values;
+        var min = inputs.Minimums;
+        var max = inputs.Maximums;
+        var r = results;
 
         int o = t * 8;
         r[o] = Math.Abs(a[t]);
@@ -411,13 +550,20 @@ public static partial class MathDifferentialKernels
     // Subnormal IEEE 754 0-ulp arithmetic and Sqrt without FTZ
     [GpuKernel]
     public static void SubnormalIeeeExactMatrixKernel(
-        float[] fa, float[] fb, double[] da, double[] db, float[] rf, double[] rd)
+        SingleOperandPair singleOperands, DoubleOperandPair doubleOperands, float[] singleResults, double[] doubleResults)
     {
         int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (t >= fa.Length)
+        if (t >= singleOperands.LeftValues.Length)
         {
             return;
         }
+
+        var fa = singleOperands.LeftValues;
+        var fb = singleOperands.RightValues;
+        var da = doubleOperands.LeftValues;
+        var db = doubleOperands.RightValues;
+        var rf = singleResults;
+        var rd = doubleResults;
 
         int of = t * 6;
         float x = fa[t];
@@ -442,23 +588,28 @@ public static partial class MathDifferentialKernels
     // Transcendental and Pow special values / fixed points (Bitwise)
     [GpuKernel]
     public static void TranscendentalSpecialValuesKernel(
-        float[] fx,
-        float[] logF,
-        float[] powBaseF,
-        float[] powExpF,
-        double[] dx,
-        double[] logD,
-        double[] powBaseD,
-        double[] powExpD,
-        float[] rf,
-        double[] rd
+        TranscendentalSingleSpecialInputs singleInputs,
+        TranscendentalDoubleSpecialInputs doubleInputs,
+        float[] singleResults,
+        double[] doubleResults
     )
     {
         int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (t >= fx.Length)
+        if (t >= singleInputs.GeneralValues.Length)
         {
             return;
         }
+
+        var fx = singleInputs.GeneralValues;
+        var logF = singleInputs.LogValues;
+        var powBaseF = singleInputs.PowerBases;
+        var powExpF = singleInputs.PowerExponents;
+        var dx = doubleInputs.GeneralValues;
+        var logD = doubleInputs.LogValues;
+        var powBaseD = doubleInputs.PowerBases;
+        var powExpD = doubleInputs.PowerExponents;
+        var rf = singleResults;
+        var rd = doubleResults;
 
         int of = t * 7;
         rf[of] = MathF.Sin(fx[t]);
@@ -512,13 +663,21 @@ public static partial class MathDifferentialKernels
     // IEEE 754 unordered comparisons (NaN, signed zeros, subnormals, int promotion) and large-exponent Round ties
     [GpuKernel]
     public static void FloatComparisonAndLargeTieMatrixKernel(
-        float[] fa, float[] fb, double[] da, double[] db, int[] ia, byte[] rCmp, double[] rRound)
+        FloatComparisonInputs inputs, FloatComparisonResults results)
     {
         int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (t >= fa.Length)
+        if (t >= inputs.SingleOperands.LeftValues.Length)
         {
             return;
         }
+
+        var fa = inputs.SingleOperands.LeftValues;
+        var fb = inputs.SingleOperands.RightValues;
+        var da = inputs.DoubleOperands.LeftValues;
+        var db = inputs.DoubleOperands.RightValues;
+        var ia = inputs.IntegerValues;
+        var rCmp = results.Comparisons;
+        var rRound = results.RoundedValues;
 
         float x = fa[t];
         float y = fb[t];
@@ -552,29 +711,40 @@ public static partial class MathDifferentialKernels
     // Mul-Add exact inputs (Bitwise) and FMA contraction witness (Verify)
     [GpuKernel]
     public static void MulAddExactAndContractionKernel(
-        float[] fa, float[] fb, float[] fc, float[] rExact, float[] rContract)
+        MulAddSingleInputs inputs, float[] exactResults, float[] contractedResults)
     {
         int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (t >= fa.Length)
+        if (t >= inputs.Multiplicands.Length)
         {
             return;
         }
 
-        rExact[t] = fa[t] * fb[t] + fc[t];
+        var fa = inputs.Multiplicands;
+        var fb = inputs.Multipliers;
+        var fc = inputs.Addends;
+
+        exactResults[t] = fa[t] * fb[t] + fc[t];
         float k = fa[t];
-        rContract[t] = k * k - (1.0f + 2.0f * 0.000244140625f);
+        contractedResults[t] = k * k - (1.0f + 2.0f * 0.000244140625f);
     }
 
     // MathF single-precision transcendentals (per-column CUDA ULP + Verify mathematical identities)
     [GpuKernel]
     public static void SingleTranscendentalMatrixKernel(
-        float[] trigX, float[] expX, float[] logX, float[] powBase, float[] powExp, float[] r)
+        SingleTranscendentalInputs inputs, float[] results)
     {
         int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (t >= trigX.Length)
+        if (t >= inputs.TrigArguments.Length)
         {
             return;
         }
+
+        var trigX = inputs.TrigArguments;
+        var expX = inputs.ExpArguments;
+        var logX = inputs.LogArguments;
+        var powBase = inputs.PowerBases;
+        var powExp = inputs.PowerExponents;
+        var r = results;
 
         int o = t * 6;
         r[o] = MathF.Sin(trigX[t]);
@@ -588,14 +758,24 @@ public static partial class MathDifferentialKernels
     // System.Math double-precision transcendentals + float argument widening (#876)
     [GpuKernel]
     public static void DoubleAndPromotedSingleTranscendentalMatrixKernel(
-        double[] trigD, double[] expD, double[] logD, double[] powBaseD, double[] powExpD,
-        float[] fArg, float[] fExp, double[] r)
+        DoubleTranscendentalInputs doubleInputs,
+        PromotedSingleTranscendentalInputs promotedSingleInputs,
+        double[] results)
     {
         int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (t >= trigD.Length)
+        if (t >= doubleInputs.TrigArguments.Length)
         {
             return;
         }
+
+        var trigD = doubleInputs.TrigArguments;
+        var expD = doubleInputs.ExpArguments;
+        var logD = doubleInputs.LogArguments;
+        var powBaseD = doubleInputs.PowerBases;
+        var powExpD = doubleInputs.PowerExponents;
+        var fArg = promotedSingleInputs.Arguments;
+        var fExp = promotedSingleInputs.Exponents;
+        var r = results;
 
         int o = t * 12;
         r[o] = Math.Sin(trigD[t]);
@@ -614,14 +794,19 @@ public static partial class MathDifferentialKernels
 
     // FastMath (Sqrt, Abs, Exp, Log)
     [GpuKernel]
-    public static void FastMathMatrixKernel(
-        float[] x, float[] expX, float[] logUnitX, float[] logWideX, float[] r)
+    public static void FastMathMatrixKernel(FastMathInputs inputs, float[] results)
     {
         int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (t >= x.Length)
+        if (t >= inputs.Values.Length)
         {
             return;
         }
+
+        var x = inputs.Values;
+        var expX = inputs.ExpArguments;
+        var logUnitX = inputs.UnitLogArguments;
+        var logWideX = inputs.WideLogArguments;
+        var r = results;
 
         int o = t * 5;
         r[o] = FastMath.Sqrt(MathF.Abs(x[t]));

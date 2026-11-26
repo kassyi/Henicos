@@ -6,16 +6,16 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
 import type { ReadStep } from "./command-reader.ts";
-import { loadConfig, type QueueConfig } from "./config.ts";
-import { EntryScript } from "./constants.ts";
+import type { QueueConfig } from "./config.ts";
 import {
   PluginApiVersion,
-  type AssertModule,
   type CheckResult,
   type Classification,
   type ClientContext,
   type ContentDigest,
   type GrantInfo,
+  type OffloadAnswer,
+  type OffloadCheckRequest,
   type PreparedCommand,
   type QueuePlugin,
   type ResourceRequest,
@@ -25,22 +25,30 @@ import {
   type StepKeys,
   type ViewPanel,
 } from "./plugin-api.ts";
+import {
+  DefaultImportTimeoutMs,
+  DefaultPluginsRoot,
+  importWithTimeout,
+  isPlainObject,
+  resolvePluginFolder,
+  runPluginChecks,
+  type PluginChecksOptions,
+} from "./plugin-checks-runner.ts";
 import { errorMessage } from "./history.ts";
 import { isCommandKeys, isMemoryMb } from "./protocol.ts";
+import { resolveRemoteRules, type RemoteContributionEntry, type ResolvedRemoteRules } from "./remote/rules.ts";
+
+export { DefaultPluginsRoot, runPluginChecks, type PluginChecksOptions };
 
 export type BaseClientContext = Omit<ClientContext, "options">;
 
-const DefaultImportTimeoutMs = 5000;
 const DefaultSlowHookMs = 500;
 /** How long one plugin may take to answer checkShare (the answer may run a test list through the queue). */
 export const CheckShareTimeoutMs = 180_000;
+/** How long one plugin may take to answer checkOffload (may run a `--list-tests` CPU job through the queue). */
+export const CheckOffloadTimeoutMs = 180_000;
 /** How long the `stillValid` of a shared answer may take (it should only compare what was measured). */
 export const StillValidTimeoutMs = 30_000;
-export const DefaultPluginsRoot = path.resolve(import.meta.dirname, "plugins");
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
-}
 
 function isValidSplitPlan(value: unknown): value is SplitPlan {
   if (!isPlainObject(value)) {
@@ -70,36 +78,6 @@ function isValidViewPanel(value: unknown): value is ViewPanel {
   );
 }
 
-function resolvePluginFolder(name: string, configRoot: string, pluginsRoot = DefaultPluginsRoot): string | null {
-  if (name.startsWith("./") || name.startsWith(".\\")) {
-    return path.resolve(configRoot, name);
-  }
-  if (name.includes("/") || name.includes("\\") || name.includes("..")) {
-    return null;
-  }
-  const resolved = path.resolve(pluginsRoot, name);
-  const relative = path.relative(pluginsRoot, resolved);
-  if (relative === "" || relative.startsWith("..") || path.isAbsolute(relative)) {
-    return null;
-  }
-  return resolved;
-}
-
-async function importWithTimeout(fileUrl: string, timeoutMs: number): Promise<unknown> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<never>((_resolve, reject) => {
-    timer = setTimeout(() => reject(new Error(`timed out after ${timeoutMs} ms`)), timeoutMs);
-    timer.unref?.();
-  });
-  try {
-    return await Promise.race([import(fileUrl), timeout]);
-  } finally {
-    if (timer !== undefined) {
-      clearTimeout(timer);
-    }
-  }
-}
-
 export interface PluginHostLoadOptions {
   importTimeoutMs?: number;
   slowHookMs?: number;
@@ -114,6 +92,8 @@ export class PluginHost {
   private readonly warnedFailures = new Set<string>();
   /** The time limit of one checkShare call; a field so that a self-test can shorten it. */
   checkShareTimeoutMs = CheckShareTimeoutMs;
+  /** The time limit of one checkOffload call; a field so that a self-test can shorten it. */
+  checkOffloadTimeoutMs = CheckOffloadTimeoutMs;
   /** The time limit of one `stillValid` call; a field so that a self-test can shorten it. */
   stillValidTimeoutMs = StillValidTimeoutMs;
 
@@ -309,6 +289,15 @@ export class PluginHost {
       if (result.share === undefined && (res.share === "shared" || res.share === "exclusive")) {
         result.share = res.share;
       }
+      if (result.offloadable === undefined && typeof res.offloadable === "boolean") {
+        result.offloadable = res.offloadable;
+        if (!res.offloadable && typeof res.localReason === "string") {
+          const reason = res.localReason.replace(/[\r\n]+/g, " ").trim();
+          if (reason !== "") {
+            result.localReason = reason;
+          }
+        }
+      }
     }
     if (resource?.forcedExclusive) {
       result.share = "exclusive";
@@ -343,7 +332,7 @@ export class PluginHost {
           return { share: res };
         }
         if (isPlainObject(res) && (res.share === "shared" || res.share === "exclusive")) {
-          // An exclusive answer needs no re-check; a stillValid that is no function is ignored (the client then has none)
+          // An exclusive answer needs no re-check; a non-function stillValid is ignored (the client then has none)
           const stillValid =
             res.share === "shared" && typeof res.stillValid === "function"
               ? (res.stillValid as () => Promise<boolean>)
@@ -357,6 +346,67 @@ export class PluginHost {
           `[job-queue] plugin ${plugin.name}.checkShare failed: ${errorMessage(error)}; taking the GPU exclusively`,
         );
         return { share: "exclusive" };
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * [first, async] Asks plugins in order whether a remotely eligible command may offload: "allow" or "local" ends the
+   * asking, undefined passes to the next plugin. A throw, timeout (checkOffloadTimeoutMs), or invalid return value
+   * fails closed to "local".
+   */
+  async checkOffload(
+    command: string,
+    request: OffloadCheckRequest,
+    context: BaseClientContext,
+  ): Promise<OffloadAnswer | undefined> {
+    for (let i = 0; i < this.plugins.length; i++) {
+      const plugin = this.plugins[i] as QueuePlugin;
+      if (typeof plugin.checkOffload !== "function") {
+        continue;
+      }
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      // Aborted when the race is lost, so that a list job the plugin started does not outlive the answer
+      const abort = new AbortController();
+      try {
+        const limit = new Promise<never>((_, reject) => {
+          timer = setTimeout(() => {
+            abort.abort();
+            reject(new Error(`timed out after ${this.checkOffloadTimeoutMs} ms`));
+          }, this.checkOffloadTimeoutMs);
+        });
+        const pluginRequest: OffloadCheckRequest = {
+          ...request,
+          timeoutMs: this.checkOffloadTimeoutMs,
+          signal: abort.signal,
+        };
+        const res = await Promise.race([
+          plugin.checkOffload(command, pluginRequest, this.contextFor(i, context)),
+          limit,
+        ]);
+        if (res === undefined) {
+          continue;
+        }
+        if (res === "allow" || res === "local") {
+          return { offload: res };
+        }
+        if (isPlainObject(res) && (res.offload === "allow" || res.offload === "local")) {
+          if (res.offload === "allow") {
+            return { offload: "allow" };
+          }
+          const reason = typeof res.reason === "string" ? res.reason.replace(/[\r\n]+/g, " ").trim() : "";
+          return reason !== "" ? { offload: "local", reason } : { offload: "local" };
+        }
+        const reason = `plugin ${plugin.name}.checkOffload returned an invalid value`;
+        this.warn(`[job-queue] ${reason}; running locally`);
+        return { offload: "local", reason };
+      } catch (error) {
+        const reason = `plugin ${plugin.name}.checkOffload failed: ${errorMessage(error)}`;
+        this.warn(`[job-queue] ${reason}; running locally`);
+        return { offload: "local", reason };
       } finally {
         clearTimeout(timer);
       }
@@ -534,99 +584,23 @@ export class PluginHost {
     }
     return undefined;
   }
-}
 
-export interface PluginChecksOptions {
-  config?: QueueConfig;
-  configRoot?: string;
-  pluginsRoot?: string;
-  importTimeoutMs?: number;
-}
-
-function bundledPluginOrder(name: string): number {
-  return name === "dotnet" ? 0 : name === "just" ? 1 : 2;
-}
-
-/**
- * Discovers and runs `checks(assert)` for all bundled `plugins/<name>/checks.ts` (dotnet, just, then sorted others)
- * plus `config.plugins[]` entries, regardless of `JOB_QUEUE_PLUGINS=0`. Rejects if an enabled config plugin
- * lacks `checks.ts` or if any `checks(assert)` throws.
- */
-export async function runPluginChecks(assert: AssertModule, options: PluginChecksOptions = {}): Promise<void> {
-  const pluginsRoot = options.pluginsRoot ?? DefaultPluginsRoot;
-  const timeoutMs = options.importTimeoutMs ?? DefaultImportTimeoutMs;
-  let config = options.config;
-  let configRoot = options.configRoot;
-  if (config === undefined) {
-    const loaded =
-      configRoot !== undefined
-        ? loadConfig({
-            mode: "status",
-            configPath: path.join(configRoot, "job-queue.config.json"),
-            fromDirectory: configRoot,
-            warn: () => {},
-          })
-        : loadConfig({
-            mode: "status",
-            fromDirectory: path.dirname(EntryScript),
-          });
-    config = loaded.config;
-    configRoot = loaded.configRoot;
-  } else if (configRoot === undefined) {
-    configRoot = path.dirname(EntryScript);
-  }
-
-  const targets: { name: string; checksPath: string }[] = [];
-  const seen = new Set<string>();
-  const addTarget = (name: string, checksPath: string): void => {
-    const realPath = fs.realpathSync.native(checksPath);
-    if (seen.has(realPath)) {
-      return;
-    }
-    seen.add(realPath);
-    targets.push({ name, checksPath: realPath });
-  };
-
-  if (fs.existsSync(pluginsRoot)) {
-    const bundledNames = fs
-      .readdirSync(pluginsRoot, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => entry.name)
-      .sort((a, b) => bundledPluginOrder(a) - bundledPluginOrder(b) || (a < b ? -1 : a > b ? 1 : 0));
-    for (const name of bundledNames) {
-      const folder = resolvePluginFolder(name, configRoot, pluginsRoot);
-      if (folder === null) {
+  /** [all] Collects and validates remote CPU offload rules and hooks from every plugin in order. */
+  remoteOffload(context: BaseClientContext): ResolvedRemoteRules {
+    const entries: RemoteContributionEntry[] = [];
+    for (let i = 0; i < this.plugins.length; i++) {
+      const plugin = this.plugins[i] as QueuePlugin;
+      if (typeof plugin.remoteOffload !== "function") {
         continue;
       }
-      const checksPath = path.join(folder, "checks.ts");
-      if (fs.existsSync(checksPath)) {
-        addTarget(name, checksPath);
+      const contribution = this.callHook(i, "remoteOffload", (p) => p.remoteOffload?.(this.contextFor(i, context)));
+      if (isPlainObject(contribution)) {
+        entries.push({
+          contribution,
+          call: (subHook, invoke) => this.callHook(i, subHook, () => invoke()),
+        });
       }
     }
-  }
-
-  for (const entry of config.plugins) {
-    const folder = resolvePluginFolder(entry.name, configRoot, pluginsRoot);
-    if (folder === null) {
-      throw new Error(`plugin ${entry.name} has an invalid bare name`);
-    }
-    const checksPath = path.join(folder, "checks.ts");
-    if (!fs.existsSync(checksPath)) {
-      throw new Error(`plugin ${entry.name} has no checks.ts (${checksPath})`);
-    }
-    addTarget(entry.name, checksPath);
-  }
-
-  for (const target of targets) {
-    try {
-      const moduleValue = await importWithTimeout(pathToFileURL(target.checksPath).href, timeoutMs);
-      const checks = isPlainObject(moduleValue) ? moduleValue.checks : undefined;
-      if (typeof checks !== "function") {
-        throw new Error("missing exported checks(assert) function");
-      }
-      await (checks as (assert: AssertModule) => void | Promise<void>)(assert);
-    } catch (error) {
-      throw new Error(`plugin ${target.name} checks failed: ${errorMessage(error)}`, { cause: error });
-    }
+    return resolveRemoteRules(entries);
   }
 }

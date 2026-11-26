@@ -23,26 +23,17 @@ public sealed class LaunchShapeDifferentialTests : TranspilerTestBase
     // 3D Index Linearization, Bijection & Signed Arithmetic
     // -------------------------------------------------------------------------
     internal static readonly DifferentialCase s_threeDimensionalIndexAndSignedness =
-        new($"{nameof(LaunchShapeDifferentialKernels)}.{nameof(LaunchShapeDifferentialKernels.ThreeDimensionalIndexAndSignednessKernel)}")
-        {
-            Shapes = LaunchShapes.FullMetamorphicMatrix(150),
-            Inputs = static (_, s) => new DiffBuffers()
+        DiffCases.CreateRows<long, int, int>(
+            LaunchShapeDifferentialKernels.LaunchThreeDimensionalIndexAndSignednessKernel,
+            inputs: static (_, s) => new DiffBuffers()
                 .Out<long>("outGid", s.Rows, OutputPolicy.Exact)
                 .Out<int>("outSignedMath", s.Rows, LaunchShapeDifferentialKernels.SignedMathColumns, OutputPolicy.Exact)
                 .Out<int>("visitCount", s.Rows, OutputPolicy.Exact),
-            Launch = static (b, s) => LaunchShapeDifferentialKernels.LaunchThreeDimensionalIndexAndSignednessKernel(
-                b.Get<long>("outGid"),
-                b.Get<int>("outSignedMath"),
-                b.Get<int>("visitCount"),
-                s.Rows,
-                gridDimX: s.GridX,
-                gridDimY: s.GridY,
-                gridDimZ: s.GridZ,
-                blockDimX: s.BlockX,
-                blockDimY: s.BlockY,
-                blockDimZ: s.BlockZ
-            ),
-            Reference = static (b, s) =>
+            shapes: LaunchShapes.FullMetamorphicMatrix(150),
+            firstInputName: "outGid",
+            secondInputName: "outSignedMath",
+            outputName: "visitCount",
+            reference: static (b, s) =>
             {
                 var outGid = b.Get<long>("outGid");
                 var outSignedMath = b.Get<int>("outSignedMath");
@@ -76,8 +67,7 @@ public sealed class LaunchShapeDifferentialTests : TranspilerTestBase
                         visitCount[idx] += 1;
                     }
                 }
-            },
-        };
+            });
 
     // -------------------------------------------------------------------------
     // Gpu.GridStrideLoop 3D & Metamorphic Shape Invariance
@@ -93,13 +83,19 @@ public sealed class LaunchShapeDifferentialTests : TranspilerTestBase
                 .Out<int>("dstShort", GridStrideShortN, OutputPolicy.Exact)
                 .Out<int>("zeroGuard", 2, OutputPolicy.Exact),
             Launch = static (b, s) => LaunchShapeDifferentialKernels.LaunchGridStrideLoopMetamorphicKernel(
-                b.Get<int>("src"),
-                b.Get<int>("dstMulti"),
-                b.Get<int>("dstShort"),
-                b.Get<int>("zeroGuard"),
-                GridStrideMultiN,
-                GridStrideShortN,
-                b.GetScalar<int>("bias"),
+                inputs: new GridStrideLoopInputs
+                {
+                    Source = b.Get<int>("src"),
+                    MultiPassCount = GridStrideMultiN,
+                    ShortPassCount = GridStrideShortN,
+                    Bias = b.GetScalar<int>("bias"),
+                },
+                results: new GridStrideLoopResults
+                {
+                    MultiPassOutputs = b.Get<int>("dstMulti"),
+                    ShortPassOutputs = b.Get<int>("dstShort"),
+                    ZeroGuardCounters = b.Get<int>("zeroGuard"),
+                },
                 gridDimX: s.GridX,
                 gridDimY: s.GridY,
                 gridDimZ: s.GridZ,
@@ -196,13 +192,19 @@ public sealed class LaunchShapeDifferentialTests : TranspilerTestBase
                 .Out<float>("outShflFloat", s.Rows, OutputPolicy.Bitwise)
                 .Out<uint>("outShflUInt", s.Rows, OutputPolicy.Exact),
             Launch = static (b, s) => LaunchShapeDifferentialKernels.LaunchCrossAxisWarpShuffleAndActiveMaskKernel(
-                b.Get<int>("srcInt"),
-                b.Get<float>("srcFloat"),
-                b.Get<uint>("srcUInt"),
-                b.Get<uint>("outMask"),
-                b.Get<int>("outShflInt"),
-                b.Get<float>("outShflFloat"),
-                b.Get<uint>("outShflUInt"),
+                inputs: new CrossAxisShuffleInputs
+                {
+                    Int32Values = b.Get<int>("srcInt"),
+                    SingleValues = b.Get<float>("srcFloat"),
+                    UInt32Values = b.Get<uint>("srcUInt"),
+                },
+                results: new CrossAxisShuffleResults
+                {
+                    ActiveMasks = b.Get<uint>("outMask"),
+                    ShuffledInt32Values = b.Get<int>("outShflInt"),
+                    ShuffledSingleValues = b.Get<float>("outShflFloat"),
+                    ShuffledUInt32Values = b.Get<uint>("outShflUInt"),
+                },
                 gridDimX: s.GridX,
                 gridDimY: s.GridY,
                 gridDimZ: s.GridZ,

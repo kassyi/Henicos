@@ -7,65 +7,6 @@ namespace Kassyi.GSharp.Compiler.Dialects;
 internal static class WmmaTypeSyntaxHelper
 {
     /// <summary>
-    /// Appends the C++ representation of a WMMA fragment or marker type when <paramref name="typeSymbol"/> is one.
-    /// </summary>
-    public static bool TryAppendType(ref TranspileContext context, ITypeSymbol typeSymbol)
-    {
-        if (typeSymbol.IsWmmaMarkerType())
-        {
-            if (TryGetShapeDimensions(typeSymbol, out var sm, out var sn, out var sk))
-            {
-                context.Emitter.Writer.Append($"{GSharpInternalNames.Wmma.Shape}<{sm}, {sn}, {sk}>");
-                return true;
-            }
-
-            if (TryGetLayoutCppName(typeSymbol, out var layoutName))
-            {
-                context.Emitter.Writer.Append(layoutName);
-                return true;
-            }
-
-            return false;
-        }
-
-        if (!typeSymbol.IsWmmaFragmentType() || typeSymbol is not INamedTypeSymbol { TypeArguments.Length: >= 2 } fragmentType)
-        {
-            return false;
-        }
-
-        var role = fragmentType.Name switch
-        {
-            TypeConstants.WmmaTypes.MatrixA => GSharpInternalNames.Wmma.MatrixA,
-            TypeConstants.WmmaTypes.MatrixB => GSharpInternalNames.Wmma.MatrixB,
-            _ => GSharpInternalNames.Wmma.Accumulator
-        };
-
-        if (!TryGetShapeDimensions(fragmentType.TypeArguments[0], out var m, out var n, out var k))
-        {
-            (m, n, k) = (0, 0, 0);
-        }
-
-        context.Emitter.Writer.Append(GSharpInternalNames.Wmma.Fragment);
-        using (context.Emitter.Writer.InlineScope("<", ">"))
-        {
-            context.Emitter.Writer.Append($"{role}, {m}, {n}, {k}, ");
-            context.Emitter.Dialect.AppendType(ref context, fragmentType.TypeArguments[1]);
-            context.Emitter.Writer.Append(", ");
-            if (fragmentType.TypeArguments.Length >= 3 &&
-                TryGetLayoutCppName(fragmentType.TypeArguments[2], out var fragLayout))
-            {
-                context.Emitter.Writer.Append(fragLayout);
-            }
-            else
-            {
-                context.Emitter.Writer.Append("void");
-            }
-        }
-
-        return true;
-    }
-
-    /// <summary>
     /// Extracts the tile dimensions (<c>m, n, k</c>) from a WMMA shape marker type.
     /// </summary>
     public static bool TryGetShapeDimensions(ITypeSymbol? shapeType, out int m, out int n, out int k)

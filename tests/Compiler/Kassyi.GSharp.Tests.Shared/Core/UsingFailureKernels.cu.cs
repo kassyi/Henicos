@@ -57,6 +57,39 @@ public struct FailingResourceHolder
     public FailingResource Resource;
 }
 
+public struct UsingFailureBuffers
+{
+    public int[] Log;
+    public int[] Source;
+    public int[] Results;
+}
+
+public struct UsingReturnFailureOptions
+{
+    public int Value;
+    public bool ReturnEarly;
+    public int BodyFail;
+    public int OuterDisposeFail;
+    public int InnerDisposeFail;
+}
+
+public struct UsingLoopFailureOptions
+{
+    public int Iterations;
+    public int SkipIndex;
+    public int StopIndex;
+    public int BodyFailIndex;
+    public int DisposeFailIndex;
+}
+
+public struct UsingDeclaratorsFailureOptions
+{
+    public int SecondInitFail;
+    public int BodyFail;
+    public int FirstDisposeFail;
+    public int SecondDisposeFail;
+}
+
 /// <summary>
 /// Kernels in which the body of a <c>using</c>, its <c>Dispose</c> or both fail a C# check, for
 /// <see cref="UsingFailureTests"/>: what is disposed, in which order, how often, and which failure the launch throws.
@@ -90,8 +123,11 @@ public static partial class UsingFailureKernels
 
     // One using statement
     [GpuKernel]
-    public static void SingleKernel(int[] log, int[] source, int[] outs, int bodyFail, int disposeFail)
+    public static void SingleKernel(UsingFailureBuffers buffers, int bodyFail, int disposeFail)
     {
+        int[] log = buffers.Log;
+        int[] source = buffers.Source;
+        int[] outs = buffers.Results;
         using (var r = new FailingResource { Log = log, Source = source, Id = 1, Fail = disposeFail })
         {
             FailIf(bodyFail != 0, source);
@@ -103,8 +139,11 @@ public static partial class UsingFailureKernels
 
     // Two nested using statements: a (id 1) outside b (id 2)
     [GpuKernel]
-    public static void NestedKernel(int[] log, int[] source, int[] outs, int bodyFail, int failA, int failB)
+    public static void NestedKernel(UsingFailureBuffers buffers, int bodyFail, int failA, int failB)
     {
+        int[] log = buffers.Log;
+        int[] source = buffers.Source;
+        int[] outs = buffers.Results;
         using (var a = new FailingResource { Log = log, Source = source, Id = 1, Fail = failA })
         {
             using (var b = new FailingResource { Log = log, Source = source, Id = 2, Fail = failB })
@@ -135,18 +174,31 @@ public static partial class UsingFailureKernels
     }
 
     [GpuKernel]
-    public static void ReturnKernel(int[] log, int[] source, int[] outs, int x, bool early, int bodyFail, int failA,
-        int failB)
+    public static void ReturnKernel(UsingFailureBuffers buffers, UsingReturnFailureOptions options)
     {
-        outs[0] = Returns(log, source, x, early, bodyFail, failA, failB);
+        buffers.Results[0] = Returns(
+            buffers.Log,
+            buffers.Source,
+            options.Value,
+            options.ReturnEarly,
+            options.BodyFail,
+            options.OuterDisposeFail,
+            options.InnerDisposeFail);
     }
 
     // A using declaration in a loop, left by continue and break; resource i + 1 fails its Dispose when i is
     // disposeFailAt
     [GpuKernel]
-    public static void LoopKernel(int[] log, int[] source, int[] outs, int n, int skip, int stop, int failAt,
-        int disposeFailAt)
+    public static void LoopKernel(UsingFailureBuffers buffers, UsingLoopFailureOptions options)
     {
+        int[] log = buffers.Log;
+        int[] source = buffers.Source;
+        int[] outs = buffers.Results;
+        int n = options.Iterations;
+        int skip = options.SkipIndex;
+        int stop = options.StopIndex;
+        int failAt = options.BodyFailIndex;
+        int disposeFailAt = options.DisposeFailIndex;
         for (int i = 0; i < n; i++)
         {
             int fail = i == disposeFailAt ? 1 : 0;
@@ -170,9 +222,15 @@ public static partial class UsingFailureKernels
 
     // Two declarators: the second initializer may fail after the first resource is declared
     [GpuKernel]
-    public static void DeclaratorsKernel(int[] log, int[] source, int[] outs, int initFailB, int bodyFail, int failA,
-        int failB)
+    public static void DeclaratorsKernel(UsingFailureBuffers buffers, UsingDeclaratorsFailureOptions options)
     {
+        int[] log = buffers.Log;
+        int[] source = buffers.Source;
+        int[] outs = buffers.Results;
+        int initFailB = options.SecondInitFail;
+        int bodyFail = options.BodyFail;
+        int failA = options.FirstDisposeFail;
+        int failB = options.SecondDisposeFail;
         using (FailingResource a = new FailingResource { Log = log, Source = source, Id = 1, Fail = failA },
                b = new FailingResource
                {
@@ -206,8 +264,11 @@ public static partial class UsingFailureKernels
 
     // a using declaration under a label, reached by a forward goto
     [GpuKernel]
-    public static void LabeledDeclarationKernel(int[] log, int[] source, int[] outs, int bodyFail, int disposeFail)
+    public static void LabeledDeclarationKernel(UsingFailureBuffers buffers, int bodyFail, int disposeFail)
     {
+        int[] log = buffers.Log;
+        int[] source = buffers.Source;
+        int[] outs = buffers.Results;
         int n = 0;
         if (bodyFail == 2)
         {
@@ -224,8 +285,11 @@ public static partial class UsingFailureKernels
 
     // goto case / goto default / break out of a using in a switch section
     [GpuKernel]
-    public static void SwitchKernel(int[] log, int[] source, int[] outs, int mode, int bodyFail, int disposeFail)
+    public static void SwitchKernel(UsingFailureBuffers buffers, int mode, int bodyFail, int disposeFail)
     {
+        int[] log = buffers.Log;
+        int[] source = buffers.Source;
+        int[] outs = buffers.Results;
         switch (mode)
         {
             case 0:
@@ -266,8 +330,11 @@ public static partial class UsingFailureKernels
 
     // continue (from a switch inside the body) and break leave two nested usings in a loop
     [GpuKernel]
-    public static void NestedLoopKernel(int[] log, int[] source, int[] outs, int n, int stop, int disposeFailAt)
+    public static void NestedLoopKernel(UsingFailureBuffers buffers, int n, int stop, int disposeFailAt)
     {
+        int[] log = buffers.Log;
+        int[] source = buffers.Source;
+        int[] outs = buffers.Results;
         for (int i = 0; i < n; i++)
         {
             using (var a = new FailingResource { Log = log, Source = source, Id = 10 + i, Fail = 0 })
@@ -300,8 +367,11 @@ public static partial class UsingFailureKernels
 
     // gotos out of two usings, two of them to the same label
     [GpuKernel]
-    public static void GotoKernel(int[] log, int[] source, int[] outs, int mode, int disposeFail)
+    public static void GotoKernel(UsingFailureBuffers buffers, int mode, int disposeFail)
     {
+        int[] log = buffers.Log;
+        int[] source = buffers.Source;
+        int[] outs = buffers.Results;
         int pass = 0;
         retry:
         pass++;
@@ -347,15 +417,18 @@ public static partial class UsingFailureKernels
     }
 
     [GpuKernel]
-    public static void RefReturnKernel(int[] log, int[] source, int[] outs, int index, int disposeFail)
+    public static void RefReturnKernel(UsingFailureBuffers buffers, int index, int disposeFail)
     {
-        PickRef(log, source, outs, index, disposeFail) = 42;
+        PickRef(buffers.Log, buffers.Source, buffers.Results, index, disposeFail) = 42;
     }
 
     // a block lambda that returns a value out of its own using, called in the body of another using
     [GpuKernel]
-    public static void LambdaKernel(int[] log, int[] source, int[] outs, int mode, int disposeFail)
+    public static void LambdaKernel(UsingFailureBuffers buffers, int mode, int disposeFail)
     {
+        int[] log = buffers.Log;
+        int[] source = buffers.Source;
+        int[] outs = buffers.Results;
         using (var r = new FailingResource { Log = log, Source = source, Id = 1, Fail = disposeFail })
         {
             Func<int, int> pick = v =>

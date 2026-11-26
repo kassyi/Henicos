@@ -23,35 +23,23 @@ public class CrossFileIteratorDifferentialTests
         int.MaxValue / 16, int.MinValue / 16, 7, -7, 42
     ];
 
-    internal static readonly DifferentialCase s_callArgCase = new(
-        $"{nameof(CrossFileIteratorKernels)}.{nameof(CrossFileIteratorKernels.CrossFileIteratorCallArgKernel)}")
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_callArgCase = DiffCases.Create(
+        CrossFileIteratorKernels.LaunchCrossFileIteratorCallArgKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("input", DiffValues.Mixed(rng, rows, s_boundaryInputs, DiffValues.NextInt32))
             .Out<int>("output", rows, CrossFileIteratorKernels.CallArgColumns, OutputPolicy.Exact),
-        Launch = static (b, s) => CrossFileIteratorKernels.LaunchCrossFileIteratorCallArgKernel(
-            b.Get<int>("input"),
-            b.Get<int>("output"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShape.ForRows(Rows, blockX: 64),
+        inputName: "input",
+        outputName: "output");
 
-    internal static readonly DifferentialCase s_twiceCase = new(
-        $"{nameof(CrossFileIteratorKernels)}.{nameof(CrossFileIteratorKernels.CrossFileIteratorTwiceKernel)}")
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_twiceCase = DiffCases.Create(
+        CrossFileIteratorKernels.LaunchCrossFileIteratorTwiceKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("input", DiffValues.Mixed(rng, rows, s_boundaryInputs, DiffValues.NextInt32))
             .Out<int>("output", rows, CrossFileIteratorKernels.TwiceColumns, OutputPolicy.Exact),
-        Launch = static (b, s) => CrossFileIteratorKernels.LaunchCrossFileIteratorTwiceKernel(
-            b.Get<int>("input"),
-            b.Get<int>("output"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShape.ForRows(Rows, blockX: 64),
+        inputName: "input",
+        outputName: "output");
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]

@@ -145,12 +145,51 @@ public static partial class GpuBigIntFermatKernels
         }
     }
 
+    private const int TileWords = 32 * 33; // 32 x 32 values, one padding word per row
+    private const int MaxTilesPerBatch = 3; // 4 tiles (16.5 KB) + 34048 B rows at 2^25 points pass 48 KB
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void LoadTile(
+        SharedMemory<uint> sTiles, int tileBase, [GpuReadOnly] uint[] idata,
+        int bx, int by, int tx, int ty, int width, int height)
+    {
+        var xIndex = bx * 32 + tx;
+        var yIndex = by * 32 + ty;
+
+        for (int i = 0; i < 32; i += 8)
+        {
+            if (xIndex < width && yIndex + i < height)
+            {
+                sTiles[tileBase + (ty + i) * 33 + tx] = idata[(yIndex + i) * width + xIndex];
+            }
+        }
+    }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void StoreTile(
+        SharedMemory<uint> sTiles, int tileBase, uint[] odata,
+        int bx, int by, int tx, int ty, int width, int height)
+    {
+        var outXIndex = by * 32 + tx;
+        var outYIndex = bx * 32 + ty;
+
+        for (int i = 0; i < 32; i += 8)
+        {
+            if (outXIndex < height && outYIndex + i < width)
+            {
+                odata[(outYIndex + i) * height + outXIndex] = sTiles[tileBase + tx * 33 + (ty + i)];
+            }
+        }
+    }
+
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void DeviceTranspose32X32([GpuReadOnly] uint[] idata, uint[] odata, int width, int height,
         bool syncThreads = true)
     {
-        var sMem = new SharedMemory<uint>(32 * 33);
+        var sMem = new SharedMemory<uint>(TileWords);
 
         var gridX = (width + 31) / 32;
         var gridY = (height + 31) / 32;
@@ -163,44 +202,82 @@ public static partial class GpuBigIntFermatKernels
 
             if (ThreadIndex.X < 256)
             {
-                var tx = ThreadIndex.X % 32;
-                var ty = ThreadIndex.X / 32;
-
-                var xIndex = bx * 32 + tx;
-                var yIndex = by * 32 + ty;
-
-                for (int i = 0; i < 32; i += 8)
-                {
-                    if (xIndex < width && yIndex + i < height)
-                    {
-                        sMem[(ty + i) * 33 + tx] = idata[(yIndex + i) * width + xIndex];
-                    }
-                }
+                LoadTile(sMem, 0, idata, bx, by, ThreadIndex.X % 32, ThreadIndex.X / 32, width, height);
             }
 
             Gpu.SyncThreads();
 
             if (ThreadIndex.X < 256)
             {
-                var tx = ThreadIndex.X % 32;
-                var ty = ThreadIndex.X / 32;
-
-                var outXIndex = by * 32 + tx;
-                var outYIndex = bx * 32 + ty;
-
-                for (int i = 0; i < 32; i += 8)
-                {
-                    if (outXIndex < height && outYIndex + i < width)
-                    {
-                        odata[(outYIndex + i) * height + outXIndex] = sMem[tx * 33 + (ty + i)];
-                    }
-                }
+                StoreTile(sMem, 0, odata, bx, by, ThreadIndex.X % 32, ThreadIndex.X / 32, width, height);
             }
 
             if (syncThreads)
             {
                 Gpu.SyncThreads();
             }
+        }
+    }
+
+    /// <summary>
+    /// Transposes a 2D matrix of dimensions <paramref name="height"/> x <paramref name="width"/> into
+    /// <paramref name="odata"/>, moving up to three 32 x 32 tiles per block in parallel.
+    /// </summary>
+    /// <remarks>
+    /// Precondition: <c>BlockDimension.X &gt;= 256</c>; every 256 threads move one tile (eight rows at a time), and
+    /// threads past the last whole group of 256 stay idle.
+    /// </remarks>
+    [GpuDeviceFunction]
+    internal static void TransposeTileBatches([GpuReadOnly] uint[] idata, uint[] odata, int width, int height)
+    {
+        var sTiles = new SharedMemory<uint>(MaxTilesPerBatch * TileWords);
+
+        // 256 threads move one 32 x 32 tile (four elements each); a block moves BlockDimension.X / 256 tiles at once,
+        // at most MaxTilesPerBatch: with 4 tiles (16.5 KB) and the 34048 B of rows of a 2^25-point transform, the
+        // mega-kernels need more than the 48 KB of shared memory a block gets without opting in.
+        int tilesPerBatch = BlockDimension.X >> 8;
+        if (tilesPerBatch > MaxTilesPerBatch)
+        {
+            tilesPerBatch = MaxTilesPerBatch;
+        }
+
+        if (tilesPerBatch < 1)
+        {
+            tilesPerBatch = 1;
+        }
+
+        var gridX = (width + 31) / 32;
+        var gridY = (height + 31) / 32;
+        var totalTiles = gridX * gridY;
+
+        // The tiles of this block are BlockIndex.X + k * GridDimension.X, k = 0 .. tilesOfBlock - 1.
+        int tilesOfBlock = (totalTiles - BlockIndex.X + GridDimension.X - 1) / GridDimension.X;
+
+        int slot = ThreadIndex.X >> 8;
+        int tx = ThreadIndex.X & 31;
+        int ty = (ThreadIndex.X >> 5) & 7;
+        int tileBase = slot * TileWords;
+
+        for (int firstSlot = 0; firstSlot < tilesOfBlock; firstSlot += tilesPerBatch)
+        {
+            bool moves = slot < tilesPerBatch && firstSlot + slot < tilesOfBlock;
+            int tile = BlockIndex.X + (firstSlot + slot) * GridDimension.X;
+            var bx = tile % gridX;
+            var by = tile / gridX;
+
+            if (moves)
+            {
+                LoadTile(sTiles, tileBase, idata, bx, by, tx, ty, width, height);
+            }
+
+            Gpu.SyncThreads();
+
+            if (moves)
+            {
+                StoreTile(sTiles, tileBase, odata, bx, by, tx, ty, width, height);
+            }
+
+            Gpu.SyncThreads();
         }
     }
 

@@ -83,6 +83,8 @@ The number of selected elements is computed on the device, and the host does not
 
 Two separately built `Where` results cannot be combined element-wise, because their counts are known only on the device (`NotSupportedException`): write `v.Where(p.And(q))`. `v.Where(p).Where(m)` works when `m` has the capacity's length.
 
+As in System.Linq, `Take(k)` after a `Where` runs the projections of the source only up to the k-th selected element, and `Any` / `All` only up to the deciding one; `Skip(k)` after a `Where` runs them for the skipped elements as well. When projections throw for several elements, the exception of the lowest element is thrown, the one System.Linq meets first.
+
 ## SelectAdd / SelectSubtract / SelectMultiply
 
 Applies a scalar addition, subtraction, or multiplication to each element of a vectorized expression using a grid-stride parallel kernel.
@@ -355,7 +357,7 @@ public static IGpuBoolExpr Any(this IGpuBoolVectorExpression source);
 public static IGpuBoolExpr All(this IGpuBoolVectorExpression source);
 ```
 
-`Any` and `All` stop at the deciding element, as `System.Linq` does: the first `true` element for `Any`, the first `false` one for `All`. A projection of the chain that throws for an element after it (a zero divisor, the square root of a negative value, a float operation outside its domain) does not throw; one that throws for that element or an earlier one throws its exception, the earliest element first and, within one element, the inner projection first. The elements are still evaluated together, so the stop decides which exception is thrown, not how much is computed. A chain that contains a `Where`, or an expression implemented outside GpuMath, is evaluated in full and throws for any element that throws: after `Where` the flags no longer have the indices of the projected elements, and an outside expression can evaluate other vectors.
+`Any` and `All` stop at the deciding element, as `System.Linq` does: the first `true` element for `Any`, the first `false` one for `All`. A projection of the chain that throws for an element after it (a zero divisor, the square root of a negative value, a float operation outside its domain) does not throw; one that throws for that element or an earlier one throws its exception, the earliest element first and, within one element, the inner projection first. The elements are still evaluated together, so the stop decides which exception is thrown, not how much is computed. An expression implemented outside GpuMath is evaluated in full and throws for any element that throws, because an outside expression can evaluate other vectors.
 
 ## Remarks
 

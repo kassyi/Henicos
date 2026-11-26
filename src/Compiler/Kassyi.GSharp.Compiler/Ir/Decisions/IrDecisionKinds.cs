@@ -1,5 +1,4 @@
 using Kassyi.GSharp.Compiler.Ir.Expressions;
-using Kassyi.GSharp.Compiler.Ir.Linear;
 
 namespace Kassyi.GSharp.Compiler.Ir.Decisions;
 
@@ -15,7 +14,7 @@ internal static class IrDecisionKinds
     /// </summary>
     public static Type? Of(IrNode node) => node switch
     {
-        IrStatement or IrState or IrStateMachine => null,
+        IrStatement => null,
 
         IrBinary => typeof(IrBinaryDecision),
         IrUnary => typeof(IrUnaryDecision),

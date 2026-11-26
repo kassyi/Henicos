@@ -2,6 +2,7 @@
 #pragma warning disable CS0649
 using System.Collections.Immutable;
 using System.Threading;
+using Kassyi.GSharp.Compiler.Semantics;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Kassyi.ZeroAlloc.Linq;

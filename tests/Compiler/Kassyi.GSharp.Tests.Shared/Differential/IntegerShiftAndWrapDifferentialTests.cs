@@ -70,25 +70,26 @@ public class IntegerShiftAndWrapDifferentialTests
         },
         Launch = static (b, s) =>
             IntegerTrapAndCheckedDifferentialKernels.LaunchShiftCountMaskBoundaryMatrixKernel(
-            b.Get<int>("iVals"),
-            b.Get<uint>("uVals"),
-            b.Get<long>("lVals"),
-            b.Get<ulong>("ulVals"),
-            b.Get<short>("sVals"),
-            b.Get<sbyte>("sbVals"),
-            b.Get<int>("counts"),
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
+                operands: new ShiftBoundaryOperands
+                {
+                    Int32Values = b.Get<int>("iVals"),
+                    UInt32Values = b.Get<uint>("uVals"),
+                    Int64Values = b.Get<long>("lVals"),
+                    UInt64Values = b.Get<ulong>("ulVals"),
+                    Int16Values = b.Get<short>("sVals"),
+                    SByteValues = b.Get<sbyte>("sbVals"),
+                    ShiftCounts = b.Get<int>("counts"),
+                },
+                results: b.Get<int>("dst"),
+                rows: s.Rows,
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX),
         OracleIsLaunch = true,
     };
 
-    internal static readonly DifferentialCase s_uncheckedIntegerWrap = new(
-        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.UncheckedIntegerWrapKernel)))
-    {
-        Shape = LaunchShapes.PartialWarp(74, 37),
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_uncheckedIntegerWrap = DiffCases.Create(
+        IntegerTrapAndCheckedDifferentialKernels.LaunchUncheckedIntegerWrapKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             var (left, right) = DiffValues.Int32Pairs(rng, rows);
@@ -101,15 +102,9 @@ public class IntegerShiftAndWrapDifferentialTests
                     IntegerTrapAndCheckedDifferentialKernels.UncheckedIntegerWrapColumns,
                     OutputPolicy.Exact);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchUncheckedIntegerWrapKernel(
-            b.Get<int>("left"),
-            b.Get<int>("right"),
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.PartialWarp(74, 37),
+        firstInputName: "left",
+        secondInputName: "right");
 
     [SkippableFact]
     public void IntegerShift_ShiftCountMaskEdgeMatrix_MatchesTheOracleOnEveryPath() =>

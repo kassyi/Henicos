@@ -217,6 +217,7 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
     [Scenario(TestScenario.Boundary)]
     public void EditingIteratorInAnotherFile_ReemitsConsumerKernel(string dialect)
     {
+        // Kept inline: paired directly with IteratorBefore for iterator cache invalidation.
         const string KernelSource = """
             using Kassyi.GSharp.Core;
 
@@ -238,6 +239,7 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
             }
             """;
 
+        // Kept inline: edited via string.Replace between compilations to test iterator cache invalidation.
         const string IteratorBefore = """
             using System.Collections.Generic;
             using Kassyi.GSharp.Core;
