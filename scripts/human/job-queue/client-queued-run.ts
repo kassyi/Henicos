@@ -753,8 +753,8 @@ export class QueuedRun {
   /**
    * Decides the share of a GPU turn before its first registration: classify (sync), and when no plugin has an opinion
    * (an explicit "shared" or "exclusive" stands, a veto too, and --gpu-exclusive, which PluginHost.classify answers
-   * as "exclusive") and --after is not set, the plugins' checkShare, which may take a while (a test list through the queue), so it runs before the connection is
-   * made, not during it. Once per run; a re-registration reuses the answer.
+   * as "exclusive") and --after is not set, the plugins' checkShare, which may take a while (a test list through the
+   * queue), so it runs before the connection is made, not during it. Once per run; a re-registration reuses the answer.
    */
   private async resolveShare(): Promise<void> {
     const plugins = this.plugins;

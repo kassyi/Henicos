@@ -614,7 +614,7 @@ export async function checkDowngradeShareReason(assert: AssertModule): Promise<v
   });
 }
 
-/** A downgrade that claims `share: "shared"` with the reason "not-shared" is still checked as exclusive: "downgrade". */
+/** A downgrade that claims `share: "shared"` with the reason "not-shared" is checked as exclusive: "downgrade". */
 export async function checkMalformedDowngradeShareReason(assert: AssertModule): Promise<void> {
   await withGpu({ slots: 2 }, async ({ server, port, lines }) => {
     const d = await queueTurn(port, "D", { share: "shared", shareReason: "list:0" });
