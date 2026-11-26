@@ -33,6 +33,55 @@ import { RemoteRunner, type RemoteRunResult } from "./runner.ts";
 import { remoteUsageOf, type RemoteSpec } from "./spec.ts";
 
 export const RemoteExecutorChecks: Record<string, (assert: AssertModule) => void | Promise<void>> = {
+  async remoteRegisterBeforeDecisionStaysLocal(assert: AssertModule): Promise<void> {
+    await quietly(async () => {
+      const scheduler = new FakeScheduler();
+      await scheduler.listen();
+      const wtDir = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-q-register-")));
+      const prevCwd = process.cwd();
+      try {
+        fs.mkdirSync(path.join(wtDir, "scripts"), { recursive: true });
+        fs.writeFileSync(path.join(wtDir, "scripts", "a.js"), "console.log(1);");
+        spawnSync("git", ["init", "-q"], { cwd: wtDir, windowsHide: true });
+        process.chdir(wtDir);
+        const plugin: QueuePlugin = {
+          name: "off",
+          apiVersion: PluginApiVersion,
+          classify: () => ({ offloadable: true }),
+        };
+        const hostPlugin = new PluginHost([plugin], [undefined], wtDir, () => {});
+        const options = baseRunOpts("node scripts/a.js", { remotes: [makeRemote()] });
+        const placement = { weight: 1, pin: null, before: null };
+
+        // Control: after the whole decision (checkOffload included) the request asks for the remote
+        const decided = new FakeHost();
+        void new QueuedRun(options, placement, false, false, decided, hostPlugin).run();
+        await until("decided client connects", () => decided.connects.length === 1);
+        decided.connects[0]?.resolve(await scheduler.connect());
+        await until(
+          "decided request",
+          () => scheduler.accepted[0]?.messages.some((m) => m.type === "request") === true,
+        );
+        const decidedRequest = scheduler.accepted[0]?.messages.find((m) => m.type === "request");
+        assert.strictEqual(decidedRequest?.offload, "auto", "a decided job registers its preference");
+        scheduler.accepted[0]?.socket.destroy();
+
+        // A registration before checkOffload answered (this.offload still null) must not adopt the sync preference
+        const early = new QueuedRun(options, placement, false, false, new FakeHost(), hostPlugin);
+        const socket = await scheduler.connect();
+        (early as unknown as { register(current: typeof socket): void }).register(socket);
+        await until("early request", () => scheduler.accepted[1]?.messages.some((m) => m.type === "request") === true);
+        const earlyRequest = scheduler.accepted[1]?.messages.find((m) => m.type === "request");
+        assert.ok(earlyRequest !== undefined && !("offload" in earlyRequest), "an undecided job registers as never");
+        socket.destroy();
+      } finally {
+        process.chdir(prevCwd);
+        scheduler.close();
+        fs.rmSync(wtDir, { recursive: true, force: true });
+      }
+    });
+  },
+
   async remoteExecutorFallbackLocalWithJobServer(assert: AssertModule): Promise<void> {
     await quietly(async () => {
       await withRemoteWorkspaceServer(async ({ server, port, wt }) => {

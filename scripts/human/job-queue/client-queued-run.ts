@@ -863,10 +863,11 @@ export class QueuedRun {
       if (this.plugins !== undefined && this.plugins.plugins.length > 0) {
         this.memoryMb = sync.resolvedMemoryMb ?? 0;
       }
-      if (sync.reason !== undefined) {
+      // checkOffload has not answered yet: the synchronous preference is not a decision, so the job registers local
+      if (sync.offload === "never" && sync.reason !== undefined) {
         prefix(sync.reason);
       }
-      this.offload = sync.offload ?? "never";
+      this.offload = "never";
     }
     // Resolved once per job (git), kept for the re-registrations after a scheduler restart
     const cwd = process.cwd();
