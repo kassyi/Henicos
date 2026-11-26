@@ -13,7 +13,8 @@ import type { SchedulerJob } from "../scheduler.ts";
 import { JobServer } from "../server.ts";
 import type { ShellResult } from "../shell.ts";
 import type { RemoteCommandPlan } from "./command-translator.ts";
-import type { RemoteRunResult } from "./runner.ts";
+import { type RemoteRunResult } from "./runner.ts";
+import { removeReadOnlyTree } from "./artifact-collector.ts";
 import type { RemoteSpec } from "./spec.ts";
 import type { CaptureResult, RemoteTransport, StreamCallbacks } from "./transport.ts";
 
@@ -293,6 +294,6 @@ export async function withRemoteWorkspaceServer(
       job.connection?.socket.destroy();
     }
     server.server.close();
-    fs.rmSync(top, { recursive: true, force: true });
+    removeReadOnlyTree(top);
   }
 }

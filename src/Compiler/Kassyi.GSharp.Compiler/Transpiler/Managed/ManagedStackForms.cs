@@ -9,14 +9,13 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// </summary>
 /// <param name="Kernels">The stack form of each kernel that has one, by its entry point name.</param>
 /// <param name="Devices">The stack forms of the suspending device functions, in declaration order.</param>
-/// <param name="Failures">
-/// The functions whose stack form could not be made, each with the reason; they and the functions that call them run as
-/// state machines.
+/// <param name="Fallbacks">
+/// The kernels and suspending device functions that stay on the managed state machine, each with its reason.
 /// </param>
 internal readonly record struct ManagedStackForms(
     EquatableArray<ManagedStackKernelForm> Kernels,
     EquatableArray<ManagedStackDeviceForm> Devices,
-    EquatableArray<string> Failures);
+    EquatableArray<StateMachineFallback> Fallbacks);
 
 /// <summary>The stack form of one kernel.</summary>
 /// <param name="KernelName">The entry point name of the kernel (<see cref="GlobalCppNames.GetKernelName"/>).</param>
@@ -76,14 +75,14 @@ internal static class ManagedStackFormCollector
     {
         var kernels = new List<IMethodSymbol>();
         var devices = new List<IMethodSymbol>();
-        var failures = ImmutableArray.CreateBuilder<string>();
-        CollectFunctions(compilation, kernels, devices, failures, cancellationToken);
+        var fallbacks = ImmutableArray.CreateBuilder<StateMachineFallback>();
+        CollectFunctions(compilation, kernels, devices, fallbacks, cancellationToken);
 
         var deviceSources = new Dictionary<IMethodSymbol, string>(SymbolEqualityComparer.Default);
         foreach (var device in devices)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (TryGenerate(device, compilation, isKernel: false, failures) is { } source)
+            if (TryGenerate(device, compilation, isKernel: false, fallbacks) is { } source)
             {
                 deviceSources.Add(device, source);
             }
@@ -96,10 +95,11 @@ internal static class ManagedStackFormCollector
             changed = false;
             foreach (var device in devices)
             {
-                if (deviceSources.ContainsKey(device) && CallsFunctionWithoutForm(device, compilation, deviceSources))
+                if (deviceSources.ContainsKey(device) &&
+                    CallsFunctionWithoutForm(device, compilation, deviceSources, out var failure))
                 {
                     deviceSources.Remove(device);
-                    failures.Add(GetDisplayName(device) + ": calls a function without a stack form");
+                    fallbacks.Add(CreateCallsWithoutFormFallback(device, failure));
                     changed = true;
                 }
             }
@@ -119,13 +119,13 @@ internal static class ManagedStackFormCollector
         foreach (var kernel in kernels)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (CallsFunctionWithoutForm(kernel, compilation, deviceSources))
+            if (CallsFunctionWithoutForm(kernel, compilation, deviceSources, out var failure))
             {
-                failures.Add(GetDisplayName(kernel) + ": calls a function without a stack form");
+                fallbacks.Add(CreateCallsWithoutFormFallback(kernel, failure));
                 continue;
             }
 
-            if (TryGenerate(kernel, compilation, isKernel: true, failures) is { } source)
+            if (TryGenerate(kernel, compilation, isKernel: true, fallbacks) is { } source)
             {
                 kernelForms.Add(new ManagedStackKernelForm(GlobalCppNames.GetKernelName(kernel), source));
             }
@@ -134,14 +134,15 @@ internal static class ManagedStackFormCollector
         return new ManagedStackForms(
             kernelForms.ToImmutable().AsEquatableArray(),
             deviceForms.MoveToImmutable().AsEquatableArray(),
-            failures.ToImmutable().AsEquatableArray());
+            fallbacks.ToImmutable().AsEquatableArray());
     }
 
     // The kernels and device functions that can have a stack form, each once (a partial method by its defining part),
-    // in the order of their first declaration; a kernel whose warp collectives cannot run on its stack goes to
-    // <failures> with the reason (ManagedStackEligibility.GetWarpFailure)
+    // in the order of their first declaration; those that stay on the managed state machine go to <fallbacks> with the
+    // reason (ManagedStackEligibility)
     private static void CollectFunctions(Compilation compilation, List<IMethodSymbol> kernels,
-        List<IMethodSymbol> devices, ImmutableArray<string>.Builder failures, CancellationToken cancellationToken)
+        List<IMethodSymbol> devices, ImmutableArray<StateMachineFallback>.Builder fallbacks,
+        CancellationToken cancellationToken)
     {
         var seen = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
         foreach (var tree in compilation.SyntaxTrees)
@@ -167,30 +168,43 @@ internal static class ManagedStackFormCollector
                 var isKernel = method.HasAttribute(KnownAttributes.GpuKernel);
                 if (isKernel && KernelDeclaration.IsLaunchable(method, compilation, cancellationToken))
                 {
-                    if (ManagedStackEligibility.IsStackKernel(method, compilation))
+                    // Kernels whose ManagedMode is Unavailable (GSH0119) or UserMethod do not run as a managed state machine
+                    if (IsManagedCopyExcluded(method, compilation))
+                    {
+                        continue;
+                    }
+
+                    if (ManagedStackEligibility.FindKernelReason(method, compilation) is not { } reason)
                     {
                         kernels.Add(method);
                     }
-                    else if (ManagedStackEligibility.GetWarpFailure(method, compilation) is { } reason)
+                    else if (reason.Name != nameof(NativeStackObstacle.NoBlockBarrier))
                     {
-                        failures.Add(GetDisplayName(method) + ": " + reason);
+                        fallbacks.Add(new StateMachineFallback(KernelHostNames.GetMessageName(method), reason));
                     }
                 }
                 else if (!isKernel &&
                          method.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
-                         !method.IsPartialWithoutImplementation() &&
-                         ManagedStackEligibility.IsStackFunction(method, compilation))
+                         !method.IsPartialWithoutImplementation())
                 {
-                    devices.Add(method);
+                    if (ManagedStackEligibility.FindFunctionReason(method, compilation) is not { } reason)
+                    {
+                        devices.Add(method);
+                    }
+                    else if (SuspensionAnalysis.IsSuspendingFunction(method, compilation) &&
+                             reason.Name != nameof(NativeStackObstacle.NoBlockBarrier))
+                    {
+                        fallbacks.Add(new StateMachineFallback(KernelHostNames.GetMessageName(method), reason));
+                    }
                 }
             }
         }
     }
 
     // [WHY] A stack form is an addition of the Stack model: when it cannot be made, the function keeps its state
-    // machine and the reason is stated in the build output (ManagedStackPipeline.EmitFailures) instead of failing it
+    // machine and the reason is stated in the build output (StateMachineFallbackPipeline) instead of failing it
     private static string? TryGenerate(IMethodSymbol method, Compilation compilation, bool isKernel,
-        ImmutableArray<string>.Builder failures)
+        ImmutableArray<StateMachineFallback>.Builder fallbacks)
     {
         try
         {
@@ -210,27 +224,57 @@ internal static class ManagedStackFormCollector
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            failures.Add(GetDisplayName(method) + ": " + exception.GetType().Name + ": " + exception.Message);
+            fallbacks.Add(new StateMachineFallback(
+                KernelHostNames.GetMessageName(method),
+                new StateMachineReason(
+                    CpuPath.Managed,
+                    "StackFormGenerationFailed",
+                    "its stack form could not be generated",
+                    exception.GetType().Name + ": " + exception.Message)));
             return null;
         }
     }
 
+    private static StateMachineFallback CreateCallsWithoutFormFallback(IMethodSymbol method, string detail) =>
+        new(
+            KernelHostNames.GetMessageName(method),
+            new StateMachineReason(
+                CpuPath.Managed,
+                "CallsFunctionWithoutForm",
+                "it calls a suspending device function without a stack form",
+                detail));
+
+    private static bool IsManagedCopyExcluded(IMethodSymbol kernel, Compilation compilation) =>
+        FileLocalNames.FindOwnName(kernel, compilation) is not null;
+
     private static bool CallsFunctionWithoutForm(IMethodSymbol method, Compilation compilation,
-        Dictionary<IMethodSymbol, string> deviceSources)
+        Dictionary<IMethodSymbol, string> deviceSources, [NotNullWhen(true)] out string? failure)
     {
         if (!method.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var declaration) ||
             declaration.GetBodyNode() is not { } body)
         {
+            failure = null;
             return false;
         }
 
-        return SuspensionAnalysis.GetSuspendingCallees(body, compilation)
-            .AsStackEnumerable()
-            .Any(deviceSources, static (callee, sources) => !sources.ContainsKey(GetDefinition(callee)));
-    }
+        var semanticModel = compilation.GetCachedSemanticModel(declaration.SyntaxTree);
+        foreach (var (callee, isMethodGroup) in
+                 SuspensionAnalysis.GetReferencedSuspendingFunctions(body, compilation, semanticModel))
+        {
+            var definition = GetDefinition(callee);
+            if (!deviceSources.ContainsKey(definition))
+            {
+                failure = isMethodGroup
+                    ? "passes " + KernelHostNames.GetMessageName(definition) +
+                      ", which has no stack form, as a method group"
+                    : "calls a function without a stack form";
+                return true;
+            }
+        }
 
-    // <type>.<method>, for the build output
-    private static string GetDisplayName(IMethodSymbol method) => method.ContainingType.Name + "." + method.Name;
+        failure = null;
+        return false;
+    }
 
     // The symbol a call names, as CollectFunctions keys it
     private static IMethodSymbol GetDefinition(IMethodSymbol method)

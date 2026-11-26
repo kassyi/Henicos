@@ -1,11 +1,8 @@
 #nullable enable
 using Kassyi.GSharp.Compiler;
 using Kassyi.GSharp.Compiler.Ir;
-using Kassyi.GSharp.Compiler.Ir.Classifying;
 using Kassyi.GSharp.Compiler.Ir.Decisions;
 using Kassyi.GSharp.Compiler.Ir.Expressions;
-using Kassyi.GSharp.Compiler.Ir.Linear;
-using Kassyi.GSharp.Compiler.Ir.Splitting;
 using Kassyi.GSharp.Compiler.Ir.Statements;
 using Kassyi.GSharp.Compiler.Transpiler;
 using Kassyi.GSharp.Compiler.Transpiler.Helpers;
@@ -312,58 +309,6 @@ public class IrNumericDecisionTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Decide_OperandOfASplit_ReadsTheOriginalOperand()
-    {
-        var compilation = IrTestCases.Compile(TestCase);
-        var preSplit = DecideMethod("ShuffleOperandByte");
-        var preBinary = IrNodeChildren.DescendantsAndSelf(preSplit.Body)
-            .OfType<IrBinary>()
-            .Single(static b => !b.Source.Synthesized);
-
-        var (built, machine) = BuildSplitMachine(compilation, "ShuffleOperandByte");
-        var postDecided = IrDecisions.Decide(machine, IrDecisionTestContext.Create(compilation, machine, built));
-        Assert.Empty(IrDecisionInvariants.Verify(postDecided));
-        var postBinary = IrNodeChildren.DescendantsAndSelf(postDecided)
-            .OfType<IrBinary>()
-            .Single(b => !b.Source.Synthesized && b.Source == preBinary.Source);
-
-        Assert.Null(preBinary.Decided.Helper);
-        Assert.Equal(preBinary.Decided.Helper, postBinary.Decided.Helper);
-        Assert.Equal(preBinary.Decided.PromotedType, postBinary.Decided.PromotedType, SymbolEqualityComparer.Default);
-        Assert.Equal(preBinary.Decided.ShiftMask, postBinary.Decided.ShiftMask);
-        Assert.Equal(preBinary.Decided.ManagedDivision, postBinary.Decided.ManagedDivision);
-    }
-
-    [Fact]
-    [Scenario(TestScenario.HappyPath)]
-    public void Decide_PromotedOperandOfASplit_KeepsThePromotion()
-    {
-        var compilation = IrTestCases.Compile(TestCase);
-        var preSplit = DecideMethod("ShuffleOperandPromote");
-        var preBinaries = IrNodeChildren.DescendantsAndSelf(preSplit.Body)
-            .OfType<IrBinary>()
-            .Where(static b => !b.Source.Synthesized)
-            .ToArray();
-
-        var (built, machine) = BuildSplitMachine(compilation, "ShuffleOperandPromote");
-        var postDecided = IrDecisions.Decide(machine, IrDecisionTestContext.Create(compilation, machine, built));
-        Assert.Empty(IrDecisionInvariants.Verify(postDecided));
-
-        foreach (var pre in preBinaries)
-        {
-            var post = IrNodeChildren.DescendantsAndSelf(postDecided)
-                .OfType<IrBinary>()
-                .Single(b => !b.Source.Synthesized && b.Source == pre.Source);
-            Assert.Equal(pre.Decided.PromotedType, post.Decided.PromotedType, SymbolEqualityComparer.Default);
-            Assert.Equal(pre.Decided.ConvertsLeft, post.Decided.ConvertsLeft);
-            Assert.Equal(pre.Decided.ConvertsRight, post.Decided.ConvertsRight);
-        }
-
-        Assert.Contains(preBinaries, static b => b.Decided.PromotedType?.SpecialType == SpecialType.System_Int64);
-    }
-
-    [Fact]
-    [Scenario(TestScenario.HappyPath)]
     public void Resolve_TemporaryChain_ReachesTheOriginalOperand()
     {
         var compilation = IrTestCases.Compile(TestCase);
@@ -461,9 +406,6 @@ public class IrNumericDecisionTests
         var built = IrTestCases.Build(TestCase, TypeName, name);
         return IrDecisions.Decide(built, IrDecisionTestContext.Create(compilation, built));
     }
-
-    private static (IrMethod Built, IrStateMachine Machine) BuildSplitMachine(Compilation compilation, string name) =>
-        IrDecisionTestContext.BuildSplitMachine(compilation, TestCase, TypeName, name);
 
     private static IrExpression AssignedValue(IrMethod method)
     {

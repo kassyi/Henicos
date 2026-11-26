@@ -1,4 +1,5 @@
-// Checks of the config loader, the plugin host, and the scheduler's optional memoryMb / keys fields.
+// Checks of the config loader, plugin loading, and the scheduler's optional memoryMb / keys fields (the plugin host
+// checks are in plugin-host-checks.ts).
 
 import type * as Assert from "node:assert";
 import * as fs from "node:fs";
@@ -21,8 +22,16 @@ import {
 import { connect, request } from "./client-connect.ts";
 import { loadConfig } from "./config.ts";
 import type { ConfigFileModule } from "./lib/types.ts";
-import { PluginApiVersion, type QueuePlugin, type ShareMode } from "./plugin-api.ts";
-import { PluginHost, runPluginChecks, type BaseClientContext } from "./plugin-host.ts";
+import { PluginApiVersion, type QueuePlugin } from "./plugin-api.ts";
+import { PluginHost, runPluginChecks } from "./plugin-host.ts";
+import {
+  baseContext,
+  checkHostCheckOffload,
+  checkHostClassify,
+  checkHostExceptions,
+  checkHostSequential,
+  checkHostValidation,
+} from "./plugin-host-checks.ts";
 import { ProcessTable } from "./system.ts";
 import { delay, firstTestPort, removeDirectory } from "./self-test-support.ts";
 import {
@@ -37,17 +46,6 @@ type AssertModule = typeof Assert;
 
 const require = createRequire(import.meta.url);
 const { findConfigFile, loadConfigFile } = require("./lib/config-file.js") as ConfigFileModule;
-
-function baseContext(configRoot: string, warnings: string[]): BaseClientContext {
-  return {
-    cwd: configRoot,
-    worktree: configRoot,
-    configRoot,
-    shell: "bash",
-    env: {},
-    log: (text: string) => warnings.push(`[job-queue] ${text}`),
-  };
-}
 
 /** Runs `body` with a temporary `JOB_QUEUE_CONFIG` value, restoring the original afterwards. */
 export async function withConfigEnv(value: string | undefined, body: () => void | Promise<void>): Promise<void> {
@@ -204,198 +202,6 @@ async function checkConfig(assert: AssertModule): Promise<void> {
   } finally {
     removeDirectory(subDir);
   }
-}
-
-/**
- * Check 2: 2 fake plugins with classify -> per-field first-wins, and forcedExclusive overrides share.
- */
-function checkHostClassify(assert: AssertModule): void {
-  const warnings: string[] = [];
-  const p1: QueuePlugin = {
-    name: "first",
-    apiVersion: PluginApiVersion,
-    classify: () => ({ test: true }),
-  };
-  const p2: QueuePlugin = {
-    name: "second",
-    apiVersion: PluginApiVersion,
-    classify: () => ({ test: false, memoryMb: 2048, share: "shared" }),
-  };
-  const host = new PluginHost([p1, p2], [undefined, undefined], process.cwd(), (m) => warnings.push(m));
-  const ctx = baseContext(process.cwd(), warnings);
-
-  const shared = host.classify("cmd", { name: "gpu", forcedExclusive: false }, ctx);
-  assert.deepStrictEqual(shared, { test: true, memoryMb: 2048, share: "shared" });
-
-  const forced = host.classify("cmd", { name: "gpu", forcedExclusive: true }, ctx);
-  assert.deepStrictEqual(forced, { test: true, memoryMb: 2048, share: "exclusive" });
-  assert.deepStrictEqual(warnings, []);
-}
-
-/**
- * Check 3: Throwing plugin is skipped, warns once per plugin x hook, next plugin's answer is used; throwing check does
- * not refuse.
- */
-function checkHostExceptions(assert: AssertModule): void {
-  const warnings: string[] = [];
-  const throwing: QueuePlugin = {
-    name: "bad",
-    apiVersion: PluginApiVersion,
-    classify: () => {
-      throw new Error("boom-classify");
-    },
-    check: () => {
-      throw new Error("boom-check");
-    },
-  };
-  const fallback: QueuePlugin = {
-    name: "good",
-    apiVersion: PluginApiVersion,
-    classify: () => ({ test: true, memoryMb: 512 }),
-    check: () => ({ hints: ["good-hint"] }),
-  };
-  const host = new PluginHost([throwing, fallback], [undefined, undefined], process.cwd(), (m) => warnings.push(m));
-  const ctx = baseContext(process.cwd(), warnings);
-
-  assert.deepStrictEqual(host.classify("cmd", null, ctx), { test: true, memoryMb: 512 });
-  assert.deepStrictEqual(host.classify("cmd", null, ctx), { test: true, memoryMb: 512 });
-  assert.strictEqual(
-    warnings.filter((w) => w.includes("bad.classify")).length,
-    1,
-    "warns exactly once per plugin x hook",
-  );
-  assert.strictEqual(warnings[0], "[job-queue] plugin bad.classify failed: boom-classify; continuing without it");
-
-  const checkResult = host.check("cmd", null, ctx);
-  assert.strictEqual(checkResult.refuse, undefined, "throwing check must not refuse");
-  assert.deepStrictEqual(checkResult.hints, ["good-hint"]);
-  assert.strictEqual(warnings.filter((w) => w.includes("bad.check")).length, 1);
-}
-
-/**
- * Check 4: prepareCommand applies sequentially (command chained, env later-wins, note joined with ", "), plus
- * shortName / check composition.
- */
-function checkHostSequential(assert: AssertModule): void {
-  const warnings: string[] = [];
-  const p1: QueuePlugin = {
-    name: "p1",
-    apiVersion: PluginApiVersion,
-    prepareCommand: (command) => ({
-      command: `${command} --a`,
-      env: { SHARED: "from-p1", ONLY_A: "1" },
-      note: "note-a",
-    }),
-    shortName: (_command, short) => `${short}:a`,
-    check: () => ({ hints: ["h1"] }),
-  };
-  const p2: QueuePlugin = {
-    name: "p2",
-    apiVersion: PluginApiVersion,
-    prepareCommand: (command) => ({
-      command: `${command} --b`,
-      env: { SHARED: "from-p2", ONLY_B: "2" },
-      note: "note-b",
-    }),
-    shortName: (_command, short) => `${short}:b`,
-    check: () => ({ refuse: "blocked", hints: ["h2"] }),
-  };
-  const p3: QueuePlugin = {
-    name: "p3",
-    apiVersion: PluginApiVersion,
-    check: () => ({ hints: ["should-not-run"] }),
-  };
-  const host = new PluginHost([p1, p2, p3], [undefined, undefined, undefined], process.cwd(), (m) => warnings.push(m));
-  const ctx = baseContext(process.cwd(), warnings);
-
-  const prepared = host.prepareCommand("base", { jobId: 1, cpus: 4, nested: false }, ctx);
-  assert.strictEqual(prepared.command, "base --a --b");
-  assert.strictEqual(Object.getPrototypeOf(prepared.env), null);
-  assert.deepStrictEqual(
-    prepared.env,
-    Object.assign(Object.create(null), { SHARED: "from-p2", ONLY_A: "1", ONLY_B: "2" }),
-  );
-  assert.strictEqual(prepared.note, "note-a, note-b");
-  assert.strictEqual(host.shortName("base", "base"), "base:a:b");
-
-  const checked = host.check("base", null, ctx);
-  assert.strictEqual(checked.refuse, "blocked");
-  assert.deepStrictEqual(checked.hints, ["h1", "h2"]);
-}
-
-/**
- * Check 5: Host discards out-of-range / wrong-type return values (memoryMb -1, "x", 1e12, share "both", oversized
- * StepKeys, empty SplitPlan fields).
- */
-function checkHostValidation(assert: AssertModule): void {
-  const warnings: string[] = [];
-  const bad: QueuePlugin = {
-    name: "bad-values",
-    apiVersion: PluginApiVersion,
-    classify: () => ({
-      test: true,
-      memoryMb: -1,
-      share: "both" as ShareMode,
-    }),
-    stepKeys: () => ({ normalized: "x".repeat(2001), shape: "s", kind: "k" }),
-    splitBeforeTurn: () => ({ before: "", after: "test", beforeRole: "b", afterRole: "a" }),
-  };
-  const badType: QueuePlugin = {
-    name: "bad-types",
-    apiVersion: PluginApiVersion,
-    classify: () => ({
-      memoryMb: "x" as unknown as number,
-    }),
-  };
-  const badHuge: QueuePlugin = {
-    name: "bad-huge",
-    apiVersion: PluginApiVersion,
-    classify: () => ({
-      memoryMb: 1e12,
-    }),
-  };
-  const validFallback: QueuePlugin = {
-    name: "valid",
-    apiVersion: PluginApiVersion,
-    classify: () => ({ memoryMb: 256, share: "shared" }),
-    stepKeys: () => ({ normalized: "ok", shape: "ok", kind: "ok" }),
-    splitBeforeTurn: () => ({ before: "build", after: "test", beforeRole: "build", afterRole: "test" }),
-  };
-  const host = new PluginHost(
-    [bad, badType, badHuge, validFallback],
-    [undefined, undefined, undefined, undefined],
-    process.cwd(),
-    (m) => warnings.push(m),
-  );
-  const ctx = baseContext(process.cwd(), warnings);
-
-  // Without valid fallback, invalid values must all be discarded
-  const onlyInvalid = new PluginHost(
-    [bad, badType, badHuge],
-    [undefined, undefined, undefined],
-    process.cwd(),
-    () => {},
-  );
-  assert.deepStrictEqual(onlyInvalid.classify("cmd", null, ctx), { test: true });
-  assert.strictEqual(
-    onlyInvalid.stepKeys({ words: ["cmd"] }, { cwd: "", resolvePath: (a) => ({ text: a, where: "" }) }),
-    undefined,
-  );
-  assert.strictEqual(onlyInvalid.splitBeforeTurn("cmd", { name: "gpu", forcedExclusive: false }, ctx), undefined);
-
-  // With valid fallback, valid values win after invalid ones are discarded
-  assert.deepStrictEqual(host.classify("cmd", null, ctx), { test: true, memoryMb: 256, share: "shared" });
-  assert.deepStrictEqual(host.stepKeys({ words: ["cmd"] }, { cwd: "", resolvePath: (a) => ({ text: a, where: "" }) }), {
-    normalized: "ok",
-    shape: "ok",
-    kind: "ok",
-  });
-  assert.deepStrictEqual(host.splitBeforeTurn("cmd", { name: "gpu", forcedExclusive: false }, ctx), {
-    before: "build",
-    after: "test",
-    beforeRole: "build",
-    afterRole: "test",
-  });
 }
 
 /**
@@ -840,6 +646,7 @@ async function checkHardeningAndConfigForwarding(assert: AssertModule): Promise<
 export async function checkPlugins(assert: AssertModule): Promise<void> {
   await checkConfig(assert);
   checkHostClassify(assert);
+  await checkHostCheckOffload(assert);
   checkHostExceptions(assert);
   checkHostSequential(assert);
   checkHostValidation(assert);

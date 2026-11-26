@@ -40,6 +40,7 @@ internal static class ExpressionWalk
                 {
                     var operand = walker.GetOperand(frame.Node, frame.Next);
                     var operandTarget = walker.OperandTarget(frame.Node, frame.Target);
+                    walker.BeginOperand(frame.Node, frame.Next);
                     frame.Next++;
                     walker.Enter(operand, operandTarget);
                     frames.Push(new Frame<TNode, TTarget>(operand, operandTarget,

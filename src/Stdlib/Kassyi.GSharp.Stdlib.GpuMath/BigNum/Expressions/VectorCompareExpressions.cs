@@ -30,7 +30,7 @@ internal class VectorCompareScalarExpression(
     // The flags of the capacity; the elements are the first Count of them, as for the input
     private BoolVectorEvaluation Apply(GpuWorkspace workspace, VectorEvaluation vecResult)
     {
-        var scalarResult = scalar.Evaluate(workspace);
+        var scalarResult = VectorEffects.EvaluateScalar(scalar, workspace);
         try
         {
             var flags = _flags.Get(workspace, Capacity);

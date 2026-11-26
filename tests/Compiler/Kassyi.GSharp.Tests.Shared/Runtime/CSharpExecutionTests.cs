@@ -245,7 +245,9 @@ public class CSharpExecutionTests
 
         Assert.False(ManagedGpuContext.IsActive);
         Assert.False(ManagedThreadContext.IsCSharpExecution);
+#pragma warning disable GSH0018 // Verifies that KernelExecution.CSharp leaves no active GPU thread context on the caller
         Assert.Throws<GpuOnlyException>(static () => ThreadIndex.X);
+#pragma warning restore GSH0018
     }
 
     [Fact]

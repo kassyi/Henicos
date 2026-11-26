@@ -27,12 +27,23 @@ internal static class NativeStackEligibility
         // A using declaration in a method that reaches Warp.ActiveMask()
         UsingDeclarationWithActiveMask = 32,
         // A method that reaches Warp.ActiveMask() whose body the stack lowering fails on
-        StackBodyLowering = 64
+        StackBodyLowering = 64,
+        // A suspending device function that reaches a warp collective is passed as a method group
+        WarpMethodGroup = 128
     }
 
     public static bool CanRunOnStack(MethodDeclarationSyntax declaration, SemanticModel semanticModel) =>
-        declaration.HasBody() &&
-        ClassifyBody(declaration, semanticModel) == NativeStackObstacle.None;
+        ClassifyDeviceFunction(declaration, semanticModel) == NativeStackObstacle.None;
+
+    /// <summary>
+    /// Classifies a suspending device function's body for native stack execution without re-classifying it separately.
+    /// </summary>
+    public static NativeStackObstacle ClassifyDeviceFunction(
+        MethodDeclarationSyntax declaration,
+        SemanticModel semanticModel) =>
+        declaration.HasBody()
+            ? ClassifyBody(declaration, semanticModel)
+            : NativeStackObstacle.NoBlockBarrier;
 
     public static NativeStackObstacle Classify(
         IMethodSymbol kernel,
@@ -81,7 +92,7 @@ internal static class NativeStackEligibility
 
         var visited = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
         var queue = new Queue<IMethodSymbol>();
-        EnqueueSuspendingCallees(declaration, compilation, visited, queue);
+        EnqueueSuspendingCallees(declaration, semanticModel, visited, queue);
 
         while (queue.Count > 0)
         {
@@ -93,14 +104,15 @@ internal static class NativeStackEligibility
 
             // Recursive suspending functions (#926, GSH0061) do not get a stack overload; keep them on the
             // diagnostic / state-machine path rather than emitting a broken or no-op barrier call.
-            if (!SuspensionAnalysis.RequiresStateMachine(callee, compilation))
+            if (!SuspensionAnalysis.RequiresStateMachine(callee, compilation) ||
+                HasSuspendingCycle(callee, compilation))
             {
                 return NativeStackObstacle.RecursiveSuspendingCall;
             }
 
             var calleeModel = compilation.GetCachedSemanticModel(calleeDeclaration.SyntaxTree);
             facts |= GetFacts(callee, calleeDeclaration, calleeModel);
-            EnqueueSuspendingCallees(calleeDeclaration, compilation, visited, queue);
+            EnqueueSuspendingCallees(calleeDeclaration, calleeModel, visited, queue);
         }
 
         if ((facts & BodyFacts.GridSync) != 0)
@@ -127,6 +139,11 @@ internal static class NativeStackEligibility
             (facts & BodyFacts.CaseWithoutLabel) != 0)
         {
             return NativeStackObstacle.CaseValueWithoutLabel;
+        }
+
+        if ((facts & BodyFacts.WarpMethodGroup) != 0)
+        {
+            return NativeStackObstacle.WarpMethodGroup;
         }
 
         if ((facts & BodyFacts.WarpCollective) != 0)
@@ -181,16 +198,70 @@ internal static class NativeStackEligibility
 
     private static void EnqueueSuspendingCallees(
         MethodDeclarationSyntax declaration,
-        Compilation compilation,
+        SemanticModel semanticModel,
         HashSet<IMethodSymbol> visited,
         Queue<IMethodSymbol> queue)
     {
-        foreach (var callee in SuspensionAnalysis.GetSuspendingCallees(declaration, compilation))
+        if (declaration.GetBodyNode() is not { } body)
+        {
+            return;
+        }
+
+        foreach (var (callee, _) in
+                 SuspensionAnalysis.GetReferencedSuspendingFunctions(body, semanticModel.Compilation, semanticModel))
         {
             if (visited.Add(callee))
             {
                 queue.Enqueue(callee);
             }
+        }
+    }
+
+    private static bool HasSuspendingCycle(IMethodSymbol start, Compilation compilation) =>
+        HasSuspendingCycle(
+            start,
+            compilation,
+            new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default),
+            new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default));
+
+    private static bool HasSuspendingCycle(
+        IMethodSymbol method,
+        Compilation compilation,
+        HashSet<IMethodSymbol> visiting,
+        HashSet<IMethodSymbol> acyclic)
+    {
+        if (acyclic.Contains(method))
+        {
+            return false;
+        }
+
+        if (!visiting.Add(method))
+        {
+            return true;
+        }
+
+        try
+        {
+            if (SuspensionAnalysis.TryGetDeviceFunctionBody(method, compilation, out var declaration) &&
+                declaration.GetBodyNode() is { } body)
+            {
+                var model = compilation.GetCachedSemanticModel(declaration.SyntaxTree);
+                foreach (var (callee, _) in
+                         SuspensionAnalysis.GetReferencedSuspendingFunctions(body, compilation, model))
+                {
+                    if (HasSuspendingCycle(callee, compilation, visiting, acyclic))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            acyclic.Add(method);
+            return false;
+        }
+        finally
+        {
+            visiting.Remove(method);
         }
     }
 
@@ -262,12 +333,16 @@ internal static class NativeStackEligibility
                 return MessageText.Name(method) + ": " + reason;
             }
 
-            foreach (var callee in SuspensionAnalysis.GetSuspendingCallees(methodDeclaration, compilation))
+            if (methodDeclaration.GetBodyNode() is { } body)
             {
-                if (visited.Add(callee) &&
-                    SuspensionAnalysis.TryGetDeviceFunctionBody(callee, compilation, out var calleeDeclaration))
+                foreach (var (callee, _) in
+                         SuspensionAnalysis.GetReferencedSuspendingFunctions(body, compilation, model))
                 {
-                    queue.Enqueue((callee, calleeDeclaration));
+                    if (visited.Add(callee) &&
+                        SuspensionAnalysis.TryGetDeviceFunctionBody(callee, compilation, out var calleeDeclaration))
+                    {
+                        queue.Enqueue((callee, calleeDeclaration));
+                    }
                 }
             }
         }
@@ -319,6 +394,27 @@ internal static class NativeStackEligibility
             };
         }
 
-        return facts;
+        return facts | ScanWarpMethodGroups(declaration, semanticModel);
+    }
+
+    // A suspending function that reaches a warp collective, named as a method group (#2272)
+    private static BodyFacts ScanWarpMethodGroups(MethodDeclarationSyntax declaration, SemanticModel semanticModel)
+    {
+        if (declaration.GetBodyNode() is not { } body)
+        {
+            return BodyFacts.None;
+        }
+
+        var compilation = semanticModel.Compilation;
+        foreach (var (referenced, isMethodGroup) in
+                 SuspensionAnalysis.GetReferencedSuspendingFunctions(body, compilation, semanticModel))
+        {
+            if (isMethodGroup && SuspensionAnalysis.ReachesWarpShuffle(referenced, compilation))
+            {
+                return BodyFacts.WarpMethodGroup;
+            }
+        }
+
+        return BodyFacts.None;
     }
 }

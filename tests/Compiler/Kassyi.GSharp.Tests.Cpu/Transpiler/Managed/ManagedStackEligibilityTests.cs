@@ -32,6 +32,16 @@ public class ManagedStackEligibilityTests
     [InlineData("InstanceEligibilityTarget", "CallsInstanceDeviceFunction", false)]
     [InlineData("WarpEligibilityKernels", "WarpOnly", true)]
     [InlineData("WarpEligibilityKernels", "CallsRecursiveShuffle", false)]
+    [InlineData("EligibilityKernels", "PassesIneligibleGroupKernel", false)]
+    [InlineData("EligibilityKernels", "PassesIneligibleExtensionGroupKernel", false)]
+    [InlineData("EligibilityKernels", "NameofIneligibleGroupKernel", true)]
+    [InlineData("EligibilityKernels", "PassesSelfGroupKernel", false)]
+    [InlineData("EligibilityKernels", "PassesCycleKernel", false)]
+    [InlineData("EligibilityKernels", "PassesEligibleGenericGroupKernel", true)]
+    [InlineData("EligibilityKernels", "PassesIneligibleGenericGroupKernel", false)]
+    [InlineData("EligibilityKernels", "PassesEligiblePartialGroupKernel", true)]
+    [InlineData("EligibilityKernels", "PassesIneligiblePartialGroupKernel", false)]
+    [InlineData("UserDefinedNameofKernels", "CallsUserNameofWithIneligibleGroupKernel", false)]
     public void IsStackKernel_VariousShapes_MatchesExpectedEligibility(string typeName, string methodName,
         bool expected)
     {
@@ -48,11 +58,37 @@ public class ManagedStackEligibilityTests
     [InlineData("WarpEligibilityKernels", "Chain10", true)]
     [InlineData("WarpEligibilityKernels", "RecursiveShuffle", false)]
     [InlineData("InstanceEligibilityTarget", "InstanceDeviceWait", false)]
+    [InlineData("EligibilityKernels", "IneligibleGroupStep", false)]
+    [InlineData("EligibilityKernels", "CallsIneligibleGroupHelper", false)]
+    [InlineData("EligibilityKernels", "IneligibleExtensionStep", false)]
+    [InlineData("EligibilityKernels", "PassesInstanceGroupHelper", false)]
+    [InlineData("EligibilityKernels", "EligibleGenericStep", true)]
+    [InlineData("EligibilityKernels", "IneligibleGenericStep", false)]
+    [InlineData("EligibilityKernels", "EligiblePartialStep", true)]
+    [InlineData("EligibilityKernels", "IneligiblePartialStep", false)]
     public void IsStackFunction_VariousShapes_MatchesExpectedEligibility(string typeName, string methodName,
         bool expected)
     {
         var method = GetMethod(typeName, methodName);
         Assert.Equal(expected, ManagedStackEligibility.IsStackFunction(method, s_compilation));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void IsStackFunction_SelfMethodGroupCycle_ReturnsFalseWithoutOverflow()
+    {
+        var method = GetMethod("EligibilityKernels", "SelfGroup");
+        Assert.False(ManagedStackEligibility.IsStackFunction(method, s_compilation));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void IsStackFunction_MutualMethodGroupCycle_ReturnsFalseWithoutOverflow()
+    {
+        Assert.False(ManagedStackEligibility.IsStackFunction(GetMethod("EligibilityKernels", "CycleA"), s_compilation));
+        Assert.False(ManagedStackEligibility.IsStackFunction(GetMethod("EligibilityKernels", "CycleB"), s_compilation));
+        Assert.False(ManagedStackEligibility.IsStackKernel(GetMethod("EligibilityKernels", "PassesCycleKernel"),
+            s_compilation));
     }
 
     [Theory]

@@ -149,6 +149,7 @@ public class GpuExecutionTests
     [InlineData("SharedMemory<T>")]
     public void Run_DelegateReachesAnOperationOfOtherThreads_ThrowsCSharpExecutionUnsupportedException(string construct)
     {
+#pragma warning disable GSH0018, GSH0042 // Deliberately passes a GPU-only delegate to CSharpKernelRunner.Run to test the runtime backstop
         Action<long> thread = construct switch
         {
             "Gpu.SyncThreads()" => static _ => Gpu.SyncThreads(),
@@ -157,6 +158,7 @@ public class GpuExecutionTests
             "Warp.ActiveMask()" => static _ => Warp.ActiveMask(),
             _ => static _ => AllocateSharedMemory()
         };
+#pragma warning restore GSH0018, GSH0042
         var ran = 0;
 
         var ex = Assert.Throws<CSharpExecutionUnsupportedException>(() => CSharpKernelRunner.Run(1, 1, 1, 2, 1, 1, id =>
@@ -184,8 +186,10 @@ public class GpuExecutionTests
         {
             try
             {
+#pragma warning disable GSH0018, GSH0042 // Unit test of Gpu.SyncThreads() runtime guard under ManagedThreadContext outside KernelExecution.CSharp
                 ManagedThreadContext.Set(new GpuThreadContext(0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1));
                 Gpu.SyncThreads();
+#pragma warning restore GSH0018, GSH0042
             }
             catch (Exception ex)
             {
@@ -212,7 +216,6 @@ public class GpuExecutionTests
 
     private static void AllocateSharedMemory()
     {
-        var tile = new SharedMemory<int>(4);
-        tile[0] = 1;
+        _ = new SharedMemory<int>(4);
     }
 }

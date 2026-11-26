@@ -1,4 +1,5 @@
 using System.Threading;
+using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.Tests.Shared.Helpers;
@@ -15,7 +16,7 @@ internal sealed class StreamGate : IDisposable
     private readonly CudaStreamGate _gate;
     private readonly Timer _releaseTimer;
 
-    private StreamGate(CudaStreamGate gate, TimeSpan holdTime)
+    private StreamGate([TakesOwnership] CudaStreamGate gate, TimeSpan holdTime)
     {
         _gate = gate;
         _releaseTimer = new Timer(static state =>

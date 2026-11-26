@@ -343,7 +343,7 @@ internal static class FileLocalNames
         for (var current = node.Parent; current != null; current = current.Parent)
         {
             if (current is InvocationExpressionSyntax invocation &&
-                ManagedNameQualifier.IsNameofOperator(invocation, semanticModel))
+                NameofOperator.Is(invocation, semanticModel))
             {
                 return true;
             }

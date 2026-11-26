@@ -39,7 +39,6 @@ public sealed partial class DiffPointerScope : IDisposable
 
     private partial void InitializeStorage();
     private partial IntPtr AllocateAndUpload(DiffBuffer buffer);
-    private partial void DisposeStorage();
 
     /// <summary>Gets the device (or staging) pointer for the buffer named <paramref name="name"/>.</summary>
     public IntPtr Get(string name) =>
@@ -66,15 +65,14 @@ public sealed partial class DiffPointerScope : IDisposable
     public IntPtr PinOrUpload<T>(string name)
         where T : unmanaged => Get(name);
 
-    /// <summary>Copies device/staging memory back to the host buffers and releases all allocations.</summary>
-    public void Dispose()
+    private bool BeginDispose()
     {
         if (_disposed)
         {
-            return;
+            return false;
         }
 
         _disposed = true;
-        DisposeStorage();
+        return true;
     }
 }

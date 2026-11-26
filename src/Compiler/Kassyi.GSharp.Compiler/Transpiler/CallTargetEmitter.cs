@@ -72,7 +72,7 @@ internal static class CallTargetEmitter
     /// <returns>Whether it reported and wrote the placeholder.</returns>
     public static bool TryFailMethodGroup(SyntaxNode node, ISymbol? symbol, ref TranspileContext context) =>
         symbol is IMethodSymbol method &&
-        CallTargetClassifier.IsMethodGroup(node) &&
+        MethodGroupReference.Is(node, context.Query.SemanticModel) &&
         TryFail(
             node,
             CallTargetClassifier.Classify(method, node, context.Query.SemanticModel, context.Emitter.Dialect),

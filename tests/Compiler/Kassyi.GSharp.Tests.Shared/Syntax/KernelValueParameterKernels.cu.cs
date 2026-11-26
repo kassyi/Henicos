@@ -14,7 +14,7 @@ public struct KernelParameterHolder
     public int[] Data;
 }
 
-public static class KernelParameterPointExtensions
+public static partial class KernelParameterPointExtensions
 {
     [GpuDeviceFunction]
     public static void Bump(this ref KernelParameterPoint point, int d)

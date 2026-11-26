@@ -55,6 +55,22 @@ public class NativeStackEligibilityTests
         "UserLookalikeBarrierKernel", NativeStackObstacle.NoBlockBarrier)]
     [InlineData("NativeStackEligibilityCases.Kernels",
         "ConditionalOmittedCallKernel", NativeStackObstacle.NoBlockBarrier)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "MethodGroupGridSyncKernel", NativeStackObstacle.GridSync)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "MethodGroupRecursiveKernel", NativeStackObstacle.RecursiveSuspendingCall)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "MethodGroupWarpKernel", NativeStackObstacle.WarpMethodGroup)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "MethodGroupActiveMaskKernel", NativeStackObstacle.WarpMethodGroup)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "MethodGroupUsingActiveMaskKernel", NativeStackObstacle.UsingDeclarationWithActiveMask)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "MethodGroupNameofKernel", NativeStackObstacle.None)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "MethodGroupSelfCycleKernel", NativeStackObstacle.RecursiveSuspendingCall)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "MethodGroupMutualCycleKernel", NativeStackObstacle.RecursiveSuspendingCall)]
     internal void Classify_KernelBody_ReturnsExpectedObstacle(
         string typeName,
         string methodName,
@@ -169,6 +185,12 @@ public class NativeStackEligibilityTests
         Assert.Equal(
             NativeStackObstacle.ImportedSuspendingCall,
             NativeStackEligibility.Classify(symbol, declaration, model));
+
+        var (groupSymbol, groupDeclaration, groupModel) =
+            GetKernel(consumerCompilation, "ConsumerApp.Kernels", "PassRemoteMethodGroupKernel");
+        Assert.Equal(
+            NativeStackObstacle.ImportedSuspendingCall,
+            NativeStackEligibility.Classify(groupSymbol, groupDeclaration, groupModel));
     }
 
     private static string ReadCase(string fileName) =>

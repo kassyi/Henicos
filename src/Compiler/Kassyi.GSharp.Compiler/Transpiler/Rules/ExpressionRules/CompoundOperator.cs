@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Backends.Cpp;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
@@ -75,7 +76,7 @@ internal readonly record struct CompoundOperator(string Operator, string? Helper
             if (ShiftMask == 0)
             {
                 EvaluationOrder.AppendTempName(writer, value);
-                DivisorCheck.AppendSiteArgument(writer, Site);
+                NullCheckSiteWriter.AppendSiteArgument(writer, Site);
                 return;
             }
 

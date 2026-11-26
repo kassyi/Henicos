@@ -15,9 +15,11 @@ import {
 import type { PathPlace } from "../estimate-key.ts";
 import { formatJobId } from "../job-id.ts";
 import type { BaseClientContext, PluginHost } from "../plugin-host.ts";
+import type { QuarantineSummary } from "../protocol.ts";
 import type { ShellResult } from "../shell.ts";
 import { prefix } from "../system.ts";
 import { translateForRemote, type RemoteCommandPlan } from "./command-translator.ts";
+import { getEnvValue, resolveCallerEnv } from "./env-policy.ts";
 import type { ResolvedRemoteRules } from "./rules.ts";
 import type { OffloadPreference, RemoteSpec } from "./spec.ts";
 
@@ -41,6 +43,8 @@ export interface ExecutionResult extends ShellResult {
   fallbackToLocal?: boolean;
   /** True when the remote command hit the GNU `timeout` limit (`exit 124`). */
   timedOut?: boolean;
+  /** Present when quarantined artifacts were written or `--results-directory` was redirected to quarantine. */
+  quarantine?: QuarantineSummary;
 }
 
 /** Strategy contract for executing a granted job. */
@@ -57,17 +61,38 @@ export function resolveOffloadPreference(params: {
   options: RunOptions;
   inGpuLock: boolean;
   classifiedOffloadable: boolean;
+  classifiedLocalReason?: string;
   memoryMb?: number;
   cwd: string;
   worktree: string;
   shell: ShellName;
   places: Readonly<Record<string, PathPlace>>;
   remoteRules: ResolvedRemoteRules;
-}): { ok: true; offload: OffloadPreference } | { ok: false; error: string } {
-  const { options, inGpuLock, classifiedOffloadable, memoryMb, cwd, worktree, shell, places, remoteRules } = params;
+  env?: Readonly<NodeJS.ProcessEnv>;
+  platform?: NodeJS.Platform;
+}): { ok: true; offload: OffloadPreference; reason?: string } | { ok: false; error: string } {
+  const {
+    options,
+    inGpuLock,
+    classifiedOffloadable,
+    classifiedLocalReason,
+    memoryMb,
+    cwd,
+    worktree,
+    shell,
+    places,
+    remoteRules,
+    env,
+    platform,
+  } = params;
+  const callerEnv = env ?? process.env;
+  const targetPlatform = platform ?? process.platform;
   const enabledRemotes = (options.remotes ?? []).filter((r) => r.mode !== "off");
   const disabled =
-    inGpuLock || options.local === true || process.env[OffloadVariable] === "0" || enabledRemotes.length === 0;
+    inGpuLock ||
+    options.local === true ||
+    getEnvValue(callerEnv, OffloadVariable, targetPlatform) === "0" ||
+    enabledRemotes.length === 0;
   if (disabled) {
     if (options.remote === true) {
       return {
@@ -76,6 +101,21 @@ export function resolveOffloadPreference(params: {
       };
     }
     return { ok: true, offload: "never" };
+  }
+  if (!classifiedOffloadable) {
+    const localWhy = classifiedLocalReason?.replace(/[\r\n]+/g, " ").trim() ?? "";
+    if (options.remote === true) {
+      return {
+        ok: false,
+        error:
+          localWhy !== ""
+            ? `--remote requested, but ${localWhy}`
+            : "--remote requested, but this command is not eligible for remote CPU offload",
+      };
+    }
+    return localWhy !== ""
+      ? { ok: true, offload: "never", reason: `running locally: ${localWhy}` }
+      : { ok: true, offload: "never" };
   }
   const neededMemoryMb = Math.max(0, memoryMb ?? 0);
   const fittingRemotes = enabledRemotes.filter((r) => neededMemoryMb <= r.memoryMb);
@@ -88,24 +128,35 @@ export function resolveOffloadPreference(params: {
     }
     return { ok: true, offload: "never" };
   }
-  const plan = classifiedOffloadable
-    ? translateForRemote(options.command, {
-        cwd,
-        worktree,
-        shell,
-        places,
-        cpus: fittingRemotes[0]?.cpus ?? 1,
-        keepBuildServersWarm: fittingRemotes[0]?.keepBuildServersWarm ?? true,
-        env: process.env,
-        remoteRules,
-      })
-    : null;
+  const callerEnvResolution = resolveCallerEnv(callerEnv, remoteRules, targetPlatform);
+  if (!callerEnvResolution.ok) {
+    if (options.remote === true) {
+      return {
+        ok: false,
+        error: `--remote requested, but ${callerEnvResolution.reason}`,
+      };
+    }
+    return {
+      ok: true,
+      offload: "never",
+      reason: `running locally: ${callerEnvResolution.reason}`,
+    };
+  }
+  const plan = translateForRemote(options.command, {
+    cwd,
+    worktree,
+    shell,
+    places,
+    cpus: fittingRemotes[0]?.cpus ?? 1,
+    keepBuildServersWarm: fittingRemotes[0]?.keepBuildServersWarm ?? true,
+    env: callerEnv,
+    platform: targetPlatform,
+    remoteRules,
+  });
   if (options.remote === true && plan === null) {
     return {
       ok: false,
-      error: classifiedOffloadable
-        ? "--remote requested, but this command cannot be safely translated for remote Linux execution"
-        : "--remote requested, but this command is not eligible for remote CPU offload",
+      error: "--remote requested, but this command cannot be safely translated for remote Linux execution",
     };
   }
   return { ok: true, offload: plan !== null ? (options.remote === true ? "force" : "auto") : "never" };
@@ -183,6 +234,7 @@ export class RemoteWithFallbackExecutor implements JobExecutor {
     }
     const remoteSpec: RemoteSpec | undefined = (options.remotes ?? []).find((r) => r.name === remoteName);
     const remoteRules = plugins !== undefined && context !== undefined ? plugins.remoteOffload(context) : undefined;
+    const callerEnv = context?.env ?? process.env;
     const plan =
       remoteSpec === undefined
         ? null
@@ -193,15 +245,27 @@ export class RemoteWithFallbackExecutor implements JobExecutor {
             places,
             cpus,
             keepBuildServersWarm: remoteSpec.keepBuildServersWarm,
-            env: process.env,
+            env: callerEnv,
             remoteRules,
           });
     if (this.host.runRemoteCommand === undefined || remoteSpec === undefined || plan === null) {
+      const callerEnvResolution =
+        remoteSpec !== undefined && this.host.runRemoteCommand !== undefined && remoteRules !== undefined
+          ? resolveCallerEnv(callerEnv, remoteRules)
+          : null;
       if (options.remote === true) {
-        prefix(`--remote requested, but remote ${remoteName} could not run this command; refusing local execution`);
+        prefix(
+          callerEnvResolution !== null && !callerEnvResolution.ok
+            ? `--remote requested, but ${callerEnvResolution.reason}; refusing local execution`
+            : `--remote requested, but remote ${remoteName} could not run this command; refusing local execution`,
+        );
         return { code: UsageExitCode, signaled: false };
       }
-      prefix(`remote ${remoteName} unavailable or command cannot translate; requesting local slot`);
+      prefix(
+        callerEnvResolution !== null && !callerEnvResolution.ok
+          ? `running locally: ${callerEnvResolution.reason}; requesting local slot`
+          : `remote ${remoteName} unavailable or command cannot translate; requesting local slot`,
+      );
       this.onRemoteGrantChange(null);
       return { code: 255, signaled: false, fallbackToLocal: true };
     }
@@ -219,7 +283,7 @@ export class RemoteWithFallbackExecutor implements JobExecutor {
       `granted ${formatJobId(jobId)} on remote ${remoteName} (${remoteSpec.host}) after ${waitedSec}s ` +
         `(${remoteNote})`,
     );
-    const remoteResult = await this.host.runRemoteCommand(remoteSpec, remotePlan, onChild, remoteRules, signal);
+    const remoteResult = await this.host.runRemoteCommand(remoteSpec, remotePlan, onChild, remoteRules, signal, jobId);
     if (signal?.aborted) {
       return { code: CancelledExitCode, signaled: true };
     }

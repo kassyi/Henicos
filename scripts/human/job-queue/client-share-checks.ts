@@ -12,7 +12,7 @@ import { gpuLockArguments } from "./client-run-host.ts";
 import { ProtocolVersion } from "./constants.ts";
 import { PluginApiVersion, type QueuePlugin } from "./plugin-api.ts";
 import { PluginHost } from "./plugin-host.ts";
-import type { Incoming } from "./protocol.ts";
+import { sanitizeShareReason, shareReasonField, type Incoming } from "./protocol.ts";
 import { FakeHost, FakeScheduler, quietly, until } from "./self-test-client.ts";
 
 type AssertModule = typeof Assert;
@@ -141,7 +141,30 @@ async function checkTurnShare(assert: AssertModule): Promise<void> {
     }
     const forced = await lockModeAfterGrant(scheduler, 5, runOptions({ gpuExclusive: true }), "shared");
     assert.strictEqual(forced.registration.share, "exclusive", "--gpu-exclusive asks for exclusive");
+    assert.strictEqual(forced.registration.shareReason, "forced-exclusive");
     assert.strictEqual(forced.mode, "exclusive", "an echo it did not ask for does not make the lock shared");
+
+    const reasonedPlugin: QueuePlugin = {
+      name: "reasoned",
+      apiVersion: PluginApiVersion,
+      classify: (_command, resource) =>
+        resource?.name === "gpu" ? { share: "shared", shareReason: "categories" } : undefined,
+    };
+    const reasonedHost = new PluginHost([reasonedPlugin], [undefined], process.cwd(), () => {});
+    const reasoned = await startRun(scheduler, 6, runOptions(), false, true, reasonedHost);
+    assert.deepStrictEqual(
+      [reasoned.registration.share, reasoned.registration.shareReason],
+      ["shared", "categories"],
+      "plugin classify shareReason is sent on request",
+    );
+    reasoned.drop();
+    const forcedReasoned = await startRun(scheduler, 7, runOptions({ gpuExclusive: true }), false, true, reasonedHost);
+    assert.deepStrictEqual(
+      [forcedReasoned.registration.share, forcedReasoned.registration.shareReason],
+      ["exclusive", "forced-exclusive"],
+      "--gpu-exclusive overrides plugin shareReason",
+    );
+    forcedReasoned.drop();
   } finally {
     scheduler.close();
   }
@@ -175,7 +198,20 @@ async function checkShareRegistrations(assert: AssertModule): Promise<void> {
   const scheduler = new FakeScheduler();
   await scheduler.listen();
   try {
-    const turn = await startRun(scheduler, 0, runOptions(), false, true, sharingHost());
+    const reasonedHost = new PluginHost(
+      [
+        {
+          name: "reasoned",
+          apiVersion: PluginApiVersion,
+          classify: (_command, resource) =>
+            resource?.name === "gpu" ? { share: "shared", shareReason: "categories" } : undefined,
+        },
+      ],
+      [undefined],
+      process.cwd(),
+      () => {},
+    );
+    const turn = await startRun(scheduler, 0, runOptions(), false, true, reasonedHost);
     turn.send(granted(40, "shared"));
     await until("the turn takes the GPU lock", () => turn.host.locks.length === 1);
     turn.drop();
@@ -184,41 +220,49 @@ async function checkShareRegistrations(assert: AssertModule): Promise<void> {
     await until("the re-registration arrives", () => (scheduler.accepted[1]?.messages.length ?? 0) > 0);
     const adopt = scheduler.accepted[1]?.messages[0];
     assert.deepStrictEqual(
-      [adopt?.type, adopt?.resource, adopt?.share],
-      ["adopt", "gpu", "shared"],
-      "adopt carries the same resource and share",
+      [adopt?.type, adopt?.resource, adopt?.share, adopt?.shareReason],
+      ["adopt", "gpu", "shared", "categories"],
+      "adopt carries the same resource, share, and shareReason",
     );
     scheduler.accepted[1]?.socket.destroy();
 
-    const holder = await startRun(scheduler, 2, runOptions({ gpu: false }), true, false, sharingHost());
+    const holder = await startRun(scheduler, 2, runOptions({ gpu: false }), true, false, reasonedHost);
     assert.deepStrictEqual(
-      ["resource" in holder.registration, "share" in holder.registration],
-      [false, false],
-      "a GPU holder carries neither",
+      ["resource" in holder.registration, "share" in holder.registration, "shareReason" in holder.registration],
+      [false, false, false],
+      "a GPU holder carries none of resource, share, shareReason",
     );
     holder.drop();
-    const plain = await startRun(scheduler, 3, runOptions({ gpu: false }), false, false, sharingHost());
+    const plain = await startRun(scheduler, 3, runOptions({ gpu: false }), false, false, reasonedHost);
     assert.deepStrictEqual(
-      ["resource" in plain.registration, "share" in plain.registration],
-      [false, false],
-      "a job without a turn carries neither",
+      ["resource" in plain.registration, "share" in plain.registration, "shareReason" in plain.registration],
+      [false, false, false],
+      "a job without a turn carries none of resource, share, shareReason",
     );
     plain.drop();
     const none = new PluginHost([], [], process.cwd(), () => {});
     const bare = await startRun(scheduler, 4, runOptions(), false, true, none);
     assert.deepStrictEqual(
-      [bare.registration.resource, "share" in bare.registration],
-      ["gpu", false],
-      "without plugins: no share",
+      [bare.registration.resource, "share" in bare.registration, "shareReason" in bare.registration],
+      ["gpu", false, false],
+      "without plugins: no share or shareReason",
     );
     bare.drop();
     const absent = await startRun(scheduler, 5, runOptions(), false, true, undefined);
-    assert.strictEqual("share" in absent.registration, false, "no plugin host: no share");
+    assert.deepStrictEqual(
+      ["share" in absent.registration, "shareReason" in absent.registration],
+      [false, false],
+      "no plugin host: no share or shareReason",
+    );
     absent.drop();
     const silentPlugin: QueuePlugin = { name: "silent", apiVersion: PluginApiVersion, classify: () => ({}) };
     const silentHost = new PluginHost([silentPlugin], [undefined], process.cwd(), () => {});
     const silent = await startRun(scheduler, 6, runOptions(), false, true, silentHost);
-    assert.strictEqual(silent.registration.share, "exclusive", "plugins that answer no share: exclusive");
+    assert.deepStrictEqual(
+      [silent.registration.share, silent.registration.shareReason],
+      ["exclusive", "no-opinion"],
+      "plugins that answer no share: exclusive with no-opinion reason",
+    );
     silent.drop();
   } finally {
     scheduler.close();
@@ -271,45 +315,76 @@ async function checkCheckShare(assert: AssertModule): Promise<void> {
       run.drop();
       return run.registration.share;
     };
+    const registrationOf = async (plugins: PluginHost, options: RunOptions = runOptions()): Promise<Incoming> => {
+      const run = await startRun(scheduler, index++, options, false, true, plugins);
+      run.drop();
+      return run.registration;
+    };
 
-    assert.strictEqual(await shareOf(hostOf(() => Promise.resolve("shared"))), "shared", "checkShare shared");
+    const legacyStr = await registrationOf(hostOf(() => Promise.resolve("shared")));
+    assert.strictEqual(legacyStr.share, "shared", "checkShare shared");
+    assert.strictEqual("shareReason" in legacyStr, false, "legacy string answer omits shareReason");
     assert.deepStrictEqual(asked, ["dotnet test X --filter Name~Foo"], "asked with the command, once");
     assert.strictEqual(await shareOf(hostOf(() => Promise.resolve("exclusive"))), "exclusive");
-    assert.strictEqual(await shareOf(hostOf(() => Promise.resolve(undefined))), "exclusive", "no answer");
-    assert.strictEqual(await shareOf(hostOf(undefined)), "exclusive", "no checkShare hook");
+    const noAnswerReg = await registrationOf(hostOf(() => Promise.resolve(undefined)));
+    assert.deepStrictEqual([noAnswerReg.share, noAnswerReg.shareReason], ["exclusive", "no-opinion"], "no answer");
+    const noHookReg = await registrationOf(hostOf(undefined));
+    assert.deepStrictEqual([noHookReg.share, noHookReg.shareReason], ["exclusive", "no-opinion"], "no checkShare hook");
 
     warnings.length = 0;
-    assert.strictEqual(await shareOf(hostOf(() => Promise.reject(new Error("boom")))), "exclusive", "a rejection");
-    assert.strictEqual(
-      await shareOf(
-        hostOf(() => {
-          throw new Error("sync boom");
-        }),
-      ),
-      "exclusive",
-      "a throw",
+    const rejectedReg = await registrationOf(hostOf(() => Promise.reject(new Error("boom"))));
+    assert.deepStrictEqual([rejectedReg.share, rejectedReg.shareReason], ["exclusive", "error"], "a rejection");
+    const thrownReg = await registrationOf(
+      hostOf(() => {
+        throw new Error("sync boom");
+      }),
     );
-    assert.strictEqual(await shareOf(hostOf(() => new Promise<never>(() => {}))), "exclusive", "a time out");
-    assert.strictEqual(await shareOf(hostOf(() => Promise.resolve("Shared"))), "exclusive", "an invalid value");
+    assert.deepStrictEqual([thrownReg.share, thrownReg.shareReason], ["exclusive", "error"], "a throw");
+    const timeoutReg = await registrationOf(hostOf(() => new Promise<never>(() => {})));
+    assert.deepStrictEqual([timeoutReg.share, timeoutReg.shareReason], ["exclusive", "timeout"], "a time out");
+    const invalidReg = await registrationOf(hostOf(() => Promise.resolve("Shared")));
+    assert.deepStrictEqual([invalidReg.share, invalidReg.shareReason], ["exclusive", "invalid"], "an invalid value");
     assert.strictEqual(warnings.length, 4, "each of the four says why on one line");
     assert.match(warnings.join("\n"), /checkShare failed: boom.*exclusively/);
     assert.match(warnings.join("\n"), /timed out after 100 ms/);
     assert.match(warnings.join("\n"), /invalid value/);
 
-    // The host itself answers "exclusive" (not undefined) for a failure, a time out and an invalid value
+    // The host itself answers "exclusive" (not undefined) for a failure, a time out and an invalid value, with reason
     const direct = { cwd: ".", worktree: ".", configRoot: ".", shell: "bash" as const, env: {}, log: () => {} };
-    for (const hook of [
-      () => Promise.reject(new Error("x")),
-      () => new Promise<never>(() => {}),
-      () => Promise.resolve(true),
-    ]) {
-      assert.strictEqual((await hostOf(hook).checkShare("c", direct))?.share, "exclusive");
-    }
+    assert.deepStrictEqual(await hostOf(() => Promise.reject(new Error("timed out"))).checkShare("c", direct), {
+      share: "exclusive",
+      reason: "error",
+    });
+    assert.deepStrictEqual(await hostOf(() => new Promise<never>(() => {})).checkShare("c", direct), {
+      share: "exclusive",
+      reason: "timeout",
+    });
+    assert.deepStrictEqual(await hostOf(() => Promise.resolve(true)).checkShare("c", direct), {
+      share: "exclusive",
+      reason: "invalid",
+    });
     assert.strictEqual(await hostOf(() => Promise.resolve(undefined)).checkShare("c", direct), undefined);
+    // An answer may carry reason; invalid reason or "shared" on exclusive is dropped while share and stillValid stay
+    const sharedReasoned = await registrationOf(hostOf(() => Promise.resolve({ share: "shared", reason: "list:0" })));
+    assert.deepStrictEqual([sharedReasoned.share, sharedReasoned.shareReason], ["shared", "list:0"]);
+    const exclReasoned = await registrationOf(hostOf(() => Promise.resolve({ share: "exclusive", reason: "list:3" })));
+    assert.deepStrictEqual([exclReasoned.share, exclReasoned.shareReason], ["exclusive", "list:3"]);
+    const badExclReason = await registrationOf(
+      hostOf(() => Promise.resolve({ share: "exclusive", reason: "not-shared" })),
+    );
+    assert.strictEqual(badExclReason.share, "exclusive");
+    assert.strictEqual("shareReason" in badExclReason, false, "exclusive reason containing 'shared' is dropped");
+    const badCharsReason = await registrationOf(
+      hostOf(() => Promise.resolve({ share: "shared", reason: "bad reason\n" })),
+    );
+    assert.strictEqual(badCharsReason.share, "shared");
+    assert.strictEqual("shareReason" in badCharsReason, false, "invalid characters in reason are dropped");
     // An answer may be an object: a shared one keeps its stillValid; an exclusive one, or one that is no function, drops it
     const valid = (): Promise<boolean> => Promise.resolve(true);
     const kept = await hostOf(() => Promise.resolve({ share: "shared", stillValid: valid })).checkShare("c", direct);
-    assert.deepStrictEqual([kept?.share, kept?.stillValid === valid], ["shared", true]);
+    assert.deepStrictEqual([kept?.share, kept?.reason, kept?.stillValid === valid], ["shared", undefined, true]);
+    const legacyObjReg = await registrationOf(hostOf(() => Promise.resolve({ share: "shared", stillValid: valid })));
+    assert.strictEqual("shareReason" in legacyObjReg, false, "object answer without reason omits shareReason");
     const dropped = await hostOf(() => Promise.resolve({ share: "exclusive", stillValid: valid })).checkShare(
       "c",
       direct,
@@ -349,13 +424,36 @@ async function checkCheckShare(assert: AssertModule): Promise<void> {
       "exclusive",
       "--gpu-exclusive wins",
     );
-    assert.strictEqual(
-      await shareOf(
-        hostOf(() => Promise.resolve("shared")),
-        runOptions({ after: 5 }),
-      ),
-      "exclusive",
+    const afterReg = await registrationOf(
+      hostOf(() => Promise.resolve("shared")),
+      runOptions({ after: 1 }),
+    );
+    assert.deepStrictEqual(
+      [afterReg.share, afterReg.shareReason],
+      ["exclusive", "after"],
       "--after: the predecessor may still build what a list would read",
+    );
+    const vetoHost = new PluginHost(
+      [
+        {
+          name: "veto",
+          apiVersion: PluginApiVersion,
+          classify: () => ({ share: "exclusive", shareReason: "env-prefix" }),
+          checkShare: () => {
+            asked.push("should-not-run");
+            return Promise.resolve("shared");
+          },
+        },
+      ],
+      [undefined],
+      process.cwd(),
+      () => {},
+    );
+    const vetoReg = await registrationOf(vetoHost);
+    assert.deepStrictEqual(
+      [vetoReg.share, vetoReg.shareReason],
+      ["exclusive", "env-prefix"],
+      "an explicit exclusive of classify is a veto and keeps its shareReason",
     );
     assert.strictEqual(
       await shareOf(hostOf(() => Promise.resolve("shared"), "exclusive")),
@@ -363,6 +461,25 @@ async function checkCheckShare(assert: AssertModule): Promise<void> {
       "an explicit exclusive of classify is a veto",
     );
     assert.deepStrictEqual(asked, [], "not asked when classify answered, --gpu-exclusive or --after");
+    // Direct protocol sanitizer checks
+    assert.strictEqual(sanitizeShareReason("list:0", "shared"), "list:0");
+    assert.strictEqual(sanitizeShareReason("shared-foo", "shared"), "shared-foo");
+    assert.strictEqual(sanitizeShareReason("a_b-c:1", "exclusive"), "a_b-c:1");
+    assert.strictEqual(sanitizeShareReason("x".repeat(64), "exclusive"), "x".repeat(64));
+    assert.strictEqual(sanitizeShareReason("", "shared"), undefined);
+    assert.strictEqual(sanitizeShareReason("x".repeat(65), "shared"), undefined);
+    assert.strictEqual(sanitizeShareReason("not-shared", "exclusive"), undefined);
+    assert.strictEqual(sanitizeShareReason("not-shared", undefined), undefined);
+    assert.strictEqual(sanitizeShareReason("bad reason", "shared"), undefined);
+    assert.strictEqual(sanitizeShareReason("bad(reason)", "shared"), undefined);
+    assert.strictEqual(sanitizeShareReason("bad\nreason", "shared"), undefined);
+    assert.strictEqual(sanitizeShareReason(42, "shared"), undefined);
+    assert.strictEqual(shareReasonField({ share: "exclusive", shareReason: "not-shared" }, "exclusive"), undefined);
+    // The share passed counts, not the message's own: undefined is not shared
+    assert.strictEqual(shareReasonField({ share: "shared", shareReason: "not-shared" }, undefined), undefined);
+    assert.strictEqual(shareReasonField({ share: "shared", shareReason: "not-shared" }, "exclusive"), undefined);
+    assert.strictEqual(shareReasonField({ share: "exclusive", shareReason: "shared-foo" }, "shared"), "shared-foo");
+    assert.strictEqual(shareReasonField({ shareReason: "env-prefix" }, undefined), "env-prefix");
     const second: QueuePlugin = {
       name: "second",
       apiVersion: PluginApiVersion,
@@ -431,7 +548,7 @@ async function checkStillValid(assert: AssertModule): Promise<void> {
     const plugin: QueuePlugin = {
       name: "fingerprint",
       apiVersion: PluginApiVersion,
-      checkShare: () => Promise.resolve({ share: "shared", stillValid }),
+      checkShare: () => Promise.resolve({ share: "shared", reason: "list:0", stillValid }),
     };
     const host = new PluginHost([plugin], [undefined], process.cwd(), () => {});
     host.stillValidTimeoutMs = 100;
@@ -476,6 +593,8 @@ async function checkStillValid(assert: AssertModule): Promise<void> {
       await until(`the turn asks to be downgraded (${name})`, () =>
         Boolean(scheduler.accepted[0]?.messages.some((message) => message.type === "downgrade")),
       );
+      const downgradeMsg = scheduler.accepted[0]?.messages.find((message) => message.type === "downgrade");
+      assert.strictEqual(downgradeMsg?.shareReason, "stale", `${name}: downgrade carries shareReason stale`);
       assert.strictEqual(run.host.connects.length, 1, `${name}: the same connection, the same job`);
       assert.strictEqual(run.host.locks.length, 0, `${name}: the lock is not taken`);
       assert.ok(
@@ -521,9 +640,9 @@ async function checkStillValid(assert: AssertModule): Promise<void> {
     await until("the second registration arrives", () => (scheduler.accepted[1]?.messages.length ?? 0) > 0);
     const again = scheduler.accepted[1]?.messages[0];
     assert.deepStrictEqual(
-      [again?.type, again?.share, again?.id],
-      ["request", "exclusive", 91],
-      "registered again as exclusive, under the same id",
+      [again?.type, again?.share, again?.shareReason, again?.id],
+      ["request", "exclusive", "stale", 91],
+      "registered again as exclusive with stale shareReason, under the same id",
     );
     const second = scheduler.accepted[1];
     if (second === undefined) {
@@ -580,9 +699,9 @@ async function checkStillValid(assert: AssertModule): Promise<void> {
       await until("the new registration arrives", () => (scheduler.accepted[1]?.messages.length ?? 0) > 0);
       const again = scheduler.accepted[1]?.messages[0];
       assert.deepStrictEqual(
-        [again?.type, again?.resource, again?.share, again?.id],
-        ["request", "gpu", "exclusive", 0],
-        "queued again as exclusive, as a new job",
+        [again?.type, again?.resource, again?.share, again?.shareReason, again?.id],
+        ["request", "gpu", "exclusive", "stale", 0],
+        "queued again as exclusive with stale shareReason, as a new job",
       );
       assert.notStrictEqual(again?.queuedAt, firstQueuedAt, "a new client identity");
       // The old connection has closed by now (the client ended it): that must not start a third connection
@@ -650,7 +769,7 @@ async function checkBuildBeforeShareCheck(assert: AssertModule): Promise<void> {
       }),
       checkShare: (command) => {
         order.push(`share check of: ${command}`);
-        return Promise.resolve("shared");
+        return Promise.resolve({ share: "shared", reason: "list:0" });
       },
     };
     const plugins = new PluginHost([plugin], [undefined], process.cwd(), () => {});
@@ -688,7 +807,7 @@ async function checkBuildBeforeShareCheck(assert: AssertModule): Promise<void> {
       "the share check runs after the build and reads the command after the split",
     );
     const turn = scheduler.accepted[1]?.messages[0];
-    assert.deepStrictEqual([turn?.resource, turn?.share], ["gpu", "shared"]);
+    assert.deepStrictEqual([turn?.resource, turn?.share, turn?.shareReason], ["gpu", "shared", "list:0"]);
     scheduler.accepted[1]?.socket.destroy();
     void done;
   } finally {

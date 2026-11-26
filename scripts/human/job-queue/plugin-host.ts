@@ -14,6 +14,8 @@ import {
   type ClientContext,
   type ContentDigest,
   type GrantInfo,
+  type OffloadAnswer,
+  type OffloadCheckRequest,
   type PreparedCommand,
   type QueuePlugin,
   type ResourceRequest,
@@ -33,7 +35,7 @@ import {
   type PluginChecksOptions,
 } from "./plugin-checks-runner.ts";
 import { errorMessage } from "./history.ts";
-import { isCommandKeys, isMemoryMb } from "./protocol.ts";
+import { isCommandKeys, isMemoryMb, sanitizeShareReason } from "./protocol.ts";
 import { resolveRemoteRules, type RemoteContributionEntry, type ResolvedRemoteRules } from "./remote/rules.ts";
 
 export { DefaultPluginsRoot, runPluginChecks, type PluginChecksOptions };
@@ -43,6 +45,8 @@ export type BaseClientContext = Omit<ClientContext, "options">;
 const DefaultSlowHookMs = 500;
 /** How long one plugin may take to answer checkShare (the answer may run a test list through the queue). */
 export const CheckShareTimeoutMs = 180_000;
+/** How long one plugin may take to answer checkOffload (may run a `--list-tests` CPU job through the queue). */
+export const CheckOffloadTimeoutMs = 180_000;
 /** How long the `stillValid` of a shared answer may take (it should only compare what was measured). */
 export const StillValidTimeoutMs = 30_000;
 
@@ -88,6 +92,8 @@ export class PluginHost {
   private readonly warnedFailures = new Set<string>();
   /** The time limit of one checkShare call; a field so that a self-test can shorten it. */
   checkShareTimeoutMs = CheckShareTimeoutMs;
+  /** The time limit of one checkOffload call; a field so that a self-test can shorten it. */
+  checkOffloadTimeoutMs = CheckOffloadTimeoutMs;
   /** The time limit of one `stillValid` call; a field so that a self-test can shorten it. */
   stillValidTimeoutMs = StillValidTimeoutMs;
 
@@ -282,13 +288,24 @@ export class PluginHost {
       }
       if (result.share === undefined && (res.share === "shared" || res.share === "exclusive")) {
         result.share = res.share;
+        const reason = sanitizeShareReason(res.shareReason, res.share);
+        if (reason !== undefined) {
+          result.shareReason = reason;
+        }
       }
       if (result.offloadable === undefined && typeof res.offloadable === "boolean") {
         result.offloadable = res.offloadable;
+        if (!res.offloadable && typeof res.localReason === "string") {
+          const reason = res.localReason.replace(/[\r\n]+/g, " ").trim();
+          if (reason !== "") {
+            result.localReason = reason;
+          }
+        }
       }
     }
     if (resource?.forcedExclusive) {
       result.share = "exclusive";
+      result.shareReason = "forced-exclusive";
     }
     return result;
   }
@@ -305,12 +322,13 @@ export class PluginHost {
         continue;
       }
       let timer: ReturnType<typeof setTimeout> | undefined;
+      let timedOut = false;
       try {
         const limit = new Promise<never>((_, reject) => {
-          timer = setTimeout(
-            () => reject(new Error(`timed out after ${this.checkShareTimeoutMs} ms`)),
-            this.checkShareTimeoutMs,
-          );
+          timer = setTimeout(() => {
+            timedOut = true;
+            reject(new Error(`timed out after ${this.checkShareTimeoutMs} ms`));
+          }, this.checkShareTimeoutMs);
         });
         const res = await Promise.race([plugin.checkShare(command, this.contextFor(i, context)), limit]);
         if (res === undefined) {
@@ -325,15 +343,81 @@ export class PluginHost {
             res.share === "shared" && typeof res.stillValid === "function"
               ? (res.stillValid as () => Promise<boolean>)
               : undefined;
-          return stillValid !== undefined ? { share: "shared", stillValid } : { share: res.share };
+          const reason = sanitizeShareReason(res.reason, res.share);
+          return {
+            share: res.share,
+            ...(reason !== undefined ? { reason } : {}),
+            ...(stillValid !== undefined ? { stillValid } : {}),
+          };
         }
         this.warn(`[job-queue] plugin ${plugin.name}.checkShare returned an invalid value; taking the GPU exclusively`);
-        return { share: "exclusive" };
+        return { share: "exclusive", reason: "invalid" };
       } catch (error) {
         this.warn(
           `[job-queue] plugin ${plugin.name}.checkShare failed: ${errorMessage(error)}; taking the GPU exclusively`,
         );
-        return { share: "exclusive" };
+        return { share: "exclusive", reason: timedOut ? "timeout" : "error" };
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * [first, async] Asks plugins in order whether a remotely eligible command may offload: "allow" or "local" ends the
+   * asking, undefined passes to the next plugin. A throw, timeout (checkOffloadTimeoutMs), or invalid return value
+   * fails closed to "local".
+   */
+  async checkOffload(
+    command: string,
+    request: OffloadCheckRequest,
+    context: BaseClientContext,
+  ): Promise<OffloadAnswer | undefined> {
+    for (let i = 0; i < this.plugins.length; i++) {
+      const plugin = this.plugins[i] as QueuePlugin;
+      if (typeof plugin.checkOffload !== "function") {
+        continue;
+      }
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      // Aborted when the race is lost, so that a list job the plugin started does not outlive the answer
+      const abort = new AbortController();
+      try {
+        const limit = new Promise<never>((_, reject) => {
+          timer = setTimeout(() => {
+            abort.abort();
+            reject(new Error(`timed out after ${this.checkOffloadTimeoutMs} ms`));
+          }, this.checkOffloadTimeoutMs);
+        });
+        const pluginRequest: OffloadCheckRequest = {
+          ...request,
+          timeoutMs: this.checkOffloadTimeoutMs,
+          signal: abort.signal,
+        };
+        const res = await Promise.race([
+          plugin.checkOffload(command, pluginRequest, this.contextFor(i, context)),
+          limit,
+        ]);
+        if (res === undefined) {
+          continue;
+        }
+        if (res === "allow" || res === "local") {
+          return { offload: res };
+        }
+        if (isPlainObject(res) && (res.offload === "allow" || res.offload === "local")) {
+          if (res.offload === "allow") {
+            return { offload: "allow" };
+          }
+          const reason = typeof res.reason === "string" ? res.reason.replace(/[\r\n]+/g, " ").trim() : "";
+          return reason !== "" ? { offload: "local", reason } : { offload: "local" };
+        }
+        const reason = `plugin ${plugin.name}.checkOffload returned an invalid value`;
+        this.warn(`[job-queue] ${reason}; running locally`);
+        return { offload: "local", reason };
+      } catch (error) {
+        const reason = `plugin ${plugin.name}.checkOffload failed: ${errorMessage(error)}`;
+        this.warn(`[job-queue] ${reason}; running locally`);
+        return { offload: "local", reason };
       } finally {
         clearTimeout(timer);
       }

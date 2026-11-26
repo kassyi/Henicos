@@ -18,8 +18,16 @@ import { shortCommand } from "../job-queue/view.ts";
 import { selectsCategory } from "../job-queue/plugins/dotnet/plugin.ts";
 import { cpuOnlyTestProjects, parseBudgets, testMemoryMb } from "./budgets.ts";
 import { checkNameFilter } from "./name-filter-checks.ts";
-import { checkOffloadClassification, checkQueuedRunMemoryMb, checkRepoBaselineConfig } from "./offload-checks.ts";
+import { checkHenicosOffloadSources } from "./offload-source-checks.ts";
+import {
+  checkHenicosEnvAllowlist,
+  checkHenicosOffloadProbe,
+  checkOffloadClassification,
+  checkQueuedRunMemoryMb,
+  checkRepoBaselineConfig,
+} from "./offload-checks.ts";
 import henicosPlugin, { isHenicosTest } from "./plugin.ts";
+import { shareDecision } from "./share-rules.ts";
 
 const require = createRequire(import.meta.url);
 const { dialectOf } = require("./target-dialect.js") as TargetDialectModule;
@@ -412,21 +420,96 @@ function checkShareRules(assert: AssertModule, host: PluginHost): void {
     const wt = fs.realpathSync.native(dir);
     const ctx = contextFor(wt, wt);
     for (const [command, expected] of ShareTable) {
-      assert.strictEqual(host.classify(command, Gpu, ctx).share, expected, `share of: ${command}`);
+      const classified = host.classify(command, Gpu, ctx);
+      assert.strictEqual(classified.share, expected, `share of: ${command}`);
+      assert.ok(
+        classified.shareReason !== undefined && /^[a-z0-9:_-]{1,64}$/.test(classified.shareReason),
+        `shareReason token format for: ${command} (got ${String(classified.shareReason)})`,
+      );
+      if (expected === "exclusive") {
+        assert.strictEqual(
+          classified.shareReason.includes("shared"),
+          false,
+          `exclusive shareReason must never contain 'shared': ${command} -> ${classified.shareReason}`,
+        );
+      }
+    }
+    // Verify shareReason codes per branch of shareDecision and classify
+    const repoOptions = {
+      exclusiveCategories: ["Stress", "Benchmark", "GpuTrap"],
+      exclusiveEnv: ["GSHARP_CUDA_TRAP_TESTS"],
+      sharedRecipes: ["test", "test-coverage", "test-differential-cuda"],
+    };
+    const reasonCtx = { ...ctx, options: repoOptions };
+    const reasonCases: readonly [string, string][] = [
+      [`dotnet test X --filter "${Kept}"`, "categories"],
+      ["just test", "shared-recipe"],
+      ['just test --filter "FullyQualifiedName~Foo"', "filter-categories"],
+      ["just test -- RunConfiguration.TestCaseFilter=Name~Foo", "filter-unreadable"],
+      ["just test-stability", "exclusive-recipe"],
+      ["dotnet test X --no-build", "no-filter"],
+      [`dotnet test bin/Tests.dll --filter "${Kept}"`, "binary-test"],
+      [`dotnet test X --filter "${Kept}" --filter:"Name~Foo"`, "filter-unreadable"],
+      [`dotnet test X --filter:"${Kept}"`, "filter-unreadable"],
+      ['dotnet test X --filter:v "Name~Foo"', "filter-unreadable"],
+      ["dotnet test X -p:VSTestTestCaseFilter=Name~Foo", "filter-unreadable"],
+      ["dotnet test X -- RunConfiguration.TestCaseFilter=Name~Foo", "filter-unreadable"],
+      ['dotnet test X --filter "Category!=Stress"', "filter-categories"],
+      ["$env:DiffEngine_Disabled='true'; dotnet test X --no-build --filter \"Name~Foo\"", "env-prefix"],
+      ['ROWBATCH_ROOTS=1 dotnet test X --no-build --filter "Name~Foo"', "env-prefix"],
+      [`dotnet test X --filter "${Kept}&Category=Stress"`, "exclusive-category"],
+      [`dotnet test X --filter "${Kept}" -e GSHARP_CUDA_TRAP_TESTS=1`, "exclusive-env"],
+      [`dotnet test X --filter "${Kept}" | tee log`, "piped"],
+      [`dotnet test X --filter "${Kept}`, "unreadable"],
+      ["echo hello", "no-work"],
+      ['dotnet test X --filter "$FILTER"', "hidden"],
+      ["dotnet build X", "not-test-command"],
+    ];
+    for (const [command, expectedReason] of reasonCases) {
+      assert.strictEqual(
+        host.classify(command, Gpu, ctx).shareReason,
+        expectedReason,
+        `classify shareReason for: ${command}`,
+      );
+      assert.strictEqual(
+        shareDecision(command, reasonCtx)?.reason,
+        expectedReason,
+        `shareDecision reason for: ${command}`,
+      );
     }
     // A command that nameFilterCheck reads has no opinion (checkShare judges it by the test list); a veto stays one
     const named = 'dotnet test tests/X/X.csproj --no-build --filter "FullyQualifiedName~Foo"';
-    assert.strictEqual(host.classify(named, Gpu, ctx).share, undefined, "a readable name filter: no opinion");
-    assert.strictEqual(
-      host.classify(named.replace("~Foo", "!~Foo"), Gpu, ctx).share,
-      "exclusive",
-      "a negated name term is no name filter: exclusive",
+    const namedClassified = host.classify(named, Gpu, ctx);
+    assert.deepStrictEqual([namedClassified.share, namedClassified.shareReason], [undefined, undefined]);
+    assert.deepStrictEqual(
+      [
+        host.classify(named.replace("~Foo", "!~Foo"), Gpu, ctx).share,
+        host.classify(named.replace("~Foo", "!~Foo"), Gpu, ctx).shareReason,
+      ],
+      ["exclusive", "filter-categories"],
+      "a negated name term is no name filter: exclusive with filter-categories",
     );
-    assert.strictEqual(host.classify(named, { ...Gpu, forcedExclusive: true }, ctx).share, "exclusive");
+    assert.deepStrictEqual(
+      [
+        host.classify(named, { ...Gpu, forcedExclusive: true }, ctx).share,
+        host.classify(named, { ...Gpu, forcedExclusive: true }, ctx).shareReason,
+      ],
+      ["exclusive", "forced-exclusive"],
+    );
     const filtered = `dotnet test X --filter "${Kept}"`;
-    assert.strictEqual(host.classify(filtered, null, ctx).share, undefined, "no share without a resource");
+    assert.deepStrictEqual(
+      [host.classify(filtered, null, ctx).share, host.classify(filtered, null, ctx).shareReason],
+      [undefined, undefined],
+      "no share or shareReason without a resource",
+    );
     assert.strictEqual(host.classify(filtered, { name: "cpu", forcedExclusive: false }, ctx).share, undefined);
-    assert.strictEqual(host.classify(filtered, { name: "gpu", forcedExclusive: true }, ctx).share, "exclusive");
+    assert.deepStrictEqual(
+      [
+        host.classify(filtered, { name: "gpu", forcedExclusive: true }, ctx).share,
+        host.classify(filtered, { name: "gpu", forcedExclusive: true }, ctx).shareReason,
+      ],
+      ["exclusive", "forced-exclusive"],
+    );
 
     const withEnv = (value: string, name = "GSHARP_CUDA_TRAP_TESTS") => ({ ...ctx, env: { [name]: value } });
     assert.strictEqual(host.classify(filtered, Gpu, withEnv("1")).share, "exclusive", "trap tests on in the env");
@@ -479,6 +562,13 @@ function checkDialectOf(assert: AssertModule): void {
       "<Project><PropertyGroup>\r\n  <GSharpTargetDialect> cpu </GSharpTargetDialect>\r\n</PropertyGroup></Project>",
     );
     assert.strictEqual(dialectOf(cpuProj), "cpu", "lowercase dialect with whitespace must return 'cpu'");
+
+    const attrProj = path.join(tempDir, "attr.csproj");
+    fs.writeFileSync(
+      attrProj,
+      '<Project><PropertyGroup><GSharpTargetDialect Condition="true">Cpu</GSharpTargetDialect></PropertyGroup></Project>',
+    );
+    assert.strictEqual(dialectOf(attrProj), "cpu", "dialect tag with attributes must return 'cpu'");
 
     const noneProj = path.join(tempDir, "none.csproj");
     fs.writeFileSync(
@@ -555,5 +645,8 @@ export async function checks(assert: AssertModule): Promise<void> {
   await quietly(() => checkQueuedRunMemoryMb(assert, host, FixedBudgetsYaml));
   checkShortCommandWithPlugins(assert, host);
   checkOffloadClassification(assert, host, loaded.configRoot);
+  checkHenicosEnvAllowlist(assert, host, loaded.configRoot);
+  await checkHenicosOffloadProbe(assert, loaded.configRoot);
+  await checkHenicosOffloadSources(assert, loaded.configRoot);
   await checkNameFilter(assert);
 }

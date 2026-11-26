@@ -407,6 +407,7 @@ public class ManagedStackRunnerTests
     }
 
     [SkippableFact]
+    [Platform(TestPlatform.Windows)]
     [Scenario(TestScenario.Boundary)]
     public void Run_OnAnStaThread_GivesTheResultOfAnMtaThread()
     {

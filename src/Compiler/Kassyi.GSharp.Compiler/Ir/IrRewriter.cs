@@ -1,5 +1,4 @@
 using Kassyi.GSharp.Compiler.Ir.Expressions;
-using Kassyi.GSharp.Compiler.Ir.Linear;
 using Kassyi.GSharp.Compiler.Ir.Statements;
 
 namespace Kassyi.GSharp.Compiler.Ir;
@@ -39,30 +38,11 @@ internal abstract class IrRewriter
             @if.Else is { } @else ? VisitStatement(@else) : null),
         IrWhile @while => @while.Update(VisitExpression(@while.Condition), VisitStatement(@while.Body)),
         IrOpaqueStatement opaque => VisitOpaqueStatement(opaque),
-        IrLabel or IrGoto or IrSuspend or IrStateMachineExit => statement,
-        IrConditionalGoto conditionalGoto => conditionalGoto.Update(VisitExpression(conditionalGoto.Condition)),
-        IrResumeCall resume => resume.Update(
-            VisitExpression(resume.Call) as IrCall ??
-            throw new InvalidOperationException("A rewriter replaced the call of a resuming call with another node."),
-            resume.ResultTarget is { } target
-                ? VisitExpression(target) as IrVariableReference ??
-                  throw new InvalidOperationException(
-                      "A rewriter replaced the result target of a resuming call with another node.")
-                : null),
-        IrStateJump jump => jump.Update(VisitOptional(jump.Condition)),
         _ => throw Unknown(statement)
     };
 
     /// <summary>Rewrites a block.</summary>
     public virtual IrBlock VisitBlock(IrBlock block) => block.Update(VisitList(block.Statements, VisitStatement));
-
-    /// <summary>Rewrites a state in an <see cref="IrStateMachine"/>.</summary>
-    public virtual IrState VisitState(IrState state) =>
-        state.Update(VisitList(state.Statements, VisitStatement), state.UnreachableFrom);
-
-    /// <summary>Rewrites an <see cref="IrStateMachine"/>.</summary>
-    public virtual IrStateMachine VisitStateMachine(IrStateMachine machine) =>
-        machine.Update(VisitList(machine.States, VisitState));
 
     /// <summary>Rewrites an expression.</summary>
     public virtual IrExpression VisitExpression(IrExpression expression) => expression switch

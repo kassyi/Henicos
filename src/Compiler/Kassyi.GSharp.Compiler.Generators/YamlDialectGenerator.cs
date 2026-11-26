@@ -139,7 +139,6 @@ public static class YamlDialectGenerator
         writer.Line("using System;");
         writer.Line("using System.Collections.Generic;");
         writer.Line("using Kassyi.GSharp.Compiler.Layout;");
-        writer.Line("using Kassyi.GSharp.Compiler.Transpiler;");
         writer.Line("using Kassyi.GSharp.Compiler.Dialects;");
         writer.Line();
         writer.Line("namespace Kassyi.GSharp.Compiler.Dialects;");

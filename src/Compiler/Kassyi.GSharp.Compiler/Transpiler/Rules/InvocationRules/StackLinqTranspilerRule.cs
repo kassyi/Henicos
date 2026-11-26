@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Backends.Cpp;
+
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules;
 
 /// <summary>
@@ -247,7 +249,7 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
         {
             AppendSpan(source, argument, parameter, in sequence, ref context);
             writer.Append(", ");
-            ArrayNullCheck.AppendSite(writer, site);
+            NullCheckSiteWriter.AppendSite(writer, site);
         }
     }
 

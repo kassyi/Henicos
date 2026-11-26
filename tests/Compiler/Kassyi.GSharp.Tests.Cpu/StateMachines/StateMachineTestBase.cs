@@ -34,9 +34,10 @@ public abstract class StateMachineTestBase
         string testCaseFile,
         Func<BlockSyntax, SemanticModel, BlockSyntax>? preLowerTransform = null,
         Action<LoweredStateMachine, SemanticModel>? inspect = null,
+        string? kernelName = null,
         [CallerMemberName] string methodName = "")
     {
-        var (lowered, model) = LowerTestCase(testCaseFile, preLowerTransform);
+        var (lowered, model) = LowerTestCase(testCaseFile, preLowerTransform, kernelName);
 
         inspect?.Invoke(lowered, model);
 
@@ -107,14 +108,17 @@ public abstract class StateMachineTestBase
 
     private static (LoweredStateMachine Lowered, SemanticModel Model) LowerTestCase(
         string testCaseFile,
-        Func<BlockSyntax, SemanticModel, BlockSyntax>? preLowerTransform)
+        Func<BlockSyntax, SemanticModel, BlockSyntax>? preLowerTransform,
+        string? kernelName = null)
     {
         var (compilation, tree, model) = RoslynTestUtility.GetTestCaseContext(
             Path.Combine("StateMachines", testCaseFile));
-        var method = tree.GetRoot()
+        var methods = tree.GetRoot()
             .DescendantNodes()
-            .OfType<MethodDeclarationSyntax>()
-            .First();
+            .OfType<MethodDeclarationSyntax>();
+        var method = kernelName is null
+            ? methods.First()
+            : methods.Single(m => m.Identifier.ValueText == kernelName);
 
         // Lowered as the generator lowers a kernel: with its symbol, so that the value parameters it writes are copied
         var symbol = model.GetDeclaredSymbol<IMethodSymbol>(method);

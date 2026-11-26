@@ -138,6 +138,7 @@ public class ConcurrencyAndWarpTests : TranspilerTestBase
 
 public class ConcurrencyAndWarpTarget
 {
+#pragma warning disable GSH0018 // Roslyn TranspileMethod input (not invoked on host or compiled by nvcc)
     public static void CooperativeGroups(int[] data)
     {
         data[ThreadIndex.X] += 1;
@@ -151,6 +152,7 @@ public class ConcurrencyAndWarpTarget
         Gpu.InlinePtx("cp.async.wait_all;");
         data[0] = 1u;
     }
+#pragma warning restore GSH0018
 }
 
 

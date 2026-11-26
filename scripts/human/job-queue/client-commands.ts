@@ -185,7 +185,7 @@ export function isJobHere(job: StatusJob, here: string): boolean {
 
 /** status: every job, one job (`id`), or with `here` (status --here) the jobs of that worktree only. */
 export async function status(port: number, id: number, json: boolean, here: string | null = null): Promise<void> {
-  const raw = await request(port, { type: "status" });
+  const raw = await request(port, id > 0 ? { type: "status", id } : { type: "status" });
   if (raw !== null && raw.type !== "status") {
     printReplyError(raw);
     return;
@@ -201,20 +201,52 @@ export async function status(port: number, id: number, json: boolean, here: stri
           waiting: all.waiting.filter((job) => isJobHere(job, here)),
         };
   if (id > 0) {
-    // One job: its state, place and expected times; exit 1 when the scheduler does not know it (ended or never queued)
+    // One job: its state, place and expected times; or quarantine metadata for ended remote jobs; exit 1 otherwise
     const job = reply === null ? undefined : reply.running.concat(reply.waiting).find((j) => j.id === id);
-    if (reply === null || job === undefined) {
+    if (reply !== null && job !== undefined) {
       process.stdout.write(
-        json ? `${JSON.stringify({ id, state: "unknown" })}\n` : `no job ${id} (ended, or never queued)\n`,
+        json
+          ? `${JSON.stringify({ now: reply.now, ...job })}\n`
+          : `${formatJobId(job.id)} = job ${job.id}\n${formatJob(job, reply.now)}\n`,
       );
-      process.exitCode = 1;
+      return;
+    }
+    const endedJob = reply?.endedJob?.id === id ? reply.endedJob : undefined;
+    if (reply !== null && endedJob !== undefined) {
+      const q = endedJob.quarantine;
+      // Retention removes old job folders while the summary stays in the state file: say that the files are gone
+      const pruned = q.files > 0 && !fs.existsSync(q.dir);
+      if (json) {
+        process.stdout.write(
+          `${JSON.stringify({
+            now: reply.now,
+            id,
+            state: "ended",
+            ...(endedJob.outcome !== undefined ? { outcome: endedJob.outcome } : {}),
+            quarantine: q,
+            ...(pruned ? { pruned: true } : {}),
+          })}\n`,
+        );
+        return;
+      }
+      const kb = q.bytes === 0 ? 0 : Math.max(1, Math.round(q.bytes / 1024));
+      const outcomeText = endedJob.outcome !== undefined ? ` (${endedJob.outcome})` : "";
+      const dirsNote =
+        q.resultsDirs !== undefined && q.resultsDirs.length > 0
+          ? ` (--results-directory ${q.resultsDirs.join(", ")} redirected here)`
+          : q.resultsRedirected
+            ? " (--results-directory redirected here)"
+            : "";
+      process.stdout.write(
+        `${formatJobId(id)} = job ${id}, ended${outcomeText}\n` +
+          `  quarantine: ${q.dir}${pruned ? " (pruned)" : ""} (${q.files} file(s), ${kb} KB)${dirsNote}\n`,
+      );
       return;
     }
     process.stdout.write(
-      json
-        ? `${JSON.stringify({ now: reply.now, ...job })}\n`
-        : `${formatJobId(job.id)} = job ${job.id}\n${formatJob(job, reply.now)}\n`,
+      json ? `${JSON.stringify({ id, state: "unknown" })}\n` : `no job ${id} (ended, or never queued)\n`,
     );
+    process.exitCode = 1;
     return;
   }
   if (reply === null) {

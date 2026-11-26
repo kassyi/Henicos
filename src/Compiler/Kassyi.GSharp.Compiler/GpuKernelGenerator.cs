@@ -250,7 +250,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var stateMachines = allDevices.Combine(stackForms)
             .SelectMany(static (input, _) =>
                 DeviceStateMachineGroups.Create(GetDistinctDeviceMethods(input.Left), input.Right.Devices));
-        ManagedStackPipeline.RegisterFailures(context, stackForms);
+        StateMachineFallbackPipeline.Register(context, allKernels, allDevices, stackForms, configProvider);
 
         context.RegisterSourceOutput(
             allDevices.Combine(importedCode).Combine(configProvider).Combine(hasKernels)
@@ -411,7 +411,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 structExports,
                 cppText.ErrorSites,
                 heldRefLocalSites,
-                Spill: spill
+                Spill: spill,
+                NativeFallback: cppText.NativeFallback
             );
         }
         catch (Exception ex)
@@ -511,7 +512,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
             export,
             structExports,
             HeldRefLocalSite.Collect(plan.Lowered, plan.SemanticModel, plan.Declaration),
-            cpp.ErrorSites);
+            cpp.ErrorSites,
+            cpp.NativeFallback);
     }
 
     // A struct that other assemblies can name, rendered for both dialects (StructTranspiler.IsExportedOnItsOwn), with

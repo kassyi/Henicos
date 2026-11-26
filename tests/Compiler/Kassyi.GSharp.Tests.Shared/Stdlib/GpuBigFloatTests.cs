@@ -41,8 +41,8 @@ public class GpuBigFloatTests
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
-        using var sig = new GpuBigUInt(context, new uint[] { 0xAAAAAAAA, 0x55555555, 0xFFFFFFFF, 0x80000000 });
-        var floatVal = new GpuBigFloat(sig, exp, isNegative: false);
+        var sig = new GpuBigUInt(context, new uint[] { 0xAAAAAAAA, 0x55555555, 0xFFFFFFFF, 0x80000000 });
+        using var floatVal = new GpuBigFloat(sig, exp, isNegative: false);
         
         // Assert creation preserves exponent boundaries without corrupting significand
         Assert.Equal(exp, floatVal.UFloat.Exponent);
@@ -56,11 +56,11 @@ public class GpuBigFloatTests
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
-        using var zeroSig = new GpuBigUInt(context, new uint[] { 0, 0, 0, 0 });
-        using var valSig = new GpuBigUInt(context, new uint[] { 42, 0, 0, 0 });
+        var zeroSig = new GpuBigUInt(context, new uint[] { 0, 0, 0, 0 });
+        var valSig = new GpuBigUInt(context, new uint[] { 42, 0, 0, 0 });
 
-        var floatZero = new GpuBigFloat(zeroSig, 100, isNegative: true);
-        var floatVal = new GpuBigFloat(valSig, 50, isNegative: false);
+        using var floatZero = new GpuBigFloat(zeroSig, 100, isNegative: true);
+        using var floatVal = new GpuBigFloat(valSig, 50, isNegative: false);
 
         var normZero = floatZero.Normalize();
         Assert.True(normZero.UFloat.Significand.IsZero());

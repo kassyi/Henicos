@@ -1068,6 +1068,7 @@ extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__C
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 auto __gsharp_stack_body = [&]() {__gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__NeighbourKernel(__gsharp_id_0_buffer, __gsharp_id_1_output);};
+++__gsharp_stack_launch_count;
 const auto __gsharp_stack_fp = __gsharp_stack_capture_fp();
 #pragma omp parallel num_threads(__gsharp_stack_thread_limit((uint64_t)__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_total_blocks))
 {
@@ -1372,6 +1373,7 @@ extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__C
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 auto __gsharp_stack_body = [&]() {__gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__MultiBlockNeighbourKernel(__gsharp_id_0_buffer, __gsharp_id_1_output);};
+++__gsharp_stack_launch_count;
 const auto __gsharp_stack_fp = __gsharp_stack_capture_fp();
 #pragma omp parallel num_threads(__gsharp_stack_thread_limit((uint64_t)__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_total_blocks))
 {
@@ -1686,6 +1688,7 @@ extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__C
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 auto __gsharp_stack_body = [&]() {__gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__LoopBarrierLocalsKernel(__gsharp_id_0_scratch, __gsharp_id_1_output);};
+++__gsharp_stack_launch_count;
 const auto __gsharp_stack_fp = __gsharp_stack_capture_fp();
 #pragma omp parallel num_threads(__gsharp_stack_thread_limit((uint64_t)__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_total_blocks))
 {
@@ -2028,6 +2031,7 @@ extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__C
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 auto __gsharp_stack_body = [&]() {__gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__EarlyReturnBeforeBarrierKernel(__gsharp_id_0_buffer, __gsharp_id_1_output, __gsharp_id_2_activeCount);};
+++__gsharp_stack_launch_count;
 const auto __gsharp_stack_fp = __gsharp_stack_capture_fp();
 #pragma omp parallel num_threads(__gsharp_stack_thread_limit((uint64_t)__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_total_blocks))
 {
@@ -2343,6 +2347,7 @@ extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__C
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 auto __gsharp_stack_body = [&]() {__gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ReturningBarrierKernel(__gsharp_id_0_buffer, __gsharp_auto_result);};
+++__gsharp_stack_launch_count;
 const auto __gsharp_stack_fp = __gsharp_stack_capture_fp();
 #pragma omp parallel num_threads(__gsharp_stack_thread_limit((uint64_t)__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_total_blocks))
 {
@@ -2652,6 +2657,7 @@ extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__C
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 auto __gsharp_stack_body = [&]() {__gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__SharedMemoryBarrierKernel(__gsharp_id_0_input, __gsharp_id_1_output);};
+++__gsharp_stack_launch_count;
 const auto __gsharp_stack_fp = __gsharp_stack_capture_fp();
 #pragma omp parallel num_threads(__gsharp_stack_thread_limit((uint64_t)__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_total_blocks))
 {
@@ -2975,6 +2981,7 @@ __gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers __gshar
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 auto __gsharp_stack_body = [&]() {__gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__FailureAfterBarrierKernel(__gsharp_id_0_buffers, __gsharp_id_1_failingThread, __gsharp_id_2_badIndex);};
+++__gsharp_stack_launch_count;
 const auto __gsharp_stack_fp = __gsharp_stack_capture_fp();
 #pragma omp parallel num_threads(__gsharp_stack_thread_limit((uint64_t)__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_total_blocks))
 {
@@ -3281,6 +3288,7 @@ extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__C
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 auto __gsharp_stack_body = [&]() {__gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__TwoThreadsFailAfterBarrierKernel(__gsharp_id_0_source, __gsharp_id_1_after, __gsharp_id_2_badIndex);};
+++__gsharp_stack_launch_count;
 const auto __gsharp_stack_fp = __gsharp_stack_capture_fp();
 #pragma omp parallel num_threads(__gsharp_stack_thread_limit((uint64_t)__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_total_blocks))
 {
@@ -3634,6 +3642,7 @@ extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__C
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 auto __gsharp_stack_body = [&]() {__gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__UsingUnwindAfterBarrierKernel(__gsharp_id_0_source, __gsharp_id_1_log, __gsharp_id_2_badIndex);};
+++__gsharp_stack_launch_count;
 const auto __gsharp_stack_fp = __gsharp_stack_capture_fp();
 #pragma omp parallel num_threads(__gsharp_stack_thread_limit((uint64_t)__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_total_blocks))
 {
@@ -3953,6 +3962,7 @@ extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__C
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 auto __gsharp_stack_body = [&]() {__gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__OneLevelSuspendingDeviceKernel(__gsharp_id_0_scratch, __gsharp_id_1_output);};
+++__gsharp_stack_launch_count;
 const auto __gsharp_stack_fp = __gsharp_stack_capture_fp();
 #pragma omp parallel num_threads(__gsharp_stack_thread_limit((uint64_t)__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_total_blocks))
 {
@@ -4265,6 +4275,7 @@ extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__C
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 auto __gsharp_stack_body = [&]() {__gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__MultiLevelSuspendingDeviceKernel(__gsharp_id_0_scratch, __gsharp_id_1_output);};
+++__gsharp_stack_launch_count;
 const auto __gsharp_stack_fp = __gsharp_stack_capture_fp();
 #pragma omp parallel num_threads(__gsharp_stack_thread_limit((uint64_t)__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_total_blocks))
 {
@@ -4573,6 +4584,7 @@ extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__C
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 auto __gsharp_stack_body = [&]() {__gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__SuspendingDeviceUsingKernel(__gsharp_id_0_log, __gsharp_id_1_marker);};
+++__gsharp_stack_launch_count;
 const auto __gsharp_stack_fp = __gsharp_stack_capture_fp();
 #pragma omp parallel num_threads(__gsharp_stack_thread_limit((uint64_t)__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_total_blocks))
 {
@@ -4863,6 +4875,7 @@ extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__C
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 auto __gsharp_stack_body = [&]() {__gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleDeviceFallbackKernel(__gsharp_id_0_output);};
+++__gsharp_stack_launch_count;
 const auto __gsharp_stack_fp = __gsharp_stack_capture_fp();
 #pragma omp parallel num_threads(__gsharp_stack_thread_limit((uint64_t)__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_total_blocks))
 {
@@ -5197,6 +5210,7 @@ extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__C
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 auto __gsharp_stack_body = [&]() {__gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleAndBarrierKernel(__gsharp_id_0_output);};
+++__gsharp_stack_launch_count;
 const auto __gsharp_stack_fp = __gsharp_stack_capture_fp();
 #pragma omp parallel num_threads(__gsharp_stack_thread_limit((uint64_t)__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_total_blocks))
 {

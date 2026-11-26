@@ -28,13 +28,16 @@ import {
   offloadField,
   optionalNumberField,
   placesField,
+  quarantineField,
   remoteField,
   resourceField,
   send,
   shareField,
+  shareReasonField,
   type Incoming,
   type Outcome,
   type Outlook,
+  type QuarantineSummary,
   type ServerMessage,
 } from "./protocol.ts";
 import { MachineProfile } from "./machine.ts";
@@ -75,6 +78,12 @@ export function serve(options: ServeOptions): void {
   new JobServer(options).start();
 }
 
+/** The share of a GPU turn on its `grant` line: `shared` or `exclusive`, with its reason in parentheses when known. */
+function shareFlag(job: ServerJob): string {
+  const share = job.share === "shared" ? "shared" : "exclusive";
+  return job.shareReason !== undefined ? `${share}(${job.shareReason})` : share;
+}
+
 /** The scheduler process: the job table, the outcomes, the settle step, the timers and the TCP server. */
 export class JobServer {
   readonly options: ServeOptions;
@@ -95,6 +104,8 @@ export class JobServer {
   readonly records = new Map<number, ServerJob>();
   /** How the jobs that ended went, oldest first, for --after (also across a restart, through jobs-<port>.json). */
   readonly outcomes = new Map<number, Outcome>();
+  /** Quarantine summaries of ended remote jobs, bounded to KeptOutcomes (also across restarts). */
+  readonly quarantines = new Map<number, QuarantineSummary>();
   /** The connections waiting for a job to end (await, wait). */
   readonly awaiters = new Map<number, net.Socket[]>();
   /**
@@ -311,8 +322,8 @@ export class JobServer {
     for (const job of granted) {
       job.phase = "running";
       job.epoch++;
-      const shared = job.gpuTurn === true && job.share === "shared" ? " shared" : "";
-      const gpu = `${job.gpu ? " gpu" : ""}${job.gpuTurn ? " gpu-turn" : ""}${shared}`;
+      const share = job.gpuTurn === true ? ` share=${shareFlag(job)}` : "";
+      const gpu = `${job.gpu ? " gpu" : ""}${job.gpuTurn ? " gpu-turn" : ""}${share}`;
       const remote = job.remote !== undefined ? ` remote=${job.remote}` : "";
       const flags = `${gpu}${remote}${job.backfilled ? " backfilled" : ""}`;
       this.log(`grant ${formatJobId(job.id)} weight ${job.weight}${flags} pid ${job.pid}: ${job.command}`);
@@ -350,10 +361,12 @@ export class JobServer {
     const keys = keysField(message);
     const memoryMb = memoryMbField(message);
     const resource = resourceField(message);
-    const share = shareField(message);
+    const gpuTurn = message.gpuTurn === true;
+    const share = gpuTurn ? shareField(message) : undefined;
+    const shareReason = gpuTurn ? shareReasonField(message, share) : undefined;
     const offload = offloadField(message);
     const remote = remoteField(message);
-    const gpuTurn = message.gpuTurn === true;
+    const quarantine = quarantineField(message);
     const remoteEstimates = new Map<string, Estimate | null>();
     for (const state of this.scheduler.remoteStates()) {
       remoteEstimates.set(
@@ -385,6 +398,7 @@ export class JobServer {
       ...(keys !== undefined ? { keys } : {}),
       ...(resource !== undefined ? { resource } : {}),
       ...(share !== undefined ? { share } : {}),
+      ...(shareReason !== undefined ? { shareReason } : {}),
       ...(offload !== undefined ? { offload } : {}),
       ...(remote !== undefined ? { remote } : {}),
       ...(remoteEstimates.size > 0 ? { remoteEstimates } : {}),
@@ -405,7 +419,18 @@ export class JobServer {
       completed: false,
       exitCode: null,
       cancelPending: false,
+      ...(quarantine !== undefined ? { quarantine } : {}),
     };
+  }
+
+  /** Records an ended job's quarantine summary, bounded to KeptOutcomes entries. */
+  recordQuarantine(id: number, quarantine: QuarantineSummary): void {
+    const quarantines = this.quarantines;
+    quarantines.delete(id);
+    quarantines.set(id, quarantine);
+    while (quarantines.size > KeptOutcomes) {
+      quarantines.delete(quarantines.keys().next().value as number);
+    }
   }
 
   /**
@@ -464,6 +489,9 @@ export class JobServer {
       targetHistory.record(job.command, actualMs, this.nextId, Date.now(), context, job.keys);
     }
     this.scheduler.detach(job);
+    if (job.quarantine !== undefined) {
+      this.recordQuarantine(job.id, job.quarantine);
+    }
     this.recordOutcome(job.id, outcome);
     if (this.scheduler.isIdle()) {
       this.idleSince = Date.now();

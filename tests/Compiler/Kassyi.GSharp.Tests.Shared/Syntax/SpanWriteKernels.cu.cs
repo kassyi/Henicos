@@ -407,17 +407,17 @@ public static partial class SpanWriteKernels
         int[] dst3 = targets.ArrayCopyTarget;
         int[] counters = targets.Counters;
 
-        var i = 1;
+        int i = 1;
         Span<int> sub = src.AsSpan().Slice(i++, i++);
         sub.CopyTo(dst1.AsSpan());
         counters[0] = i;
 
-        var j = 1;
+        int j = 1;
         Array.Fill(dst2, j * 10, j++, ++j);
         counters[1] = j;
 
-        var k = 0;
-        var len = 2;
+        int k = 0;
+        int len = 2;
         Array.Copy(src, k++, dst3, k++, ++len);
         counters[2] = k;
         counters[3] = len;

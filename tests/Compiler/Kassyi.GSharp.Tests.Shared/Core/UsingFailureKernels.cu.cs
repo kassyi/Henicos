@@ -50,13 +50,13 @@ public struct CountingResource : IDisposable
         Counts[Slot] = Counts[Slot] + 1;
     }
 }
-
+#pragma warning disable GSH0020 // Test holder intentionally does not implement IDisposable; ExpressionKernel tests 'using (holder.Resource)' on a copy
 /// <summary>Holds a resource, so that <c>using (holder.Resource)</c> disposes a copy of it.</summary>
 public struct FailingResourceHolder
 {
     public FailingResource Resource;
 }
-
+#pragma warning restore GSH0020
 public struct UsingFailureBuffers
 {
     public int[] Log;

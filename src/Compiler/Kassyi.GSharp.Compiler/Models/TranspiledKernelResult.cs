@@ -29,6 +29,10 @@ namespace Kassyi.GSharp.Compiler.Models;
 /// <param name="Spill">
 /// What the spill warning (GS0001) of the kernel covers (<see cref="SpillSuppressionPlan"/>).
 /// </param>
+/// <param name="NativeFallback">
+/// Why the native CPU path keeps the method on its state machine under <c>GSharpNativeBarrierModel=Stack</c>, for the
+/// fallback list (<see cref="StateMachineFallbackPipeline"/>); default when it runs on the stack.
+/// </param>
 internal readonly record struct TranspiledKernelResult(
     HostClassHeader Class,
     KernelHostModel Host,
@@ -42,7 +46,8 @@ internal readonly record struct TranspiledKernelResult(
     EquatableArray<ErrorSiteEntry> ErrorSites = default,
     EquatableArray<HeldRefLocalSite> HeldRefLocalSites = default,
     string ManagedStackSource = "",
-    KernelSpillScope Spill = default)
+    KernelSpillScope Spill = default,
+    StateMachineFallback NativeFallback = default)
 {
     public string GetSource(bool isCuda) => isCuda ? CudaSource : CppSource;
 

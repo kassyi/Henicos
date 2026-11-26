@@ -35,6 +35,7 @@ import {
   type ClientMessage,
   type Incoming,
   type Placement,
+  type QuarantineSummary,
 } from "./protocol.ts";
 import type { ShareAnswer } from "./plugin-api.ts";
 import { RemoteWithFallbackExecutor, resolveOffloadPreference } from "./remote/executor.ts";
@@ -48,6 +49,34 @@ import { formatJobId } from "./job-id.ts";
 /** The non-empty notes joined by "; ". */
 function joinNotes(...notes: string[]): string {
   return notes.filter((note) => note !== "").join("; ");
+}
+
+/** The share a GPU turn asks for and the reason it sends with it (null: none). */
+interface ShareDecision {
+  share: ShareMode;
+  shareReason: string | null;
+}
+
+/**
+ * The share of a GPU turn of which no plugin has an opinion: classify gave none and checkShare answered nothing (a
+ * plugin that throws, or whose share options are malformed, has none either).
+ */
+const NoOpinionShare: ShareDecision = { share: "exclusive", shareReason: "no-opinion" };
+
+/**
+ * The share of a GPU turn that is known without checkShare: classify's (an explicit "exclusive" and --gpu-exclusive
+ * included), else "exclusive" for --after: the predecessor may still build what the test reads (a run split by run
+ * --gpu zeroes it: its build job already waited), so a list now could read the old assembly. Undefined when the
+ * plugins' checkShare is to be asked.
+ */
+function shareBeforeCheck(
+  classified: { share?: ShareMode; shareReason?: string },
+  after: number,
+): ShareDecision | undefined {
+  if (classified.share !== undefined) {
+    return { share: classified.share, shareReason: classified.shareReason ?? null };
+  }
+  return after > 0 ? { share: "exclusive", shareReason: "after" } : undefined;
 }
 
 /**
@@ -85,6 +114,8 @@ export class QueuedRun {
    * when the plugins answer exactly that and --gpu-exclusive is not set. Null until then, and without plugins.
    */
   private share: ShareMode | null = null;
+  /** Short reason token explaining `share` (logged on scheduler `grant` and shown in `status --json`). */
+  private shareReason: string | null = null;
   /** The plugin's check that a shared answer still holds (see ShareAnswer), called once the shared turn is granted. */
   private stillValid: ShareAnswer | null = null;
   /** start() has begun for a grant: another grant, as one that arrives twice, does not start it again. */
@@ -126,6 +157,8 @@ export class QueuedRun {
   private abortController: AbortController | null = null;
   /** Remote transport failed before execution: waiting for server "queued" + fresh local "granted". */
   private fallingBackLocal = false;
+  /** Quarantine summary produced by remote execution, forwarded on "done" and "report". */
+  private quarantine: QuarantineSummary | null = null;
 
   constructor(
     options: RunOptions,
@@ -162,7 +195,7 @@ export class QueuedRun {
     }
 
     await this.resolveShare();
-    if (!this.resolveOffloadAndMemory()) {
+    if (!(await this.resolveOffloadAndMemory())) {
       return;
     }
     await this.attach();
@@ -178,12 +211,13 @@ export class QueuedRun {
     this.state = "done";
     const current = this.socket;
     const jobId = this.jobId;
+    const quarantine = this.quarantine;
     if (current === null || current.destroyed) {
       if (ran && jobId > 0) {
         // No scheduler listens right now (it restarts): report the outcome to the next one, for the jobs that wait for
         // this one, then exit
         void this.host
-          .reportEnd(jobId, completed, code, cancelled, this.reporter())
+          .reportEnd(jobId, completed, code, cancelled, this.reporter(), ...(quarantine !== null ? [quarantine] : []))
           .finally(() => this.host.exit(code));
         return;
       }
@@ -198,6 +232,7 @@ export class QueuedRun {
       completed,
       exitCode: code,
       cancelled,
+      ...(quarantine !== null ? { quarantine } : {}),
     });
     if (!ran || jobId === 0 || !this.receipts) {
       setTimeout(() => this.host.exit(code), 1000).unref();
@@ -220,7 +255,14 @@ export class QueuedRun {
       }
       current.destroy();
       void this.host
-        .reportEnd(this.jobId, completed, code, cancelled, this.reporter())
+        .reportEnd(
+          this.jobId,
+          completed,
+          code,
+          cancelled,
+          this.reporter(),
+          ...(quarantine !== null ? [quarantine] : []),
+        )
         .finally(() => this.host.exit(code));
     };
     setTimeout(() => this.doneReceipt?.(false), 2000);
@@ -286,6 +328,7 @@ export class QueuedRun {
         "no longer holds; waiting again as exclusive",
     );
     this.share = "exclusive";
+    this.shareReason = "stale";
     this.stillValid = null;
     if (granted.downgrade !== true) {
       // A scheduler that does not know "downgrade" would close the connection at the message: the older way
@@ -294,7 +337,7 @@ export class QueuedRun {
     }
     // Grants that arrive until the scheduler answers are the old shared one: ignored
     this.downgrading = true;
-    const message: ClientMessage = { type: "downgrade" };
+    const message: ClientMessage = { type: "downgrade", shareReason: "stale" };
     send(this.socket, { version: wireVersion(message), ...message });
     return true;
   }
@@ -398,6 +441,9 @@ export class QueuedRun {
       this.requestLocalFallback(jobId);
       return;
     }
+    if (result.quarantine !== undefined) {
+      this.quarantine = result.quarantine;
+    }
     // The command's result decides, also after a cancel; a run a signal cut short is not recorded
     const end = commandEnd(result, this.cancelRequested);
     this.finish(end.exitCode, end.completed, end.cancelled);
@@ -407,6 +453,7 @@ export class QueuedRun {
   private requestLocalFallback(jobId: number): void {
     this.offload = "never";
     this.grantedRemote = null;
+    this.quarantine = null;
     this.child = null;
     this.spawnedAt = 0;
     this.state = "waiting";
@@ -697,49 +744,60 @@ export class QueuedRun {
   }
 
   /** What the plugins' classify says of the share of this GPU turn; undefined when no plugin has an opinion. */
-  private classifyShare(plugins: PluginHost): ShareMode | undefined {
+  private classifyShare(plugins: PluginHost): { share?: ShareMode; shareReason?: string } {
     const resource = { name: "gpu", forcedExclusive: this.options.gpuExclusive === true };
-    return plugins.classify(this.options.command, resource, this.contextOf(plugins)).share;
+    const classified = plugins.classify(this.options.command, resource, this.contextOf(plugins));
+    return { share: classified.share, shareReason: classified.shareReason };
   }
 
   /**
    * Decides the share of a GPU turn before its first registration: classify (sync), and when no plugin has an opinion
-   * (an explicit "shared" or "exclusive" stands, a veto too) and neither --gpu-exclusive nor --after is set, the
-   * plugins' checkShare, which may take a while (a test list through the queue), so it runs before the connection is
-   * made, not during it. Once per run; a re-registration reuses the answer.
+   * (an explicit "shared" or "exclusive" stands, a veto too, and --gpu-exclusive, which PluginHost.classify answers
+   * as "exclusive") and --after is not set, the plugins' checkShare, which may take a while (a test list through the
+   * queue), so it runs before the connection is made, not during it. Once per run; a re-registration reuses the answer.
    */
   private async resolveShare(): Promise<void> {
     const plugins = this.plugins;
     if (!this.gpuTurn || plugins === undefined || plugins.plugins.length === 0 || this.share !== null) {
       return;
     }
-    let share = this.classifyShare(plugins);
-    // --after: the predecessor may still build what the test reads (a run split by run --gpu zeroes it: its build
-    // job already waited), so a list now could read the old assembly
-    if (share === undefined && this.options.gpuExclusive !== true && this.options.after === 0) {
+    let decided = shareBeforeCheck(this.classifyShare(plugins), this.options.after);
+    if (decided === undefined) {
       const answer = await plugins.checkShare(this.options.command, this.contextOf(plugins));
-      share = answer?.share;
-      this.stillValid = answer?.share === "shared" && answer.stillValid !== undefined ? answer : null;
+      if (answer === undefined) {
+        decided = NoOpinionShare;
+      } else {
+        decided = { share: answer.share, shareReason: answer.reason ?? null };
+        this.stillValid = answer.share === "shared" && answer.stillValid !== undefined ? answer : null;
+      }
     }
-    this.share = share === "shared" ? "shared" : "exclusive";
+    this.share = decided.share === "shared" ? "shared" : "exclusive";
+    this.shareReason = decided.shareReason;
   }
 
   /**
-   * Resolves memory budget and remote offload eligibility once per run; exits with UsageExitCode on invalid `--remote`.
+   * Synchronous portion of memory/offload resolution; leaves async plugin `checkOffload` for `resolveOffloadAndMemory`.
    */
-  private resolveOffloadAndMemory(): boolean {
+  private resolveOffloadAndMemorySync(): {
+    done: boolean;
+    ok: boolean;
+    places?: Record<string, PathPlace>;
+    resolvedMemoryMb?: number;
+    offload?: OffloadPreference;
+    reason?: string;
+  } {
     if (this.gpuTurn) {
-      return true;
+      return { done: true, ok: true };
     }
     const hasPlugins = this.plugins !== undefined && this.plugins.plugins.length > 0;
     if ((!hasPlugins || this.memoryMb !== null) && this.offload !== null) {
-      return true;
+      return { done: true, ok: true };
     }
     const { options } = this;
     const enabledRemotes = (options.remotes ?? []).filter((r) => r.mode !== "off");
     if (!hasPlugins && options.remote !== true && enabledRemotes.length === 0) {
       this.offload = "never";
-      return true;
+      return { done: true, ok: true };
     }
     const cwd = process.cwd();
     const worktree = (this.worktree ??= resolveWorktree(cwd));
@@ -756,6 +814,7 @@ export class QueuedRun {
       options,
       inGpuLock: this.inGpuLock,
       classifiedOffloadable: classified.offloadable === true,
+      classifiedLocalReason: classified.localReason,
       memoryMb: resolvedMemoryMb,
       cwd,
       worktree,
@@ -769,12 +828,61 @@ export class QueuedRun {
       this.socket?.destroy();
       this.socket = null;
       this.host.exit(UsageExitCode);
-      return false;
+      return { done: true, ok: false };
+    }
+    return {
+      done: false,
+      ok: true,
+      places,
+      resolvedMemoryMb,
+      offload: decision.offload,
+      reason: decision.reason,
+    };
+  }
+
+  /**
+   * Resolves memory budget and remote offload eligibility once per run (including async `checkOffload` when
+   * synchronous gates pass); exits with UsageExitCode on invalid `--remote`.
+   */
+  private async resolveOffloadAndMemory(): Promise<boolean> {
+    const sync = this.resolveOffloadAndMemorySync();
+    if (sync.done) {
+      return sync.ok;
+    }
+    const { options } = this;
+    const hasPlugins = this.plugins !== undefined && this.plugins.plugins.length > 0;
+    let offload = sync.offload ?? "never";
+    let reason = sync.reason;
+    if (offload !== "never" && hasPlugins) {
+      const answer = await (this.plugins as PluginHost).checkOffload(
+        options.command,
+        { remoteForced: options.remote === true, places: sync.places ?? {} },
+        this.contextOf(this.plugins as PluginHost),
+      );
+      if (this.ended()) {
+        return false;
+      }
+      if (answer?.offload === "local") {
+        const localWhy = answer.reason ?? "plugin required local execution";
+        if (options.remote === true) {
+          prefix(`--remote requested, but ${localWhy}`);
+          this.state = "done";
+          this.socket?.destroy();
+          this.socket = null;
+          this.host.exit(UsageExitCode);
+          return false;
+        }
+        reason = localWhy.startsWith("running locally:") ? localWhy : `running locally: ${localWhy}`;
+        offload = "never";
+      }
     }
     if (hasPlugins) {
-      this.memoryMb = resolvedMemoryMb;
+      this.memoryMb = sync.resolvedMemoryMb ?? 0;
     }
-    this.offload = decision.offload;
+    if (reason !== undefined) {
+      prefix(reason);
+    }
+    this.offload = offload;
     return true;
   }
 
@@ -782,8 +890,19 @@ export class QueuedRun {
   private register(current: net.Socket): void {
     const { options, placement } = this;
     const running = this.child;
-    if (!this.resolveOffloadAndMemory()) {
+    const sync = this.resolveOffloadAndMemorySync();
+    if (!sync.ok) {
       return;
+    }
+    if (!sync.done) {
+      if (this.plugins !== undefined && this.plugins.plugins.length > 0) {
+        this.memoryMb = sync.resolvedMemoryMb ?? 0;
+      }
+      // checkOffload has not answered yet: the synchronous preference is not a decision, so the job registers local
+      if (sync.offload === "never" && sync.reason !== undefined) {
+        prefix(sync.reason);
+      }
+      this.offload = "never";
     }
     // Resolved once per job (git), kept for the re-registrations after a scheduler restart
     const cwd = process.cwd();
@@ -798,12 +917,18 @@ export class QueuedRun {
     const offload = !this.gpuTurn ? (this.offload ?? undefined) : undefined;
     // A GPU turn names its resource and asks for its share; a GPU holder does not (the scheduler ties it to its turn)
     let share: ShareMode | undefined;
+    let shareReason: string | undefined;
     if (hasPlugins && this.gpuTurn) {
       if (this.share === null) {
-        // Normally set by resolveShare before the connection; kept for a run that registers without it
-        this.share = this.classifyShare(this.plugins as PluginHost) === "shared" ? "shared" : "exclusive";
+        // Normally set by resolveShare before the connection; kept for a run that registers without it, which does
+        // not wait for checkShare here
+        const classified = this.classifyShare(this.plugins as PluginHost);
+        const decided = shareBeforeCheck(classified, this.options.after) ?? NoOpinionShare;
+        this.share = decided.share === "shared" ? "shared" : "exclusive";
+        this.shareReason = decided.shareReason;
       }
       share = this.share;
+      shareReason = this.shareReason ?? undefined;
     }
     // The worktree's content as queued, once, while the job waits; a GPU holder starts at once, under a turn that took
     // its own
@@ -837,6 +962,7 @@ export class QueuedRun {
       ...(memoryMb !== undefined ? { memoryMb } : {}),
       ...(this.gpuTurn ? { resource: "gpu" } : {}),
       ...(share !== undefined ? { share } : {}),
+      ...(shareReason !== undefined ? { shareReason } : {}),
       ...(offload !== undefined && offload !== "never" ? { offload } : {}),
       ...(this.state === "running" && this.grantedRemote !== null ? { remote: this.grantedRemote } : {}),
       envHash: environment.hash,

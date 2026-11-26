@@ -1,7 +1,7 @@
 #nullable enable
 using Kassyi.GSharp.Compiler.Ir;
 using Kassyi.GSharp.Compiler.Ir.Classifying;
-using Kassyi.GSharp.Compiler.Ir.Linear;
+using Kassyi.GSharp.Compiler.Ir.Expressions;
 using Kassyi.GSharp.Compiler.Ir.Reconverging;
 using Kassyi.GSharp.Compiler.Ir.Splitting;
 using Kassyi.GSharp.Compiler.Ir.Statements;

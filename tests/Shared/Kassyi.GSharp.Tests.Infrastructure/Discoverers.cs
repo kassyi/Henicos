@@ -68,3 +68,9 @@ public sealed class CategoryDiscoverer() : EnumTraitDiscoverer<TestCategory>("Ca
 /// Emits both 'Scenario' and 'Category' keys for seamless CLI filtering and backward compatibility.
 /// </summary>
 public sealed class ScenarioDiscoverer() : EnumTraitDiscoverer<TestScenario>("Scenario", emitCategoryAlias: true);
+
+/// <summary>
+/// Discovers test traits from <see cref="PlatformAttribute"/>.
+/// Emits only the 'Platform' key so platform constraints never collide with 'Category'.
+/// </summary>
+public sealed class PlatformDiscoverer() : EnumTraitDiscoverer<TestPlatform>("Platform", emitCategoryAlias: false);
