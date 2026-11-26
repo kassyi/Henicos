@@ -9,7 +9,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 internal static class CppNameFormatterForwarders
 {
     internal static readonly Func<INamedTypeSymbol, string?> TryGetUserTypeName =
-        static type => GlobalCppNames.IsEmittedUserType(type) ? GlobalCppNames.GetTypeName(type) : null;
+        TranspileTypeServices.ResolveUserTypeName;
 
     /// <inheritdoc cref="CppNameFormatter.AppendFullyQualifiedCppName(in SourceWriter, ISymbol, Func{INamedTypeSymbol, string?}?)"/>
     public static ref readonly SourceWriter AppendFullyQualifiedCppName(

@@ -13,7 +13,7 @@ internal static class CppNameFormatter
     public static ref readonly SourceWriter AppendFullyQualifiedCppName(
         this in SourceWriter writer,
         ISymbol symbol,
-        Func<INamedTypeSymbol, string?>? tryGetUserTypeName = null)
+        Func<INamedTypeSymbol, string?>? tryGetUserTypeName)
     {
         if (symbol is INamedTypeSymbol type && tryGetUserTypeName?.Invoke(type) is { } userTypeName)
         {
@@ -30,7 +30,7 @@ internal static class CppNameFormatter
     /// </summary>
     public static string GetIncludeGuardName(
         INamedTypeSymbol structSymbol,
-        Func<INamedTypeSymbol, string?>? tryGetUserTypeName = null)
+        Func<INamedTypeSymbol, string?>? tryGetUserTypeName)
     {
         using var writer = new SourceWriter();
         writer.Append("__GSHARP_STRUCT_")
