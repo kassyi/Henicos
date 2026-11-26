@@ -159,7 +159,9 @@ internal static class StructDefinitionEmitter
 
     private static void WriteStructHeader(ref TranspileContext context, INamedTypeSymbol structSym)
     {
-        var guardName = CppNameFormatter.GetIncludeGuardName(structSym);
+        var guardName = Backends.Cpp.CppNameFormatter.GetIncludeGuardName(
+            structSym,
+            CppNameFormatterForwarders.TryGetUserTypeName);
 
         context.Emitter.Writer.Append("#ifndef ").AppendLine(guardName)
             .Append("#define ").AppendLine(guardName);
