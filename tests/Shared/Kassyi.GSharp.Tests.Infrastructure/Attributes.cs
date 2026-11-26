@@ -30,3 +30,13 @@ public sealed class ScenarioAttribute(TestScenario scenario) : Attribute, ITrait
 {
     public TestScenario Scenario { get; } = scenario;
 }
+
+/// <summary>
+/// Marks an xUnit test or test class as requiring the specified host operating system platform.
+/// </summary>
+[TraitDiscoverer("Kassyi.GSharp.Tests.Infrastructure.PlatformDiscoverer", "Kassyi.GSharp.Tests.Infrastructure")]
+[AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = true)]
+public sealed class PlatformAttribute(TestPlatform platform) : Attribute, ITraitAttribute
+{
+    public TestPlatform Platform { get; } = platform;
+}
