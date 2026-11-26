@@ -84,7 +84,8 @@ export function directoryCompileItems(buildFile: string, text: string): string[]
     if (value.trim() === "" || /[$*?;%@]/.test(value)) {
       return null;
     }
-    items.push(path.resolve(path.dirname(buildFile), value.trim()));
+    // MSBuild treats `\` in an item path as a separator on every OS; Node's posix path module does not
+    items.push(path.resolve(path.dirname(buildFile), value.trim().replace(/\\/g, "/")));
   }
   return items;
 }
