@@ -104,12 +104,6 @@ internal readonly record struct StateMachineReason(
             nameof(NativeStackObstacle.WarpMethodGroup),
             "it passes a suspending device function that reaches a warp collective as a method group",
             detail),
-        NativeStackObstacle.UsingDeclarationWithActiveMask => new(
-            CpuPath.Native,
-            nameof(NativeStackObstacle.UsingDeclarationWithActiveMask),
-            "it reaches Warp.ActiveMask() and declares a local with using: a jump of its reconvergence regions may " +
-            "pass the declaration",
-            detail),
         NativeStackObstacle.StackBodyLowering => new(
             CpuPath.Native,
             nameof(NativeStackObstacle.StackBodyLowering),

@@ -43,7 +43,9 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// <para>
 /// Runs after <see cref="ConditionalEvaluationRewriter"/> and <see cref="WarpInstructionRewriter"/> have turned the
 /// operands of <c>&amp;&amp;</c>, <c>||</c> and <c>?:</c> into statements, and before <see cref="BranchRewriter"/> and
-/// <see cref="LoopRewriter"/> flatten the branches and loops: the regions follow the structure of the C# source.
+/// <see cref="LoopRewriter"/> flatten the branches and loops: the regions follow the structure of the C# source. In the
+/// stack form (<c>stackForm: true</c>), it also enters <c>using</c> and <c>fixed</c> statements so that branches and
+/// jumps inside their bodies keep their reconvergence regions.
 /// </para>
 /// </remarks>
 internal sealed class ReconvergenceInserter : IBlockLoweringPass
@@ -129,7 +131,12 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
     {
         _labelEntryOpen.Clear();
         _reaches = true;
-        _cycles = CyclePlanner.Plan(block, BarrierHelper.ContainsPhaseBarrier, GetConstantCondition, _model);
+        _cycles = CyclePlanner.Plan(
+            block,
+            BarrierHelper.ContainsPhaseBarrier,
+            GetConstantCondition,
+            _model,
+            _stackForm);
         return LabeledStatementSplitter.Split(
             block.WithStatements(RewriteList(block.Statements, isKernelBody: !_isDeviceFunction)));
     }
@@ -668,8 +675,46 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
             case CheckedStatementSyntax checkedStatement:
                 return checkedStatement.WithBlock(
                     checkedStatement.Block.WithStatements(RewriteList(checkedStatement.Block.Statements, isKernelBody: false)));
+            case UsingStatementSyntax usingStatement when _stackForm:
+                return RewriteScopedStatement(
+                    usingStatement,
+                    (SyntaxNode?)usingStatement.Declaration ?? usingStatement.Expression,
+                    usingStatement.Statement,
+                    static (u, body) => u.WithStatement(body));
+            case FixedStatementSyntax fixedStatement when _stackForm:
+                return RewriteScopedStatement(
+                    fixedStatement,
+                    fixedStatement.Declaration,
+                    fixedStatement.Statement,
+                    static (f, body) => f.WithStatement(body));
             default:
                 return statement;
+        }
+    }
+
+    private T RewriteScopedStatement<T>(
+        T statement,
+        SyntaxNode? header,
+        StatementSyntax body,
+        Func<T, StatementSyntax, T> withBody) where T : StatementSyntax
+    {
+        GuardScopedHeader(header);
+        var rewrittenBody = body is BlockSyntax block
+            ? block.WithStatements(RewriteList(block.Statements, isKernelBody: false))
+            : RewriteEmbedded(body);
+        return withBody(statement, rewrittenBody);
+    }
+
+    private static void GuardScopedHeader(SyntaxNode? header)
+    {
+        if (header is not null &&
+            header.DescendantNodesAndSelf(static node => node is not AnonymousFunctionExpressionSyntax)
+                .AsStackEnumerable()
+                .Any(static node => node is InvocationExpressionSyntax inv && BarrierHelper.IsPhaseBarrier(inv)))
+        {
+            throw new InvalidOperationException(
+                "G#: internal error: a using or fixed header holds a split point in ReconvergenceInserter " +
+                "(please report this G# bug).");
         }
     }
 
@@ -761,7 +806,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
     }
 
     private bool ReachesEnd(StatementSyntax statement) =>
-        StatementFlow.ReachesEnd(statement, GetConstantCondition);
+        StatementFlow.ReachesEnd(statement, GetConstantCondition, _stackForm);
 
     private ImmutableArray<Region> SliceOpen(int count)
     {
@@ -1081,7 +1126,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         var afterBuilder = ImmutableArray.CreateBuilder<StatementSyntax>();
         if (openDropped)
         {
-            var bodyReachesEnd = StatementFlow.ReachesEnd(body, GetConstantCondition);
+            var bodyReachesEnd = ReachesEnd(body);
             if (hasNaturalLoop)
             {
                 if (bodyReachesEnd)
@@ -1104,7 +1149,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         }
         else if (!OpenMatches(bodyEntryOpen))
         {
-            if (StatementFlow.ReachesEnd(body, GetConstantCondition))
+            if (ReachesEnd(body))
             {
                 throw new InvalidOperationException(
                     "The body of a loop ends with other regions than it starts with.");

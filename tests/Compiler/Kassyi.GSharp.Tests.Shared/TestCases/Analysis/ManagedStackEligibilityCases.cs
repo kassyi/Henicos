@@ -50,8 +50,8 @@ public static partial class EligibilityKernels
         }
     }
 
-    // A using declaration after a continue that leaves the region of the loop body: the goto of the region would pass
-    // the declaration (CS8648), so the kernel keeps its state machine
+    // A using declaration after a continue that leaves the region of the loop body: UsingDeclarationScopes lowers it
+    // to a using statement over the rest of its block, so the kernel runs on its stacks
     [GpuKernel]
     public static void ActiveMaskWithUsing(int[] data)
     {

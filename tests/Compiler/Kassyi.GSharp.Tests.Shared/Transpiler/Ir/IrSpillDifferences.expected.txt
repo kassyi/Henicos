@@ -398,3 +398,51 @@
   SplitOperandOrderDifferentialKernels.cu.cs SplitOperandOrderDifferentialKernels.CompoundOrderKernel: unsignedShifted >>>= SyncThen(SetTo(ref unsignedShifted, 64));
     ir:     spill(unsignedShifted) spill(SetTo(ref unsignedShifted, 64)) split(SyncThen(SetTo(ref unsignedShifted, 64)))
     syntax: spill(SetTo(ref unsignedShifted, 64)) split(SyncThen(SetTo(ref unsignedShifted, 64)))
+#991 the read of a compound assignment target
+  StackScopeKernels.cu.cs StackScopeKernels.LocalFunctionAfterUsingDeclarationKernel: result[g] += (uint)a + (Warp.ActiveMask() & 0xFu);
+    ir:     spill(result[g]) spill((uint)a) split(Warp.ActiveMask())
+    syntax: spill((uint)a) split(Warp.ActiveMask())
+#991 the read of a compound assignment target
+  StackScopeKernels.cu.cs StackScopeKernels.LocalFunctionCapturingPriorConstAfterUsingDeclarationKernel: result[g] += (uint)a + (Warp.ActiveMask() & 0xFu);
+    ir:     spill(result[g]) spill((uint)a) split(Warp.ActiveMask())
+    syntax: spill((uint)a) split(Warp.ActiveMask())
+#991 the read of a compound assignment target
+  StackScopeKernels.cu.cs StackScopeKernels.SelectIndexWithBranchMask: result[g] += Warp.ActiveMask() & 0xFu;
+    ir:     spill(result[g]) split(Warp.ActiveMask())
+    syntax: split(Warp.ActiveMask())
+#991 the read of a compound assignment target
+  StackScopeKernels.cu.cs StackScopeKernels.TwoUsingDeclarationsWithBreakAndContinueKernel: result[g] += (Warp.ActiveMask() & 0xFFu) << 8;
+    ir:     spill(result[g]) split(Warp.ActiveMask())
+    syntax: split(Warp.ActiveMask())
+#991 the read of a compound assignment target
+  StackScopeKernels.cu.cs StackScopeKernels.UsingDeclarationDisposeOrderNestedKernel: result[g] += Warp.ActiveMask() & 0xFu;
+    ir:     spill(result[g]) split(Warp.ActiveMask())
+    syntax: split(Warp.ActiveMask())
+#991 the read of a compound assignment target
+  StackScopeKernels.cu.cs StackScopeKernels.UsingDeclarationDisposeOrderSingleKernel: result[g] += Warp.ActiveMask() & 0xFu;
+    ir:     spill(result[g]) split(Warp.ActiveMask())
+    syntax: split(Warp.ActiveMask())
+#991 the read of a compound assignment target
+  StackScopeKernels.cu.cs StackScopeKernels.UsingDeclarationHeaderCallKernel: result[g] += (Warp.ActiveMask() & 0xFFu) << 8;
+    ir:     spill(result[g]) split(Warp.ActiveMask())
+    syntax: split(Warp.ActiveMask())
+#991 the read of a compound assignment target
+  StackScopeKernels.cu.cs StackScopeKernels.UsingDeclarationInBranchKernel: result[g] += (Warp.ActiveMask() & 0xFFu) << 8;
+    ir:     spill(result[g]) split(Warp.ActiveMask())
+    syntax: split(Warp.ActiveMask())
+#991 the read of a compound assignment target
+  StackScopeKernels.cu.cs StackScopeKernels.UsingDeclarationInBranchKernel: result[g] += Warp.ActiveMask() & 0xFFu;
+    ir:     spill(result[g]) split(Warp.ActiveMask())
+    syntax: split(Warp.ActiveMask())
+#991 the read of a compound assignment target
+  StackScopeKernels.cu.cs StackScopeKernels.UsingDeclarationInDeviceFunctionKernel: result[g] += (Warp.ActiveMask() & 0xFFu) << 8;
+    ir:     spill(result[g]) split(Warp.ActiveMask())
+    syntax: split(Warp.ActiveMask())
+#991 the read of a compound assignment target
+  StackScopeKernels.cu.cs StackScopeKernels.UsingDeclarationMaskKernel: result[g] += Warp.ActiveMask() & 0xFu;
+    ir:     spill(result[g]) split(Warp.ActiveMask())
+    syntax: split(Warp.ActiveMask())
+#991 the read of a compound assignment target
+  StackScopeLoweringCases.cs StackScopeLoweringCases.LabeledUsingDeclarationKernel: r[t] += Warp.ActiveMask();
+    ir:     spill(r[t]) split(Warp.ActiveMask())
+    syntax: split(Warp.ActiveMask())

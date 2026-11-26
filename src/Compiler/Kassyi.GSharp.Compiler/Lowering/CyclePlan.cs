@@ -185,9 +185,10 @@ internal static class CyclePlanner
         BlockSyntax body,
         Func<StatementSyntax, bool> holdsSplitPoint,
         Func<ExpressionSyntax, bool?> constantCondition,
-        SemanticModel? semanticModel = null)
+        SemanticModel? semanticModel = null,
+        bool enterScopedStatements = false)
     {
-        var flow = StatementFlow.Build(body, constantCondition);
+        var flow = StatementFlow.Build(body, constantCondition, enterScopedStatements);
         var listPlans = ImmutableArray.CreateBuilder<(SyntaxList<StatementSyntax> Statements, JumpRegionPlan Plan)>();
         var allGotoLoops = ImmutableArray.CreateBuilder<(SyntaxList<StatementSyntax> Statements, JumpRegion Region)>();
         var allLoops = ImmutableArray.CreateBuilder<StatementSyntax>();
@@ -196,6 +197,7 @@ internal static class CyclePlanner
             body.Statements,
             holdsSplitPoint,
             semanticModel,
+            enterScopedStatements,
             listPlans,
             allGotoLoops,
             allLoops,
@@ -208,11 +210,11 @@ internal static class CyclePlanner
         {
             PlanListCycles(
                 statements, plan, flow, semanticModel, gotoLoops, switchesWithJoins, holdsSplitPoint, constantCondition,
-                cycles, orderedCycles);
+                enterScopedStatements, cycles, orderedCycles);
         }
 
         var loopCycles = new Dictionary<StatementSyntax, LoopCycle>();
-        PlanLoopCycles(allLoops.ToImmutable(), flow, holdsSplitPoint, loopCycles);
+        PlanLoopCycles(allLoops.ToImmutable(), flow, holdsSplitPoint, enterScopedStatements, loopCycles);
 
         return new CyclePlan(flow, cycles, orderedCycles.ToImmutable(), loopCycles);
     }
@@ -281,6 +283,7 @@ internal static class CyclePlanner
         SyntaxList<StatementSyntax> statements,
         Func<StatementSyntax, bool> holdsSplitPoint,
         SemanticModel? semanticModel,
+        bool enterScopedStatements,
         ImmutableArray<(SyntaxList<StatementSyntax> Statements, JumpRegionPlan Plan)>.Builder listPlans,
         ImmutableArray<(SyntaxList<StatementSyntax> Statements, JumpRegion Region)>.Builder allGotoLoops,
         ImmutableArray<StatementSyntax>.Builder allLoops,
@@ -302,7 +305,8 @@ internal static class CyclePlanner
         foreach (var statement in statements)
         {
             CollectStatementPlans(
-                statement, holdsSplitPoint, semanticModel, listPlans, allGotoLoops, allLoops, switchesWithJoins);
+                statement, holdsSplitPoint, semanticModel, enterScopedStatements, listPlans, allGotoLoops, allLoops,
+                switchesWithJoins);
         }
     }
 
@@ -310,6 +314,7 @@ internal static class CyclePlanner
         StatementSyntax statement,
         Func<StatementSyntax, bool> holdsSplitPoint,
         SemanticModel? semanticModel,
+        bool enterScopedStatements,
         ImmutableArray<(SyntaxList<StatementSyntax> Statements, JumpRegionPlan Plan)>.Builder listPlans,
         ImmutableArray<(SyntaxList<StatementSyntax> Statements, JumpRegion Region)>.Builder allGotoLoops,
         ImmutableArray<StatementSyntax>.Builder allLoops,
@@ -324,13 +329,15 @@ internal static class CyclePlanner
         {
             case BlockSyntax block:
                 CollectListPlans(
-                    block.Statements, holdsSplitPoint, semanticModel, listPlans, allGotoLoops, allLoops, switchesWithJoins);
+                    block.Statements, holdsSplitPoint, semanticModel, enterScopedStatements, listPlans, allGotoLoops,
+                    allLoops, switchesWithJoins);
                 break;
             case CheckedStatementSyntax checkedStatement:
                 CollectListPlans(
                     checkedStatement.Block.Statements,
                     holdsSplitPoint,
                     semanticModel,
+                    enterScopedStatements,
                     listPlans,
                     allGotoLoops,
                     allLoops,
@@ -341,6 +348,29 @@ internal static class CyclePlanner
                     unsafeStatement.Block.Statements,
                     holdsSplitPoint,
                     semanticModel,
+                    enterScopedStatements,
+                    listPlans,
+                    allGotoLoops,
+                    allLoops,
+                    switchesWithJoins);
+                break;
+            case UsingStatementSyntax usingStatement when enterScopedStatements:
+                CollectStatementPlans(
+                    usingStatement.Statement,
+                    holdsSplitPoint,
+                    semanticModel,
+                    enterScopedStatements,
+                    listPlans,
+                    allGotoLoops,
+                    allLoops,
+                    switchesWithJoins);
+                break;
+            case FixedStatementSyntax fixedStatement when enterScopedStatements:
+                CollectStatementPlans(
+                    fixedStatement.Statement,
+                    holdsSplitPoint,
+                    semanticModel,
+                    enterScopedStatements,
                     listPlans,
                     allGotoLoops,
                     allLoops,
@@ -351,6 +381,7 @@ internal static class CyclePlanner
                     ifStatement.Statement,
                     holdsSplitPoint,
                     semanticModel,
+                    enterScopedStatements,
                     listPlans,
                     allGotoLoops,
                     allLoops,
@@ -361,6 +392,7 @@ internal static class CyclePlanner
                         elseClause.Statement,
                         holdsSplitPoint,
                         semanticModel,
+                        enterScopedStatements,
                         listPlans,
                         allGotoLoops,
                         allLoops,
@@ -374,6 +406,7 @@ internal static class CyclePlanner
                     whileStatement.Statement,
                     holdsSplitPoint,
                     semanticModel,
+                    enterScopedStatements,
                     listPlans,
                     allGotoLoops,
                     allLoops,
@@ -385,6 +418,7 @@ internal static class CyclePlanner
                     doStatement.Statement,
                     holdsSplitPoint,
                     semanticModel,
+                    enterScopedStatements,
                     listPlans,
                     allGotoLoops,
                     allLoops,
@@ -396,6 +430,7 @@ internal static class CyclePlanner
                     forStatement.Statement,
                     holdsSplitPoint,
                     semanticModel,
+                    enterScopedStatements,
                     listPlans,
                     allGotoLoops,
                     allLoops,
@@ -407,6 +442,7 @@ internal static class CyclePlanner
                     forEachStatement.Statement,
                     holdsSplitPoint,
                     semanticModel,
+                    enterScopedStatements,
                     listPlans,
                     allGotoLoops,
                     allLoops,
@@ -447,6 +483,7 @@ internal static class CyclePlanner
                             sectionStatement,
                             holdsSplitPoint,
                             semanticModel,
+                            enterScopedStatements,
                             listPlans,
                             allGotoLoops,
                             allLoops,
@@ -499,6 +536,7 @@ internal static class CyclePlanner
         HashSet<SwitchStatementSyntax> switchesWithJoins,
         Func<StatementSyntax, bool> holdsSplitPoint,
         Func<ExpressionSyntax, bool?> constantCondition,
+        bool enterScopedStatements,
         Dictionary<CyclePlan.CycleKey, Cycle> cycles,
         ImmutableArray<Cycle>.Builder orderedCycles)
     {
@@ -544,14 +582,14 @@ internal static class CyclePlanner
 
             backJumps = liveBackJumps.ToImmutable();
 
-            var branchGates = FindBranchGates(members, backJumps, constantCondition);
-            if (!HasOnlyAllowedParents(backJumps, members, flow, owner, switchesWithJoins) ||
-                !AreBranchGatesAllowed(branchGates, members, flow, owner, switchesWithJoins))
+            var branchGates = FindBranchGates(members, backJumps, constantCondition, enterScopedStatements);
+            if (!HasOnlyAllowedParents(backJumps, members, flow, owner, switchesWithJoins, enterScopedStatements) ||
+                !AreBranchGatesAllowed(branchGates, members, flow, owner, switchesWithJoins, enterScopedStatements))
             {
                 continue;
             }
 
-            if (HasForwardGotoIntoLexicalRange(flow, statements, region, members))
+            if (HasForwardGotoIntoLexicalRange(flow, statements, region, members, enterScopedStatements))
             {
                 continue;
             }
@@ -559,7 +597,8 @@ internal static class CyclePlanner
             var needsLatch = backJumps.Length >= 2 ||
                 NeedsLatchForSingleBackJump(
                     backJumps[0], owner, statements, region, members, flow, semanticModel, allGotoLoops) ||
-                HasUngatedSplit(statements, region, flow, members, backJumps, branchGates, holdsSplitPoint);
+                HasUngatedSplit(
+                    statements, region, flow, members, backJumps, branchGates, holdsSplitPoint, enterScopedStatements);
             var cycle = new Cycle(
                 header,
                 statements,
@@ -578,11 +617,13 @@ internal static class CyclePlanner
         ImmutableHashSet<FlowNode> members,
         StatementFlow flow,
         SyntaxNode owner,
-        HashSet<SwitchStatementSyntax> switchesWithJoins)
+        HashSet<SwitchStatementSyntax> switchesWithJoins,
+        bool enterScopedStatements)
     {
         foreach (var gate in branchGates)
         {
-            if (!HasAllowedAncestors(gate, owner, switchesWithJoins) || IsInsideNonNaturalLoopWithJump(gate, owner, flow, members))
+            if (!HasAllowedAncestors(gate, owner, switchesWithJoins, enterScopedStatements) ||
+                IsInsideNonNaturalLoopWithJump(gate, owner, flow, members))
             {
                 return false;
             }
@@ -600,9 +641,10 @@ internal static class CyclePlanner
         ImmutableHashSet<FlowNode> members,
         ImmutableArray<GotoStatementSyntax> backJumps,
         ImmutableHashSet<StatementSyntax> branchGates,
-        Func<StatementSyntax, bool> holdsSplitPoint)
+        Func<StatementSyntax, bool> holdsSplitPoint,
+        bool enterScopedStatements)
     {
-        var scan = new UngatedScan(flow, members, backJumps, branchGates, holdsSplitPoint);
+        var scan = new UngatedScan(flow, members, backJumps, branchGates, holdsSplitPoint, enterScopedStatements);
         return scan.InList(statements, region.First, region.Last);
     }
 
@@ -611,7 +653,8 @@ internal static class CyclePlanner
         ImmutableHashSet<FlowNode> Members,
         ImmutableArray<GotoStatementSyntax> BackJumps,
         ImmutableHashSet<StatementSyntax> BranchGates,
-        Func<StatementSyntax, bool> HoldsSplitPoint)
+        Func<StatementSyntax, bool> HoldsSplitPoint,
+        bool EnterScopedStatements)
     {
         // The statements after a gate statement of the list, and the gate statement itself, are past the gate
         public bool InList(SyntaxList<StatementSyntax> list, int first, int last)
@@ -655,6 +698,10 @@ internal static class CyclePlanner
                     return InStatement(checkedStatement.Block);
                 case UnsafeStatementSyntax unsafeStatement:
                     return InStatement(unsafeStatement.Block);
+                case UsingStatementSyntax usingStatement when EnterScopedStatements:
+                    return InStatement(usingStatement.Statement);
+                case FixedStatementSyntax fixedStatement when EnterScopedStatements:
+                    return InStatement(fixedStatement.Statement);
                 case LabeledStatementSyntax labeled:
                     return InStatement(labeled.Statement, asMember || Members.Contains(StatementFlow.EntryOf(labeled)));
             }
@@ -697,7 +744,8 @@ internal static class CyclePlanner
     private static ImmutableHashSet<StatementSyntax> FindBranchGates(
         ImmutableHashSet<FlowNode> members,
         ImmutableArray<GotoStatementSyntax> backJumps,
-        Func<ExpressionSyntax, bool?> constantCondition)
+        Func<ExpressionSyntax, bool?> constantCondition,
+        bool enterScopedStatements)
     {
         var gates = ImmutableHashSet.CreateBuilder<StatementSyntax>();
         foreach (var member in members)
@@ -709,13 +757,13 @@ internal static class CyclePlanner
                 continue;
             }
 
-            if (IsBackOnlyBranch(ifStatement.Statement, members, constantCondition) &&
+            if (IsBackOnlyBranch(ifStatement.Statement, members, constantCondition, enterScopedStatements) &&
                 FirstStatementOf(elseClause.Statement) is { } elseFirst)
             {
                 gates.Add(elseFirst);
             }
 
-            if (IsBackOnlyBranch(elseClause.Statement, members, constantCondition) &&
+            if (IsBackOnlyBranch(elseClause.Statement, members, constantCondition, enterScopedStatements) &&
                 FirstStatementOf(ifStatement.Statement) is { } thenFirst)
             {
                 gates.Add(thenFirst);
@@ -732,9 +780,11 @@ internal static class CyclePlanner
     private static bool IsBackOnlyBranch(
         StatementSyntax branch,
         ImmutableHashSet<FlowNode> members,
-        Func<ExpressionSyntax, bool?> constantCondition)
+        Func<ExpressionSyntax, bool?> constantCondition,
+        bool enterScopedStatements)
     {
-        if (branch is BlockSyntax { Statements.Count: 0 } || CanFallThrough(branch, constantCondition))
+        if (branch is BlockSyntax { Statements.Count: 0 } ||
+            CanFallThrough(branch, constantCondition, enterScopedStatements))
         {
             return false;
         }
@@ -749,7 +799,10 @@ internal static class CyclePlanner
     }
 
     // Whether control can reach the end of the statement; a form that is not sure answers true (no gate is placed)
-    private static bool CanFallThrough(StatementSyntax statement, Func<ExpressionSyntax, bool?> constantCondition)
+    private static bool CanFallThrough(
+        StatementSyntax statement,
+        Func<ExpressionSyntax, bool?> constantCondition,
+        bool enterScopedStatements)
     {
         switch (statement)
         {
@@ -757,17 +810,22 @@ internal static class CyclePlanner
                 or ThrowStatementSyntax:
                 return false;
             case BlockSyntax block:
-                return block.Statements.Count == 0 || CanFallThrough(block.Statements[^1], constantCondition);
+                return block.Statements.Count == 0 ||
+                       CanFallThrough(block.Statements[^1], constantCondition, enterScopedStatements);
             case CheckedStatementSyntax checkedStatement:
-                return CanFallThrough(checkedStatement.Block, constantCondition);
+                return CanFallThrough(checkedStatement.Block, constantCondition, enterScopedStatements);
             case UnsafeStatementSyntax unsafeStatement:
-                return CanFallThrough(unsafeStatement.Block, constantCondition);
+                return CanFallThrough(unsafeStatement.Block, constantCondition, enterScopedStatements);
+            case UsingStatementSyntax usingStatement when enterScopedStatements:
+                return CanFallThrough(usingStatement.Statement, constantCondition, enterScopedStatements);
+            case FixedStatementSyntax fixedStatement when enterScopedStatements:
+                return CanFallThrough(fixedStatement.Statement, constantCondition, enterScopedStatements);
             case LabeledStatementSyntax labeled:
-                return CanFallThrough(labeled.Statement, constantCondition);
+                return CanFallThrough(labeled.Statement, constantCondition, enterScopedStatements);
             case IfStatementSyntax ifStatement:
                 return ifStatement.Else == null ||
-                       CanFallThrough(ifStatement.Statement, constantCondition) ||
-                       CanFallThrough(ifStatement.Else.Statement, constantCondition);
+                       CanFallThrough(ifStatement.Statement, constantCondition, enterScopedStatements) ||
+                       CanFallThrough(ifStatement.Else.Statement, constantCondition, enterScopedStatements);
             case WhileStatementSyntax whileStatement:
                 return constantCondition(whileStatement.Condition) != true || HasOwnBreak(whileStatement.Statement);
             case DoStatementSyntax doStatement:
@@ -1037,11 +1095,12 @@ internal static class CyclePlanner
         ImmutableHashSet<FlowNode> members,
         StatementFlow flow,
         SyntaxNode owner,
-        HashSet<SwitchStatementSyntax> switchesWithJoins)
+        HashSet<SwitchStatementSyntax> switchesWithJoins,
+        bool enterScopedStatements)
     {
         foreach (var backJump in backJumps)
         {
-            if (!HasAllowedAncestors(backJump, owner, switchesWithJoins))
+            if (!HasAllowedAncestors(backJump, owner, switchesWithJoins, enterScopedStatements))
             {
                 return false;
             }
@@ -1059,7 +1118,7 @@ internal static class CyclePlanner
 
             var candidateGate = list[index + 1];
             if (CyclePlan.IsGateTransition(flow, members, backJumps, memberStatement, candidateGate) &&
-                (!HasAllowedAncestors(candidateGate, owner, switchesWithJoins) ||
+                (!HasAllowedAncestors(candidateGate, owner, switchesWithJoins, enterScopedStatements) ||
                  IsInsideNonNaturalLoopWithJump(candidateGate, owner, flow, members)))
             {
                 return false;
@@ -1094,7 +1153,8 @@ internal static class CyclePlanner
     private static bool HasAllowedAncestors(
         SyntaxNode node,
         SyntaxNode owner,
-        HashSet<SwitchStatementSyntax> switchesWithJoins)
+        HashSet<SwitchStatementSyntax> switchesWithJoins,
+        bool enterScopedStatements)
     {
         for (var current = node.Parent; current != null; current = current.Parent)
         {
@@ -1110,6 +1170,11 @@ internal static class CyclePlanner
                     return false;
                 }
 
+                continue;
+            }
+
+            if (enterScopedStatements && current is UsingStatementSyntax or FixedStatementSyntax)
+            {
                 continue;
             }
 
@@ -1131,7 +1196,8 @@ internal static class CyclePlanner
         StatementFlow flow,
         SyntaxList<StatementSyntax> statements,
         JumpRegion region,
-        ImmutableHashSet<FlowNode> members)
+        ImmutableHashSet<FlowNode> members,
+        bool enterScopedStatements)
     {
         var visited = new HashSet<FlowNode>();
         var queue = new Queue<FlowNode>();
@@ -1149,7 +1215,8 @@ internal static class CyclePlanner
             var current = queue.Dequeue();
             if (current.Kind == FlowNodeKind.Statement &&
                 current.Syntax is StatementSyntax currentStatement &&
-                JumpsToLabelOutsideMembersInRange(currentStatement, flow, statements, region, members))
+                JumpsToLabelOutsideMembersInRange(
+                    currentStatement, flow, statements, region, members, enterScopedStatements))
             {
                 return true;
             }
@@ -1178,7 +1245,8 @@ internal static class CyclePlanner
         StatementFlow flow,
         SyntaxList<StatementSyntax> statements,
         JumpRegion region,
-        ImmutableHashSet<FlowNode> members)
+        ImmutableHashSet<FlowNode> members,
+        bool enterScopedStatements)
     {
         var inner = statement;
         while (inner is LabeledStatementSyntax labeled)
@@ -1193,7 +1261,8 @@ internal static class CyclePlanner
 
         if (inner is BlockSyntax or CheckedStatementSyntax or UnsafeStatementSyntax or IfStatementSyntax
             or SwitchStatementSyntax or WhileStatementSyntax or DoStatementSyntax or ForStatementSyntax
-            or CommonForEachStatementSyntax)
+            or CommonForEachStatementSyntax ||
+            (enterScopedStatements && inner is UsingStatementSyntax or FixedStatementSyntax))
         {
             return false;
         }
@@ -1258,6 +1327,7 @@ internal static class CyclePlanner
         ImmutableArray<StatementSyntax> allLoops,
         StatementFlow flow,
         Func<StatementSyntax, bool> holdsSplitPoint,
+        bool enterScopedStatements,
         Dictionary<StatementSyntax, LoopCycle> loopCycles)
     {
         foreach (var loop in allLoops)
@@ -1317,12 +1387,12 @@ internal static class CyclePlanner
             }
 
             var backJumps = liveBackJumps.ToImmutable();
-            if (!HasOnlyRewritableLoopBackJumpParents(backJumps, loop))
+            if (!HasOnlyRewritableLoopBackJumpParents(backJumps, loop, enterScopedStatements))
             {
                 continue;
             }
 
-            if (HasForwardGotoOutsideMembersInBody(flow, body, members))
+            if (HasForwardGotoOutsideMembersInBody(flow, body, members, enterScopedStatements))
             {
                 continue;
             }
@@ -1344,7 +1414,7 @@ internal static class CyclePlanner
                 if (CyclePlan.IsGateTransition(flow, members, memberStatement, candidateGate) &&
                     CyclePlan.HasBackJumpInside(backJumps, memberStatement))
                 {
-                    if (!HasAllowedLoopGateAncestors(candidateGate, loop))
+                    if (!HasAllowedLoopGateAncestors(candidateGate, loop, enterScopedStatements))
                     {
                         hasDisallowedGate = true;
                         break;
@@ -1404,13 +1474,18 @@ internal static class CyclePlanner
         return members.ToImmutable();
     }
 
-    private static bool HasAllowedLoopGateAncestors(SyntaxNode node, StatementSyntax loop)
+    private static bool HasAllowedLoopGateAncestors(SyntaxNode node, StatementSyntax loop, bool enterScopedStatements)
     {
         for (var current = node.Parent; current != null; current = current.Parent)
         {
             if (current == loop)
             {
                 return true;
+            }
+
+            if (enterScopedStatements && current is UsingStatementSyntax or FixedStatementSyntax)
+            {
+                continue;
             }
 
             if (current is not (BlockSyntax or LabeledStatementSyntax or CheckedStatementSyntax
@@ -1425,18 +1500,25 @@ internal static class CyclePlanner
 
     private static bool HasOnlyRewritableLoopBackJumpParents(
         ImmutableArray<ContinueStatementSyntax> backJumps,
-        StatementSyntax loop) =>
+        StatementSyntax loop,
+        bool enterScopedStatements) =>
         backJumps
             .AsStackEnumerable()
-            .All(loop, static (backJump, target) => HasRewritableLoopAncestors(backJump, target));
+            .All((loop, enterScopedStatements), static (backJump, state) =>
+                HasRewritableLoopAncestors(backJump, state.loop, state.enterScopedStatements));
 
-    private static bool HasRewritableLoopAncestors(SyntaxNode node, StatementSyntax loop)
+    private static bool HasRewritableLoopAncestors(SyntaxNode node, StatementSyntax loop, bool enterScopedStatements)
     {
         for (var current = node.Parent; current != null; current = current.Parent)
         {
             if (current == loop)
             {
                 return true;
+            }
+
+            if (enterScopedStatements && current is UsingStatementSyntax or FixedStatementSyntax)
+            {
+                continue;
             }
 
             if (current is not (BlockSyntax or LabeledStatementSyntax or CheckedStatementSyntax
@@ -1454,7 +1536,8 @@ internal static class CyclePlanner
     private static bool HasForwardGotoOutsideMembersInBody(
         StatementFlow flow,
         StatementSyntax body,
-        ImmutableHashSet<FlowNode> members)
+        ImmutableHashSet<FlowNode> members,
+        bool enterScopedStatements)
     {
         var visited = new HashSet<FlowNode>();
         var queue = new Queue<FlowNode>();
@@ -1471,7 +1554,7 @@ internal static class CyclePlanner
             var current = queue.Dequeue();
             if (current.Kind == FlowNodeKind.Statement &&
                 current.Syntax is StatementSyntax currentStatement &&
-                JumpsToNonMemberLabelInsideBody(currentStatement, flow, body, members))
+                JumpsToNonMemberLabelInsideBody(currentStatement, flow, body, members, enterScopedStatements))
             {
                 return true;
             }
@@ -1499,7 +1582,8 @@ internal static class CyclePlanner
         StatementSyntax statement,
         StatementFlow flow,
         StatementSyntax body,
-        ImmutableHashSet<FlowNode> members)
+        ImmutableHashSet<FlowNode> members,
+        bool enterScopedStatements)
     {
         var inner = statement;
         while (inner is LabeledStatementSyntax labeled)
@@ -1514,7 +1598,8 @@ internal static class CyclePlanner
 
         if (inner is BlockSyntax or CheckedStatementSyntax or UnsafeStatementSyntax or IfStatementSyntax
             or SwitchStatementSyntax or WhileStatementSyntax or DoStatementSyntax or ForStatementSyntax
-            or CommonForEachStatementSyntax)
+            or CommonForEachStatementSyntax ||
+            (enterScopedStatements && inner is UsingStatementSyntax or FixedStatementSyntax))
         {
             return false;
         }

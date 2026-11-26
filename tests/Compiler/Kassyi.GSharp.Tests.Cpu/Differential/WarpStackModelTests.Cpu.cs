@@ -61,18 +61,31 @@ public partial class WarpStackModelTests
             WarpActiveMaskDifferentialKernels.ContinueInLoopKernel_Source, StringComparison.Ordinal);
     }
 
-    // A nullable local that a continue jumps past runs on stacks; a using declaration in a method that reaches
-    // Warp.ActiveMask() keeps the kernel on the state machine (NativeStackObstacle.UsingDeclarationWithActiveMask)
+    // A nullable local or a using declaration that a continue jumps past, and using/fixed scopes with
+    // Warp.ActiveMask(), run on the native stack model
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void ContinuePastKernels_StackModelBuild_RunOnStacksUnlessAUsingDeclarationEntersATry()
+    public void ContinuePastAndScopeKernels_NativeStackBuild_RunOnStacks()
     {
         Skip.IfNot(NativeStackTests.IsStackBuild(), "Runs only when GSharpNativeBarrierModel=Stack.");
 
         Assert.Contains(GSharpInternalNames.NativeStack.Resume, WarpStackModelKernels.ContinuePastNullableKernel_Source,
             StringComparison.Ordinal);
-        Assert.DoesNotContain(GSharpInternalNames.NativeStack.Resume,
-            WarpStackModelKernels.ContinuePastUsingKernel_Source, StringComparison.Ordinal);
+        Assert.Contains(GSharpInternalNames.NativeStack.Resume, WarpStackModelKernels.ContinuePastUsingKernel_Source,
+            StringComparison.Ordinal);
+        Assert.Contains(GSharpInternalNames.NativeStack.Resume, StackScopeKernels.UsingDeclarationMaskKernel_Source,
+            StringComparison.Ordinal);
+        Assert.Contains(GSharpInternalNames.NativeStack.Resume, StackScopeKernels.ContinueInsideFixedInLoopKernel_Source,
+            StringComparison.Ordinal);
+        Assert.Contains(GSharpInternalNames.NativeStack.Resume,
+            StackScopeKernels.LocalFunctionCapturingPriorConstAfterUsingDeclarationKernel_Source,
+            StringComparison.Ordinal);
+        Assert.Contains(GSharpInternalNames.NativeStack.Resume,
+            StackScopeKernels.GotoLoopCrossingUsingStatementKernel_Source,
+            StringComparison.Ordinal);
+        Assert.Contains(GSharpInternalNames.NativeStack.Resume,
+            StackScopeKernels.GotoLoopCrossingFixedStatementKernel_Source,
+            StringComparison.Ordinal);
     }
 
     // A continue that leaves the region of a loop body, and a jump to the join of a switch, are gotos in the stack

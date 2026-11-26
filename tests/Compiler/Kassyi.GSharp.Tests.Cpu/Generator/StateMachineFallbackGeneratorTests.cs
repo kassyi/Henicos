@@ -104,8 +104,6 @@ public class StateMachineFallbackGeneratorTests
     [InlineData("FallbackCases.ShuffleCallingKernelKernel", NativeStackObstacle.WarpLayout, "visit counts")]
     [InlineData("FallbackCases.FloatSwitchNaNKernel", NativeStackObstacle.CaseValueWithoutLabel, "case value")]
     [InlineData("FallbackCases.WarpOperatorMacroKernel", NativeStackObstacle.WarpOperatorMacro, "operator macro")]
-    [InlineData("FallbackCases.UsingActiveMaskKernel", NativeStackObstacle.UsingDeclarationWithActiveMask, "declares a local with using")]
-    [InlineData("FallbackCases.UsingActiveMaskHelper", NativeStackObstacle.UsingDeclarationWithActiveMask, "declares a local with using")]
     [InlineData("FallbackCases.StackBodyLoweringKernel", NativeStackObstacle.StackBodyLowering, "lowered")]
     internal void StateMachineFallbacks_NativeObstacle_EmitsLineAndReason(
         string displayName,
@@ -128,6 +126,8 @@ public class StateMachineFallbackGeneratorTests
         Assert.DoesNotContain("EligibleSuspendingHelper", file.SourceText, StringComparison.Ordinal);
         Assert.DoesNotContain("NoBarrierKernel", file.SourceText, StringComparison.Ordinal);
         Assert.DoesNotContain("NonSuspendingHelper", file.SourceText, StringComparison.Ordinal);
+        Assert.DoesNotContain("UsingActiveMaskKernel", file.SourceText, StringComparison.Ordinal);
+        Assert.DoesNotContain("UsingActiveMaskHelper", file.SourceText, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -175,8 +175,6 @@ public class StateMachineFallbackGeneratorTests
 
     [Theory]
     [Scenario(TestScenario.SadPath)]
-    [InlineData("FallbackCases", "CooperativeAndUsingKernel", "UsingDeclarationWithActiveMask", "declares a local with using")]
-    [InlineData("FallbackCases", "UsingActiveMaskKernel", "UsingDeclarationWithActiveMask", "declares a local with using")]
     [InlineData("FallbackCases", "NonSpanRefStructKernel", "UnsupportedStackArgument", "ref struct")]
     [InlineData("FallbackCases", "RecursiveCallKernel", "RecursiveSuspendingCall", "recursive")]
     [InlineData("FallbackCases", "CallsFileLocalDeviceKernel", "FileLocalType", "file-local")]
@@ -206,6 +204,7 @@ public class StateMachineFallbackGeneratorTests
     [Theory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData("CooperativeKernel", false)]
+    [InlineData("CooperativeAndUsingKernel", false)]
     [InlineData("GridSyncKernel", false)]
     [InlineData("GridSyncHelper", true)]
     public void StateMachineFallbacks_ManagedCooperativeOrGridSync_HasNoReason(string methodName, bool isDeviceFunction)
@@ -226,7 +225,6 @@ public class StateMachineFallbackGeneratorTests
     [Scenario(TestScenario.SadPath)]
     [InlineData("FallbackCases", "DirectlyRecursiveHelper", "RecursiveSuspendingCall", "recursive")]
     [InlineData("FallbackCases", "RecursiveWrapperHelper", "RecursiveSuspendingCall", "recursive")]
-    [InlineData("FallbackCases", "UsingActiveMaskHelper", "UsingDeclarationWithActiveMask", "declares a local with using")]
     [InlineData("FallbackCases", "FileLocalDeviceHelper", "FileLocalType", "file-local")]
     [InlineData("InstanceDeviceHolder", "InstanceSuspendingHelper", "InstanceDeviceFunction", "instance")]
     [InlineData("NonPartialHolder", "NonPartialSuspendingHelper", "NonPartialContainingType", "partial")]
@@ -286,6 +284,8 @@ public class StateMachineFallbackGeneratorTests
         Assert.DoesNotContain("NoBarrierKernel", casesFile.SourceText, StringComparison.Ordinal);
         Assert.DoesNotContain("NonSuspendingHelper", casesFile.SourceText, StringComparison.Ordinal);
         Assert.DoesNotContain("FileLocalUnavailableKernel", casesFile.SourceText, StringComparison.Ordinal);
+        Assert.DoesNotContain("UsingActiveMaskKernel", casesFile.SourceText, StringComparison.Ordinal);
+        Assert.DoesNotContain("UsingActiveMaskHelper", casesFile.SourceText, StringComparison.Ordinal);
     }
 
     [Fact]
