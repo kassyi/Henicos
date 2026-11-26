@@ -1,4 +1,4 @@
-using Kassyi.GSharp.Compiler.Ir.Linear;
+using Kassyi.GSharp.Compiler.Ir.Expressions;
 using Kassyi.GSharp.Compiler.Ir.Splitting;
 using Kassyi.GSharp.Compiler.Ir.Statements;
 

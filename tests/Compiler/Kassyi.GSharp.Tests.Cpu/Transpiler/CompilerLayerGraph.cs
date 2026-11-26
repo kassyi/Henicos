@@ -199,7 +199,7 @@ internal sealed record CompilerLayerGraph(
                 {
                     edges.Add(FormatEdge(current, target, treeInfos));
                 }
-                else if (!isForbidden && !IsExcludedStateMachineType(target, treeInfos) && visited.Add(target))
+                else if (!isForbidden && visited.Add(target))
                 {
                     queue.Enqueue(target);
                 }
@@ -214,22 +214,6 @@ internal sealed record CompilerLayerGraph(
         var lineSpan = diagnostic.Location.GetLineSpan();
         var line = lineSpan.StartLinePosition.Line + 1;
         return $"{diagnostic.Id}: {diagnostic.GetMessage(CultureInfo.InvariantCulture)} ({lineSpan.Path}:{line})";
-    }
-
-    private static bool IsExcludedStateMachineType(
-        INamedTypeSymbol type,
-        Dictionary<SyntaxTree, TreeInfo> treeInfos)
-    {
-        foreach (var syntaxRef in type.DeclaringSyntaxReferences)
-        {
-            if (treeInfos.TryGetValue(syntaxRef.SyntaxTree, out var info) &&
-                info.Layer == LayerKind.Tier1ExcludedStateMachine)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static void AddSimpleNameTarget(
@@ -271,14 +255,6 @@ internal sealed record CompilerLayerGraph(
             relative.StartsWith("Lowering/", StringComparison.OrdinalIgnoreCase))
         {
             return LayerKind.Forbidden;
-        }
-
-        // The state machine of Ir/Linear is deleted with the syntax path; named one by one so that a new helper file
-        // beside it is still checked
-        if (relative is "Ir/Linear/IrStateMachine.cs" or "Ir/Linear/IrStateMachineBuilder.cs" or
-            "Ir/Linear/IrStateMachineExit.cs")
-        {
-            return LayerKind.Tier1ExcludedStateMachine;
         }
 
         if (relative.StartsWith("Ir/", StringComparison.OrdinalIgnoreCase) ||
@@ -375,7 +351,6 @@ internal sealed record CompilerLayerGraph(
     {
         Other,
         Tier1,
-        Tier1ExcludedStateMachine,
         Forbidden
     }
 
@@ -411,13 +386,13 @@ internal sealed record CompilerLayerGraph(
             walker.Visit(tree.GetRoot());
         }
 
-        // The trees that declare a type, outside the forbidden folders and the excluded state machine
+        // The trees that declare a type, outside the forbidden folders
         public void WalkDeclarations(INamedTypeSymbol type)
         {
             foreach (var syntaxRef in type.DeclaringSyntaxReferences)
             {
                 if (treeInfos.TryGetValue(syntaxRef.SyntaxTree, out var info) &&
-                    info.Layer is not (LayerKind.Forbidden or LayerKind.Tier1ExcludedStateMachine))
+                    info.Layer != LayerKind.Forbidden)
                 {
                     Walk(syntaxRef.SyntaxTree);
                 }

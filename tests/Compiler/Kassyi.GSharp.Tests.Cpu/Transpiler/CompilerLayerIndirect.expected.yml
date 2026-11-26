@@ -1,4 +1,4 @@
-# Indirect references: types reachable from Tier 1 (excluding Transpiler/, Lowering/, and Ir/Linear/IrStateMachine*)
+# Indirect references: types reachable from Tier 1 (excluding Transpiler/ and Lowering/)
 # that reference types or extension methods declared in Transpiler/ or Lowering/.
 - "BarrierClassifier (Analysis/Uniformity/BarrierClassifier.cs) -> DeviceExportTable (Transpiler/DeviceExportTable.cs)"
 - "BarrierClassifier (Analysis/Uniformity/BarrierClassifier.cs) -> ImportedDeviceRecord (Transpiler/ImportedDeviceRecord.cs)"

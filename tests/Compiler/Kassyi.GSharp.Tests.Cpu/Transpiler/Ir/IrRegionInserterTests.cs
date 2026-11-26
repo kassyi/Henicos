@@ -1,9 +1,7 @@
 #nullable enable
 using Kassyi.GSharp.Compiler.Ir;
 using Kassyi.GSharp.Compiler.Ir.Expressions;
-using Kassyi.GSharp.Compiler.Ir.Linear;
 using Kassyi.GSharp.Compiler.Ir.Reconverging;
-using Kassyi.GSharp.Compiler.Ir.Splitting;
 using Kassyi.GSharp.Compiler.Ir.Statements;
 using Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 
@@ -229,28 +227,6 @@ public class IrRegionInserterTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Linearize_ThreadVariantIf_KeepsTheRegionStatementsAroundTheFlattenedIf()
-    {
-        var steps = Run("ThreadVariantIf");
-        string[] expected =
-        [
-            "decl",
-            "enter 0",
-            "if!goto __gsharp_BranchEnd_0",
-            "split",
-            "expr",
-            "__gsharp_BranchEnd_0:",
-            "arrive 0",
-            "split",
-            "expr"
-        ];
-
-        Assert.Equal(expected, steps.Linear.Select(s => Shape(s, steps.Compilation)).ToArray());
-        Assert.Empty(IrInvariants.VerifyLinear(steps.Linear, steps.Compilation));
-    }
-
-    [Fact]
-    [Scenario(TestScenario.HappyPath)]
     public void Insert_EveryCase_HasNoViolation()
     {
         var compilation = IrTestCases.Compile(IrLoweringSteps.Cases);
@@ -340,28 +316,4 @@ public class IrRegionInserterTests
                 break;
         }
     }
-
-    private static string Shape(IrStatement statement, Compilation compilation) => statement switch
-    {
-        IrExpressionStatement { Expression: IrRuntimeCall { Function: IrRuntimeFunction.WarpRegionEnter } call } =>
-            $"enter {call.Site}",
-        IrExpressionStatement { Expression: IrRuntimeCall { Function: IrRuntimeFunction.WarpRegionLeave } call } =>
-            $"leave {call.Site}",
-        IrExpressionStatement { Expression: IrRuntimeCall { Function: IrRuntimeFunction.WarpReconvergeArrive } call } =>
-            $"arrive {call.Site}",
-        IrLabel label => $"{label.Label.Name}:",
-        IrGoto @goto => $"goto {@goto.Target.Name}",
-        IrConditionalGoto { JumpIfTrue: false } cond => $"if!goto {cond.Target.Name}",
-        IrExpressionStatement { Expression: IrCall call } when IrSplitLowering.HoldsSplit(call, compilation) =>
-            "split",
-        IrLocalDeclaration { Initializer: IrCall call } when IrSplitLowering.HoldsSplit(call, compilation) =>
-            "split",
-        IrLocalDeclaration => "decl",
-        IrExpressionStatement => "expr",
-        IrIf => "if",
-        IrWhile => "while",
-        IrBlock => "block",
-        IrReturn => "return",
-        _ => throw new InvalidOperationException($"Unexpected statement shape: {statement.GetType().Name}")
-    };
 }
