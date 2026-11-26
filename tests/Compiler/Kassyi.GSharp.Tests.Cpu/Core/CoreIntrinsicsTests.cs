@@ -73,11 +73,6 @@ public class CoreIntrinsicsTests
         Assert.Throws<GpuOnlyException>(() => Gpu.MultiplyHigh(ulongVal, 2ul));
         Assert.Throws<GpuOnlyException>(() => Gpu.FunnelShiftLeft(uintVal, uintVal, 2u));
         Assert.Throws<GpuOnlyException>(() => Gpu.FunnelShiftRight(uintVal, uintVal, 2u));
-
-        // Representative ManagedAtomics-forwarded stub host backstop (#728)
-        int atomicVal = 7;
-        Assert.Throws<GpuOnlyException>(() => Gpu.AtomicAdd(ref atomicVal, 1));
-        Assert.Equal(7, atomicVal);
 #pragma warning restore GSH0018
     }
 
@@ -130,6 +125,66 @@ public class CoreIntrinsicsTests
         invoke();
     }
 
+    // The same stubs called on the host, by the keys above; each call starts from 7 and must leave it
+#pragma warning disable GSH0018 // The host call is what these entries check: the GpuOnlyException backstop
+    private static readonly Dictionary<string, Action> s_hostAtomicStubs = new()
+    {
+        ["AtomicAdd(int)"] = static () => RunOnHost(7, static (ref int v) => Gpu.AtomicAdd(ref v, 1)),
+        ["AtomicAdd(uint)"] = static () => RunOnHost(7u, static (ref uint v) => Gpu.AtomicAdd(ref v, 1u)),
+        ["AtomicAdd(ulong)"] = static () => RunOnHost(7ul, static (ref ulong v) => Gpu.AtomicAdd(ref v, 1ul)),
+        ["AtomicAdd(float)"] = static () => RunOnHost(7f, static (ref float v) => Gpu.AtomicAdd(ref v, 1f)),
+        ["AtomicSub(int)"] = static () => RunOnHost(7, static (ref int v) => Gpu.AtomicSub(ref v, 1)),
+        ["AtomicSub(uint)"] = static () => RunOnHost(7u, static (ref uint v) => Gpu.AtomicSub(ref v, 1u)),
+        ["AtomicOr(uint)"] = static () => RunOnHost(7u, static (ref uint v) => Gpu.AtomicOr(ref v, 8u)),
+        ["AtomicOr(ulong)"] = static () => RunOnHost(7ul, static (ref ulong v) => Gpu.AtomicOr(ref v, 8ul)),
+        ["AtomicMax(uint)"] = static () => RunOnHost(7u, static (ref uint v) => Gpu.AtomicMax(ref v, 9u)),
+        ["AtomicMax(ulong)"] = static () => RunOnHost(7ul, static (ref ulong v) => Gpu.AtomicMax(ref v, 9ul)),
+        ["AtomicExch(int)"] = static () => RunOnHost(7, static (ref int v) => Gpu.AtomicExch(ref v, 1)),
+        ["AtomicExch(uint)"] = static () => RunOnHost(7u, static (ref uint v) => Gpu.AtomicExch(ref v, 1u)),
+        ["AtomicExch(ulong)"] = static () => RunOnHost(7ul, static (ref ulong v) => Gpu.AtomicExch(ref v, 1ul)),
+        ["AtomicExch(float)"] = static () => RunOnHost(7f, static (ref float v) => Gpu.AtomicExch(ref v, 1f)),
+        ["AtomicMin(int)"] = static () => RunOnHost(7, static (ref int v) => Gpu.AtomicMin(ref v, 1)),
+        ["AtomicMin(uint)"] = static () => RunOnHost(7u, static (ref uint v) => Gpu.AtomicMin(ref v, 1u)),
+        ["AtomicMin(ulong)"] = static () => RunOnHost(7ul, static (ref ulong v) => Gpu.AtomicMin(ref v, 1ul)),
+        ["AtomicInc(uint)"] = static () => RunOnHost(7u, static (ref uint v) => Gpu.AtomicInc(ref v, 9u)),
+        ["AtomicDec(uint)"] = static () => RunOnHost(7u, static (ref uint v) => Gpu.AtomicDec(ref v, 9u)),
+        ["AtomicCAS(int)"] = static () => RunOnHost(7, static (ref int v) => Gpu.AtomicCAS(ref v, 7, 1)),
+        ["AtomicCAS(uint)"] = static () => RunOnHost(7u, static (ref uint v) => Gpu.AtomicCAS(ref v, 7u, 1u)),
+        ["AtomicCAS(ulong)"] = static () => RunOnHost(7ul, static (ref ulong v) => Gpu.AtomicCAS(ref v, 7ul, 1ul)),
+        ["AtomicAnd(int)"] = static () => RunOnHost(7, static (ref int v) => Gpu.AtomicAnd(ref v, 1)),
+        ["AtomicAnd(uint)"] = static () => RunOnHost(7u, static (ref uint v) => Gpu.AtomicAnd(ref v, 1u)),
+        ["AtomicAnd(ulong)"] = static () => RunOnHost(7ul, static (ref ulong v) => Gpu.AtomicAnd(ref v, 1ul)),
+        ["AtomicXor(int)"] = static () => RunOnHost(7, static (ref int v) => Gpu.AtomicXor(ref v, 1)),
+        ["AtomicXor(uint)"] = static () => RunOnHost(7u, static (ref uint v) => Gpu.AtomicXor(ref v, 1u)),
+        ["AtomicXor(ulong)"] = static () => RunOnHost(7ul, static (ref ulong v) => Gpu.AtomicXor(ref v, 1ul)),
+        ["ReductionAdd(int)"] = static () => RunOnHost(7, static (ref int v) => Gpu.ReductionAdd(ref v, 1)),
+        ["ReductionAdd(uint)"] = static () => RunOnHost(7u, static (ref uint v) => Gpu.ReductionAdd(ref v, 1u)),
+        ["ReductionAdd(ulong)"] = static () => RunOnHost(7ul, static (ref ulong v) => Gpu.ReductionAdd(ref v, 1ul)),
+        ["ReductionAdd(float)"] = static () => RunOnHost(7f, static (ref float v) => Gpu.ReductionAdd(ref v, 1f)),
+    };
+#pragma warning restore GSH0018
+
+    // Outside a managed launch each stub still throws, and throws before it writes (#728): one overload that skips the
+    // check would pass the managed launch above, so every overload is called here
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [MemberData(nameof(ForwardedAtomicStubs))]
+    public void ForwardedAtomicStub_HostInvocation_ThrowsGpuOnlyExceptionAndLeavesValue(string stub)
+    {
+        Assert.True(s_hostAtomicStubs.TryGetValue(stub, out var invoke));
+        invoke();
+    }
+
+    private delegate void RefAction<T>(ref T value);
+
+    // The call throws GpuOnlyException and leaves the value as it was
+    private static void RunOnHost<T>(T initial, RefAction<T> call)
+    {
+        var value = initial;
+        Assert.Throws<GpuOnlyException>(() => call(ref value));
+        Assert.Equal(initial, value);
+    }
+
     // The table above lists every overload that ptx_intrinsics.yml forwards to a managed member, and nothing else
     [Fact]
     [Scenario(TestScenario.Boundary)]
@@ -162,6 +217,7 @@ public class CoreIntrinsicsTests
         }
 
         Assert.Equal(expected, new SortedSet<string>(s_forwardedAtomicStubs.Keys, StringComparer.Ordinal));
+        Assert.Equal(expected, new SortedSet<string>(s_hostAtomicStubs.Keys, StringComparer.Ordinal));
     }
 
     private static void RunInt(int op, int expectedValue, int expectedReturned, bool checkReturned = true)
