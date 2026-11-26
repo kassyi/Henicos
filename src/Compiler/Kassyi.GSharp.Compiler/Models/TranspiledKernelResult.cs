@@ -42,7 +42,8 @@ internal readonly record struct TranspiledKernelResult(
     EquatableArray<ErrorSiteEntry> ErrorSites = default,
     EquatableArray<HeldRefLocalSite> HeldRefLocalSites = default,
     string ManagedStackSource = "",
-    KernelSpillScope Spill = default)
+    KernelSpillScope Spill = default,
+    StateMachineFallback NativeFallback = default)
 {
     public string GetSource(bool isCuda) => isCuda ? CudaSource : CppSource;
 

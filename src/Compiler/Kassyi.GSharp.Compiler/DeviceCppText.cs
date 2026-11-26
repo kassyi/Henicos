@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Models;
+
 namespace Kassyi.GSharp.Compiler;
 
 /// <summary>
@@ -8,4 +10,5 @@ internal readonly record struct DeviceCppText(
     string Signature,
     string Body,
     HashSet<string> Includes,
-    EquatableArray<ErrorSiteEntry> ErrorSites);
+    EquatableArray<ErrorSiteEntry> ErrorSites,
+    StateMachineFallback NativeFallback = default);

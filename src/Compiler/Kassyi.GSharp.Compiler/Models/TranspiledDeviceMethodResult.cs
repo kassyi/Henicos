@@ -47,7 +47,8 @@ internal readonly record struct TranspiledDeviceMethodResult(
     DeviceExportRecord Export = default,
     EquatableArray<DeviceExportRecord> StructExports = default,
     EquatableArray<HeldRefLocalSite> HeldRefLocalSites = default,
-    EquatableArray<ErrorSiteEntry> ErrorSites = default)
+    EquatableArray<ErrorSiteEntry> ErrorSites = default,
+    StateMachineFallback NativeFallback = default)
 {
     public string GetSignature(bool isCuda) => isCuda ? CudaSignature : CppSignature;
 
