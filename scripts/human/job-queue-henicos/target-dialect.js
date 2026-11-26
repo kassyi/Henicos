@@ -1,9 +1,9 @@
-'use strict';
+"use strict";
 
 // Target dialect and test project helpers for Henicos.
 
-const fs = require('node:fs');
-const path = require('node:path');
+const fs = require("node:fs");
+const path = require("node:path");
 
 /**
  * Enumerates all test projects under tests/<category>/<name>/<name>.csproj.
@@ -35,15 +35,31 @@ function testProjectFiles(testsDir) {
 }
 
 /**
- * Reads a csproj file and extracts its GSharpTargetDialect.
+ * Reads a csproj file (ignoring XML comments) and extracts its GSharpTargetDialect.
  * Returns "cpu" or "cuda" (lowercase), or null if undefined, unreadable, or another dialect.
  * @param {string} projectFile - Absolute or relative path to .csproj.
  * @returns {"cpu" | "cuda" | null}
  */
 function dialectOf(projectFile) {
   try {
-    const content = fs.readFileSync(projectFile, 'utf8');
-    const match = /<GSharpTargetDialect>\s*(Cpu|Cuda)\s*<\/GSharpTargetDialect>/i.exec(content);
+    const content = fs.readFileSync(projectFile, "utf8").replace(/<!--[\s\S]*?-->/g, "");
+    const match = /<GSharpTargetDialect(?:\s[^>]*)?>\s*(Cpu|Cuda)\s*<\/GSharpTargetDialect>/i.exec(content);
+    return match ? match[1].toLowerCase() : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Reads a csproj file (ignoring XML comments) and extracts its GSharpRemoteOffload value.
+ * Returns the trimmed lowercase value (e.g. "local"), or null if undefined or unreadable.
+ * @param {string} projectFile - Absolute or relative path to .csproj.
+ * @returns {string | null}
+ */
+function remoteOffloadOf(projectFile) {
+  try {
+    const content = fs.readFileSync(projectFile, "utf8").replace(/<!--[\s\S]*?-->/g, "");
+    const match = /<GSharpRemoteOffload(?:\s[^>]*)?>\s*([^\s<]+)\s*<\/GSharpRemoteOffload>/i.exec(content);
     return match ? match[1].toLowerCase() : null;
   } catch {
     return null;
@@ -53,4 +69,5 @@ function dialectOf(projectFile) {
 module.exports = {
   testProjectFiles,
   dialectOf,
+  remoteOffloadOf,
 };
