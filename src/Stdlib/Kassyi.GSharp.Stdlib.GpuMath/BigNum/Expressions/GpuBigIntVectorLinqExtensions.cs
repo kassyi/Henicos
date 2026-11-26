@@ -516,8 +516,8 @@ public static class GpuBigIntVectorLinqExtensions
     /// <remarks>
     /// Stops at the deciding element (the first <see langword="true"/> element), as System.Linq: an element after
     /// it whose projection throws (a zero divisor, the square root of a negative value) does not throw; the earliest
-    /// throwing element at or before it throws. A chain that contains a <c>Where</c>, or an expression implemented
-    /// outside GpuMath, is evaluated in full and throws for any element.
+    /// throwing element at or before it throws. An expression implemented outside GpuMath is evaluated in full and
+    /// throws for any element.
     /// </remarks>
     public static IGpuBoolExpr Any(this IGpuBoolVectorExpression source)
         => new VectorAnyTrueExpression(source);
@@ -530,8 +530,8 @@ public static class GpuBigIntVectorLinqExtensions
     /// <remarks>
     /// Stops at the deciding element (the first <see langword="false"/> element), as System.Linq: an element after
     /// it whose projection throws (a zero divisor, the square root of a negative value) does not throw; the earliest
-    /// throwing element at or before it throws. A chain that contains a <c>Where</c>, or an expression implemented
-    /// outside GpuMath, is evaluated in full and throws for any element.
+    /// throwing element at or before it throws. An expression implemented outside GpuMath is evaluated in full and
+    /// throws for any element.
     /// </remarks>
     public static IGpuBoolExpr All(this IGpuBoolVectorExpression source)
         => new VectorAllTrueExpression(source);

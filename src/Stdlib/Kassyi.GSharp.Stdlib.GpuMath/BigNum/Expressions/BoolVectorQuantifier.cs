@@ -107,9 +107,9 @@ internal static class BoolVectorQuantifier
         return workspace.Provider.ReadWord(result.DevicePointer, 0, stream);
     }
 
-    // Whether the element exceptions of the chain can be recorded by index: not through Where, which compacts the
-    // elements into other indices, and not through a node implemented outside GpuMath, whose evaluation may evaluate
-    // other vectors whose indices are not the indices of the flags. Each shared node is visited once.
+    // Whether the element exceptions of the chain can be recorded in the index space of the flags: not through a
+    // node implemented outside GpuMath, whose evaluation may evaluate other vectors whose indices are not the indices
+    // of the flags. Where remaps its operands' indices into its output space. Each shared node is visited once.
     private static bool CanDefer(IGpuBoolVectorExpression source)
     {
         var visited = new HashSet<object>(ReferenceEqualityComparer.Instance) { source };
@@ -119,8 +119,6 @@ internal static class BoolVectorQuantifier
         {
             switch (pending.Pop())
             {
-                case VectorWhereExpression or FloatVectorWhereExpression:
-                    return false;
                 case IVectorOperator op:
                     PushOperands(op, visited, pending);
                     break;
