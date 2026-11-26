@@ -1,6 +1,8 @@
 using Kassyi.GSharp.Tests.Generators;
 using Kassyi.GSharp.Tests.Infrastructure;
+using Kassyi.GSharp.Tests.Shared.Helpers;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 
@@ -63,9 +65,10 @@ public class TestArchitectureAnalyzerTests : AnalyzerTestBase
         );
     }
 
-    // HNT0011: Windows-only skip patterns and [SupportedOSPlatform("windows")] require [Platform(TestPlatform.Windows)]
-    // on the test method or its immediate containing class; outer enclosing classes do not propagate traits in xUnit,
-    // Unix/Linux skips and non-skip OS branches are not reported, and [Platform] does not satisfy HNT0002.
+    // HNT0011: a test that skips on Linux, or returns there before it checks anything, directly, through a helper,
+    // an override, an interface implementation or a constructor of its class, needs [Platform(TestPlatform.Windows)]
+    // on the method or on the concrete class that runs it. An inherited test is reported at each concrete class that
+    // runs it without the attribute; an attribute on an outer or base class does not count.
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public async Task Architecture_WindowsOnlySkipWithoutPlatformAttribute_ReportsHnt0011OnlyOnWindowsOnlyTests()
@@ -75,43 +78,50 @@ public class TestArchitectureAnalyzerTests : AnalyzerTestBase
             new TestArchitectureAnalyzer());
 
         Assert.Empty(compilerErrors);
+        string[] expected =
+        [
+            .. new[]
+            {
+                "SkipIfNotOperatingSystemIsWindows",
+                "SkipIfNotOperatingSystemIsWindowsCompoundAnd",
+                "SkipIfNegatedOperatingSystemIsWindows",
+                "SkipIfRuntimeInformationIsOSPlatformWindows",
+                "IfNotWindowsThrowSkipException",
+                "IfWindowsElseSkip",
+                "SupportedOSPlatformWindowsMethod",
+                "HelperCallingWindowsSkip",
+                "UserDefinedPlatformAttributeDoesNotSatisfy",
+                "NestedMethod",
+                "SkipIfOperatingSystemIsLinux",
+                "SkipIfNotIsOSPlatformWindowsString",
+                "SkipIfNotRuntimeLinuxIsFalse",
+                "SkipIfNotOSVersionWin32NT",
+                "SkipIfOSVersionNotWin32NT",
+                "SkipIfNotWindowsLocal",
+                "SkipIfNotWindowsProperty",
+                "SkipIfNotWindowsMethodHelper",
+                "SkipIfNotWindowsHelperOnX64",
+                "SkipIfNeitherWindowsNorMacOS",
+                "ReturnIfNotWindows",
+                "ReturnIfLinuxInBlock",
+                "ReturnInElseOfWindowsHelper",
+                "ReturnThroughHelper",
+                "ReturnIfNotWindowsAsync",
+                "SkipThroughOverride",
+                "SkipThroughInterface",
+                "SkipThroughExplicitInterface",
+                "FirstTestOfSkippingClass",
+                "SecondTestOfSkippingClass",
+                "TestOfStaticConstructorClass",
+            }.Select(static method => Hnt0011Entry("method", method, method)),
+            Hnt0011Entry("class", "UnannotatedDerivedTests", "InheritedWindowsSkip"),
+            Hnt0011Entry("class", "ConstructorSkipDerivedTests", "InheritedWindowsSkip"),
+            Hnt0011Entry("class", "ConstructorSkipDerivedTests", "InheritedPlainTest"),
+            Hnt0011Entry("class", "BaseOnlyAnnotatedDerivedTests", "SkipAnnotatedOnlyOnBase"),
+            Hnt0011Entry("class", "GenericSkipDerivedTests", "GenericInheritedSkip"),
+        ];
 
-        var hnt0011Targets = diagnostics
-            .Where(static d => d.Id == "HNT0011")
-            .Select(static d => d.GetMessage())
-            .ToList();
-
-        Assert.Equal(10, hnt0011Targets.Count);
-        foreach (var expectedMethod in new[]
-        {
-            "SkipIfNotOperatingSystemIsWindows",
-            "SkipIfNotOperatingSystemIsWindowsCompoundAnd",
-            "SkipIfNegatedOperatingSystemIsWindows",
-            "SkipIfRuntimeInformationIsOSPlatformWindows",
-            "IfNotWindowsThrowSkipException",
-            "IfWindowsElseSkip",
-            "SupportedOSPlatformWindowsMethod",
-            "HelperCallingWindowsSkip",
-            "UserDefinedPlatformAttributeDoesNotSatisfy",
-            "NestedMethod",
-        })
-        {
-            Assert.Contains(hnt0011Targets, msg => msg.Contains($"'{expectedMethod}'", StringComparison.Ordinal));
-        }
-
-        foreach (var unexpectedMethod in new[]
-        {
-            "AnnotatedOnMethod",
-            "AnnotatedOnClass",
-            "SkipIfOperatingSystemIsWindows",
-            "SkipIfNotOperatingSystemIsLinux",
-            "NonSkipConditionalBranch",
-            "RequireWindowsHost",
-            "PlatformOnlyStillNeedsCategory",
-        })
-        {
-            Assert.DoesNotContain(hnt0011Targets, msg => msg.Contains($"'{unexpectedMethod}'", StringComparison.Ordinal));
-        }
+        Assert.Equal(expected.Order(StringComparer.Ordinal), Hnt0011Entries(diagnostics));
 
         var hnt0002 = Assert.Single(diagnostics, static d => d.Id == "HNT0002");
         Assert.Contains("'PlatformOnlyStillNeedsCategory'", hnt0002.GetMessage(), StringComparison.Ordinal);
@@ -133,4 +143,53 @@ public class TestArchitectureAnalyzerTests : AnalyzerTestBase
         Assert.Empty(compilerErrors);
         Assert.Empty(diagnostics);
     }
+
+    // HNT0011 analyzes a test method in source generator output (*.g.cs) but no other method there, so a skip that a
+    // test reaches only through a generated helper is not reported.
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public async Task Architecture_WindowsSkipInGeneratorOutput_ReportsOnlyTheGeneratedTest()
+    {
+        var compilation = RoslynTestUtility.CreateCompilationAt(
+            (
+                "GeneratorCaller.cs",
+                RoslynTestUtility.ReadTestCase("Analyzers/TestArchitecture/WindowsPlatformSkipGeneratorCaller.cs")
+            ),
+            (
+                "Kassyi.GSharp.Compiler/GeneratedPlatformHelpers.g.cs",
+                RoslynTestUtility.ReadTestCase("Analyzers/TestArchitecture/WindowsPlatformSkipGeneratorOutput.cs")
+            ));
+        var (diagnostics, compilerErrors) = await GetAnalyzerDiagnosticsAsync(compilation, new TestArchitectureAnalyzer());
+
+        Assert.Empty(compilerErrors);
+        Assert.Equal(
+            new[] { Hnt0011Entry("method", "GeneratedWindowsSkip", "GeneratedWindowsSkip") },
+            Hnt0011Entries(diagnostics));
+    }
+
+    // The declaration whose identifier the diagnostic spans exactly, and the message
+    private static IEnumerable<string> Hnt0011Entries(IEnumerable<Diagnostic> diagnostics) =>
+        diagnostics
+            .Where(static d => d.Id == "HNT0011")
+            .Select(static d =>
+            {
+                var span = d.Location.SourceSpan;
+                var token = d.Location.SourceTree?.GetRoot().FindToken(span.Start) ?? default;
+                var kind = token.Span == span
+                    ? token.Parent switch
+                    {
+                        MethodDeclarationSyntax method when method.Identifier == token => "method",
+                        ClassDeclarationSyntax type when type.Identifier == token => "class",
+                        _ => "other",
+                    }
+                    : "partial span";
+                return $"{kind} {token.ValueText}: {d.GetMessage()}";
+            })
+            .Order(StringComparer.Ordinal);
+
+    private static string Hnt0011Entry(string kind, string identifier, string testMethod) =>
+        $"{kind} {identifier}: " + Diagnostic.Create(
+            TestArchitectureAnalyzer.WindowsOnlyTestMustHavePlatformAttribute,
+            Location.None,
+            testMethod).GetMessage();
 }
