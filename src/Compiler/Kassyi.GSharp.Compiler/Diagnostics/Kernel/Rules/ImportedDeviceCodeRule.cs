@@ -332,7 +332,10 @@ internal sealed class ImportedDeviceCodeRule : ISyntaxValidationRule<InvocationE
                 ]);
             }
 
-            if (imported.Record is { Kind: DeviceExportRecord.FunctionKind, Traits.StackOnly: true })
+            // A stack-only function has no state machine: only a caller that would run one needs both CPU paths on the
+            // stacks (a CUDA kernel calls the CUDA text, which has no state machine either)
+            if (needsManagedStateMachine &&
+                imported.Record is { Kind: DeviceExportRecord.FunctionKind, Traits.StackOnly: true })
             {
                 if (!bothOnStacks)
                 {

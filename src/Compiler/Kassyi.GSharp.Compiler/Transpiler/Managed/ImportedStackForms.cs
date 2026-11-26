@@ -9,8 +9,7 @@ internal static class ImportedStackForms
     /// <summary>
     /// Whether <paramref name="function"/> has a usable managed stack form in its own assembly: its export record is
     /// compatible with this G#, did not fail for the C++ dialect, carries <c>ManagedStackForm</c>, and reaches neither
-    /// a grid barrier nor a warp collective (warp collectives across assemblies need PR-X3, and grid barriers need
-    /// PR-M2 / D1-X4).
+    /// a grid barrier nor a warp collective (neither runs on the managed stack across assemblies yet).
     /// </summary>
     public static bool HasManagedForm(IMethodSymbol function, Compilation compilation) =>
         DeviceExportTable.TryFindFunction(function, compilation, out var imported) &&

@@ -450,10 +450,11 @@ public class CrossAssemblyDiagnosticsTests
         Assert.All(ranges, static range => Assert.Equal((Analyzer, 11, 43, 11, 48), range));
     }
 
-    // A stack-only library function reports GSH0089 unless both CPU barrier models are Stack
+    // A stack-only library function reports GSH0089 at a call that runs a state machine (the C++ dialect) unless both
+    // CPU barrier models are Stack; a CUDA kernel calls its CUDA text
     [Theory]
     [InlineData("Cpu", null, null, 1)]
-    [InlineData("Cuda", null, null, 1)]
+    [InlineData("Cuda", null, null, 0)]
     [InlineData("Cpu", "Stack", null, 1)]
     [InlineData("Cpu", null, "Stack", 1)]
     [InlineData("Cpu", "Stack", "Stack", 0)]
