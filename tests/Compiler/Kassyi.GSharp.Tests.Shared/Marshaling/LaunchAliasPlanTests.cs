@@ -144,6 +144,153 @@ public class LaunchAliasPlanTests
         }
         """;
 
+    private const string CpuConvertedHeldGuardSource = """
+        using System;
+        using System.Runtime.InteropServices;
+        using Kassyi.GSharp.Core;
+
+        namespace Kassyi.GSharp.Tests.Shared.TestCases.Marshaling.CpuConvertedHeldGuard;
+
+        [StructLayout(LayoutKind.Auto)]
+        public struct AutoElem
+        {
+            public int First;
+            public byte Tag;
+        }
+
+        public struct AutoElemArrayHolder
+        {
+            public AutoElem[]? Items;
+        }
+
+        public struct AutoElemMemoryHolder
+        {
+            public Memory<AutoElem> Items;
+        }
+
+        public static partial class CpuConvertedHeldGuardKernels
+        {
+            [GpuKernel]
+            public static void ArrayFieldAndSlice(AutoElemArrayHolder holder, Span<AutoElem> slice)
+            {
+                int tid = ThreadIndex.X;
+                if (tid == 0 && holder.Items is { } items)
+                {
+                    slice[0] = new AutoElem { First = items[0].First + 10, Tag = 99 };
+                }
+            }
+
+            [GpuKernel]
+            public static void MemoryFieldAndSlice(AutoElemMemoryHolder holder, Span<AutoElem> slice)
+            {
+                int tid = ThreadIndex.X;
+                if (tid == 0)
+                {
+                    slice[0] = new AutoElem { First = holder.Items.Span[0].First + 10, Tag = 99 };
+                }
+            }
+
+            [GpuKernel]
+            public static void InArrayFieldAndInSlice([In] AutoElemArrayHolder[] holders, [In] Span<AutoElem> slice,
+                int[] observed)
+            {
+                int tid = ThreadIndex.X;
+                if (tid == 0 && holders[0].Items is { } items)
+                {
+                    items[1] = new AutoElem { First = items[1].First + 10, Tag = 77 };
+                    slice[0] = new AutoElem { First = slice[0].First + 100, Tag = 88 };
+                    observed[0] = items[1].First;
+                    observed[1] = slice[0].First;
+                }
+            }
+
+            [GpuKernel]
+            public static void InSliceFirstAndInArrayField([In] Span<AutoElem> slice, [In] AutoElemArrayHolder[] holders,
+                int[] observed)
+            {
+                int tid = ThreadIndex.X;
+                if (tid == 0 && holders[0].Items is { } items)
+                {
+                    items[1] = new AutoElem { First = items[1].First + 10, Tag = 77 };
+                    slice[0] = new AutoElem { First = slice[0].First + 100, Tag = 88 };
+                    observed[0] = items[1].First;
+                    observed[1] = slice[0].First;
+                }
+            }
+        }
+
+        public static class CpuConvertedHeldGuardDriver
+        {
+            public static int[] RunArrayFieldAndSlice(int sliceStart, int sliceLength)
+            {
+                var items = BuildItems(4);
+                var holder = new AutoElemArrayHolder { Items = items };
+                CpuConvertedHeldGuardKernels.LaunchArrayFieldAndSlice(
+                    holder,
+                    items.AsSpan(sliceStart, sliceLength),
+                    blockDimX: 1);
+                return [items[sliceStart].First, items[sliceStart].Tag];
+            }
+
+            public static int[] RunDisjointArrayFieldAndSlice()
+            {
+                var heldItems = BuildItems(4);
+                var sliceItems = BuildItems(2);
+                var holder = new AutoElemArrayHolder { Items = heldItems };
+                CpuConvertedHeldGuardKernels.LaunchArrayFieldAndSlice(
+                    holder,
+                    sliceItems.AsSpan(),
+                    blockDimX: 1);
+                return [sliceItems[0].First, sliceItems[0].Tag];
+            }
+
+            public static void RunMemoryFieldAndSlice(int sliceStart, int sliceLength)
+            {
+                var items = BuildItems(4);
+                var holder = new AutoElemMemoryHolder { Items = items.AsMemory(0, items.Length) };
+                CpuConvertedHeldGuardKernels.LaunchMemoryFieldAndSlice(
+                    holder,
+                    items.AsSpan(sliceStart, sliceLength),
+                    blockDimX: 1);
+            }
+
+            public static void RunInArrayFieldAndInSlice(int sliceStart, int sliceLength)
+            {
+                var items = BuildItems(4);
+                AutoElemArrayHolder[] holders = [new AutoElemArrayHolder { Items = items }];
+                int[] observed = new int[2];
+                CpuConvertedHeldGuardKernels.LaunchInArrayFieldAndInSlice(
+                    holders,
+                    items.AsSpan(sliceStart, sliceLength),
+                    observed,
+                    blockDimX: 1);
+            }
+
+            public static void RunInSliceFirstAndInArrayField(int sliceStart, int sliceLength)
+            {
+                var items = BuildItems(4);
+                AutoElemArrayHolder[] holders = [new AutoElemArrayHolder { Items = items }];
+                int[] observed = new int[2];
+                CpuConvertedHeldGuardKernels.LaunchInSliceFirstAndInArrayField(
+                    items.AsSpan(sliceStart, sliceLength),
+                    holders,
+                    observed,
+                    blockDimX: 1);
+            }
+
+            private static AutoElem[] BuildItems(int count)
+            {
+                var items = new AutoElem[count];
+                for (var i = 0; i < items.Length; i++)
+                {
+                    items[i] = new AutoElem { First = i + 1, Tag = (byte)(i + 10) };
+                }
+
+                return items;
+            }
+        }
+        """;
+
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("SingleArrayBagAlone")]
@@ -837,5 +984,78 @@ public class LaunchAliasPlanTests
         Assert.True(Assert.IsType<bool>(holdsDeep.Invoke(null, [defaultDeep, inner1])));
         Assert.False(Assert.IsType<bool>(holdsDeep.Invoke(null, [defaultDeep, unrelated])));
 #pragma warning restore RS0030
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void ForCpu_ConvertedHeldElementOverlappingSlice_ThrowsNotSupported()
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(CpuConvertedHeldGuardSource);
+        var (_, outputCompilation, generatorDiagnostics) = GeneratorTestRunner.RunGenerator(compilation, "Cpu");
+
+        Assert.Empty(generatorDiagnostics.Where(static d => d.Severity == DiagnosticSeverity.Error));
+        var compileErrors = outputCompilation
+            .GetDiagnostics()
+            .Where(static d => d.Severity == DiagnosticSeverity.Error)
+            .ToArray();
+        Assert.Empty(compileErrors);
+
+        using var stream = new MemoryStream();
+        var emitResult = outputCompilation.Emit(stream);
+        Assert.True(emitResult.Success, string.Join(Environment.NewLine, emitResult.Diagnostics));
+
+        var loadContext = new System.Runtime.Loader.AssemblyLoadContext(
+            $"CpuConvertedHeldGuard_{Guid.NewGuid():N}",
+            isCollectible: true);
+        try
+        {
+            stream.Position = 0;
+            var assembly = loadContext.LoadFromStream(stream);
+            var driverType = assembly.GetType(
+                "Kassyi.GSharp.Tests.Shared.TestCases.Marshaling.CpuConvertedHeldGuard.CpuConvertedHeldGuardDriver");
+            Assert.NotNull(driverType);
+
+            void AssertThrowsNotSupported(string methodName, int sliceStart, int sliceLength)
+            {
+#pragma warning disable RS0030 // Reflection to inspect generated test driver method compiled at run time
+                var method = driverType.GetMethod(methodName);
+#pragma warning restore RS0030
+                Assert.NotNull(method);
+                var tie = Assert.Throws<System.Reflection.TargetInvocationException>(() =>
+                {
+#pragma warning disable RS0030 // Reflection to invoke launcher wrapper compiled at run time
+                    method.Invoke(null, [sliceStart, sliceLength]);
+#pragma warning restore RS0030
+                });
+                var notSupported = Assert.IsType<NotSupportedException>(tie.InnerException);
+                Assert.Contains("overlap one memory", notSupported.Message, StringComparison.Ordinal);
+            }
+
+            AssertThrowsNotSupported("RunArrayFieldAndSlice", sliceStart: 1, sliceLength: 2);
+            AssertThrowsNotSupported("RunArrayFieldAndSlice", sliceStart: 0, sliceLength: 3);
+            AssertThrowsNotSupported("RunMemoryFieldAndSlice", sliceStart: 1, sliceLength: 2);
+            AssertThrowsNotSupported("RunMemoryFieldAndSlice", sliceStart: 0, sliceLength: 3);
+            AssertThrowsNotSupported("RunInArrayFieldAndInSlice", sliceStart: 1, sliceLength: 2);
+            AssertThrowsNotSupported("RunInArrayFieldAndInSlice", sliceStart: 0, sliceLength: 3);
+            AssertThrowsNotSupported("RunInSliceFirstAndInArrayField", sliceStart: 0, sliceLength: 3);
+            AssertThrowsNotSupported("RunInSliceFirstAndInArrayField", sliceStart: 1, sliceLength: 2);
+
+            // Disjoint arguments of the same CPU-converted element type still run cleanly without aliasing
+            using (Kassyi.GSharp.Runtime.GpuExecution.Use(Kassyi.GSharp.Runtime.KernelExecution.Managed))
+            {
+#pragma warning disable RS0030 // Reflection to inspect generated test driver method compiled at run time
+                var disjointMethod = driverType.GetMethod("RunDisjointArrayFieldAndSlice");
+#pragma warning restore RS0030
+                Assert.NotNull(disjointMethod);
+#pragma warning disable RS0030 // Reflection to invoke launcher wrapper compiled at run time
+                var result = Assert.IsType<int[]>(disjointMethod.Invoke(null, null));
+#pragma warning restore RS0030
+                Assert.Equal([11, 99], result);
+            }
+        }
+        finally
+        {
+            loadContext.Unload();
+        }
     }
 }

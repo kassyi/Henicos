@@ -1041,12 +1041,16 @@
 - {file: "Differential/MarshalingBoundaryDifferentialKernels.cu.cs", method: "MarshalingBoundaryDifferentialKernels.VectorAlignmentAndExternalStructsKernel", status: "Compared", count: 1}
 - {file: "Differential/MarshalingBoundaryDifferentialKernels.cu.cs", method: "MarshalingBoundaryDifferentialKernels.WeightAutoMixed", status: "NoStateMachine", count: 1}
 - {file: "Differential/MarshalingFieldOverlapDifferentialKernels.cu.cs", method: "MarshalingFieldOverlapDifferentialKernels.ArrayFieldAndMemoryFieldKernel", status: "Compared", count: 1}
+- {file: "Differential/MarshalingFieldOverlapDifferentialKernels.cu.cs", method: "MarshalingFieldOverlapDifferentialKernels.ConvertedFieldAndRefElementKernel", status: "Compared", count: 1}
 - {file: "Differential/MarshalingFieldOverlapDifferentialKernels.cu.cs", method: "MarshalingFieldOverlapDifferentialKernels.ConvertedFieldAndSliceKernel", status: "Compared", count: 1}
+- {file: "Differential/MarshalingFieldOverlapDifferentialKernels.cu.cs", method: "MarshalingFieldOverlapDifferentialKernels.ConvertedMemoryFieldAndSliceKernel", status: "Compared", count: 1}
 - {file: "Differential/MarshalingFieldOverlapDifferentialKernels.cu.cs", method: "MarshalingFieldOverlapDifferentialKernels.ElementFieldAndSliceKernel", status: "Compared", count: 1}
 - {file: "Differential/MarshalingFieldOverlapDifferentialKernels.cu.cs", method: "MarshalingFieldOverlapDifferentialKernels.ElementMemoryFieldAndSliceKernel", status: "Compared", count: 1}
 - {file: "Differential/MarshalingFieldOverlapDifferentialKernels.cu.cs", method: "MarshalingFieldOverlapDifferentialKernels.FieldAndSliceKernel", status: "Compared", count: 1}
 - {file: "Differential/MarshalingFieldOverlapDifferentialKernels.cu.cs", method: "MarshalingFieldOverlapDifferentialKernels.ImmutableArrayElementsAndSliceKernel", status: "Compared", count: 1}
 - {file: "Differential/MarshalingFieldOverlapDifferentialKernels.cu.cs", method: "MarshalingFieldOverlapDifferentialKernels.ImmutableArrayFieldAndReadOnlySliceKernel", status: "Compared", count: 1}
+- {file: "Differential/MarshalingFieldOverlapDifferentialKernels.cu.cs", method: "MarshalingFieldOverlapDifferentialKernels.InConvertedFieldAndInSliceKernel", status: "Compared", count: 1}
+- {file: "Differential/MarshalingFieldOverlapDifferentialKernels.cu.cs", method: "MarshalingFieldOverlapDifferentialKernels.InConvertedMemoryFieldAndInSliceKernel", status: "Compared", count: 1}
 - {file: "Differential/MarshalingFieldOverlapDifferentialKernels.cu.cs", method: "MarshalingFieldOverlapDifferentialKernels.InElementMemoryFieldAndInSliceKernel", status: "Compared", count: 1}
 - {file: "Differential/MarshalingFieldOverlapDifferentialKernels.cu.cs", method: "MarshalingFieldOverlapDifferentialKernels.InElementsWithIdenticalMemoryKernel", status: "Compared", count: 1}
 - {file: "Differential/MarshalingFieldOverlapDifferentialKernels.cu.cs", method: "MarshalingFieldOverlapDifferentialKernels.InFieldAndInSliceKernel", status: "Compared", count: 1}

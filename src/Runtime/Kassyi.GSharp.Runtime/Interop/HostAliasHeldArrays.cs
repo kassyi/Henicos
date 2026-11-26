@@ -31,6 +31,7 @@ public sealed class HostAliasHeldArrays
     private readonly List<GCHandle> _pins = [];
     private readonly List<MemoryHandle> _viewPins = [];
     private readonly List<string> _convertedTypes = [];
+    private Dictionary<Type, (int Key, int DeviceSize)>? _mappedConversions;
     private nint[] _heldRanges = [];
     private byte[] _heldTraits = [];
     private string _heldNames = "";
@@ -71,6 +72,19 @@ public sealed class HostAliasHeldArrays
     public bool CopiesBack { get; set; }
 
     /// <summary>
+    /// Maps a converted host element type to the launcher's conversion key and device element size, so that a held
+    /// array or view of that element shares a group with a candidate parameter of the same element type.
+    /// </summary>
+    /// <param name="hostElement">The host element type.</param>
+    /// <param name="key">The launcher's conversion key for <paramref name="hostElement"/>.</param>
+    /// <param name="deviceSize">The element size on the device.</param>
+    public void MapConversion(Type hostElement, int key, int deviceSize)
+    {
+        ArgumentNullException.ThrowIfNull(hostElement);
+        (_mappedConversions ??= [])[hostElement] = (key, deviceSize);
+    }
+
+    /// <summary>
     /// Adds an array that a struct argument holds. A null or empty array, an array that was added already (two fields
     /// that hold one array), and an array whose elements hold references (no address can be kept of it) are left out.
     /// </summary>
@@ -96,14 +110,15 @@ public sealed class HostAliasHeldArrays
         }
 
         var hostSize = Unsafe.SizeOf<T>();
+        var (conversionKey, resolvedDeviceSize) = ResolveConversion(typeof(T), deviceSize, hostSize, converted);
         _entries.Add(new HeldEntry
         {
             Array = array,
             Length = (nint)array.Length * hostSize,
             HostSize = hostSize,
-            DeviceSize = deviceSize == 0 ? hostSize : deviceSize,
+            DeviceSize = resolvedDeviceSize,
             Alignment = deviceAlignment,
-            Conversion = converted ? GetConversionKey(typeof(T)) : 0,
+            Conversion = conversionKey,
             CopiesBack = CopiesBack,
             Sharer = ShareCopy<T>
         });
@@ -134,8 +149,7 @@ public sealed class HostAliasHeldArrays
         }
 
         var hostSize = Unsafe.SizeOf<T>();
-        var resolvedDeviceSize = deviceSize == 0 ? hostSize : deviceSize;
-        var conversionKey = converted ? GetConversionKey(typeof(T)) : 0;
+        var (conversionKey, resolvedDeviceSize) = ResolveConversion(typeof(T), deviceSize, hostSize, converted);
         var byteLength = (nint)view.Length * hostSize;
         var handle = view.Pin();
         _viewPins.Add(handle);
@@ -151,6 +165,21 @@ public sealed class HostAliasHeldArrays
             RequiresTypedArray = requiresTypedArray,
             Sharer = ShareCopyView<T>
         });
+    }
+
+    private (int Key, nint DeviceSize) ResolveConversion(Type element, int deviceSize, nint hostSize, bool converted)
+    {
+        if (!converted)
+        {
+            return (0, deviceSize == 0 ? hostSize : deviceSize);
+        }
+
+        if (_mappedConversions is not null && _mappedConversions.TryGetValue(element, out var mapped))
+        {
+            return (mapped.Key, deviceSize == 0 ? mapped.DeviceSize : deviceSize);
+        }
+
+        return (GetConversionKey(element), deviceSize == 0 ? hostSize : deviceSize);
     }
 
     // The conversion number of an element type, numbered on its first use
@@ -393,6 +422,7 @@ public sealed class HostAliasHeldArrays
         _pins.Clear();
         _viewPins.Clear();
         _entries.Clear();
+        _mappedConversions?.Clear();
         _heldRanges = [];
         _heldTraits = [];
         _heldNames = "";

@@ -4371,6 +4371,7 @@ try
 void** __gsharp_kernel_params = stackalloc void*[4];
 // Find the arguments that overlap and give each group one device region
 __gsharp_alias_held = new();
+__gsharp_alias_held.MapConversion(typeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag), 1, sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingOverlapDifferentialKernels.AotContexts.DiffDeepBag));
 __gsharp_alias_held.CopiesBack = false;
 for (int __gsharp_alias_index = 0; __gsharp_alias_index < bags.Length; __gsharp_alias_index++)
 {
@@ -6918,6 +6919,7 @@ try
 void** __gsharp_kernel_params = stackalloc void*[4];
 // Find the arguments that overlap and give each group one device region
 __gsharp_alias_held = new();
+__gsharp_alias_held.MapConversion(typeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag), 1, sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingOverlapDifferentialKernels.AotContexts.DiffDeepBag));
 __gsharp_alias_held.CopiesBack = true;
 for (int __gsharp_alias_index = 0; __gsharp_alias_index < a.Length; __gsharp_alias_index++)
 {
@@ -7299,6 +7301,7 @@ try
 void** __gsharp_kernel_params = stackalloc void*[4];
 // Find the arguments that overlap and give each group one device region
 __gsharp_alias_held = new();
+__gsharp_alias_held.MapConversion(typeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag), 1, sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingOverlapDifferentialKernels.AotContexts.DiffDeepBag));
 __gsharp_alias_held.CopiesBack = true;
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingOverlapDifferentialKernels.AotContexts.AliasHeldArrays_DiffDeepBag(ref bag, __gsharp_alias_held);
 __gsharp_alias_held.CopiesBack = true;
@@ -11788,6 +11791,7 @@ try
 void** __gsharp_kernel_params = stackalloc void*[4];
 // Find the arguments that overlap and give each group one device region
 __gsharp_alias_held = new();
+__gsharp_alias_held.MapConversion(typeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag), 1, sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingOverlapDifferentialKernels.AotContexts.DiffDeepBag));
 __gsharp_alias_held.CopiesBack = true;
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingOverlapDifferentialKernels.AotContexts.AliasHeldArrays_DiffDeepBag(ref other, __gsharp_alias_held);
 __gsharp_alias_held.Pin();

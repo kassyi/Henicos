@@ -12,6 +12,12 @@ public struct DiffPaddedHolder
     public DiffVec2Padded[] Items;
 }
 
+/// <summary>A struct that holds a writable <see cref="Memory{T}"/> of elements whose host and device layouts differ.</summary>
+public struct DiffPaddedMemoryHolder
+{
+    public Memory<DiffVec2Padded> Items;
+}
+
 /// <summary>A struct that holds a writable <see cref="Memory{T}"/> view.</summary>
 public struct DiffMemoryBag
 {
@@ -547,6 +553,68 @@ public static partial class MarshalingFieldOverlapDifferentialKernels
             observed[0] = slice[0];
             slice[1] += 100;
             observed[1] = holders[0].Bags[0].Data.Span[2];
+        }
+    }
+
+    // --- Converted elements held by a struct field beside a slice or ref of the same element type (#1858 form 0) ---
+
+    [GpuKernel]
+    public static void ConvertedMemoryFieldAndSliceKernel(
+        DiffPaddedMemoryHolder holder,
+        Span<DiffVec2Padded> slice)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            holder.Items.Span[1].A += 10f;
+            holder.Items.Span[1].V.X += 100f;
+            slice[1].A += slice[0].A + 200f;
+            slice[2].V.Y += holder.Items.Span[2].A;
+        }
+    }
+
+    [GpuKernel]
+    public static void ConvertedFieldAndRefElementKernel(
+        DiffPaddedHolder holder,
+        ref DiffVec2Padded element,
+        [Out] float[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            holder.Items[2].A += 10f;
+            observed[0] = element.A;
+            element.A += 100f;
+            element.V.X += 5f;
+            observed[1] = holder.Items[2].A;
+        }
+    }
+
+    [GpuKernel]
+    public static void InConvertedFieldAndInSliceKernel(
+        [In] DiffPaddedHolder[] holders,
+        [In] Span<DiffVec2Padded> slice,
+        [Out] float[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            holders[0].Items[1].A += 10f;
+            observed[0] = slice[0].A;
+            slice[1].A += 100f;
+            observed[1] = holders[0].Items[2].A;
+        }
+    }
+
+    [GpuKernel]
+    public static void InConvertedMemoryFieldAndInSliceKernel(
+        [In] DiffPaddedMemoryHolder[] holders,
+        [In] Span<DiffVec2Padded> slice,
+        [Out] float[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            holders[0].Items.Span[1].A += 10f;
+            observed[0] = slice[0].A;
+            slice[1].A += 100f;
+            observed[1] = holders[0].Items.Span[2].A;
         }
     }
 }

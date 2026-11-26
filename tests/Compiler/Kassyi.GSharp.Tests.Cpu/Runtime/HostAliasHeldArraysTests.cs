@@ -621,4 +621,165 @@ public class HostAliasHeldArraysTests
             held.Free();
         }
     }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
+    public void MapConversion_ConvertedArrayAndSliceRange_UsesMappedKeyAndDeviceSize()
+    {
+        ConvertedElement[] backing = new ConvertedElement[4];
+        var held = new HostAliasHeldArrays { CopiesBack = true };
+        try
+        {
+            held.MapConversion(typeof(ConvertedElement), key: 1, deviceSize: 16);
+            held.Add(backing, deviceAlignment: 8, deviceSize: 0, converted: true);
+            held.Pin();
+
+            var backingHandle = GCHandle.Alloc(backing, GCHandleType.Pinned);
+            try
+            {
+                var slicePtr = backingHandle.AddrOfPinnedObject() + Unsafe.SizeOf<ConvertedElement>();
+                ReadOnlySpan<nint> candidateRanges =
+                [
+                    slicePtr,
+                    2 * Unsafe.SizeOf<ConvertedElement>(),
+                    Unsafe.SizeOf<ConvertedElement>(),
+                    16,
+                    8,
+                    1,
+                ];
+                var combined = held.Combine(candidateRanges);
+                Assert.Equal((nint)16, combined[HostAliasGroups.RangeFields + 3]);
+                Assert.Equal((nint)1, combined[HostAliasGroups.RangeFields + 5]);
+
+                var traits = held.Combine([HostAliasGroups.CopiesIn | HostAliasGroups.CopiesBack]);
+                var groups = HostAliasGroups.Find(combined, traits, held.Combine("slice"));
+                Assert.NotNull(groups);
+                Assert.Equal(1, groups.GroupCount);
+                Assert.Equal(1, groups.GetGroupLayout(0).ConversionKey);
+            }
+            finally
+            {
+                backingHandle.Free();
+            }
+        }
+        finally
+        {
+            held.Free();
+        }
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
+    public void MapConversion_ConvertedViewAndSliceRange_UsesMappedKeyAndDeviceSize()
+    {
+        ConvertedElement[] backing = new ConvertedElement[4];
+        var held = new HostAliasHeldArrays { CopiesBack = true };
+        try
+        {
+            held.MapConversion(typeof(ConvertedElement), key: 1, deviceSize: 16);
+            held.AddView<ConvertedElement>(backing.AsMemory(0, 3), writable: true, deviceAlignment: 8,
+                deviceSize: 0, converted: true);
+            held.Pin();
+
+            var backingHandle = GCHandle.Alloc(backing, GCHandleType.Pinned);
+            try
+            {
+                var slicePtr = backingHandle.AddrOfPinnedObject() + Unsafe.SizeOf<ConvertedElement>();
+                ReadOnlySpan<nint> candidateRanges =
+                [
+                    slicePtr,
+                    3 * Unsafe.SizeOf<ConvertedElement>(),
+                    Unsafe.SizeOf<ConvertedElement>(),
+                    16,
+                    8,
+                    1,
+                ];
+                var combined = held.Combine(candidateRanges);
+                Assert.Equal((nint)16, combined[HostAliasGroups.RangeFields + 3]);
+                Assert.Equal((nint)1, combined[HostAliasGroups.RangeFields + 5]);
+
+                var traits = held.Combine([HostAliasGroups.CopiesIn | HostAliasGroups.CopiesBack]);
+                var groups = HostAliasGroups.Find(combined, traits, held.Combine("slice"));
+                Assert.NotNull(groups);
+                Assert.Equal(1, groups.GroupCount);
+                Assert.Equal(1, groups.GetGroupLayout(0).ConversionKey);
+            }
+            finally
+            {
+                backingHandle.Free();
+            }
+        }
+        finally
+        {
+            held.Free();
+        }
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void MapConversion_UnmappedConvertedElement_FallsBackToHeldConversionKey()
+    {
+        ConvertedElement[] backing = new ConvertedElement[4];
+        var held = new HostAliasHeldArrays { CopiesBack = true };
+        try
+        {
+            held.MapConversion(typeof(int), key: 1, deviceSize: 4);
+            held.Add(backing, deviceAlignment: 8, deviceSize: 0, converted: true);
+            held.AddView<ConvertedElement>(backing.AsMemory(1, 2), writable: true, deviceAlignment: 8,
+                deviceSize: 0, converted: true);
+            held.Pin();
+
+            var ranges = held.Combine(ReadOnlySpan<nint>.Empty).ToArray();
+            Assert.Equal((nint)Unsafe.SizeOf<ConvertedElement>(), ranges[3]);
+            Assert.Equal((nint)HostAliasHeldArrays.HeldConversionKey, ranges[5]);
+
+            var traits = held.Combine(Array.Empty<byte>());
+            var exception = Assert.Throws<NotSupportedException>(
+                () => HostAliasGroups.Find(ranges, traits, held.Combine("")));
+            Assert.Contains("converted between the host and device layouts", exception.Message,
+                StringComparison.Ordinal);
+        }
+        finally
+        {
+            held.Free();
+        }
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void MapConversion_ZeroDeviceSize_PropagatesZeroAndThrowsOnFind()
+    {
+        ConvertedElement[] backing = new ConvertedElement[4];
+        var held = new HostAliasHeldArrays { CopiesBack = true };
+        try
+        {
+            held.MapConversion(typeof(ConvertedElement), key: 1, deviceSize: 0);
+            held.Add(backing, deviceAlignment: 8, deviceSize: 0, converted: true);
+            held.AddView<ConvertedElement>(backing.AsMemory(1, 2), writable: true, deviceAlignment: 8,
+                deviceSize: 0, converted: true);
+            held.Pin();
+
+            var ranges = held.Combine(ReadOnlySpan<nint>.Empty).ToArray();
+            Assert.Equal((nint)0, ranges[3]);
+            Assert.Equal((nint)1, ranges[5]);
+
+            var traits = held.Combine(Array.Empty<byte>());
+            var exception = Assert.Throws<NotSupportedException>(
+                () => HostAliasGroups.Find(ranges, traits, held.Combine("")));
+            Assert.Contains("converted between the host and device layouts", exception.Message,
+                StringComparison.Ordinal);
+        }
+        finally
+        {
+            held.Free();
+        }
+    }
 }

@@ -129,6 +129,18 @@ internal static class AliasGroupEmitter
         }
 
         writer.AppendLine($"{Held} = new();");
+        // [WHY] On CPU, struct field Marshal_ allocates a fresh shadow without HostAliasStaging lookup and
+        // WriteCpuHeldRelease frees Held before WriteCpuConversions, so CPU keeps HeldConversionKey to reject
+        // overlapping CPU-converted held elements explicitly rather than staging them with candidates
+        if (isCuda)
+        {
+            foreach (var conversion in plan.Conversions)
+            {
+                writer.AppendLine(
+                    $"{Held}.MapConversion(typeof({conversion.HostType}), {conversion.Key}, sizeof({conversion.ShadowType}));");
+            }
+        }
+
         foreach (var index in plan.HeldSources)
         {
             WriteHeldArraysOf(writer, sharing, index, isCuda);
