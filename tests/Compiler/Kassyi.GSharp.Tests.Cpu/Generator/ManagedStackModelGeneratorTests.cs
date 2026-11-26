@@ -84,16 +84,14 @@ public class ManagedStackModelGeneratorTests
             failures.SourceText, StringComparison.Ordinal);
         Assert.Contains("// managed\tFallbackKernels.CallsChainKernel\tCallsFunctionWithoutForm: calls a function without a stack form",
             failures.SourceText, StringComparison.Ordinal);
-        // A using declaration that a goto of the reconvergence regions would pass (CS8648) keeps the kernel on its
-        // state machine, with the reason
-        Assert.Contains("// managed\tFallbackKernels.UsingAfterContinueKernel\tUsingDeclarationWithActiveMask",
-            failures.SourceText, StringComparison.Ordinal);
+        Assert.DoesNotContain("FallbackKernels.UsingAfterContinueKernel", failures.SourceText,
+            StringComparison.Ordinal);
         // The kernels and the functions of the chain keep their state machines: no stack form is emitted for them, and
-        // the kernel file is the default build's. Only AddShuffled, the target of the operator, has a form of its own
+        // their launchers do not call ManagedStackRunner.Run. Only AddShuffled and UsingAfterContinueKernel have stack
+        // forms of their own
         foreach (var name in new[]
                  {
-                     "PassesSuspendingGroupKernel", "BarrierStep", "CallsChainKernel", "Outer", "Middle", "Inner",
-                     "UsingAfterContinueKernel"
+                     "PassesSuspendingGroupKernel", "BarrierStep", "CallsChainKernel", "Outer", "Middle", "Inner"
                  })
         {
             var formName = GSharpInternalNames.StackModel.MethodPrefix +
@@ -104,10 +102,384 @@ public class ManagedStackModelGeneratorTests
         const string AddShuffledForm =
             GSharpInternalNames.StackModel.MethodPrefix + "ManagedStackFallbackGeneratorCases__FallbackKernels__AddShuffled(";
         Assert.Contains(stack, static s => s.SourceText.Contains(AddShuffledForm, StringComparison.Ordinal));
-        var kernelFile = Assert.Single(unset, static s => s.HintName.EndsWith("__FallbackKernels.g.cs",
+        const string UsingAfterContinueForm =
+            GSharpInternalNames.StackModel.MethodPrefix +
+            "ManagedStackFallbackGeneratorCases__FallbackKernels__UsingAfterContinueKernel(";
+        Assert.Contains(stack, static s => s.SourceText.Contains(UsingAfterContinueForm, StringComparison.Ordinal));
+
+        var unsetKernelFile = Assert.Single(unset, static s => s.HintName.EndsWith("__FallbackKernels.g.cs",
             StringComparison.Ordinal));
-        Assert.Equal(kernelFile, Assert.Single(stack, static s => s.HintName.EndsWith("__FallbackKernels.g.cs",
-            StringComparison.Ordinal)));
+        var stackKernelFile = Assert.Single(stack, static s => s.HintName.EndsWith("__FallbackKernels.g.cs",
+            StringComparison.Ordinal));
+        Assert.NotEqual(unsetKernelFile.SourceText, stackKernelFile.SourceText);
+        Assert.Contains("FallbackKernels.UsingAfterContinueKernel\", true,", stackKernelFile.SourceText,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("FallbackKernels.PassesSuspendingGroupKernel\", true,", stackKernelFile.SourceText,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("FallbackKernels.CallsChainKernel\", true,", stackKernelFile.SourceText,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void StackScopeKernels_ManagedStackBuild_RunOnStacksWithoutFailures()
+    {
+        var path = RepositoryPaths.Combine(
+            "tests", "Compiler", "Kassyi.GSharp.Tests.Shared", "Differential", "StackScopeKernels.cu.cs");
+        var (_, tree) = RoslynTestUtility.GetCallerSourceContext(path);
+        var stack = Run(barrierModel: "Stack", tree);
+
+        Assert.DoesNotContain(stack, static s => s.HintName == StateMachineFallbackPipeline.HintName);
+        var kernelFile = Assert.Single(stack, static s => s.HintName.EndsWith("__StackScopeKernels.g.cs",
+            StringComparison.Ordinal));
+        var kernels = tree.GetRoot()
+            .DescendantNodes()
+            .OfType<MethodDeclarationSyntax>()
+            .Where(static m => m.AttributeLists.SelectMany(static l => l.Attributes)
+                .Any(static a => a.Name is IdentifierNameSyntax { Identifier.ValueText: "GpuKernel" }))
+            .Select(static m => m.Identifier.ValueText)
+            .ToArray();
+        Assert.Equal(19, kernels.Length);
+        Assert.Contains("ManagedStackRunner.Run(", kernelFile.SourceText, StringComparison.Ordinal);
+        foreach (var kernel in kernels)
+        {
+            Assert.Contains($"sharedMemBytes, \"StackScopeKernels.{kernel}\"", kernelFile.SourceText,
+                StringComparison.Ordinal);
+        }
+
+        Assert.Contains("sharedMemBytes, \"StackScopeKernels.UsingDeclarationMaskKernel\", true,",
+            kernelFile.SourceText, StringComparison.Ordinal);
+        Assert.Contains("sharedMemBytes, \"StackScopeKernels.ContinueInsideFixedInLoopKernel\", true,",
+            kernelFile.SourceText, StringComparison.Ordinal);
+        Assert.Contains("sharedMemBytes, \"StackScopeKernels.GotoLoopCrossingUsingStatementKernel\", true,",
+            kernelFile.SourceText, StringComparison.Ordinal);
+        Assert.Contains("sharedMemBytes, \"StackScopeKernels.GotoLoopCrossingFixedStatementKernel\", true,",
+            kernelFile.SourceText, StringComparison.Ordinal);
+        Assert.Contains(
+            "sharedMemBytes, \"StackScopeKernels.LocalFunctionCapturingPriorConstAfterUsingDeclarationKernel\", true,",
+            kernelFile.SourceText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void LocalFunctionCapturingUnmovableAfterAnchor_StackModel_FallsBackWithoutCompileError()
+    {
+        const string Source = """
+            using System;
+            using Kassyi.GSharp.Core;
+
+            namespace LocalFunctionFallbackCases;
+
+            public struct ScopeGuard : IDisposable
+            {
+                public uint[] Arr;
+                public int I;
+
+                public void Dispose() => Arr[I] += 0x100000u;
+            }
+
+            [SkipSnapshotConsistency("Input for ManagedStackModelGeneratorTests")]
+            public static partial class FallbackKernels
+            {
+                [GpuDeviceFunction]
+                private static void AssignOut(int tid, out int picked) => picked = tid;
+
+                [GpuDeviceFunction]
+                private static bool AssignOutBool(int tid, out int picked)
+                {
+                    picked = tid;
+                    return tid > 0;
+                }
+
+                [GpuDeviceFunction]
+                private static int AssignOutRet(int tid, out int picked)
+                {
+                    picked = tid;
+                    return tid;
+                }
+
+                [GpuDeviceFunction]
+                private static bool AssignOutBoolWithMask(int tid, out int picked)
+                {
+                    picked = tid + (int)(Warp.ActiveMask() & 0xFu);
+                    return tid > 0;
+                }
+
+                [GpuDeviceFunction]
+                private static int AssignOutRetWithMask(int tid, out int picked)
+                {
+                    picked = tid + (int)(Warp.ActiveMask() & 0xFu);
+                    return picked;
+                }
+
+                [GpuKernel]
+                public static void ConstAfterAnchorKernel(uint[] result)
+                {
+                    int t = ThreadIndex.X;
+                    int a = AddConst(1);
+                    const int C = 5;
+                    using var guard = new ScopeGuard { Arr = result, I = t };
+                    int AddConst(int v) => v + C;
+                    result[t] += (uint)a + (Warp.ActiveMask() & 0xFu);
+                }
+
+                [GpuKernel]
+                public static void UsingResourceCapturedKernel(uint[] result)
+                {
+                    int t = ThreadIndex.X;
+                    if (false)
+                    {
+                        _ = ReadGuard();
+                    }
+
+                    using var guard = new ScopeGuard { Arr = result, I = t };
+                    int ReadGuard() => guard.I;
+                    result[t] += Warp.ActiveMask() & 0xFu;
+                }
+
+                [GpuKernel]
+                public static void OutVarAfterAnchorKernel(uint[] result)
+                {
+                    int t = ThreadIndex.X;
+                    int a = WriteOut(7);
+                    AssignOut(t, out var z);
+                    using var guard = new ScopeGuard { Arr = result, I = t };
+                    int WriteOut(int v)
+                    {
+                        z = v + 10;
+                        return z;
+                    }
+
+                    result[t] += (uint)a + (uint)z + (Warp.ActiveMask() & 0xFu);
+                }
+
+                [GpuKernel]
+                public static void OutVarInIfAfterAnchorKernel(uint[] result)
+                {
+                    int t = ThreadIndex.X;
+                    int a = WriteOut(7);
+                    if (t < 8 && AssignOutBool(5, out var z))
+                    {
+                        result[t] += (uint)z;
+                    }
+
+                    using var guard = new ScopeGuard { Arr = result, I = t };
+                    int WriteOut(int v)
+                    {
+                        z = v + 10;
+                        return z;
+                    }
+
+                    result[t] += (uint)a + (Warp.ActiveMask() & 0xFu);
+                }
+
+                [GpuKernel]
+                public static void OutVarInUsingHeaderKernel(uint[] result)
+                {
+                    int t = ThreadIndex.X;
+                    int a = WriteOut(7);
+                    using var guard = new ScopeGuard { Arr = result, I = AssignOutRet(t, out var z) };
+                    int WriteOut(int v)
+                    {
+                        z = v + 10;
+                        return z;
+                    }
+
+                    result[t] += (uint)a + (uint)z + (Warp.ActiveMask() & 0xFu);
+                }
+
+                [GpuKernel]
+                public static void MutableLocalAfterAnchorKernel(uint[] result)
+                {
+                    int t = ThreadIndex.X;
+                    int a = WriteX(7);
+                    int x = 3;
+                    using var guard = new ScopeGuard { Arr = result, I = t };
+                    int WriteX(int v)
+                    {
+                        x = v + 10;
+                        return x;
+                    }
+
+                    result[t] += (uint)a + (uint)x + (Warp.ActiveMask() & 0xFu);
+                }
+
+                [GpuKernel]
+                public static void AndAlsoOutVarWithMaskAfterAnchorKernel(uint[] result)
+                {
+                    int t = ThreadIndex.X;
+                    int a = WriteOut(7);
+                    if (t < 8 && AssignOutBoolWithMask(5, out var z))
+                    {
+                        result[t] += (uint)z;
+                    }
+
+                    using var guard = new ScopeGuard { Arr = result, I = t };
+                    int WriteOut(int v)
+                    {
+                        z = v + 10;
+                        return z;
+                    }
+
+                    result[t] += (uint)a + (Warp.ActiveMask() & 0xFu);
+                }
+
+                [GpuKernel]
+                public static void TernaryOutVarWithMaskAfterAnchorKernel(uint[] result)
+                {
+                    int t = ThreadIndex.X;
+                    int a = WriteOut(7);
+                    int y = t < 8 ? AssignOutRetWithMask(5, out var z) : 0;
+                    using var guard = new ScopeGuard { Arr = result, I = t };
+                    int WriteOut(int v)
+                    {
+                        z = v + 10;
+                        return z;
+                    }
+
+                    result[t] += (uint)a + (uint)y + (Warp.ActiveMask() & 0xFu);
+                }
+            }
+            """;
+        var stack = Run(barrierModel: "Stack", RoslynTestUtility.CreateCompilation(Source));
+
+        var failures = Assert.Single(stack, static s => s.HintName == StateMachineFallbackPipeline.HintName);
+        Assert.Contains("// managed\tFallbackKernels.ConstAfterAnchorKernel\tStackFormGenerationFailed: InvalidOperationException",
+            failures.SourceText, StringComparison.Ordinal);
+        Assert.Contains("// managed\tFallbackKernels.UsingResourceCapturedKernel\tStackFormGenerationFailed: InvalidOperationException",
+            failures.SourceText, StringComparison.Ordinal);
+        Assert.Contains("// managed\tFallbackKernels.OutVarAfterAnchorKernel\tStackFormGenerationFailed: InvalidOperationException",
+            failures.SourceText, StringComparison.Ordinal);
+        Assert.Contains("// managed\tFallbackKernels.OutVarInIfAfterAnchorKernel\tStackFormGenerationFailed: InvalidOperationException",
+            failures.SourceText, StringComparison.Ordinal);
+        Assert.Contains("// managed\tFallbackKernels.OutVarInUsingHeaderKernel\tStackFormGenerationFailed: InvalidOperationException",
+            failures.SourceText, StringComparison.Ordinal);
+        Assert.Contains("// managed\tFallbackKernels.MutableLocalAfterAnchorKernel\tStackFormGenerationFailed: InvalidOperationException",
+            failures.SourceText, StringComparison.Ordinal);
+        Assert.Contains("// managed\tFallbackKernels.AndAlsoOutVarWithMaskAfterAnchorKernel\tStackFormGenerationFailed: InvalidOperationException",
+            failures.SourceText, StringComparison.Ordinal);
+        Assert.Contains("// managed\tFallbackKernels.TernaryOutVarWithMaskAfterAnchorKernel\tStackFormGenerationFailed: InvalidOperationException",
+            failures.SourceText, StringComparison.Ordinal);
+        var kernelFile = Assert.Single(stack, static s => s.HintName.EndsWith("__FallbackKernels.g.cs",
+            StringComparison.Ordinal));
+        Assert.DoesNotContain("ManagedStackRunner.Run(", kernelFile.SourceText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void LocalFunctionCapturingPriorConstAndOutVarInsideUsing_StackModel_RunsOnStackWithoutFailures()
+    {
+        const string Source = """
+            using System;
+            using Kassyi.GSharp.Core;
+
+            namespace LocalFunctionStackCases;
+
+            public struct ScopeGuard : IDisposable
+            {
+                public uint[] Arr;
+                public int I;
+
+                public void Dispose() => Arr[I] += 0x100000u;
+            }
+
+            [SkipSnapshotConsistency("Input for ManagedStackModelGeneratorTests")]
+            public static partial class StackKernels
+            {
+                [GpuDeviceFunction]
+                private static void AssignOut(int tid, out int picked) => picked = tid;
+
+                [GpuDeviceFunction]
+                private static bool AssignOutBool(int tid, out int picked)
+                {
+                    picked = tid;
+                    return tid > 0;
+                }
+
+                [GpuDeviceFunction]
+                private static int AssignOutRetWithMask(int tid, out int picked)
+                {
+                    picked = tid + (int)(Warp.ActiveMask() & 0xFu);
+                    return picked;
+                }
+
+                [GpuKernel]
+                public static void PriorConstKernel(uint[] result)
+                {
+                    int t = ThreadIndex.X;
+                    const int C = 5;
+                    int a = AddConst(1);
+                    using var guard = new ScopeGuard { Arr = result, I = t };
+                    int AddConst(int v) => v + C;
+                    result[t] += (uint)a + (Warp.ActiveMask() & 0xFu);
+                }
+
+                [GpuKernel]
+                public static void OutVarInsideUsingKernel(uint[] result)
+                {
+                    int t = ThreadIndex.X;
+                    int a = WriteOut(7);
+                    using var guard = new ScopeGuard { Arr = result, I = t };
+                    AssignOut(t, out var picked);
+                    int WriteOut(int v)
+                    {
+                        picked = v;
+                        return picked;
+                    }
+
+                    result[t] += (uint)a + (uint)picked + (Warp.ActiveMask() & 0xFu);
+                }
+
+                [GpuKernel]
+                public static void OutVarInIfInsideUsingKernel(uint[] result)
+                {
+                    int t = ThreadIndex.X;
+                    int a = WriteOut(7);
+                    using var guard = new ScopeGuard { Arr = result, I = t };
+                    if (t < 8 && AssignOutBool(5, out var picked))
+                    {
+                        result[t] += (uint)picked;
+                    }
+
+                    int WriteOut(int v)
+                    {
+                        picked = v;
+                        return picked;
+                    }
+
+                    result[t] += (uint)a + (Warp.ActiveMask() & 0xFu);
+                }
+
+                [GpuKernel]
+                public static void TernaryOutVarWithMaskInsideUsingKernel(uint[] result)
+                {
+                    int t = ThreadIndex.X;
+                    int a = WriteOut(7);
+                    using var guard = new ScopeGuard { Arr = result, I = t };
+                    int y = t < 8 ? AssignOutRetWithMask(5, out var picked) : 0;
+                    int WriteOut(int v)
+                    {
+                        picked = v;
+                        return picked;
+                    }
+
+                    result[t] += (uint)a + (uint)y + (Warp.ActiveMask() & 0xFu);
+                }
+            }
+            """;
+        var stack = Run(barrierModel: "Stack", RoslynTestUtility.CreateCompilation(Source));
+
+        Assert.DoesNotContain(stack, static s => s.HintName == StateMachineFallbackPipeline.HintName);
+        var kernelFile = Assert.Single(stack, static s => s.HintName.EndsWith("__StackKernels.g.cs",
+            StringComparison.Ordinal));
+        Assert.Contains("sharedMemBytes, \"StackKernels.PriorConstKernel\", true,", kernelFile.SourceText,
+            StringComparison.Ordinal);
+        Assert.Contains("sharedMemBytes, \"StackKernels.OutVarInsideUsingKernel\", true,", kernelFile.SourceText,
+            StringComparison.Ordinal);
+        Assert.Contains("sharedMemBytes, \"StackKernels.OutVarInIfInsideUsingKernel\", true,", kernelFile.SourceText,
+            StringComparison.Ordinal);
+        Assert.Contains("sharedMemBytes, \"StackKernels.TernaryOutVarWithMaskInsideUsingKernel\", true,",
+            kernelFile.SourceText, StringComparison.Ordinal);
     }
 
     // An operator macro whose target reaches a warp collective, after a block barrier, in a kernel that has a
@@ -340,12 +712,16 @@ public class ManagedStackModelGeneratorTests
 
     private static (string HintName, string SourceText)[] Run(string? barrierModel) => Run(barrierModel, s_tree);
 
-    private static (string HintName, string SourceText)[] Run(string? barrierModel, SyntaxTree tree)
+    private static (string HintName, string SourceText)[] Run(string? barrierModel, SyntaxTree tree) =>
+        Run(
+            barrierModel,
+            CSharpCompilation.Create("ManagedStackModelCase")
+                .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true))
+                .AddReferences(RoslynTestUtility.BaseReferences)
+                .AddSyntaxTrees(tree));
+
+    private static (string HintName, string SourceText)[] Run(string? barrierModel, Compilation compilation)
     {
-        var compilation = CSharpCompilation.Create("ManagedStackModelCase")
-            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true))
-            .AddReferences(RoslynTestUtility.BaseReferences)
-            .AddSyntaxTrees(tree);
         var options = barrierModel is null
             ? null
             : new Dictionary<string, string> { ["build_property.GSharpManagedBarrierModel"] = barrierModel };

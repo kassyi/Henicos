@@ -238,6 +238,8 @@ namespace NativeStackEligibilityCases
             public void Dispose() => V = 0;
         }
 
+        // A using declaration in a kernel that reaches Warp.ActiveMask(): UsingDeclarationScopes lowers it to a using
+        // statement, so it runs on stacks
         [GpuKernel]
         public static void UsingDeclarationActiveMaskKernel(int[] data)
         {
@@ -252,6 +254,8 @@ namespace NativeStackEligibilityCases
             return Warp.ActiveMask() + (uint)guard.V;
         }
 
+        // A using declaration in a device function that reaches Warp.ActiveMask(): lowered to a using statement, so its
+        // caller runs on stacks
         [GpuKernel]
         public static void UsingDeclarationInActiveMaskCalleeKernel(int[] data)
         {

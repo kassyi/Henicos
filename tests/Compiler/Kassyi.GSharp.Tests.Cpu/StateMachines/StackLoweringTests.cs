@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Kassyi.GSharp.Compiler.Analysis;
 using Kassyi.GSharp.Compiler.Extensions;
 using Kassyi.GSharp.Compiler.Lowering;
@@ -10,6 +12,7 @@ using Kassyi.GSharp.Tests.Shared.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using VerifyXunit;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Generators.StateMachines;
@@ -209,6 +212,44 @@ public class StackLoweringTests
 
         Assert.Same(eligibilityBody.Body, newPlan.StackBody);
         Assert.NotNull(eligibilityBody.Body);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public Task LowerForStack_UsingDeclarationAfterContinue_PlacesContinueTargetAfterUsing() =>
+        VerifyStackLower(["Differential", "StackScopeKernels.cu.cs"], "ContinueBeforeUsingDeclarationKernel");
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public Task LowerForStack_TwoUsingDeclarationsInBlock_NestsInnerInsideOuter() =>
+        VerifyStackLower(["Differential", "StackScopeKernels.cu.cs"], "TwoUsingDeclarationsWithBreakAndContinueKernel");
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public Task LowerForStack_LabeledUsingDeclaration_KeepsLabelOnUsingStatement() =>
+        VerifyStackLower(["TestCases", "StateMachines", "StackScopeLoweringCases.cs"], "LabeledUsingDeclarationKernel");
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public Task LowerForStack_FixedInLoopWithContinue_LeavesRegionInsideFixed() =>
+        VerifyStackLower(["Differential", "StackScopeKernels.cu.cs"], "ContinueInsideFixedInLoopKernel");
+
+    private static Task VerifyStackLower(string[] source, string kernelName, [CallerMemberName] string methodName = "")
+    {
+        var (_, plan) = CreatePlans(source).Single(entry => entry.Name == kernelName);
+        var stack = plan.StackBody ?? throw new InvalidOperationException($"{kernelName} has no stack body.");
+#pragma warning disable RS0030 // The .verified.cs snapshot is the text of the lowered tree
+        var formatted = stack.Body.NormalizeWhitespace().ToFullString();
+#pragma warning restore RS0030
+        var snapshot = $$"""
+            public class {{methodName}}_Snapshot
+            {
+                public void LoweredMethod()
+            {{formatted}}
+            }
+            """;
+        return Verifier.Verify(snapshot, "cs")
+            .UseFastHashSnapshotName(methodName);
     }
 
     // The plans of the kernels and the device functions that a state machine lowers, by name, with their stack bodies
