@@ -24,8 +24,6 @@ internal static class NativeStackEligibility
         GridSync = 4,
         CaseWithoutLabel = 8,
         WarpOperatorMacro = 16,
-        // A using declaration in a method that reaches Warp.ActiveMask()
-        UsingDeclarationWithActiveMask = 32,
         // A method that reaches Warp.ActiveMask() whose body the stack lowering fails on
         StackBodyLowering = 64,
         // A suspending device function that reaches a warp collective is passed as a method group
@@ -123,11 +121,6 @@ internal static class NativeStackEligibility
         if ((facts & BodyFacts.WarpOperatorMacro) != 0)
         {
             return NativeStackObstacle.WarpOperatorMacro;
-        }
-
-        if ((facts & BodyFacts.UsingDeclarationWithActiveMask) != 0)
-        {
-            return NativeStackObstacle.UsingDeclarationWithActiveMask;
         }
 
         if ((facts & BodyFacts.StackBodyLowering) != 0)
@@ -271,7 +264,7 @@ internal static class NativeStackEligibility
     {
         if (method is null)
         {
-            return ScanBody(declaration, semanticModel) & ~BodyFacts.UsingDeclarationWithActiveMask;
+            return ScanBody(declaration, semanticModel);
         }
 
         var bodies = s_bodies.For(semanticModel.Compilation);
@@ -280,14 +273,9 @@ internal static class NativeStackEligibility
             return cached;
         }
 
-        // [WHY] Only a method that reaches Warp.ActiveMask() gets the reconvergence regions, whose gotos a using
-        // declaration would put inside a try (NativeStackObstacle.UsingDeclarationWithActiveMask)
         var facts = ScanBody(declaration, semanticModel);
-        if (!SuspensionAnalysis.ReachesActiveMask(method, semanticModel.Compilation))
-        {
-            facts &= ~BodyFacts.UsingDeclarationWithActiveMask;
-        }
-        else if (!CanLowerForStack(method, declaration, semanticModel))
+        if (SuspensionAnalysis.ReachesActiveMask(method, semanticModel.Compilation) &&
+            !CanLowerForStack(method, declaration, semanticModel))
         {
             facts |= BodyFacts.StackBodyLowering;
         }
@@ -359,12 +347,6 @@ internal static class NativeStackEligibility
                 IsWarpOperatorMacro((ExpressionSyntax)node, semanticModel))
             {
                 facts |= BodyFacts.WarpOperatorMacro;
-                continue;
-            }
-
-            if (StackBodyObstacles.IsUsingDeclaration(node))
-            {
-                facts |= BodyFacts.UsingDeclarationWithActiveMask;
                 continue;
             }
 

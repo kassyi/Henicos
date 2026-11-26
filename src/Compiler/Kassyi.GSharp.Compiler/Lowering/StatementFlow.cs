@@ -21,6 +21,7 @@ internal sealed class StatementFlow
     private static readonly FlowNode s_endNode = new(null, FlowNodeKind.End);
 
     private readonly Func<ExpressionSyntax, bool?> _constantCondition;
+    private readonly bool _enterScopedStatements;
     private readonly Dictionary<FlowNode, ImmutableArray<FlowNode>> _successors;
     private readonly Dictionary<FlowNode, ImmutableArray<FlowNode>> _predecessors;
     private readonly Dictionary<StatementSyntax, (SyntaxList<StatementSyntax> List, int Index)> _listPositions;
@@ -31,6 +32,7 @@ internal sealed class StatementFlow
 
     private StatementFlow(
         Func<ExpressionSyntax, bool?> constantCondition,
+        bool enterScopedStatements,
         Dictionary<FlowNode, ImmutableArray<FlowNode>> successors,
         Dictionary<FlowNode, ImmutableArray<FlowNode>> predecessors,
         Dictionary<StatementSyntax, (SyntaxList<StatementSyntax> List, int Index)> listPositions,
@@ -39,6 +41,7 @@ internal sealed class StatementFlow
         Dictionary<SyntaxNode, FlowNode> breakAfter)
     {
         _constantCondition = constantCondition;
+        _enterScopedStatements = enterScopedStatements;
         _successors = successors;
         _predecessors = predecessors;
         _listPositions = listPositions;
@@ -51,11 +54,17 @@ internal sealed class StatementFlow
 
     public static FlowNode EntryOf(StatementSyntax statement) => new(statement, FlowNodeKind.Statement);
 
-    public static StatementFlow Build(BlockSyntax body, Func<ExpressionSyntax, bool?> constantCondition) =>
-        new Builder(constantCondition).Build(body);
+    public static StatementFlow Build(
+        BlockSyntax body,
+        Func<ExpressionSyntax, bool?> constantCondition,
+        bool enterScopedStatements = false) =>
+        new Builder(constantCondition, enterScopedStatements).Build(body);
 
-    public static bool ReachesEnd(StatementSyntax statement, Func<ExpressionSyntax, bool?> constantCondition) =>
-        new Builder(constantCondition).ReachesEnd(statement);
+    public static bool ReachesEnd(
+        StatementSyntax statement,
+        Func<ExpressionSyntax, bool?> constantCondition,
+        bool enterScopedStatements = false) =>
+        new Builder(constantCondition, enterScopedStatements).ReachesEnd(statement);
 
     public ImmutableArray<FlowNode> GetSuccessors(FlowNode node) =>
         _successors.TryGetValue(node, out var list) ? list : ImmutableArray<FlowNode>.Empty;
@@ -103,7 +112,7 @@ internal sealed class StatementFlow
             return reaches;
         }
 
-        reaches = ReachesEnd(statement, _constantCondition);
+        reaches = ReachesEnd(statement, _constantCondition, _enterScopedStatements);
         _reachesEnd[statement] = reaches;
         return reaches;
     }
@@ -130,7 +139,7 @@ internal sealed class StatementFlow
         return s_endNode;
     }
 
-    private sealed class Builder(Func<ExpressionSyntax, bool?> constantCondition)
+    private sealed class Builder(Func<ExpressionSyntax, bool?> constantCondition, bool enterScopedStatements)
     {
         private readonly Dictionary<FlowNode, ImmutableArray<FlowNode>.Builder> _successors = new();
         private readonly Dictionary<FlowNode, ImmutableArray<FlowNode>.Builder> _predecessors = new();
@@ -154,6 +163,7 @@ internal sealed class StatementFlow
 
             return new StatementFlow(
                 constantCondition,
+                enterScopedStatements,
                 Freeze(_successors),
                 Freeze(_predecessors),
                 _listPositions,
@@ -247,6 +257,12 @@ internal sealed class StatementFlow
                     break;
                 case UnsafeStatementSyntax unsafeStatement:
                     AddEdge(node, BuildList(unsafeStatement.Block.Statements, after));
+                    break;
+                case UsingStatementSyntax usingStatement when enterScopedStatements:
+                    AddEdge(node, BuildStatement(usingStatement.Statement, after));
+                    break;
+                case FixedStatementSyntax fixedStatement when enterScopedStatements:
+                    AddEdge(node, BuildStatement(fixedStatement.Statement, after));
                     break;
                 case IfStatementSyntax ifStatement:
                     var ifCondition = constantCondition(ifStatement.Condition);

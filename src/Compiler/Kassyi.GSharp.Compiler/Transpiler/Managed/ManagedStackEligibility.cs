@@ -12,10 +12,6 @@ internal static class ManagedStackEligibility
         "the visit counts of its warp collectives cannot be placed (a device function of another assembly or a " +
         "recursive one reaches a collective)";
 
-    private const string UsingWithActiveMaskSentence =
-        "it reaches Warp.ActiveMask() and declares a local with using: a jump of its reconvergence regions may pass " +
-        "the declaration";
-
     private const string NoBarrierSentence = "it does not reach a barrier or warp collective";
 
     private static readonly PerCompilationSymbolCache<IMethodSymbol, StateMachineReason?> s_functions = new();
@@ -174,9 +170,7 @@ internal static class ManagedStackEligibility
                 $"{WarpFrameLayout.MaxSize}");
         }
 
-        return StackBodyObstacles.DeclaresUsingWithActiveMask(kernel, compilation)
-            ? Managed(nameof(NativeStackObstacle.UsingDeclarationWithActiveMask), UsingWithActiveMaskSentence)
-            : null;
+        return null;
     }
 
     private static StateMachineReason? ComputeFunctionReason(IMethodSymbol function, Compilation compilation,
@@ -234,9 +228,7 @@ internal static class ManagedStackEligibility
             return Managed(nameof(NativeStackObstacle.WarpLayout), WarpLayoutSentence);
         }
 
-        return StackBodyObstacles.DeclaresUsingWithActiveMask(function, compilation)
-            ? Managed(nameof(NativeStackObstacle.UsingDeclarationWithActiveMask), UsingWithActiveMaskSentence)
-            : null;
+        return null;
     }
 
     private static StateMachineReason Managed(string name, string sentence) => new(CpuPath.Managed, name, sentence);
