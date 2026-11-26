@@ -10,7 +10,7 @@ import { createRequire } from "node:module";
 import { loadConfig } from "../job-queue/config.ts";
 import { EntryScript } from "../job-queue/constants.ts";
 import type { TargetDialectModule } from "../job-queue/lib/types.ts";
-import { type AssertModule } from "../job-queue/plugin-api.ts";
+import { type AssertModule, type ShareMode } from "../job-queue/plugin-api.ts";
 import { PluginHost, type BaseClientContext } from "../job-queue/plugin-host.ts";
 import { quietly } from "../job-queue/self-test-client.ts";
 import { removeDirectory } from "../job-queue/self-test-support.ts";
@@ -351,6 +351,10 @@ const ShareTable: readonly [string, "shared" | "exclusive"][] = [
   [`cd tests && dotnet test X --filter "${Kept}"; echo done`, "shared"],
   [`Set-Location tests; dotnet test X --filter "${Kept}"; Pop-Location`, "shared"],
   [`$env:DiffEngine_Disabled='true'; dotnet test X --filter "${Kept}"`, "shared"],
+  [`$env:DOTNET_CLI_UI_LANGUAGE='en'; dotnet test X --filter "${Kept}"`, "shared"],
+  [`$env:DiffEngine_Disabled='true'; $env:DOTNET_CLI_UI_LANGUAGE='en'; dotnet test X --filter "${Kept}"`, "shared"],
+  ['$env:DiffEngine_Disabled="true"; dotnet test X --filter "FullyQualifiedName~Foo"', "exclusive"],
+  ["$env:ROWBATCH_ROOTS='1'; dotnet test X --no-build --filter \"Name~Foo\"", "exclusive"],
   [`dotnet.exe test X --filter "${Kept}"`, "shared"],
   [`dotnet test bin/Tests.dll --filter "${Kept}"`, "exclusive"],
   [`dotnet test X --filter="${Kept}"`, "shared"],
@@ -441,46 +445,128 @@ function checkShareRules(assert: AssertModule, host: PluginHost): void {
       sharedRecipes: ["test", "test-coverage", "test-differential-cuda"],
     };
     const reasonCtx = { ...ctx, options: repoOptions };
-    const reasonCases: readonly [string, string][] = [
-      [`dotnet test X --filter "${Kept}"`, "categories"],
-      ["just test", "shared-recipe"],
-      ['just test --filter "FullyQualifiedName~Foo"', "filter-categories"],
-      ["just test -- RunConfiguration.TestCaseFilter=Name~Foo", "filter-unreadable"],
-      ["just test-stability", "exclusive-recipe"],
-      ["dotnet test X --no-build", "no-filter"],
-      [`dotnet test bin/Tests.dll --filter "${Kept}"`, "binary-test"],
-      [`dotnet test X --filter "${Kept}" --filter:"Name~Foo"`, "filter-unreadable"],
-      [`dotnet test X --filter:"${Kept}"`, "filter-unreadable"],
-      ['dotnet test X --filter:v "Name~Foo"', "filter-unreadable"],
-      ["dotnet test X -p:VSTestTestCaseFilter=Name~Foo", "filter-unreadable"],
-      ["dotnet test X -- RunConfiguration.TestCaseFilter=Name~Foo", "filter-unreadable"],
-      ['dotnet test X --filter "Category!=Stress"', "filter-categories"],
-      ["$env:DiffEngine_Disabled='true'; dotnet test X --no-build --filter \"Name~Foo\"", "env-prefix"],
-      ['ROWBATCH_ROOTS=1 dotnet test X --no-build --filter "Name~Foo"', "env-prefix"],
-      [`dotnet test X --filter "${Kept}&Category=Stress"`, "exclusive-category"],
-      [`dotnet test X --filter "${Kept}" -e GSHARP_CUDA_TRAP_TESTS=1`, "exclusive-env"],
-      [`dotnet test X --filter "${Kept}" | tee log`, "piped"],
-      [`dotnet test X --filter "${Kept}`, "unreadable"],
-      ["echo hello", "no-work"],
-      ['dotnet test X --filter "$FILTER"', "hidden"],
-      ["dotnet build X", "not-test-command"],
+    const reasonCases: readonly [string, ShareMode, string][] = [
+      [`dotnet test X --filter "${Kept}"`, "shared", "categories"],
+      ["just test", "shared", "shared-recipe"],
+      ['just test --filter "FullyQualifiedName~Foo"', "exclusive", "filter-categories"],
+      ["just test -- RunConfiguration.TestCaseFilter=Name~Foo", "exclusive", "filter-unreadable"],
+      ["just test-stability", "exclusive", "exclusive-recipe"],
+      ["dotnet test X --no-build", "exclusive", "no-filter"],
+      [`dotnet test bin/Tests.dll --filter "${Kept}"`, "exclusive", "binary-test"],
+      [`dotnet test X --filter "${Kept}" --filter:"Name~Foo"`, "exclusive", "filter-unreadable"],
+      [`dotnet test X --filter:"${Kept}"`, "exclusive", "filter-unreadable"],
+      ['dotnet test X --filter:v "Name~Foo"', "exclusive", "filter-unreadable"],
+      ["dotnet test X -p:VSTestTestCaseFilter=Name~Foo", "exclusive", "filter-unreadable"],
+      ["dotnet test X -- RunConfiguration.TestCaseFilter=Name~Foo", "exclusive", "filter-unreadable"],
+      ['dotnet test X --filter "Category!=Stress"', "exclusive", "filter-categories"],
+      [
+        "$env:DiffEngine_Disabled='true'; dotnet test X --no-build --filter \"Name~Foo\"",
+        "exclusive",
+        "filter-categories",
+      ],
+      [
+        "$env:DOTNET_CLI_UI_LANGUAGE='en'; dotnet test X --no-build --filter \"Name~Foo\"",
+        "exclusive",
+        "filter-categories",
+      ],
+      [
+        "$env:DiffEngine_Disabled='true'; cd tests && dotnet test X.csproj --no-build --filter \"Name~Foo\"",
+        "exclusive",
+        "filter-categories",
+      ],
+      [
+        "$env:DiffEngine_Disabled='true'; echo hi; dotnet test X.csproj --no-build --filter \"Name~Foo\"",
+        "exclusive",
+        "filter-categories",
+      ],
+      [
+        '$env:DiffEngine_Disabled=\'true\'; "C:\\Program Files\\dotnet\\dotnet.exe" test X --no-build --filter "Name~Foo"',
+        "exclusive",
+        "filter-categories",
+      ],
+      [
+        "$env:DiffEngine_Disabled='true'; dotnet test X.csproj --no-build --filter \"Category=Stress\"",
+        "exclusive",
+        "filter-categories",
+      ],
+      [
+        "$env:DiffEngine_Disabled='true'; dotnet test X.csproj --no-build --filter \"Category!=Stress&FullyQualifiedName~A\"",
+        "exclusive",
+        "filter-categories",
+      ],
+      ['export X=1; dotnet test X.csproj --filter "Category!=Stress"', "exclusive", "filter-categories"],
+      [
+        "$env:DiffEngine_Disabled='true'; dotnet test X.csproj --no-build --filter \"Name~Foo\"; $env:DiffEngine_Disabled='false'",
+        "exclusive",
+        "filter-categories",
+      ],
+      ['export X=1; dotnet test X.csproj --no-build --filter "Name~Foo"', "exclusive", "env-prefix"],
+      ['export A=1 B=2; dotnet test X.csproj --no-build --filter "Name~Foo"', "exclusive", "env-prefix"],
+      ["$env:ROWBATCH_ROOTS='1'; dotnet test X.csproj --no-build --filter \"Name~Foo\"", "exclusive", "env-prefix"],
+      ["$env:Configuration='Debug'; dotnet test X.csproj --no-build --filter \"Name~Foo\"", "exclusive", "env-prefix"],
+      [
+        "$env:DiffEngine_Disabled='true'; $env:ROWBATCH_ROOTS='1'; dotnet test X.csproj --no-build --filter \"Name~Foo\"",
+        "exclusive",
+        "env-prefix",
+      ],
+      [
+        "$env:DiffEngine_Disabled='true'; ROWBATCH_ROOTS=1 dotnet test X.csproj --no-build --filter \"Name~Foo\"",
+        "exclusive",
+        "env-prefix",
+      ],
+      [
+        'export DiffEngine_Disabled=true; dotnet test X.csproj --no-build --filter "Name~Foo"',
+        "exclusive",
+        "env-prefix",
+      ],
+      ['ROWBATCH_ROOTS=1 dotnet test X.csproj --no-build --filter "Name~Foo"', "exclusive", "env-prefix"],
+      [`dotnet test X --filter "${Kept}&Category=Stress"`, "exclusive", "exclusive-category"],
+      [`dotnet test X --filter "${Kept}" -e GSHARP_CUDA_TRAP_TESTS=1`, "exclusive", "exclusive-env"],
+      [`dotnet test X --filter "${Kept}" | tee log`, "exclusive", "piped"],
+      [`dotnet test X --filter "${Kept}`, "exclusive", "unreadable"],
+      ["echo hello", "exclusive", "no-work"],
+      ['dotnet test X --filter "$FILTER"', "exclusive", "hidden"],
+      ["dotnet build X", "exclusive", "not-test-command"],
     ];
-    for (const [command, expectedReason] of reasonCases) {
-      assert.strictEqual(
-        host.classify(command, Gpu, ctx).shareReason,
-        expectedReason,
-        `classify shareReason for: ${command}`,
+    for (const [command, expectedShare, expectedReason] of reasonCases) {
+      const classified = host.classify(command, Gpu, ctx);
+      assert.deepStrictEqual(
+        [classified.share, classified.shareReason],
+        [expectedShare, expectedReason],
+        `classify share/shareReason for: ${command}`,
       );
-      assert.strictEqual(
-        shareDecision(command, reasonCtx)?.reason,
-        expectedReason,
-        `shareDecision reason for: ${command}`,
+      const decision = shareDecision(command, reasonCtx);
+      assert.deepStrictEqual(
+        [decision?.share, decision?.reason],
+        [expectedShare, expectedReason],
+        `shareDecision share/reason for: ${command}`,
       );
     }
     // A command that nameFilterCheck reads has no opinion (checkShare judges it by the test list); a veto stays one
     const named = 'dotnet test tests/X/X.csproj --no-build --filter "FullyQualifiedName~Foo"';
     const namedClassified = host.classify(named, Gpu, ctx);
     assert.deepStrictEqual([namedClassified.share, namedClassified.shareReason], [undefined, undefined]);
+    for (const prefix of [
+      "$env:DiffEngine_Disabled='true'; ",
+      "$env:DOTNET_CLI_UI_LANGUAGE='en'; ",
+      "$env:DiffEngine_Disabled='true'; $env:DOTNET_CLI_UI_LANGUAGE='en'; ",
+      "DOTNET_CLI_UI_LANGUAGE=en ",
+    ]) {
+      const prefixed = host.classify(`${prefix}${named}`, Gpu, ctx);
+      assert.deepStrictEqual(
+        [prefixed.share, prefixed.shareReason],
+        [undefined, undefined],
+        `allowlisted env prefix passes to nameFilterCheck: ${prefix}`,
+      );
+    }
+    for (const prefix of ["$env:ROWBATCH_ROOTS='1'; ", '$env:DiffEngine_Disabled="$FOO"; ']) {
+      const prefixed = host.classify(`${prefix}${named}`, Gpu, ctx);
+      assert.deepStrictEqual(
+        [prefixed.share, prefixed.shareReason],
+        ["exclusive", "env-prefix"],
+        `disallowed env prefix stays exclusive(env-prefix): ${prefix}`,
+      );
+    }
     assert.deepStrictEqual(
       [
         host.classify(named.replace("~Foo", "!~Foo"), Gpu, ctx).share,
@@ -518,6 +604,105 @@ function checkShareRules(assert: AssertModule, host: PluginHost): void {
     const cmd = { ...ctx, shell: "cmd" as const };
     assert.strictEqual(host.classify(filtered, Gpu, cmd).share, "shared", "cmd without a variable");
     assert.strictEqual(host.classify(`${filtered} %EXTRA%`, Gpu, cmd).share, "exclusive", "cmd expands %EXTRA%");
+    for (const cmdCommand of [
+      "$env:DiffEngine_Disabled='a&hostname'; dotnet test tests/X --no-build --filter \"Name~Foo\"",
+      "DiffEngine_Disabled='a&hostname' dotnet test tests/X --no-build --filter \"Name~Foo\"",
+      "$env:DiffEngine_Disabled='true'; dotnet test tests/X --no-build --filter \"Name~Foo\"",
+      `DiffEngine_Disabled='a&hostname' dotnet test X --filter "${Kept}"`,
+    ]) {
+      assert.strictEqual(host.classify(cmdCommand, Gpu, cmd).share, "exclusive", `cmd rejects: ${cmdCommand}`);
+      assert.strictEqual(
+        shareDecision(cmdCommand, { ...reasonCtx, shell: "cmd" })?.share,
+        "exclusive",
+        `shareDecision cmd rejects: ${cmdCommand}`,
+      );
+    }
+    assert.strictEqual(
+      host.classify(
+        "$env:DiffEngine_Disabled='true'; dotnet test tests/X/X.csproj --no-build --filter \"Name~Foo\"",
+        Gpu,
+        cmd,
+      ).shareReason,
+      "env-prefix",
+      "cmd rejects $env: prefix as env-prefix",
+    );
+    assert.strictEqual(
+      shareDecision('DiffEngine_Disabled=true dotnet test tests/X/X.csproj --no-build --filter "Name~Foo"', {
+        ...reasonCtx,
+        shell: "cmd",
+      })?.reason,
+      "env-prefix",
+      "cmd rejects bash env prefix as env-prefix",
+    );
+    // Challenger fixes (a) & (b): cmd quote desync ('x"' ", '(a)') and quoted CR/LF truncation ('a\nb', "a\nb")
+    for (const cmdHidden of [
+      `dotnet test tests/X/X.csproj --no-build --filter "${Kept}" && echo 'x"' " & calc & "`,
+      `dotnet test tests/X/X.csproj --no-build --filter "Name~Foo" && echo 'x"' " & calc & "`,
+      `dotnet test tests/X/X.csproj --no-build --filter "${Kept}" && echo '(a)'`,
+      `dotnet test tests/X/X.csproj --no-build --logger 'a\nb' --filter "${Kept}"`,
+      `dotnet test tests/X/X.csproj --no-build --logger 'a\rb' --filter "${Kept}"`,
+      `dotnet test tests/X/X.csproj --no-build --logger "a\nb" --filter "${Kept}"`,
+      `dotnet test tests/X/X.csproj --no-build --logger "a\rb" --filter "${Kept}"`,
+      'dotnet test tests/X/X.csproj --no-build --logger "a\nb" --filter "Name~Foo"',
+    ]) {
+      const classified = host.classify(cmdHidden, Gpu, cmd);
+      assert.deepStrictEqual(
+        [classified.share, classified.shareReason],
+        ["exclusive", "hidden"],
+        `cmd rejects unsafe quoted syntax as hidden: ${JSON.stringify(cmdHidden)}`,
+      );
+      const decision = shareDecision(cmdHidden, { ...reasonCtx, shell: "cmd" });
+      assert.deepStrictEqual(
+        [decision?.share, decision?.reason],
+        ["exclusive", "hidden"],
+        `shareDecision cmd rejects unsafe quoted syntax as hidden: ${JSON.stringify(cmdHidden)}`,
+      );
+    }
+    // Challenger fix (c): backslash inside double-quoted $env: value is rejected in bash (\" desync) and pwsh
+    for (const escapedBash of [
+      `$env:DiffEngine_Disabled="a\\"; ${named}; echo " & calc # "`,
+      `$env:DiffEngine_Disabled="a\\\\"; ${named}`,
+    ]) {
+      const classified = host.classify(escapedBash, Gpu, ctx);
+      assert.deepStrictEqual(
+        [classified.share, classified.shareReason],
+        ["exclusive", "env-prefix"],
+        `bash rejects backslash in double-quoted $env: ${escapedBash}`,
+      );
+    }
+    const pwsh = { ...ctx, shell: "pwsh" as const };
+    assert.deepStrictEqual(
+      [
+        host.classify(`$env:DiffEngine_Disabled='true'; ${named}`, Gpu, pwsh).share,
+        host.classify(`$env:DiffEngine_Disabled='true'; ${named}`, Gpu, pwsh).shareReason,
+      ],
+      [undefined, undefined],
+      "pwsh allowlisted $env: prefix passes to nameFilterCheck",
+    );
+    assert.deepStrictEqual(
+      [
+        host.classify(`$env:DiffEngine_Disabled="a\\b"; ${named}`, Gpu, pwsh).share,
+        host.classify(`$env:DiffEngine_Disabled="a\\b"; ${named}`, Gpu, pwsh).shareReason,
+      ],
+      ["exclusive", "env-prefix"],
+      "pwsh double-quoted backslash in $env: RHS stays exclusive(env-prefix)",
+    );
+    assert.deepStrictEqual(
+      [
+        host.classify(`$env:DiffEngine_Disabled='a\\b'; ${named}`, Gpu, pwsh).share,
+        host.classify(`$env:DiffEngine_Disabled='a\\b'; ${named}`, Gpu, pwsh).shareReason,
+      ],
+      [undefined, undefined],
+      "pwsh single-quoted backslash in $env: RHS passes to nameFilterCheck",
+    );
+    assert.deepStrictEqual(
+      [
+        host.classify(`$env:DiffEngine_Disabled=hostname; ${named}`, Gpu, pwsh).share,
+        host.classify(`$env:DiffEngine_Disabled=hostname; ${named}`, Gpu, pwsh).shareReason,
+      ],
+      ["exclusive", "env-prefix"],
+      "pwsh bareword command in $env: RHS stays exclusive(env-prefix)",
+    );
     assert.strictEqual(host.classify(filtered, Gpu, withEnv("0")).share, "shared", "0 leaves them off");
     assert.strictEqual(host.classify(filtered, Gpu, withEnv("")).share, "shared", "empty leaves them off");
 

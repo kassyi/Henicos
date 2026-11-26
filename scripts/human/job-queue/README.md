@@ -249,10 +249,14 @@ the build step, with the resource `{ name: "gpu", forcedExclusive }` (`--gpu-exc
 decides, `"timeout"`, `"error"`, `"invalid"`, or `"stale"` after `stillValid` fails; sanitized to
 `/^[a-z0-9:_-]{1,64}$/`, with `"shared"` banned on exclusive reasons) with `request` and `adopt`. The scheduler sets
 two reasons of its own: `"downgrade"` for a `downgrade` that carries none, and `"rebind"` for a shared turn that
-registers again as exclusive without a reason. The repository's plugin gives, among others, `list:<n>` (the exclusive
-tests the name-filter list found), `list-timeout` (the list job was stopped on its time limit), `list-spawn-error`
-(it could not be started), `list-failed` (it exited non-zero) and `list-no-marker` (its output did not say that no
-test matches). Without plugins it sends no `share` or `shareReason`; the GPU
+registers again as exclusive without a reason. The repository's plugin gives `categories` and `shared-recipe` for
+shared runs; `unreadable`, `piped`, `no-work`, `hidden`, `exclusive-env`, `binary-test`, `filter-unreadable`,
+`no-filter`, `env-prefix` (only when stripping leading env prefixes yields a command `nameFilterCheck` reads),
+`filter-categories`, `exclusive-recipe`, `not-test-command`, and `exclusive-category` for synchronous exclusive vetoes;
+and `list:0` (shared) or `list:<n>` (the exclusive tests the name-filter list found), `list-unsupported`, `no-snapshot`,
+`list-timeout` (the list job was stopped on its time limit), `list-spawn-error` (it could not be started), `list-failed`
+(it exited non-zero), `list-no-marker` (its output did not say that no test matches), `no-assemblies`, and
+`hash-mismatch` from the name-filter check. Without plugins it sends no `share` or `shareReason`; the GPU
 holder and a job without a turn send neither. The scheduler logs `share=shared(<reason>)` or `share=exclusive(<reason>)`
 (or `share=shared` / `share=exclusive` when no reason was sent) on the `grant` line of `server.log`, and includes
 `shareReason` in `status --json` and `jobs-<port>.json`. The repository's rules are in
@@ -281,8 +285,11 @@ that queues again after a lost connection is checked at its next grant.
 
 The henicos plugin answers for a `dotnet test` whose `--filter` is positive name terms alone (`nameFilterCheck`). The
 list must read the assembly the run reads, so only a command of one `dotnet test` step with `--no-build`, started by
-nothing but `DiffEngine_Disabled=...` and run by `dotnet`, `dotnet.exe` or an absolute path to one (no `cd`, `export`,
-other leading assignment or other step except `echo`), whose project is a `.csproj` or a directory with exactly one
+nothing except allowlisted `DiffEngine_Disabled` or `DOTNET_CLI_UI_LANGUAGE` prefixes (bash `NAME=val ` without `$`,
+`` ` ``, or `\`, or PowerShell `$env:NAME='...'` / `"..."` without `$`, `` ` ``, or `\` or numeric digits `;`, never
+`export` or `cmd`, and never any other leading assignment, `cd`, or preceding step; `runListJob` adds
+`DOTNET_CLI_UI_LANGUAGE=en` to the list job's environment) and run by `dotnet`, `dotnet.exe` or an absolute path to one
+(no other step except `echo`), whose project is a `.csproj` or a directory with exactly one
 `.csproj` and no solution, with no brace or glob character, is read. It runs `dotnet test <project> --no-build
 --list-tests --filter "(<names>)&(Category=<each exclusive category>)"` as a CPU job of the queue (`job-queue.js run`,
 without `--gpu`, output read from its standard output) and answers `"shared"` only for exit code 0, the runner's `No

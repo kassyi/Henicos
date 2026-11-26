@@ -75,50 +75,69 @@ function excludesCategories(filter: string, categories: readonly string[]): bool
   return categories.every((name) => terms.has(`category!=${name.toLowerCase()}`));
 }
 
-/** Every --filter of the step keeps the exclusive categories out (true for a step without one). */
-function filtersExclude(words: readonly string[], categories: readonly string[]): boolean {
-  const filters = filtersOf(words);
-  return filters !== null && filters.every((filter) => excludesCategories(filter, categories));
-}
-
 /**
- * `dotnet test` of a project or solution (not a .dll or .exe passed directly) with a --filter that keeps the exclusive
- * categories out: without one a test run also runs Stress and Benchmark, which need the GPU alone.
- */
-function isSharedDotnetTest(words: readonly string[], categories: readonly string[]): boolean {
-  if (programOf(words[0] ?? "") !== "dotnet" || words[1] !== "test") {
-    return false;
-  }
-  const rest = words.slice(2);
-  return !rest.some((word) => /\.(dll|exe)$/i.test(word)) && rest.some((word) => /^--filter(=|$)/i.test(word))
-    ? filtersExclude(rest, categories)
-    : false;
-}
-
-/**
+ * Reason a single step of work cannot share the GPU, or null when it may share. Single source of truth for
+ * step-level shareability (`isSharedStep` delegates here).
+ *
+ * `dotnet test` of a project or solution (not a .dll or .exe passed directly) needs a readable --filter that keeps
+ * every exclusive category out; without one a test run also runs Stress and Benchmark, which need the GPU alone.
+ *
  * The recipes of sharedRecipes are the justfile's test, test-coverage and test-differential-cuda: each expands to
  * `{{queue}} --gpu -- dotnet test ... --filter "...&Category!=Stress&Category!=Benchmark&Category!=GpuTrap"`, a shared
  * test run by the rule above (the henicos checks read the justfile to keep it so). `just <recipe>` alone, with no just
  * option or assignment before the recipe; a --filter among its arguments must keep the categories out as well.
  */
-function isSharedRecipe(words: readonly string[], options: ShareOptions): boolean {
-  return (
-    programOf(words[0] ?? "") === "just" &&
-    options.sharedRecipes.includes(words[1] ?? "") &&
-    filtersExclude(words.slice(2), options.exclusiveCategories)
-  );
+function stepShareVeto(step: ReadStep, options: ShareOptions): string | null {
+  const words = step.words;
+  const program = programOf(words[0] ?? "");
+  if (program === "dotnet" && words[1] === "test") {
+    const rest = words.slice(2);
+    if (rest.some((word) => /\.(dll|exe)$/i.test(word))) {
+      return "binary-test";
+    }
+    const filters = filtersOf(rest);
+    if (filters === null) {
+      return "filter-unreadable";
+    }
+    if (filters.length === 0) {
+      return "no-filter";
+    }
+    return filters.every((filter) => excludesCategories(filter, options.exclusiveCategories))
+      ? null
+      : "filter-categories";
+  }
+  if (program === "just") {
+    if (!options.sharedRecipes.includes(words[1] ?? "")) {
+      return "exclusive-recipe";
+    }
+    const filters = filtersOf(words.slice(2));
+    if (filters === null) {
+      return "filter-unreadable";
+    }
+    return filters.every((filter) => excludesCategories(filter, options.exclusiveCategories))
+      ? null
+      : "filter-categories";
+  }
+  return "not-test-command";
 }
 
 function isSharedStep(step: ReadStep, options: ShareOptions): boolean {
-  return isSharedDotnetTest(step.words, options.exclusiveCategories) || isSharedRecipe(step.words, options);
+  return stepShareVeto(step, options) === null;
 }
 
 /**
- * A step of PowerShell that only assigns one value (`$env:A=1`, `$a = 'x'`). Any other step that starts with `$` runs
- * something: a program held in a variable (bash), or a command whose output is assigned (`$a = dotnet test X`).
+ * A step of PowerShell that only assigns one value (`$env:A=1`, `$a = 'x'`, `$env:A ='x'`, `$env:A= 'x'`). Any other
+ * step that starts with `$` runs something: a program held in a variable (bash), or a command whose output is assigned
+ * (`$a = dotnet test X`).
  */
 function isPlainAssignment(words: readonly string[]): boolean {
-  return (words.length === 1 && words[0]?.includes("=") === true) || (words.length === 3 && words[1] === "=");
+  return (
+    (words.length === 1 && words[0]?.includes("=") === true) ||
+    (words.length === 3 && words[1] === "=") ||
+    (words.length === 2 &&
+      words[0]?.toLowerCase().startsWith("$env:") === true &&
+      (words[0].endsWith("=") || words[1]?.startsWith("=") === true))
+  );
 }
 
 /** A word that assigns to a name a variable makes (`$V=1`, `${P}X=1`): which variable it sets is not known. */
@@ -151,36 +170,27 @@ export interface ShareDecision {
   reason: string;
 }
 
-function hasDisallowedEnvPrefix(command: string): boolean {
-  return /^\s*(?:\$env:|export\s|[A-Za-z_]\w*=)/i.test(command) && !StartsWithTest.test(command);
-}
+const AnyPwshEnvValue = String.raw`(?:'[^'\r\n]*'|"[^"\r\n]*"|[^\s;&|<>()'"\r\n]+)`;
+const LeadingPwshEnv = new RegExp(String.raw`^\s*\$env:[A-Za-z_]\w*\s*=\s*${AnyPwshEnvValue}\s*(?:;\s*|\r?\n\s*)`, "i");
+const AnyBashEnvValue = String.raw`(?:'[^'\r\n]*'|"[^"\r\n]*"|[^\s;&|<>()'"\r\n]*)`;
+const LeadingExportEnv = new RegExp(
+  String.raw`^\s*export(?:[ \t]+[A-Za-z_]\w*(?:=${AnyBashEnvValue})?)+[ \t]*(?:;\s*|\r?\n\s*)`,
+);
+const LeadingBashEnv = new RegExp(String.raw`^\s*[A-Za-z_]\w*=${AnyBashEnvValue}(?:[ \t]+|[ \t]*;\s*|\r?\n\s*)`);
 
-function nonSharedStepReason(command: string, step: ReadStep, options: ShareOptions): string {
-  const words = step.words;
-  const program = programOf(words[0] ?? "");
-  if (program === "dotnet" && words[1] === "test") {
-    const rest = words.slice(2);
-    if (rest.some((word) => /\.(dll|exe)$/i.test(word))) {
-      return "binary-test";
+/**
+ * Strips leading `$env:`, `export`, or `NAME=VALUE` prefixes so `shareDecision` can check whether leading env
+ * prefixes alone kept a command out of `nameFilterCheck`.
+ */
+function stripLeadingEnvPrefixes(command: string): string {
+  let rest = command;
+  for (;;) {
+    const match = LeadingPwshEnv.exec(rest) ?? LeadingExportEnv.exec(rest) ?? LeadingBashEnv.exec(rest);
+    if (match === null || match[0].length === 0) {
+      return rest;
     }
-    if (filtersOf(rest) === null) {
-      return "filter-unreadable";
-    }
-    if (!rest.some((word) => /^--filter(=|$)/i.test(word))) {
-      return "no-filter";
-    }
-    if (hasDisallowedEnvPrefix(command)) {
-      return "env-prefix";
-    }
-    return "filter-categories";
+    rest = rest.slice(match[0].length);
   }
-  if (program === "just") {
-    if (options.sharedRecipes.includes(words[1] ?? "")) {
-      return filtersOf(words.slice(2)) === null ? "filter-unreadable" : "filter-categories";
-    }
-    return "exclusive-recipe";
-  }
-  return "not-test-command";
 }
 
 /**
@@ -213,7 +223,7 @@ export function shareDecision(command: string, context: ClientContext): ShareDec
   }
   if (
     line.steps.some((step, i) => isHidden(step, line.expands[i] === true)) ||
-    (context.shell === "cmd" && command.includes("%"))
+    (context.shell === "cmd" && (command.includes("%") || hasCmdSingleQuotedMeta(command)))
   ) {
     return { share: "exclusive", reason: "hidden" };
   }
@@ -223,7 +233,16 @@ export function shareDecision(command: string, context: ClientContext): ShareDec
   }
   const nonShared = work.find((step) => !isSharedStep(step, options));
   if (nonShared !== undefined) {
-    return { share: "exclusive", reason: nonSharedStepReason(command, nonShared, options) };
+    const veto = stepShareVeto(nonShared, options);
+    if (veto === "filter-categories") {
+      const stripped = stripLeadingEnvPrefixes(command);
+      if (stripped !== command && nameFilterCheck(stripped, context) !== null) {
+        return { share: "exclusive", reason: "env-prefix" };
+      }
+    }
+    if (veto !== null) {
+      return { share: "exclusive", reason: veto };
+    }
   }
   // 4. No exclusive category selected (the same reading as the Stress budget of a test run), in any case
   const lower = command.toLowerCase();
@@ -236,7 +255,7 @@ export function shareDecision(command: string, context: ClientContext): ShareDec
     return { share: "exclusive", reason: "exclusive-category" };
   }
   // 5. Shared: via a shared recipe or explicit category exclusions
-  const reason = work.some((step) => isSharedRecipe(step.words, options)) ? "shared-recipe" : "categories";
+  const reason = work.some((step) => programOf(step.words[0] ?? "") === "just") ? "shared-recipe" : "categories";
   return { share: "shared", reason };
 }
 
@@ -279,11 +298,58 @@ export interface NameFilterTest {
   framework?: string;
 }
 
-// The test step must start the command (after DiffEngine_Disabled=... alone): any other leading assignment, `export`,
-// `cd` or `$env:` changes what the list would read
-// (the program: `dotnet`, `dotnet.exe` or an absolute path to one of them; no `;`, `&` or `|` inside a word)
-const StartsWithTest =
-  /^\s*(?:DiffEngine_Disabled=[^\s;&|]*\s+)*(?:(?:[A-Za-z]:[\\/]|[\\/])[^\s;&|]*[\\/])?dotnet(?:\.exe)?\s+test\s/i;
+// The test step must start the command (after allowlisted DiffEngine_Disabled or DOTNET_CLI_UI_LANGUAGE prefixes
+// in bash or PowerShell `$env:` form): any other leading assignment, `export`, `cd` or `$env:` changes what the list
+// would read (the program: `dotnet`, `dotnet.exe` or an absolute path to one of them; no `;`, `&` or `|` inside a word).
+// Double-quoted `$env:` values reject `$`, `` ` `` and `\`, and bare `$env:` values accept digits only (`\d+`) so pwsh
+// cannot execute a bareword command or expand variables past isHidden, and bash cannot escape `"` with `\"`.
+const AllowedEnvName = "(?:DiffEngine_Disabled|DOTNET_CLI_UI_LANGUAGE)";
+const PwshEnvValue = String.raw`(?:'[^'\r\n]*'|"[^"$\`\r\n\\]*"|\d+)`;
+const PwshEnvPrefix = String.raw`\$env:${AllowedEnvName}\s*=\s*${PwshEnvValue}\s*;\s*`;
+const BashEnvValue = String.raw`(?:'[^'\r\n]*'|"[^"$\`\r\n\\]*"|[^\s;&|<>()$\`"'\r\n\\]*)`;
+const BashEnvPrefix = String.raw`${AllowedEnvName}=${BashEnvValue}[ \t]+`;
+const AllowedEnvPrefixPattern = String.raw`(?:(?:${PwshEnvPrefix})+|(?:${BashEnvPrefix})+)`;
+const DotnetTestPrefix = String.raw`(?:(?:[A-Za-z]:[\\/]|[\\/])[^\s;&|]*[\\/])?dotnet(?:\.exe)?\s+test\s`;
+const StartsWithPlainTest = new RegExp(String.raw`^\s*${DotnetTestPrefix}`, "i");
+const StartsWithTest = new RegExp(String.raw`^\s*(?:${AllowedEnvPrefixPattern})?${DotnetTestPrefix}`, "i");
+const AllowedEnvPrefixNames = new Set(["diffengine_disabled", "dotnet_cli_ui_language"]);
+
+/**
+ * In cmd.exe, single quotes do not quote shell metacharacters (including `"`, `(` and `)`) and CR/LF truncates the
+ * command even inside quotes, unlike readCommandLine's shell-neutral quote pass.
+ */
+function hasCmdSingleQuotedMeta(command: string): boolean {
+  let quote = "";
+  for (let i = 0; i < command.length; i++) {
+    const ch = command.charAt(i);
+    if (quote !== "") {
+      if (ch === "\r" || ch === "\n") {
+        return true;
+      }
+      if (ch === quote) {
+        quote = "";
+      } else if (quote === "'" && /[&|<>()^;"]/.test(ch)) {
+        return true;
+      }
+    } else if (ch === '"' || ch === "'") {
+      quote = ch;
+    }
+  }
+  return false;
+}
+
+function isAllowedEnvStep(step: ReadStep): boolean {
+  if (!isPlainAssignment(step.words)) {
+    return false;
+  }
+  const first = step.words[0] ?? "";
+  if (!first.toLowerCase().startsWith("$env:")) {
+    return false;
+  }
+  const eq = first.indexOf("=");
+  const name = (eq >= 0 ? first.slice("$env:".length, eq) : first.slice("$env:".length)).toLowerCase();
+  return AllowedEnvPrefixNames.has(name);
+}
 // Unexpanded bash braces and globs: the shell would run other words than these
 const GlobOrBrace = /[{}*?[\]]/;
 
@@ -350,17 +416,22 @@ export function nameFilterCheck(
     return null;
   }
   // The list runs in the client's directory and environment: a step that changes them (cd, export, an assignment
-  // before the program) or builds would make it read another assembly than the run, so only echo may stand beside the
-  // dotnet test, which must follow nothing but DiffEngine_Disabled=...
+  // before the program) or builds would make it read another assembly than the run, so only allowlisted `$env:`
+  // prefixes may precede the dotnet test step and only echo may follow it
   const tests = line.steps.filter((each) => programOf(each.words[0] ?? "") === "dotnet");
   const step = tests[0];
+  const stepIndex = step === undefined ? -1 : line.steps.indexOf(step);
+  const startsWithAllowedTest =
+    context.shell === "cmd" ? StartsWithPlainTest.test(command) : StartsWithTest.test(command);
   if (
     tests.length !== 1 ||
     step === undefined ||
-    !StartsWithTest.test(command) ||
-    line.steps.some((each) => each !== step && programOf(each.words[0] ?? "") !== "echo") ||
+    !startsWithAllowedTest ||
+    line.steps.some((each, i) =>
+      i < stepIndex ? !isAllowedEnvStep(each) : i > stepIndex && programOf(each.words[0] ?? "") !== "echo",
+    ) ||
     line.steps.some((each, i) => isHidden(each, line.expands[i] === true)) ||
-    (context.shell === "cmd" && command.includes("%")) ||
+    (context.shell === "cmd" && (command.includes("%") || hasCmdSingleQuotedMeta(command))) ||
     step.words[1] !== "test" ||
     step.words.some((word) => GlobOrBrace.test(word)) ||
     usesExclusiveEnv(command, line.steps, options, context)

@@ -39,6 +39,30 @@ const Read: readonly [string, string, string][] = [
   [`${Plain}="Name~Foo"`, "tests/X", "Name~Foo"],
   ['dotnet test tests/X/X.csproj --no-build --filter "Name~Foo"', "tests/X/X.csproj", "Name~Foo"],
   ['DiffEngine_Disabled=true dotnet test tests/X --no-build --filter "Name~Foo" -v n --nologo', "tests/X", "Name~Foo"],
+  [`DOTNET_CLI_UI_LANGUAGE=en ${Plain} "Name~Foo"`, "tests/X", "Name~Foo"],
+  [`DiffEngine_Disabled=true DOTNET_CLI_UI_LANGUAGE=en ${Plain} "Name~Foo"`, "tests/X", "Name~Foo"],
+  [`DiffEngine_Disabled='true' ${Plain} "Name~Foo"`, "tests/X", "Name~Foo"],
+  [`DiffEngine_Disabled="true" ${Plain} "Name~Foo"`, "tests/X", "Name~Foo"],
+  [`$env:DiffEngine_Disabled='true'; ${Plain} "Name~Foo"`, "tests/X", "Name~Foo"],
+  [`$env:DiffEngine_Disabled="true"; ${Plain} "Name~Foo"`, "tests/X", "Name~Foo"],
+  [`$env:DiffEngine_Disabled=1; ${Plain} "Name~Foo"`, "tests/X", "Name~Foo"],
+  [`$env:DOTNET_CLI_UI_LANGUAGE=0; ${Plain} "Name~Foo"`, "tests/X", "Name~Foo"],
+  [`$env:DiffEngine_Disabled = 'true'; ${Plain} "Name~Foo"`, "tests/X", "Name~Foo"],
+  [`$env:DiffEngine_Disabled = 'true' ; ${Plain} "Name~Foo"`, "tests/X", "Name~Foo"],
+  [`$env:DiffEngine_Disabled ='true'; ${Plain} "Name~Foo"`, "tests/X", "Name~Foo"],
+  [`$env:DiffEngine_Disabled= 'true'; ${Plain} "Name~Foo"`, "tests/X", "Name~Foo"],
+  [`$env:DiffEngine_Disabled='true';${Plain} "Name~Foo"`, "tests/X", "Name~Foo"],
+  [`$env:DOTNET_CLI_UI_LANGUAGE = 'en'; ${Plain} "Name~Foo"`, "tests/X", "Name~Foo"],
+  [`$env:diffengine_disabled='true'; ${Plain} "Name~Foo"`, "tests/X", "Name~Foo"],
+  [`$env:DiffEngine_Disabled='true'; $env:DOTNET_CLI_UI_LANGUAGE='en'; ${Plain} "Name~Foo"`, "tests/X", "Name~Foo"],
+  [`$env:DiffEngine_Disabled='a;b'; ${Plain} "Name~Foo"`, "tests/X", "Name~Foo"],
+  [
+    `$env:DiffEngine_Disabled='true'; C:/PROGRA~1/dotnet/dotnet.exe test tests/X --no-build --filter "Name~Foo"`,
+    "tests/X",
+    "Name~Foo",
+  ],
+  [`$env:DiffEngine_Disabled='true'; ${Plain} "Name~Foo"; echo done`, "tests/X", "Name~Foo"],
+  [`$env:DiffEngine_Disabled='true'; ${Plain} "Name~Foo" # rerun`, "tests/X", "Name~Foo"],
   ['dotnet.exe test tests/X --no-build --filter "Name~Foo" -nodeReuse:false', "tests/X", "Name~Foo"],
   [`${Plain} "Name~Foo"; echo done`, "tests/X", "Name~Foo"],
   ['C:/PROGRA~1/dotnet/dotnet.exe test tests/X --no-build --filter "Name~Foo"', "tests/X", "Name~Foo"],
@@ -126,6 +150,42 @@ const NotRead: readonly string[] = [
   'just test --filter "Name~Foo"',
   `GSHARP_CUDA_TRAP_TESTS=1 ${Plain} "Name~Foo"`,
   `${Plain} "Name~Foo" -e GSHARP_CUDA_TRAP_TESTS=1`,
+  // Allowlisted env prefix rules: non-allowlisted names, expanded values, invalid syntax/order
+  `$env:ROWBATCH_ROOTS='1'; ${Plain} "Name~Foo"`,
+  `ROWBATCH_ROOTS=1 ${Plain} "Name~Foo"`,
+  `$env:GSHARP_CUDA_TRAP_TESTS='1'; ${Plain} "Name~Foo"`,
+  `$env:DiffEngine_Disabled='true'; $env:ROWBATCH_ROOTS='1'; ${Plain} "Name~Foo"`,
+  `$env:ROWBATCH_ROOTS='1'; $env:DiffEngine_Disabled='true'; ${Plain} "Name~Foo"`,
+  `$env:DiffEngine_Disabled_Extra='true'; ${Plain} "Name~Foo"`,
+  `export DiffEngine_Disabled=true; ${Plain} "Name~Foo"`,
+  `DiffEngine_Disabled=true; ${Plain} "Name~Foo"`,
+  `$env:DiffEngine_Disabled="$FOO"; ${Plain} "Name~Foo"`,
+  `$env:DiffEngine_Disabled=$FOO; ${Plain} "Name~Foo"`,
+  `$env:DiffEngine_Disabled=$1; ${Plain} "Name~Foo"`,
+  `$env:DiffEngine_Disabled="$(echo true)"; ${Plain} "Name~Foo"`,
+  `$env:DiffEngine_Disabled="a\`b"; ${Plain} "Name~Foo"`,
+  `$env:DiffEngine_Disabled=a\`b; ${Plain} "Name~Foo"`,
+  `$env:DiffEngine_Disabled=a;b; ${Plain} "Name~Foo"`,
+  `DiffEngine_Disabled="$FOO" ${Plain} "Name~Foo"`,
+  `DiffEngine_Disabled=$FOO ${Plain} "Name~Foo"`,
+  `DiffEngine_Disabled="a\\b" ${Plain} "Name~Foo"`,
+  `$env:DiffEngine_Disabled='true' ${Plain} "Name~Foo"`,
+  `$env:DiffEngine_Disabled='true'\n${Plain} "Name~Foo"`,
+  `DiffEngine_Disabled=true\n${Plain} "Name~Foo"`,
+  `$env:DiffEngine_Disabled=hostname; ${Plain} "Name~Foo"`,
+  `$env:DiffEngine_Disabled=cmd; ${Plain} "Name~Foo"`,
+  `$env:DiffEngine_Disabled=true; ${Plain} "Name~Foo"`,
+  `${Plain} "Name~Foo"; $env:DiffEngine_Disabled='true'`,
+  `${Plain} "Name~Foo"; $env:ROWBATCH_ROOTS='1'`,
+  `$env:DiffEngine_Disabled='true'; ${Plain} "Name~Foo"; $env:DiffEngine_Disabled='false'`,
+  `$env:DiffEngine_Disabled='true'; echo hi; ${Plain} "Name~Foo"`,
+  `echo hi; $env:DiffEngine_Disabled='true'; ${Plain} "Name~Foo"`,
+  `$env:DiffEngine_Disabled='true'; DOTNET_CLI_UI_LANGUAGE=en ${Plain} "Name~Foo"`,
+  `$env:DiffEngine_Disabled='true'; Configuration=Debug ${Plain} "Name~Foo"`,
+  `$env:DiffEngine_Disabled='true'; $env:GSHARP_CUDA_TRAP_TESTS='1'; ${Plain} "Name~Foo"`,
+  `$env:DiffEngine_Disabled="a\\"; ${Plain} "Name~Foo"`,
+  `$env:DiffEngine_Disabled="a\\"; ${Plain} "Name~Foo"; echo " & calc # "`,
+  `$env:DOTNET_CLI_UI_LANGUAGE="a\\"; ${Plain} "Name~Foo"`,
 ];
 
 /** Output samples of the test runner for the list command, as `dotnet test --list-tests` prints them. */
@@ -184,6 +244,57 @@ export async function checkNameFilter(assert: AssertModule): Promise<void> {
     null,
     "no share options: not read",
   );
+  const pwshContext = { ...context, shell: "pwsh" as const };
+  assert.deepStrictEqual(
+    nameFilterCheck(`$env:DiffEngine_Disabled='true'; ${Plain} "Name~Foo"`, pwshContext, Entries),
+    { project: "tests/X", filter: "Name~Foo" },
+    "pwsh allows single-quoted allowlisted $env: prefix",
+  );
+  assert.deepStrictEqual(
+    nameFilterCheck(`$env:DiffEngine_Disabled=1; ${Plain} "Name~Foo"`, pwshContext, Entries),
+    { project: "tests/X", filter: "Name~Foo" },
+    "pwsh allows numeric bare allowlisted $env: prefix",
+  );
+  assert.strictEqual(
+    nameFilterCheck(`$env:DiffEngine_Disabled=hostname; ${Plain} "Name~Foo"`, pwshContext, Entries),
+    null,
+    "pwsh rejects bareword command in $env: RHS",
+  );
+  assert.strictEqual(
+    nameFilterCheck(`$env:DiffEngine_Disabled="a\\"; ${Plain} "Name~Foo"`, pwshContext, Entries),
+    null,
+    "pwsh rejects backslash inside double-quoted $env: RHS",
+  );
+  assert.deepStrictEqual(
+    nameFilterCheck(`$env:DiffEngine_Disabled='a\\b'; ${Plain} "Name~Foo"`, pwshContext, Entries),
+    { project: "tests/X", filter: "Name~Foo" },
+    "pwsh allows backslash inside single-quoted $env: RHS",
+  );
+  const cmdContext = { ...context, shell: "cmd" as const };
+  assert.deepStrictEqual(
+    nameFilterCheck(`${Plain} "Name~Foo"`, cmdContext, Entries),
+    { project: "tests/X", filter: "Name~Foo" },
+    "cmd reads plain dotnet test without env prefix",
+  );
+  for (const cmdRejected of [
+    `$env:DiffEngine_Disabled='a&hostname'; ${Plain} "Name~Foo"`,
+    `DiffEngine_Disabled='a&hostname' ${Plain} "Name~Foo"`,
+    `$env:DiffEngine_Disabled='true'; ${Plain} "Name~Foo"`,
+    `DiffEngine_Disabled=true ${Plain} "Name~Foo"`,
+    `${Plain} 'Name~Foo>out.txt'`,
+    `${Plain} "Name~Foo" && echo 'x"' " & calc & "`,
+    `${Plain} "Name~Foo" && echo '(a)'`,
+    `dotnet test tests/X --no-build --logger 'a\nb' --filter "Name~Foo"`,
+    `dotnet test tests/X --no-build --logger 'a\rb' --filter "Name~Foo"`,
+    `dotnet test tests/X --no-build --logger "a\nb" --filter "Name~Foo"`,
+    `dotnet test tests/X --no-build --logger "a\rb" --filter "Name~Foo"`,
+  ]) {
+    assert.strictEqual(
+      nameFilterCheck(cmdRejected, cmdContext, Entries),
+      null,
+      `cmd rejects env prefix or single-quoted metacharacter: ${cmdRejected}`,
+    );
+  }
 
   const test = { project: "tests/X", filter: "Name~A|Name~B" };
   assert.strictEqual(
@@ -234,7 +345,20 @@ export async function checkNameFilter(assert: AssertModule): Promise<void> {
     undefined,
   );
   assert.strictEqual(await nameFilterShare("echo hi", logging, answer(NoMatch), Entries), undefined);
+  assert.strictEqual(
+    await nameFilterShare(`$env:ROWBATCH_ROOTS='1'; ${command}`, logging, answer(NoMatch), Entries, files),
+    undefined,
+  );
   assert.strictEqual(calls.length, before, "a command that is not read starts no list job");
+  const envPrefixed = await nameFilterShare(
+    `$env:DiffEngine_Disabled='true'; ${command}`,
+    logging,
+    answer(NoMatch),
+    Entries,
+    files,
+  );
+  assert.deepStrictEqual([envPrefixed?.share, envPrefixed?.reason], ["shared", "list:0"]);
+  assert.strictEqual(calls.length, before + 1, "allowlisted $env: prefix starts a list job");
 
   // The fingerprint of the assemblies the list read: unchanged, rebuilt while the turn waited, gone
   assert.strictEqual(await shared?.stillValid?.(), true, "the same assembly: still valid");
