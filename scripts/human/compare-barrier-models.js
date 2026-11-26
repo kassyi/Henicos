@@ -45,7 +45,9 @@ const helpText = [
     '  --base <dir>     Directory containing JSONL records from the default (state-machine) build.',
     '  --stack <dir>    Directory containing JSONL records from the stack build.',
     '  --models <mode>  Which path(s) to compare: native (default), managed, or both.',
-    '  --allow <file>   JSON allowlist of known divergences (default: BarrierModelDivergences.json).',
+    '  --allow <file>   JSON allowlist of known divergences (default: BarrierModelDivergences.json). An entry with',
+    '                   "undefinedBehavior": true reads undefined values (an unchecked access): it may match on one',
+    '                   platform and not on another, so it is never reported as stale.',
     '  --report <file>  Optional path to write the comparison report (.json for JSON, otherwise text).',
     '  --run            Run Tests.Cpu Differential tests in default and variant builds, then compare.',
     '  --self-test      Run built-in unit tests on in-memory and temporary JSONL records.',
@@ -145,7 +147,7 @@ function parseAllowlistText(text, sourceLabel) {
         if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) {
             throw new Error(`Allowlist ${sourceLabel}[${i}] must be an object.`);
         }
-        const allowedKeys = new Set(['case', 'path', 'issue', 'reason']);
+        const allowedKeys = new Set(['case', 'path', 'issue', 'reason', 'undefinedBehavior']);
         for (const k of Object.keys(entry)) {
             if (!allowedKeys.has(k)) {
                 throw new Error(`Allowlist ${sourceLabel}[${i}] has unknown field '${k}'.`);
@@ -163,12 +165,21 @@ function parseAllowlistText(text, sourceLabel) {
         if (typeof entry.reason !== 'string' || entry.reason.trim() === '') {
             throw new Error(`Allowlist ${sourceLabel}[${i}].reason must be a non-empty string.`);
         }
+        if (entry.undefinedBehavior !== undefined && typeof entry.undefinedBehavior !== 'boolean') {
+            throw new Error(`Allowlist ${sourceLabel}[${i}].undefinedBehavior must be a boolean.`);
+        }
         const pairKey = `${entry.case}\0${entry.path}`;
         if (seen.has(pairKey)) {
             throw new Error(`Duplicate allowlist entry for (${entry.case}, ${entry.path}) in ${sourceLabel}.`);
         }
         seen.add(pairKey);
-        entries.push({ case: entry.case, path: entry.path, issue: entry.issue, reason: entry.reason });
+        entries.push({
+            case: entry.case,
+            path: entry.path,
+            issue: entry.issue,
+            reason: entry.reason,
+            undefinedBehavior: entry.undefinedBehavior === true,
+        });
     }
     return entries;
 }
@@ -385,7 +396,8 @@ function compareRecordMaps(baseMap, stackMap, allowEntries, models) {
 
     const staleAllowEntries = [];
     for (const [pairKey, entry] of allowByPair.entries()) {
-        if (comparedCasePaths.has(pairKey) && !entry.matchedMismatch) {
+        // An entry for undefined behavior may match on one platform and not on another: it is never stale
+        if (comparedCasePaths.has(pairKey) && !entry.matchedMismatch && !entry.undefinedBehavior) {
             staleAllowEntries.push({
                 case: entry.case,
                 path: entry.path,
@@ -684,6 +696,16 @@ function runSelfTest() {
         const staleRes = compareRecordMaps(baseEqual, stackEqual, allow, 'native');
         assert.strictEqual(staleRes.ok, false, 'stale allowlist entry must fail');
         assert.strictEqual(staleRes.staleAllowEntries.length, 1);
+
+        const ubAllow = parseAllowlistText(
+            JSON.stringify([
+                { case: 'CaseA', path: 'Native', issue: 2241, reason: 'reads out of range', undefinedBehavior: true },
+            ]),
+            'test-allow-ub.json'
+        );
+        const ubRes = compareRecordMaps(baseEqual, stackEqual, ubAllow, 'native');
+        assert.strictEqual(ubRes.ok, true, 'an undefined-behavior entry that does not match must not be stale');
+        assert.strictEqual(ubRes.staleAllowEntries.length, 0);
     }
 
     // 6. Zero stack launches -> fail ("compared nothing").
@@ -760,7 +782,8 @@ function main() {
     }
 
     if (!result.ok) {
-        process.exit(1);
+        // exitCode, not exit(): exit() can end the process before a piped stdout (the CI log) is written
+        process.exitCode = 1;
     }
 }
 

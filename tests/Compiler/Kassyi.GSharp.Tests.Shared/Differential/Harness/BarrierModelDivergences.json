@@ -1,1 +1,9 @@
-[]
+[
+  {
+    "case": "BoundsAndMemoryDifferentialKernels.InlineArrayBoundsKernel",
+    "path": "Native",
+    "issue": 2241,
+    "reason": "seeds 1 and 2 index the inline array below 0; the native path reads the neighbouring memory unchecked, so the value depends on the build",
+    "undefinedBehavior": true
+  }
+]
