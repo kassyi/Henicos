@@ -69,25 +69,25 @@ public class ManagedStackModelGeneratorTests
         var unset = Run(barrierModel: null, s_fallbackTree);
         var stack = Run(barrierModel: "Stack", s_fallbackTree);
 
-        Assert.DoesNotContain(unset, static s => s.HintName == ManagedStackPipeline.FailuresHintName);
-        var failures = Assert.Single(stack, static s => s.HintName == ManagedStackPipeline.FailuresHintName);
-        Assert.Contains("FallbackKernels.PassesSuspendingGroupKernel: InvalidOperationException", failures.SourceText,
-            StringComparison.Ordinal);
+        Assert.DoesNotContain(unset, static s => s.HintName == StateMachineFallbackPipeline.HintName);
+        var failures = Assert.Single(stack, static s => s.HintName == StateMachineFallbackPipeline.HintName);
+        Assert.Contains("// managed\tFallbackKernels.PassesSuspendingGroupKernel\tStackFormGenerationFailed: InvalidOperationException",
+            failures.SourceText, StringComparison.Ordinal);
         // The form fails because the function it names has none (ManagedRouting.GetTargetPrefix)
         Assert.Contains("'BarrierStep' without a stack form", failures.SourceText, StringComparison.Ordinal);
         // A device function whose form cannot be made takes the forms of its callers along, up the whole chain
-        Assert.Contains("FallbackKernels.Inner: InvalidOperationException", failures.SourceText,
-            StringComparison.Ordinal);
-        Assert.Contains("FallbackKernels.Middle: calls a function without a stack form", failures.SourceText,
-            StringComparison.Ordinal);
-        Assert.Contains("FallbackKernels.Outer: calls a function without a stack form", failures.SourceText,
-            StringComparison.Ordinal);
-        Assert.Contains("FallbackKernels.CallsChainKernel: calls a function without a stack form", failures.SourceText,
-            StringComparison.Ordinal);
+        Assert.Contains("// managed\tFallbackKernels.Inner\tStackFormGenerationFailed: InvalidOperationException",
+            failures.SourceText, StringComparison.Ordinal);
+        Assert.Contains("// managed\tFallbackKernels.Middle\tCallsFunctionWithoutForm: calls a function without a stack form",
+            failures.SourceText, StringComparison.Ordinal);
+        Assert.Contains("// managed\tFallbackKernels.Outer\tCallsFunctionWithoutForm: calls a function without a stack form",
+            failures.SourceText, StringComparison.Ordinal);
+        Assert.Contains("// managed\tFallbackKernels.CallsChainKernel\tCallsFunctionWithoutForm: calls a function without a stack form",
+            failures.SourceText, StringComparison.Ordinal);
         // A using declaration that a goto of the reconvergence regions would pass (CS8648) keeps the kernel on its
         // state machine, with the reason
-        Assert.Contains("FallbackKernels.UsingAfterContinueKernel: it reaches Warp.ActiveMask() and declares a local " +
-                        "with using", failures.SourceText, StringComparison.Ordinal);
+        Assert.Contains("// managed\tFallbackKernels.UsingAfterContinueKernel\tUsingDeclarationWithActiveMask",
+            failures.SourceText, StringComparison.Ordinal);
         // The kernels and the functions of the chain keep their state machines: no stack form is emitted for them, and
         // the kernel file is the default build's. Only AddShuffled, the target of the operator, has a form of its own
         foreach (var name in new[]
@@ -122,14 +122,14 @@ public class ManagedStackModelGeneratorTests
         var unset = Run(barrierModel: null, s_macroTree);
         var stack = Run(barrierModel: "Stack", s_macroTree);
 
-        Assert.DoesNotContain(unset, static s => s.HintName == ManagedStackPipeline.FailuresHintName);
-        var failures = Assert.Single(stack, static s => s.HintName == ManagedStackPipeline.FailuresHintName);
-        Assert.Contains("MacroKernels.MacroAfterBarrierKernel: InvalidOperationException", failures.SourceText,
-            StringComparison.Ordinal);
-        Assert.Contains("MacroKernels.MacroAndShuffleKernel: InvalidOperationException", failures.SourceText,
-            StringComparison.Ordinal);
-        Assert.Contains("MacroKernels.MacroAndActiveMaskKernel: InvalidOperationException", failures.SourceText,
-            StringComparison.Ordinal);
+        Assert.DoesNotContain(unset, static s => s.HintName == StateMachineFallbackPipeline.HintName);
+        var failures = Assert.Single(stack, static s => s.HintName == StateMachineFallbackPipeline.HintName);
+        Assert.Contains("// managed\tMacroKernels.MacroAfterBarrierKernel\tStackFormGenerationFailed: InvalidOperationException",
+            failures.SourceText, StringComparison.Ordinal);
+        Assert.Contains("// managed\tMacroKernels.MacroAndShuffleKernel\tStackFormGenerationFailed: InvalidOperationException",
+            failures.SourceText, StringComparison.Ordinal);
+        Assert.Contains("// managed\tMacroKernels.MacroAndActiveMaskKernel\tStackFormGenerationFailed: InvalidOperationException",
+            failures.SourceText, StringComparison.Ordinal);
         Assert.Contains("through an operator macro", failures.SourceText, StringComparison.Ordinal);
         Assert.DoesNotContain(stack, static s => s.SourceText.Contains("ManagedStackRunner.Run(",
             StringComparison.Ordinal));
@@ -154,7 +154,7 @@ public class ManagedStackModelGeneratorTests
 
         var stack = Run(barrierModel: "Stack", tree);
 
-        Assert.DoesNotContain(stack, static s => s.HintName == ManagedStackPipeline.FailuresHintName);
+        Assert.DoesNotContain(stack, static s => s.HintName == StateMachineFallbackPipeline.HintName);
         var kernelFile = Assert.Single(stack, static s => s.HintName.EndsWith("__StackBodyLocalsKernels.g.cs",
             StringComparison.Ordinal));
         var kernels = tree.GetRoot()
