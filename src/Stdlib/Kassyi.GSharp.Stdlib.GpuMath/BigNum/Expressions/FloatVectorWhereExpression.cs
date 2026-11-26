@@ -72,10 +72,11 @@ internal sealed class FloatVectorWhereExpression(
         var evaluatedSource = second.Float;
         var selected = _state.Select<FloatVectorResultKind, GpuBigFloatArrayView>(workspace, evaluatedSource.Storage,
             evaluatedSource.Count, first.Bool, Capacity, WordsPerElement, request.Offset, request.Count,
-            out var count, out var inputCount, out var scan);
+            out var count, out var scan);
         if (_inputsMayThrow)
         {
-            _state.RecordTranslated(workspace, inputCount, scan, request.Offset, request.EvalCount(Capacity));
+            _state.RecordTranslated(workspace, evaluatedSource.Count, first.Bool.Count, scan, request.Offset,
+                request.EvalCount(Capacity));
         }
 
         return VectorResult.Of(new FloatVectorEvaluation(selected, count));
