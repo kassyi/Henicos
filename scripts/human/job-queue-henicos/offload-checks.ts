@@ -13,6 +13,7 @@ import { PluginApiVersion, type AssertModule, type ClientContext, type QueuePlug
 import { withConfigEnv } from "../job-queue/plugin-checks.ts";
 import { PluginHost, type BaseClientContext } from "../job-queue/plugin-host.ts";
 import { translateForRemote } from "../job-queue/remote/command-translator.ts";
+import { resolveCallerEnv } from "../job-queue/remote/env-policy.ts";
 import { resolveOffloadPreference } from "../job-queue/remote/executor.ts";
 import { buildRemoteFindPruneExpr, isExcludedSyncPath } from "../job-queue/remote/syncer.ts";
 import { FakeHost, FakeScheduler, until } from "../job-queue/self-test-client.ts";
@@ -696,8 +697,93 @@ export function checkHenicosEnvAllowlist(assert: AssertModule, host: PluginHost,
       assert.ok(remotePref.error.includes(expectedVar));
     }
   }
-}
 
+  // Caller variables read by MSBuild or the runtime: the local-only prefixes match case-insensitively on every
+  // platform, the allowlist wins over a prefix, and the ignore lists neither forward nor force local.
+  for (const platform of ["win32", "linux"] as const) {
+    for (const name of [
+      "GSharpSkipCpuCompilation",
+      "gsharpskipcpucompilation",
+      "DOTNET_gcServer",
+      "COMPlus_TieredCompilation",
+      "VSTEST_HOST_DEBUG",
+      "MSBuildSDKsPath",
+      "NUGET_PACKAGES",
+    ]) {
+      const res = resolveCallerEnv({ [name]: "1" }, rules, platform);
+      assert.ok(!res.ok && res.variable === name, `${platform}: ${name} must force local`);
+    }
+    for (const name of [
+      "MSBUILDDISABLENODEREUSE",
+      "DOTNET_SKIP_FIRST_TIME_EXPERIENCE",
+      "DOTNET_ROOT",
+      "GSHARP_JOB_QUEUE_OFFLOAD",
+      "GSHARP_GPU_HOLD_WATCH",
+      "GSHARP_GPU_TEST_SEAT",
+      "gsharp_job_queue_state_dir",
+    ]) {
+      const res = resolveCallerEnv({ [name]: "1" }, rules, platform);
+      assert.ok(res.ok && Object.keys(res.forwarded).length === 0, `${platform}: ${name} is ignored`);
+    }
+    const sanitizers = resolveCallerEnv({ GSharpNativeSanitizers: "address" }, rules, platform);
+    assert.ok(sanitizers.ok && sanitizers.forwarded.GSharpNativeSanitizers === "address", `${platform}: allowlist`);
+  }
+  for (const [name, platform] of [
+    ["Configuration", "win32"],
+    ["configuration", "win32"],
+    ["Configuration", "linux"],
+    ["Platform", "win32"],
+    ["OutDir", "win32"],
+  ] as const) {
+    assert.strictEqual(resolveCallerEnv({ [name]: "Release" }, rules, platform).ok, false, `${name} (${platform})`);
+  }
+
+  // Assignments written in the command go through the same policy: local-only names and path values keep the job
+  // local, other names pass as written, and win32 respells an allowlisted or default name canonically.
+  const proj = "tests/Shared/Kassyi.GSharp.Tests.Infrastructure.Tests/Kassyi.GSharp.Tests.Infrastructure.Tests.csproj";
+  const plan = (command: string, shell: "pwsh" | "bash", env: Record<string, string> = {}) =>
+    translateForRemote(command, {
+      cwd: repoRoot,
+      worktree: repoRoot,
+      shell,
+      places: {},
+      cpus: 2,
+      keepBuildServersWarm: true,
+      env,
+      remoteRules: rules,
+      platform: "win32",
+    });
+  assert.ok(plan(`dotnet test ${proj}`, "bash") !== null, "the plain command offloads");
+  for (const command of [
+    `GSHARP_TEST_BUILD_LOG_DIR=C:/logs dotnet test ${proj}`,
+    `LD_PRELOAD=/x.so dotnet test ${proj}`,
+    `GSHARP_CUDA_TRAP_TESTS=1 dotnet test ${proj}`,
+    `dotnet test ${proj} -e GSHARP_TEST_BUILD_LOG_DIR=C:/logs`,
+    `dotnet test ${proj} --environment GSHARP_CUDA_TRAP_TESTS=1`,
+    `dotnet test ${proj} --environment=DOTNET_gcServer=1`,
+    `GSharpSkipCpuCompilation=true dotnet test ${proj}`,
+    `TEST_SEED=C:/seed dotnet test ${proj}`,
+    `MY_TOOL_DIR=/opt/tool dotnet test ${proj}`,
+  ]) {
+    assert.strictEqual(plan(command, "bash"), null, `stays local: ${command}`);
+  }
+  assert.strictEqual(plan(`$env:DOTNET_gcServer='1'; dotnet test ${proj}`, "pwsh"), null, "pwsh leading local-only");
+  const passPlan = plan(`MY_FLAG=1 dotnet test ${proj} -e OTHER_FLAG=2`, "bash");
+  assert.ok(
+    passPlan !== null && passPlan.bashCommand.includes("MY_FLAG=1") && passPlan.bashCommand.includes("OTHER_FLAG=2"),
+  );
+
+  const keysLike = (env: Record<string, string>, name: string) =>
+    Object.keys(env).filter((key) => key.toLowerCase() === name.toLowerCase());
+  const seedPlan = plan(`$env:test_seed='2'; dotnet test ${proj}`, "pwsh", { TEST_SEED: "1" });
+  assert.ok(seedPlan !== null);
+  assert.deepStrictEqual(keysLike(seedPlan.env, "TEST_SEED"), ["TEST_SEED"]);
+  assert.strictEqual(seedPlan.env.TEST_SEED, "2");
+  const noCudaPlan = plan(`$env:gsharp_test_no_cuda='1'; dotnet test ${proj}`, "pwsh");
+  assert.ok(noCudaPlan !== null);
+  assert.deepStrictEqual(keysLike(noCudaPlan.env, "GSHARP_TEST_NO_CUDA"), ["GSHARP_TEST_NO_CUDA"]);
+  assert.strictEqual(noCudaPlan.env.GSHARP_TEST_NO_CUDA, "1");
+}
 /**
  * Checks for `<GSharpRemoteOffload>local</GSharpRemoteOffload>` parsing, VSTest filter parenthesization,
  * `--local` list-job args, `test-sanitized` Option A gating, and fail-closed `--list-tests` `&Platform=Windows` probing.

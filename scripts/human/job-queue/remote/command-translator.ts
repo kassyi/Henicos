@@ -8,7 +8,14 @@ import { KeepBuildServersWarmVariable, type ShellName } from "../constants.ts";
 import { rawWords, readCommandLine, segmentParts } from "../command-reader.ts";
 import type { PathPlace } from "../estimate-key.ts";
 import type { CollectPathSpec } from "./artifact-collector.ts";
-import { getEnvValue, hasEnvKey, isSafeEnvKey, resolveCallerEnv } from "./env-policy.ts";
+import {
+  canonicalCommandEnvName,
+  commandEnvLocalReason,
+  getEnvValue,
+  hasEnvKey,
+  isSafeEnvKey,
+  resolveCallerEnv,
+} from "./env-policy.ts";
 import { EmptyRemoteRules, type ResolvedRemoteRules } from "./rules.ts";
 import { bashQuote } from "./spec.ts";
 
@@ -97,7 +104,8 @@ const ShellDialects: Readonly<Record<ShellName, ShellDialect>> = {
 };
 
 const BasePathValueOptions = new Set(["-o", "--output"]);
-const BaseNonPathValueOptions = new Set(["-e", "--environment"]);
+const EnvironmentOptions = new Set(["-e", "--environment"]);
+const BaseNonPathValueOptions = EnvironmentOptions;
 const BasePathExtensions = new Set(["js", "ts", "json", "yml", "yaml"]);
 const BaseAllowedPrograms = new Set(["node", "echo"]);
 const BroadRepoDirs = new Set([".", "src", "tests", "docs", "tools", "scripts", ".github", ".agents"]);
@@ -488,6 +496,32 @@ function transformCompositeValue(
   return out.join(";");
 }
 
+/**
+ * Admits one assignment written in the command into `target` under its canonical spelling, or returns false when the
+ * env policy keeps the job local (a local-only name or a path value).
+ */
+function admitCommandEnv(
+  target: Record<string, string>,
+  key: string,
+  value: string,
+  rules: ResolvedRemoteRules,
+  platform: NodeJS.Platform,
+): boolean {
+  if (commandEnvLocalReason(key, value, rules, platform) !== null) {
+    return false;
+  }
+  target[canonicalCommandEnvName(key, rules, platform)] = value;
+  return true;
+}
+
+/** Checks the `NAME=VALUE` of `-e` / `--environment` (as `dotnet test` takes it) against the env policy. */
+function admitEnvironmentOption(token: string, rules: ResolvedRemoteRules, platform: NodeJS.Platform): boolean {
+  const eq = token.indexOf("=");
+  const name = eq > 0 ? token.slice(0, eq) : token;
+  const value = eq > 0 ? token.slice(eq + 1) : "";
+  return commandEnvLocalReason(name, value, rules, platform) === null;
+}
+
 function validateStatementArgs(
   args: readonly string[],
   program: string,
@@ -495,6 +529,7 @@ function validateStatementArgs(
   placesMap: ReadonlyMap<string, PathPlace>,
   rules: ResolvedRemoteRules,
   worktrees: Set<string>,
+  platform: NodeJS.Platform,
 ): boolean {
   const subcommand = (args[0] ?? "").toLowerCase();
   const checkComposite = (val: string): boolean =>
@@ -514,6 +549,9 @@ function validateStatementArgs(
     }
     if (!afterDoubleDash && prevOption !== "") {
       const prevKind = classifyOption(rules, program, subcommand, prevOption);
+      if (EnvironmentOptions.has(prevOption) && program !== "node" && !admitEnvironmentOption(token, rules, platform)) {
+        return false;
+      }
       if (prevKind === "non-path") {
         if (CompositeValueNonPathOptions.has(prevOption) && !checkComposite(token)) {
           return false;
@@ -533,6 +571,14 @@ function validateStatementArgs(
     if (inline !== null) {
       const optLower = inline.option.toLowerCase();
       const kind = afterDoubleDash ? "unknown" : classifyOption(rules, program, subcommand, optLower);
+      if (
+        !afterDoubleDash &&
+        EnvironmentOptions.has(optLower) &&
+        program !== "node" &&
+        !admitEnvironmentOption(inline.value, rules, platform)
+      ) {
+        return false;
+      }
       if (kind === "path") {
         if (inline.value.trim() === "" || !registerPathWorktree(inline.value, currentCwd, placesMap, worktrees)) {
           return false;
@@ -573,6 +619,7 @@ function parseAndValidateStatements(
   env: Record<string, string>,
   placesMap: ReadonlyMap<string, PathPlace>,
 ): { parsed: ParsedStatement[]; worktrees: Set<string>; finalCwd: string } | null {
+  const platform = options.platform ?? process.platform;
   let currentCwd = path.resolve(options.cwd);
   const worktrees = new Set<string>();
   const parsed: ParsedStatement[] = [];
@@ -583,7 +630,9 @@ function parseAndValidateStatements(
       if (parsed.length > 0) {
         return null;
       }
-      env[inlineEnv.key] = inlineEnv.value;
+      if (!admitCommandEnv(env, inlineEnv.key, inlineEnv.value, rules, platform)) {
+        return null;
+      }
       continue;
     }
     const parts = segmentParts(stmt.text, options.shell);
@@ -633,12 +682,18 @@ function parseAndValidateStatements(
     if (!BaseAllowedPrograms.has(progLower) && !rules.allowedPrograms.has(progLower)) {
       return null;
     }
-    const segEnv = parseSegEnv(parts.env, options.shell);
-    if (segEnv === null) {
+    const rawSegEnv = parseSegEnv(parts.env, options.shell);
+    if (rawSegEnv === null) {
       return null;
     }
+    const segEnv: Record<string, string> = Object.create(null) as Record<string, string>;
+    for (const [key, value] of Object.entries(rawSegEnv)) {
+      if (!admitCommandEnv(segEnv, key, value, rules, platform)) {
+        return null;
+      }
+    }
     const args = unquoted.slice(1);
-    if (!validateStatementArgs(args, progLower, currentCwd, placesMap, rules, worktrees)) {
+    if (!validateStatementArgs(args, progLower, currentCwd, placesMap, rules, worktrees, platform)) {
       return null;
     }
     parsed.push({ op: stmt.op, program: progLower, args, segEnv, redirections: parts.redirections, cwd: currentCwd });
@@ -937,7 +992,12 @@ export function translateForRemote(command: string, options: TranslateOptions): 
   if (!callerEnv.ok) {
     return null;
   }
-  const env: Record<string, string> = Object.assign(Object.create(null) as Record<string, string>, leading.env);
+  const env: Record<string, string> = Object.create(null) as Record<string, string>;
+  for (const [key, value] of Object.entries(leading.env)) {
+    if (!admitCommandEnv(env, key, value, rules, platform)) {
+      return null;
+    }
+  }
   const warmServers =
     options.keepBuildServersWarm && getEnvValue(options.env, KeepBuildServersWarmVariable, platform) !== "0";
   const placesMap = normalizePlacesMap(options.places);

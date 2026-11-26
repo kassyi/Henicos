@@ -625,6 +625,9 @@ export const RemoteTranslatorChecks: Record<string, (assert: AssertModule) => vo
           defaultEnv: rawDefaultEnv,
           allowedEnv: ["TEST_SEED", "MixedCase", "bad-dash", "bad space", "123NUM", "a;rm", "__proto__"],
           localOnlyEnv: ["GSHARP_SIGNING_KEY", "MIXEDCASE", "bad-local", "__proto__"],
+          localOnlyEnvPrefixes: ["DOTNET_", "bad-prefix", ""],
+          ignoredEnv: ["DOTNET_ROOT", "bad;x"],
+          ignoredEnvPrefixes: ["Queue_", "a b"],
           syncExcludePrefixes: ["-rf", "tests/-rf", "./-rf", "../escape", "/abs", "valid/dir/"],
           resetCleanDirs: ["-rf", "a/-rf", "./-rf", "tmp/clean"],
           failureArtifacts: [
@@ -644,6 +647,9 @@ export const RemoteTranslatorChecks: Record<string, (assert: AssertModule) => vo
     assert.deepStrictEqual([...resolved.localOnlyEnv].sort(), ["GSHARP_SIGNING_KEY", "MIXEDCASE"]);
     assert.strictEqual(resolved.allowedEnvLower.has("mixedcase"), false);
     assert.strictEqual(resolved.localOnlyEnvLower.get("mixedcase"), "MIXEDCASE");
+    assert.deepStrictEqual(resolved.localOnlyEnvPrefixesLower, ["dotnet_"]);
+    assert.deepStrictEqual([...resolved.ignoredEnv], ["DOTNET_ROOT"]);
+    assert.deepStrictEqual(resolved.ignoredEnvPrefixesLower, ["queue_"]);
     assert.deepStrictEqual(resolved.syncExcludePrefixes, ["valid/dir/"]);
     assert.deepStrictEqual(resolved.resetCleanDirs, ["tmp/clean"]);
     assert.strictEqual(resolved.failureArtifacts.length, 1);
@@ -771,9 +777,10 @@ export const RemoteTranslatorChecks: Record<string, (assert: AssertModule) => vo
         platform: "win32",
         env: { TEST_SEED: "42" },
       });
+      // win32 respells the leading name canonically, so Linux reads TEST_SEED (and only once)
       assert.ok(winLeadCaseWins !== null);
-      assert.strictEqual(winLeadCaseWins.env.test_seed, "99");
-      assert.strictEqual(winLeadCaseWins.env.TEST_SEED, undefined);
+      assert.strictEqual(winLeadCaseWins.env.TEST_SEED, "99");
+      assert.strictEqual(winLeadCaseWins.env.test_seed, undefined);
 
       const winMixedDefault = translateForRemote("$env:diffengine_disabled='false'; node scripts/a.js", {
         ...baseOpts,
@@ -781,8 +788,35 @@ export const RemoteTranslatorChecks: Record<string, (assert: AssertModule) => vo
         env: {},
       });
       assert.ok(winMixedDefault !== null);
-      assert.strictEqual(winMixedDefault.env.diffengine_disabled, "false");
-      assert.strictEqual(winMixedDefault.env.DiffEngine_Disabled, undefined);
+      assert.strictEqual(winMixedDefault.env.DiffEngine_Disabled, "false");
+      assert.strictEqual(winMixedDefault.env.diffengine_disabled, undefined);
+      // A default-only name (not allowlisted) is respelled too, and the default does not come back beside it
+      const defaultOnlyRules = resolveRemoteRules([
+        {
+          contribution: { allowedPrograms: ["node"], defaultEnv: { JQ_DEFAULT_ONLY: "1" } },
+          call: (_subHook, invoke) => invoke(),
+        },
+      ]);
+      const winDefaultOnly = translateForRemote("$env:jq_default_only='0'; node scripts/a.js", {
+        ...baseOpts,
+        remoteRules: defaultOnlyRules,
+        platform: "win32",
+        env: {},
+      });
+      assert.ok(winDefaultOnly !== null);
+      assert.deepStrictEqual(
+        Object.keys(winDefaultOnly.env).filter((key) => key.toLowerCase() === "jq_default_only"),
+        ["JQ_DEFAULT_ONLY"],
+      );
+      assert.strictEqual(winDefaultOnly.env.JQ_DEFAULT_ONLY, "0");
+      const linuxLeadCase = translateForRemote("$env:test_seed='99'; node scripts/a.js", {
+        ...baseOpts,
+        platform: "linux",
+        env: {},
+      });
+      assert.ok(
+        linuxLeadCase !== null && linuxLeadCase.env.test_seed === "99" && linuxLeadCase.env.TEST_SEED === undefined,
+      );
 
       const defaultWins = translateForRemote("node scripts/a.js", {
         ...baseOpts,

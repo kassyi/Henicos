@@ -25,6 +25,12 @@ export interface ResolvedRemoteRules {
   readonly localOnlyEnv: ReadonlySet<string>;
   readonly allowedEnvLower: ReadonlyMap<string, string>;
   readonly localOnlyEnvLower: ReadonlyMap<string, string>;
+  /** Lower-cased `localOnlyEnvPrefixes` (matched case-insensitively on every platform). */
+  readonly localOnlyEnvPrefixesLower: readonly string[];
+  readonly ignoredEnv: ReadonlySet<string>;
+  readonly ignoredEnvLower: ReadonlySet<string>;
+  /** Lower-cased `ignoredEnvPrefixes` (matched case-insensitively on every platform). */
+  readonly ignoredEnvPrefixesLower: readonly string[];
   readonly syncExcludePrefixes: readonly string[];
   readonly syncExcludeFindNames: readonly string[];
   readonly failureArtifacts: readonly RemoteFailureArtifactRule[];
@@ -51,6 +57,10 @@ export const EmptyRemoteRules: ResolvedRemoteRules = {
   localOnlyEnv: new Set(),
   allowedEnvLower: new Map(),
   localOnlyEnvLower: new Map(),
+  localOnlyEnvPrefixesLower: [],
+  ignoredEnv: new Set(),
+  ignoredEnvLower: new Set(),
+  ignoredEnvPrefixesLower: [],
   syncExcludePrefixes: [],
   syncExcludeFindNames: [],
   failureArtifacts: [],
@@ -209,6 +219,7 @@ const asFindName = (s: string): string | null => (isSafeFindName(s) ? s : null);
 const asProcessName = (s: string): string | null => (SafeProcessNamePattern.test(s) ? s : null);
 const asCleanDir = (s: string): string | null => normalizeSafeDir(s);
 const asEnvKey = (s: string): string | null => (isSafeEnvKey(s) ? s : null);
+const asEnvPrefix = (s: string): string | null => (isSafeEnvKey(s) ? s.toLowerCase() : null);
 
 type OptionPathFn = NonNullable<RemoteOffloadContribution["isOptionValuePath"]>;
 type StatementRewriteFn = NonNullable<RemoteOffloadContribution["rewriteStatement"]>;
@@ -293,6 +304,9 @@ export function resolveRemoteRules(entries: readonly RemoteContributionEntry[]):
   const defaultEnv = Object.create(null) as Record<string, string>;
   const allowedEnv = new Set<string>();
   const localOnlyEnv = new Set<string>();
+  const localOnlyEnvPrefixes = new Set<string>();
+  const ignoredEnv = new Set<string>();
+  const ignoredEnvPrefixes = new Set<string>();
   const syncExcludePrefixes = new Set<string>();
   const syncExcludeFindNames = new Set<string>();
   const failureArtifacts: RemoteFailureArtifactRule[] = [];
@@ -313,6 +327,9 @@ export function resolveRemoteRules(entries: readonly RemoteContributionEntry[]):
     mergeSafeEnv(defaultEnv, c.defaultEnv);
     collectStrings(allowedEnv, c.allowedEnv, asEnvKey);
     collectStrings(localOnlyEnv, c.localOnlyEnv, asEnvKey);
+    collectStrings(localOnlyEnvPrefixes, c.localOnlyEnvPrefixes, asEnvPrefix);
+    collectStrings(ignoredEnv, c.ignoredEnv, asEnvKey);
+    collectStrings(ignoredEnvPrefixes, c.ignoredEnvPrefixes, asEnvPrefix);
     collectStrings(syncExcludePrefixes, c.syncExcludePrefixes, asPrefix);
     collectStrings(syncExcludeFindNames, c.syncExcludeFindNames, asFindName);
     collectFailureArtifacts(failureArtifacts, c.failureArtifacts);
@@ -361,6 +378,10 @@ export function resolveRemoteRules(entries: readonly RemoteContributionEntry[]):
     localOnlyEnv,
     allowedEnvLower,
     localOnlyEnvLower,
+    localOnlyEnvPrefixesLower: [...localOnlyEnvPrefixes],
+    ignoredEnv,
+    ignoredEnvLower: new Set([...ignoredEnv].map((key) => key.toLowerCase())),
+    ignoredEnvPrefixesLower: [...ignoredEnvPrefixes],
     syncExcludePrefixes: [...syncExcludePrefixes],
     syncExcludeFindNames: [...syncExcludeFindNames],
     failureArtifacts,

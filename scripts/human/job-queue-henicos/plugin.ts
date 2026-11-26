@@ -150,9 +150,16 @@ const HenicosAllowedEnv = [
   "GSharpTestHeapHardLimit",
 ] as const;
 
-// CUDA_PATH / CUDA_PATH_V* / PATH / GSHARP_JOB_QUEUE_* / GSHARP_GPU_* are intentionally excluded from both
-// allowedEnv and localOnlyEnv so global Windows SDK and queue infra variables neither forward nor block offload.
+// CUDA_PATH / CUDA_PATH_V* / PATH match no list, so global Windows SDK variables neither forward nor block offload.
+// Queue infrastructure and machine-wide .NET settings match the local-only prefixes below and are ignored instead.
 const HenicosLocalOnlyEnv = [
+  "Configuration",
+  "Platform",
+  "TargetFramework",
+  "RuntimeIdentifier",
+  "OutDir",
+  "OutputPath",
+  "BaseIntermediateOutputPath",
   "GSHARP_TEST_MEMORY_REPORT",
   "GSHARP_TEST_BUILD_LOG_DIR",
   "GSHARP_CUDA_INCLUDE_DIR",
@@ -179,6 +186,23 @@ const HenicosLocalOnlyEnv = [
   "UBSAN_OPTIONS",
   "LD_PRELOAD",
 ] as const;
+
+// MSBuild reads every environment variable as a property (case-insensitively), and the runtime, VSTest and NuGet
+// read their own families, so a caller variable of these families changes what a remote run would build or test.
+const HenicosLocalOnlyEnvPrefixes = ["GSharp", "DOTNET_", "COMPlus_", "VSTEST_", "MSBUILD", "NUGET_"] as const;
+
+// Set on every run of a machine (MSBUILDDISABLENODEREUSE=1 avoids file locks on Windows; DOTNET_ROOT is set by
+// actions/setup-dotnet and SDK installs, and the worker resolves its own) or queue infrastructure: neither forwarded
+// nor a reason to run locally.
+const HenicosIgnoredEnv = [
+  "MSBUILDDISABLENODEREUSE",
+  "DOTNET_CLI_UI_LANGUAGE",
+  "DOTNET_CLI_TELEMETRY_OPTOUT",
+  "DOTNET_NOLOGO",
+  "DOTNET_SKIP_FIRST_TIME_EXPERIENCE",
+  "DOTNET_ROOT",
+] as const;
+const HenicosIgnoredEnvPrefixes = ["GSHARP_JOB_QUEUE_", "GSHARP_GPU_"] as const;
 
 const plugin = {
   name: "./scripts/human/job-queue-henicos",
@@ -290,6 +314,9 @@ const plugin = {
       defaultEnv: { GSHARP_TEST_NO_CUDA: "1" },
       allowedEnv: HenicosAllowedEnv,
       localOnlyEnv: HenicosLocalOnlyEnv,
+      localOnlyEnvPrefixes: HenicosLocalOnlyEnvPrefixes,
+      ignoredEnv: HenicosIgnoredEnv,
+      ignoredEnvPrefixes: HenicosIgnoredEnvPrefixes,
       syncExcludePrefixes: ["src/Compiler/Kassyi.GSharp.Compiler/StackLinqEmbedded/"],
       resetProcessNames: ["cc1plus", "clang++", "g++", "ld", "lld", "ninja"],
       resetCleanDirs: ["src/Compiler/Kassyi.GSharp.Compiler/StackLinqEmbedded"],

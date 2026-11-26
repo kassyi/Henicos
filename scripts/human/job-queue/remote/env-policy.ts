@@ -82,56 +82,135 @@ export function getEnvValue(
   return undefined;
 }
 
+/** How the env policy treats one variable name: forward, ignore, force local, or anything else. */
+export type EnvNameClass =
+  | { readonly kind: "allowed"; readonly canonical: string }
+  | { readonly kind: "ignored" }
+  | { readonly kind: "local-only"; readonly canonical: string }
+  | { readonly kind: "other" };
+
+function startsWithAnyLower(lowerName: string, lowerPrefixes: readonly string[]): boolean {
+  return lowerPrefixes.some((prefix) => lowerName.startsWith(prefix));
+}
+
+/**
+ * Classifies one variable name in this order: allowlist (forward), queue infrastructure and plugin ignore lists
+ * (neither forward nor block), local-only exact names, local-only prefixes, everything else. Exact names fold case
+ * on win32 only; prefixes always ignore case (MSBuild property names are case-insensitive, so a Linux caller is
+ * checked the same safe way).
+ */
+export function classifyEnvName(
+  name: string,
+  rules: ResolvedRemoteRules,
+  platform: NodeJS.Platform = process.platform,
+): EnvNameClass {
+  const isWindows = platform === "win32";
+  const lower = name.toLowerCase();
+  const allowed = isWindows ? rules.allowedEnvLower.get(lower) : rules.allowedEnv.has(name) ? name : undefined;
+  if (allowed !== undefined) {
+    return { kind: "allowed", canonical: allowed };
+  }
+  if (
+    isQueueInfraEnv(name, platform) ||
+    (isWindows ? rules.ignoredEnvLower.has(lower) : rules.ignoredEnv.has(name)) ||
+    startsWithAnyLower(lower, rules.ignoredEnvPrefixesLower)
+  ) {
+    return { kind: "ignored" };
+  }
+  const localOnly = isWindows ? rules.localOnlyEnvLower.get(lower) : rules.localOnlyEnv.has(name) ? name : undefined;
+  if (localOnly !== undefined) {
+    return { kind: "local-only", canonical: localOnly };
+  }
+  if (startsWithAnyLower(lower, rules.localOnlyEnvPrefixesLower)) {
+    return { kind: "local-only", canonical: name };
+  }
+  return { kind: "other" };
+}
+
+/**
+ * Checks one assignment written in the command itself (a leading `NAME=value`, `$env:NAME=...;` or `export NAME=...;`,
+ * a per-step `NAME=value`, or `-e NAME=VALUE`): returns why the job must run locally, or null when the assignment may
+ * go to the remote worker as written. Ignored names pass; local-only names (exact or prefix) and path values (paths
+ * are not rewritten) do not.
+ */
+export function commandEnvLocalReason(
+  name: string,
+  value: string,
+  rules: ResolvedRemoteRules,
+  platform: NodeJS.Platform = process.platform,
+): string | null {
+  const cls = classifyEnvName(name, rules, platform);
+  if (cls.kind === "ignored") {
+    return null;
+  }
+  if (cls.kind === "local-only") {
+    return `env var ${cls.canonical} is local-only`;
+  }
+  if (looksLikePathValue(value)) {
+    return `env var ${cls.kind === "allowed" ? cls.canonical : name} has a path value (no path rewriting)`;
+  }
+  return null;
+}
+
+/**
+ * Win32 spelling fix for an assignment written in the command: a name that matches an allowlisted or default
+ * variable case-insensitively takes that canonical spelling, so `$env:test_seed='2'` reaches Linux as `TEST_SEED`.
+ */
+export function canonicalCommandEnvName(
+  name: string,
+  rules: ResolvedRemoteRules,
+  platform: NodeJS.Platform = process.platform,
+): string {
+  if (platform !== "win32") {
+    return name;
+  }
+  const lower = name.toLowerCase();
+  const allowed = rules.allowedEnvLower.get(lower);
+  if (allowed !== undefined) {
+    return allowed;
+  }
+  return Object.keys(rules.defaultEnv).find((key) => key.toLowerCase() === lower) ?? name;
+}
+
 /**
  * Resolves which caller environment variables may be forwarded to a remote worker.
- * Empty/whitespace-only strings and `undefined` are treated as unset; `localOnlyEnv` takes precedence over `allowedEnv`.
+ * Empty/whitespace-only strings and `undefined` are treated as unset. Names are classified by `classifyEnvName`:
+ * allowlisted ones forward (a path value forces local), ignored ones neither forward nor block, local-only ones
+ * (exact or prefix) force local, and the rest are dropped.
  */
 export function resolveCallerEnv(
   callerEnv: Readonly<NodeJS.ProcessEnv>,
   rules: ResolvedRemoteRules,
   platform: NodeJS.Platform = process.platform,
 ): CallerEnvResolution {
-  const isWindows = platform === "win32";
-  const entries: readonly [string, string][] = Object.entries(callerEnv).filter(
-    (entry): entry is [string, string] =>
-      entry[1] !== undefined && entry[1].trim() !== "" && !isQueueInfraEnv(entry[0], platform),
-  );
+  const classified: { key: string; value: string; cls: EnvNameClass }[] = [];
+  for (const [key, value] of Object.entries(callerEnv)) {
+    if (value !== undefined && value.trim() !== "") {
+      classified.push({ key, value, cls: classifyEnvName(key, rules, platform) });
+    }
+  }
 
   // Check local-only variables first so fail-closed precedence holds regardless of object key order.
-  for (const [rawKey] of entries) {
-    const localCanonical = isWindows
-      ? rules.localOnlyEnvLower.get(rawKey.toLowerCase())
-      : rules.localOnlyEnv.has(rawKey)
-        ? rawKey
-        : undefined;
-    if (localCanonical !== undefined) {
-      return {
-        ok: false,
-        variable: localCanonical,
-        reason: `env var ${localCanonical} is local-only`,
-      };
+  for (const { cls } of classified) {
+    if (cls.kind === "local-only") {
+      return { ok: false, variable: cls.canonical, reason: `env var ${cls.canonical} is local-only` };
     }
   }
 
   const forwarded: Record<string, string> = Object.create(null) as Record<string, string>;
-  for (const [rawKey, rawValue] of entries) {
-    const allowedCanonical = isWindows
-      ? rules.allowedEnvLower.get(rawKey.toLowerCase())
-      : rules.allowedEnv.has(rawKey)
-        ? rawKey
-        : undefined;
-    if (allowedCanonical === undefined) {
+  for (const { key, value, cls } of classified) {
+    if (cls.kind !== "allowed") {
       continue;
     }
-    if (looksLikePathValue(rawValue)) {
+    if (looksLikePathValue(value)) {
       return {
         ok: false,
-        variable: allowedCanonical,
-        reason: `env var ${allowedCanonical} has a path value (no path rewriting)`,
+        variable: cls.canonical,
+        reason: `env var ${cls.canonical} has a path value (no path rewriting)`,
       };
     }
-    if (rawKey === allowedCanonical || forwarded[allowedCanonical] === undefined) {
-      forwarded[allowedCanonical] = rawValue;
+    if (key === cls.canonical || forwarded[cls.canonical] === undefined) {
+      forwarded[cls.canonical] = value;
     }
   }
 

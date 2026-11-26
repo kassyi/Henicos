@@ -244,6 +244,15 @@ export interface RemoteOffloadContribution {
   readonly allowedEnv?: readonly string[];
   /** Recognized build/test/path/secret environment variable names that force local execution when set in caller env. */
   readonly localOnlyEnv?: readonly string[];
+  /**
+   * Name prefixes (matched case-insensitively on every platform) of caller variables that force local execution, for
+   * families read by MSBuild or the runtime (e.g. ["DOTNET_", "MSBUILD"]). `allowedEnv` and the ignore lists win.
+   */
+  readonly localOnlyEnvPrefixes?: readonly string[];
+  /** Caller variable names that neither forward nor force local (set on every run of the machine, e.g. by the OS). */
+  readonly ignoredEnv?: readonly string[];
+  /** Name prefixes (case-insensitive) of caller variables that neither forward nor force local. */
+  readonly ignoredEnvPrefixes?: readonly string[];
   /** Additional worktree-relative POSIX directory prefixes excluded from remote source sync. */
   readonly syncExcludePrefixes?: readonly string[];
   /** Additional `find -name` glob patterns excluded from remote source sync (e.g. ["*.received.*", "*.user"]). */
