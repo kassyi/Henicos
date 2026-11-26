@@ -724,8 +724,8 @@ export class QueuedRun {
 
   /**
    * Decides the share of a GPU turn before its first registration: classify (sync), and when no plugin has an opinion
-   * (an explicit "shared" or "exclusive" stands, a veto too) and neither --gpu-exclusive nor --after is set, the
-   * plugins' checkShare, which may take a while (a test list through the queue), so it runs before the connection is
+   * (an explicit "shared" or "exclusive" stands, a veto too, and --gpu-exclusive, which PluginHost.classify answers
+   * as "exclusive") and --after is not set, the plugins' checkShare, which may take a while (a test list through the queue), so it runs before the connection is
    * made, not during it. Once per run; a re-registration reuses the answer.
    */
   private async resolveShare(): Promise<void> {
@@ -736,10 +736,7 @@ export class QueuedRun {
     const classified = this.classifyShare(plugins);
     let share = classified.share;
     let shareReason = classified.shareReason ?? null;
-    if (share === undefined && this.options.gpuExclusive === true) {
-      share = "exclusive";
-      shareReason = "forced-exclusive";
-    } else if (share === undefined && this.options.after > 0) {
+    if (share === undefined && this.options.after > 0) {
       // --after: the predecessor may still build what the test reads (a run split by run --gpu zeroes it: its build
       // job already waited), so a list now could read the old assembly
       share = "exclusive";
