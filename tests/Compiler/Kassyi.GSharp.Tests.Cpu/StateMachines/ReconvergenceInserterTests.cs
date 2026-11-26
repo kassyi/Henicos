@@ -206,7 +206,7 @@ public class ReconvergenceInserterTests : StateMachineTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Insert_GotoLoopWithContinueBeforeGateInFor_EmitsGateBeforeBreakBlock()
+    public void Insert_GotoLoopWithContinueBeforeGateInFor_EmitsNoGateBeforeBreakBlock()
     {
         var (lowered, stackLowered) = LowerFromTestCase("GotoLoopWithContinueBeforeGateInForKernel", isDeviceFunction: false);
 
@@ -215,9 +215,9 @@ public class ReconvergenceInserterTests : StateMachineTestBase
         var afterReconvergence = GetCallsAfterReconvergencePass(lowered);
         Assert.Contains("Mark(43)", afterReconvergence);
 
-        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(42)");
+        AssertHasNoGateStackReconvergeBefore(stackLowered.Body, "Mark(42)");
         AssertHasPrecedingStackReconverge(stackLowered.Body, "Mark(43)");
-        Assert.Contains(
+        Assert.DoesNotContain(
             stackLowered.Body.DescendantNodes().OfType<GotoStatementSyntax>(),
             static g => g.Expression is IdentifierNameSyntax { Identifier.ValueText: var label } &&
                         label.StartsWith(GSharpInternalNames.Lowering.ReconvergeJoinLabelPrefix, StringComparison.Ordinal));
@@ -225,17 +225,17 @@ public class ReconvergenceInserterTests : StateMachineTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Insert_GotoLoopWithLabeledBreakIntoLoopInNestedFor_GatesInnerForOnly()
+    public void Insert_GotoLoopWithLabeledBreakIntoLoopInNestedFor_EmitsNoGateInTheForLoops()
     {
         var (lowered, stackLowered) = LowerFromTestCase("GotoLoopWithLabeledBreakIntoLoopInNestedForKernel", isDeviceFunction: false);
 
         Assert.NotEmpty(lowered.LoweredBody.DescendantNodes().OfType<InvocationExpressionSyntax>()
             .Where(static call => Calls(call, GSharpInternalNames.Prelude.WarpReconvergeArrive)));
         var afterReconvergence = GetCallsAfterReconvergencePass(lowered);
-        Assert.Contains("Mark(45)", afterReconvergence);
+        Assert.DoesNotContain("Mark(45)", afterReconvergence);
         Assert.Contains("Mark(46)", afterReconvergence);
 
-        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(44)");
+        AssertHasNoGateStackReconvergeBefore(stackLowered.Body, "Mark(44)");
         AssertHasPrecedingStackReconverge(stackLowered.Body, "Mark(46)");
         Assert.DoesNotContain(
             stackLowered.Body.DescendantNodes().OfType<GotoStatementSyntax>(),
@@ -245,7 +245,7 @@ public class ReconvergenceInserterTests : StateMachineTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Insert_NestedGotoLoopsWithContinueAndBreakExitingInnerLoop_ClosesOuterAtGateAndInnerAtBreak()
+    public void Insert_NestedGotoLoopsWithContinueAndBreakExitingInnerLoop_ClosesInnerAtGateAndBreak()
     {
         var (lowered, stackLowered) = LowerFromTestCase("NestedGotoLoopsWithContinueAndBreakExitingInnerLoopKernel", isDeviceFunction: false);
 
@@ -267,8 +267,8 @@ public class ReconvergenceInserterTests : StateMachineTestBase
             .TakeWhile(static s => s is ExpressionStatementSyntax { Expression: InvocationExpressionSyntax c } &&
                                    Calls(c, GSharpInternalNames.StackWarp.RegionLeave))
             .Count();
-        // Leaves C, F, B_L1, G_L1, and B_L0 when closing outer L0 at the gate.
-        Assert.Equal(5, mark47LeavesBeforeReconverge);
+        // Leaves C, F and B_L1 when closing the inner L1 at the gate: its backward goto is the statement before Mark(47).
+        Assert.Equal(3, mark47LeavesBeforeReconverge);
 
         var joinGoto = stackLowered.Body
             .DescendantNodes()
@@ -294,7 +294,7 @@ public class ReconvergenceInserterTests : StateMachineTestBase
         Assert.NotEmpty(lowered.LoweredBody.DescendantNodes().OfType<InvocationExpressionSyntax>()
             .Where(static call => Calls(call, GSharpInternalNames.Prelude.WarpReconvergeArrive)));
 
-        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(50)");
+        AssertHasNoGateStackReconvergeBefore(stackLowered.Body, "Mark(50)");
         AssertHasPrecedingStackReconverge(stackLowered.Body, "Mark(51)");
     }
 
@@ -337,7 +337,7 @@ public class ReconvergenceInserterTests : StateMachineTestBase
             .Where(static call => Calls(call, GSharpInternalNames.Prelude.WarpReconvergeArrive)));
         Assert.Contains("Mark(55)", GetCallsAfterReconvergencePass(lowered));
 
-        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(54)");
+        AssertHasNoGateStackReconvergeBefore(stackLowered.Body, "Mark(54)");
         AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(55)");
         AssertHasLatchBeforeAllBackGotos(stackLowered.Body, "L1", 2);
     }
@@ -354,7 +354,7 @@ public class ReconvergenceInserterTests : StateMachineTestBase
             .Where(static call => Calls(call, GSharpInternalNames.Prelude.WarpReconvergeArrive)));
         Assert.Contains("Mark(58)", GetCallsAfterReconvergencePass(lowered));
 
-        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(56)");
+        AssertHasNoGateStackReconvergeBefore(stackLowered.Body, "Mark(56)");
         AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(57)");
         AssertHasPrecedingStackReconverge(stackLowered.Body, "Mark(58)");
         AssertHasLatchBeforeAllBackGotos(stackLowered.Body, "L1", 2);
@@ -378,7 +378,7 @@ public class ReconvergenceInserterTests : StateMachineTestBase
             .Where(static call => Calls(call, GSharpInternalNames.Prelude.WarpReconvergeArrive)));
         Assert.Contains("Mark(60)", GetCallsAfterReconvergencePass(lowered));
 
-        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(59)");
+        AssertHasNoGateStackReconvergeBefore(stackLowered.Body, "Mark(59)");
         AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(60)");
         AssertHasLatchBeforeAllBackGotos(stackLowered.Body, "L1", 2);
     }
@@ -395,7 +395,7 @@ public class ReconvergenceInserterTests : StateMachineTestBase
             .Where(static call => Calls(call, GSharpInternalNames.Prelude.WarpReconvergeArrive)));
         Assert.Contains("Mark(63)", GetCallsAfterReconvergencePass(lowered));
 
-        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(61)");
+        AssertHasNoGateStackReconvergeBefore(stackLowered.Body, "Mark(61)");
         AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(62)");
         AssertHasPrecedingStackReconverge(stackLowered.Body, "Mark(63)");
         AssertHasLatchBeforeAllBackGotos(stackLowered.Body, "L1", 2);
@@ -412,7 +412,7 @@ public class ReconvergenceInserterTests : StateMachineTestBase
             stackLowered,
             lowered,
             finalMark: "Mark(65)",
-            gateMark: "Mark(64)");
+            ungatedMark: "Mark(64)");
     }
 
     [Fact]
@@ -423,7 +423,7 @@ public class ReconvergenceInserterTests : StateMachineTestBase
             "GateWithForwardGotoToMemberPastReturnKernel",
             isDeviceFunction: false);
         AssertHasBalancedRegionSites(stackLowered, lowered);
-        AssertHasPrecedingStackReconverge(stackLowered.Body, "Mark(90)");
+        AssertHasNoGateStackReconvergeBefore(stackLowered.Body, "Mark(90)");
         AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(91)");
         AssertHasPrecedingStackReconverge(stackLowered.Body, "Mark(92)");
         AssertHasLatchBeforeAllBackGotos(stackLowered.Body, "L1", 2);
@@ -796,16 +796,16 @@ public class ReconvergenceInserterTests : StateMachineTestBase
         StackLoweredBody stackLowered,
         LoweredStateMachine lowered,
         string finalMark,
-        string? gateMark = null,
+        string? ungatedMark = null,
         string? afterLoopMark = null,
         bool expectLoopBodyContinueRegion = false)
     {
         AssertHasLatchBeforeAllBackGotos(stackLowered.Body, "L1", 2);
         AssertHasBalancedRegionSites(stackLowered, lowered);
 
-        if (gateMark != null)
+        if (ungatedMark != null)
         {
-            AssertHasGateStackReconvergeBefore(stackLowered.Body, gateMark);
+            AssertHasNoGateStackReconvergeBefore(stackLowered.Body, ungatedMark);
         }
 
         if (afterLoopMark != null)
@@ -916,6 +916,22 @@ public class ReconvergenceInserterTests : StateMachineTestBase
             SwitchSectionSyntax section => section.Statements,
             _ => throw new InvalidOperationException($"Expected BlockSyntax or SwitchSectionSyntax, got {parent?.Kind()}.")
         };
+
+    // A statement after a forward goto holds no backward goto, so no gate is placed before it
+    private static void AssertHasNoGateStackReconvergeBefore(BlockSyntax body, string markCall)
+    {
+        var markStatement = FindMarkStatement(body, markCall);
+        var block = Assert.IsType<BlockSyntax>(markStatement.Parent);
+        var index = block.Statements.IndexOf(markStatement);
+        var hasGate = index > 0 &&
+                      block.Statements[index - 1] is ExpressionStatementSyntax
+                      {
+                          Expression: InvocationExpressionSyntax call
+                      } &&
+                      (Calls(call, GSharpInternalNames.StackWarp.Reconverge) ||
+                       Calls(call, GSharpInternalNames.StackWarp.RegionEnter));
+        Assert.False(hasGate, $"Expected no gate before {markCall}.");
+    }
 
     private static void AssertHasGateStackReconvergeBefore(BlockSyntax body, string markCall)
     {
