@@ -6,9 +6,18 @@
 import type { ChildProcess } from "node:child_process";
 import * as crypto from "node:crypto";
 import * as path from "node:path";
+import type { QuarantineSummary } from "../protocol.ts";
 import type { ShellResult } from "../shell.ts";
 import { prefix, resolveStateDirectory } from "../system.ts";
-import { ArtifactCollector, RemoteStreamSanitizer, sanitizeRemoteLogText } from "./artifact-collector.ts";
+import {
+  ArtifactCollector,
+  pruneQuarantineDirs,
+  QuarantineFolderName,
+  RemoteStreamSanitizer,
+  resolveQuarantineJobSegment,
+  sanitizeRemoteLogText,
+  validateQuarantineRootAncestors,
+} from "./artifact-collector.ts";
 import type { RemoteCommandPlan } from "./command-translator.ts";
 import { EmptyRemoteRules, type ResolvedRemoteRules } from "./rules.ts";
 import {
@@ -28,6 +37,8 @@ export interface RemoteRunResult extends ShellResult {
   transportFailed?: boolean;
   /** True when the remote command hit the GNU `timeout` limit (`exit 124`). */
   timedOut?: boolean;
+  /** Present when quarantined artifacts were written or `--results-directory` was redirected to quarantine. */
+  quarantine?: QuarantineSummary;
 }
 
 export interface ExecScriptOptions {
@@ -156,6 +167,7 @@ export function buildExecScript(options: ExecScriptOptions): string {
 /** Facade coordinating WorkspaceSyncer, RemoteTransport, and ArtifactCollector. */
 export class RemoteRunner {
   private readonly transport: RemoteTransport;
+  private readonly stateDir: string;
   private readonly syncer: WorkspaceSyncer;
   private readonly collector: ArtifactCollector;
   private readonly remoteRules: ResolvedRemoteRules;
@@ -166,6 +178,7 @@ export class RemoteRunner {
     remoteRules: ResolvedRemoteRules = EmptyRemoteRules,
   ) {
     this.transport = transport;
+    this.stateDir = stateDir;
     this.remoteRules = remoteRules;
     this.syncer = new WorkspaceSyncer(
       transport,
@@ -277,6 +290,7 @@ export class RemoteRunner {
     onChild: (child: ChildProcess) => void,
     localManifestOverride?: Record<string, string>,
     signal?: AbortSignal,
+    jobId?: number,
   ): Promise<RemoteRunResult> {
     if (signal?.aborted) {
       return { code: 1, signaled: true };
@@ -336,13 +350,23 @@ export class RemoteRunner {
       prefix(`remote ${spec.name}: timed out after ${spec.maxJobMinutes}m (exit 124)`);
     }
 
+    const resultsDirs = plan.redirectedResultsDirs ?? [];
+    const resultsRedirected = resultsDirs.length > 0;
     if (!signal?.aborted && (runResult.code !== 0 || plan.collectPaths.length > 0)) {
+      const jobSegment = resolveQuarantineJobSegment(jobId);
+      const quarantineRoot = path.join(this.stateDir, QuarantineFolderName);
+      const quarantineDir = path.join(quarantineRoot, jobSegment);
       const pulled = await this.collector.pull(
         plan.worktree,
         runResult.code !== 0,
         manifestParentDirs(synced.localManifest),
         plan.collectPaths,
-        { knownTrackedFiles: new Set(Object.keys(synced.localManifest)), signal },
+        {
+          knownTrackedFiles: new Set(Object.keys(synced.localManifest)),
+          stateDir: this.stateDir,
+          quarantineDir,
+          signal,
+        },
       );
       if (signal?.aborted) {
         return { code: attempt.code !== 0 ? attempt.code : 1, signaled: true };
@@ -353,12 +377,55 @@ export class RemoteRunner {
             `${pulled.crashedTests.map(sanitizeRemoteLogText).join(", ")}`,
         );
       }
-      if (pulled.written > 0) {
-        const kb = Math.max(1, Math.round(pulled.bytes / 1024));
-        prefix(`remote ${spec.name}: pulled back ${pulled.written} validated file(s) (${kb} KB)`);
+      const kb = pulled.bytes === 0 ? 0 : Math.max(1, Math.round(pulled.bytes / 1024));
+      const dirText = sanitizeRemoteLogText(pulled.quarantineDir);
+      const dirsText = resultsDirs.map((d) => sanitizeRemoteLogText(d)).join(", ");
+      const blockReason =
+        pulled.quarantineBlocked === true
+          ? "quarantine root validation failed"
+          : resultsRedirected && pulled.written === 0
+            ? validateQuarantineRootAncestors(quarantineDir, this.stateDir, plan.worktree)
+            : null;
+      const quarantineBlocked = blockReason !== null;
+      if (quarantineBlocked) {
+        if (resultsRedirected) {
+          prefix(
+            `remote ${spec.name}: --results-directory ${dirsText} could not be quarantined ` +
+              `(${sanitizeRemoteLogText(blockReason)}): ${dirText}`,
+          );
+        }
+      } else if (pulled.written > 0 && resultsRedirected) {
+        prefix(
+          `remote ${spec.name}: quarantined ${pulled.written} file(s) (${kb} KB) in ${dirText} ` +
+            `(--results-directory ${dirsText} redirected here, not local)`,
+        );
+      } else if (pulled.written > 0) {
+        prefix(`remote ${spec.name}: quarantined ${pulled.written} file(s) (${kb} KB) in ${dirText}`);
+      } else if (resultsRedirected) {
+        prefix(
+          `remote ${spec.name}: --results-directory ${dirsText} redirected to quarantine (${dirText}); ` +
+            `0 file(s) received`,
+        );
       }
       if (pulled.rejected > 0) {
         prefix(`remote ${spec.name}: blocked ${pulled.rejected} unapproved artifact path(s)`);
+      }
+      if (!quarantineBlocked && (pulled.written > 0 || resultsRedirected)) {
+        runResult.quarantine = {
+          dir: pulled.quarantineDir,
+          files: pulled.written,
+          bytes: pulled.bytes,
+          resultsRedirected,
+          ...(resultsDirs.length > 0 ? { resultsDirs: [...resultsDirs] } : {}),
+        };
+      }
+      if (!quarantineBlocked) {
+        pruneQuarantineDirs(quarantineRoot, {
+          excludeName: jobSegment,
+          warn: prefix,
+          worktree: plan.worktree,
+          stateDir: this.stateDir,
+        });
       }
     }
 
@@ -374,6 +441,13 @@ export function executeRemotePlan(
   stateDir = resolveStateDirectory(),
   remoteRules: ResolvedRemoteRules = EmptyRemoteRules,
   signal?: AbortSignal,
+  jobId?: number,
 ): Promise<RemoteRunResult> {
-  return new RemoteRunner(new SshTransport(remote), stateDir, remoteRules).execute(plan, onChild, undefined, signal);
+  return new RemoteRunner(new SshTransport(remote), stateDir, remoteRules).execute(
+    plan,
+    onChild,
+    undefined,
+    signal,
+    jobId,
+  );
 }
