@@ -2103,4 +2103,50 @@ public class WarpActiveMaskDifferentialTests
                 .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
                 .Concat(PerLane(32, static t => (t & 4) == 0 && (t & 3) != 0, 2u))
                 .ToArray());
+
+    // The CUDA compiler shrinks this loop and joins every iteration into one call, so the GPU holds all the lanes of
+    // the warp, while the CPU paths split the lanes by the number of back gotos (#2336 (Warp.ActiveMask() inside a loop with a
+    // thread-dependent jump returns lanes of other iterations on CUDA)). The slot of n is outside the bounds.
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_GotoLoopLeftInsideForLoopWithoutBreak_StaysWithinLoopBounds() =>
+        RunWithinLoopBounds(128,
+            static output => WarpActiveMaskDifferentialKernels.LaunchGotoLoopLeftInsideForLoopWithoutBreakKernel(
+                output, 0, blockDimX: 32),
+            PerLane(32, static t => (t & 1) == 0, 0x55555555u)
+                .Concat(PerLane(32, static t => (t & 3) == 1, 0x22222222u))
+                .Concat(PerLane(32, static t => (t & 3) == 3, 0x88888888u))
+                .Concat(Enumerable.Range(0, 32).Select(static t => (t & 3) == 3 ? 2u : (t & 1) != 0 ? 1u : 0u))
+                .ToArray(),
+            PerLane(32, static t => (t & 1) == 0, 0xFFFFFFFFu)
+                .Concat(PerLane(32, static t => (t & 3) == 1, 0xFFFFFFFFu))
+                .Concat(PerLane(32, static t => (t & 3) == 3, 0xFFFFFFFFu))
+                .Concat(Enumerable.Range(0, 32).Select(static t => (t & 3) == 3 ? 2u : (t & 1) != 0 ? 1u : 0u))
+                .ToArray(),
+            static i => i & 31,
+            boundsFrom: 0,
+            boundsTo: 96);
+
+    // The CUDA compiler shrinks this loop and joins every iteration into one call, so the GPU holds all the lanes of
+    // the warp, while the CPU paths split the lanes by the number of back gotos (#2336 (Warp.ActiveMask() inside a loop with a
+    // thread-dependent jump returns lanes of other iterations on CUDA)). The slot of n is outside the bounds.
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_GotoLoopLeftInsideForLoopWithRuntimeTrip_StaysWithinLoopBounds() =>
+        RunWithinLoopBounds(128,
+            static output => WarpActiveMaskDifferentialKernels.LaunchGotoLoopLeftInsideForLoopWithRuntimeTripKernel(
+                output, 0, blockDimX: 32),
+            PerLane(32, static t => (t & 1) == 0, 0x55555555u)
+                .Concat(PerLane(32, static t => (t & 3) == 1, 0x22222222u))
+                .Concat(PerLane(32, static t => (t & 3) == 3, 0x88888888u))
+                .Concat(Enumerable.Range(0, 32).Select(static t => (t & 3) == 3 ? 2u : (t & 1) != 0 ? 1u : 0u))
+                .ToArray(),
+            PerLane(32, static t => (t & 1) == 0, 0xFFFFFFFFu)
+                .Concat(PerLane(32, static t => (t & 3) == 1, 0xFFFFFFFFu))
+                .Concat(PerLane(32, static t => (t & 3) == 3, 0xFFFFFFFFu))
+                .Concat(Enumerable.Range(0, 32).Select(static t => (t & 3) == 3 ? 2u : (t & 1) != 0 ? 1u : 0u))
+                .ToArray(),
+            static i => i & 31,
+            boundsFrom: 0,
+            boundsTo: 96);
 }

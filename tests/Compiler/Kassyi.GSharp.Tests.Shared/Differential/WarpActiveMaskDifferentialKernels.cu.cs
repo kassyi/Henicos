@@ -3304,4 +3304,47 @@ public static partial class WarpActiveMaskDifferentialKernels
         result[t + 32 * 5] = Warp.ActiveMask();
         result[t + 32 * 6] = (uint)n;
     }
+
+    // A goto loop left inside a for loop that runs once and has no break: the call is the last statement of the body.
+    // Slots 0..2: the call after n back gotos; 3: n
+    [GpuKernel]
+    public static void GotoLoopLeftInsideForLoopWithoutBreakKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        for (int i = 0; i < 1; i++)
+        {
+            if (((t >> n) & 1) != 0 && n < 2)
+            {
+                n++;
+                goto L1;
+            }
+
+            result[t + 32 * n] = Warp.ActiveMask();
+        }
+
+        result[t + 96] = (uint)n;
+    }
+
+    // The same with a trip count known only at run time
+    [GpuKernel]
+    public static void GotoLoopLeftInsideForLoopWithRuntimeTripKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        for (int i = 0; i <= u; i++)
+        {
+            if (((t >> n) & 1) != 0 && n < 2)
+            {
+                n++;
+                goto L1;
+            }
+
+            result[t + 32 * n] = Warp.ActiveMask();
+        }
+
+        result[t + 96] = (uint)n;
+    }
 }
