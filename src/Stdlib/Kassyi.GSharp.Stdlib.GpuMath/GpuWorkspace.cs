@@ -115,7 +115,7 @@ public class GpuWorkspace : IGpuResourceScope
 
     /// <summary>
     /// Gets or sets the size of a square root, in 32-bit words, above which its inverse square root is computed by
-    /// precision doubling driven from the host instead of one cooperative mega-kernel. Default is 45 words.
+    /// precision doubling driven from the host instead of one cooperative mega-kernel. Default is 5956 words.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -127,11 +127,11 @@ public class GpuWorkspace : IGpuResourceScope
     /// </para>
     /// <para>
     /// The result is exactly the same either way; only the time differs. The size at which the two take the same time
-    /// depends on the GPU (its number of SMs and its launch latency), so measure it on yours and set it here. On the
-    /// GPU the default was measured on, the mega-kernel is the faster while its transforms fit 512 points, which holds
-    /// up to 45 root words. 0 sends every root to the precision doubling, <see cref="int.MaxValue"/> every root to the
-    /// mega-kernel.
-    /// </para>
+    /// depends on the GPU (its number of SMs and its launch latency), so measure it on yours and set it here. The
+    /// default, 5956 root words, is where the cooperative mega-kernel stops being the faster path: up to 5956 words
+    /// its transforms fit 65536 points, and from 5957 words they need 131072 points, where host-driven precision
+    /// doubling is faster. The value comes from the <c>arithmetic sqrt-path</c> benchmark on an idle machine. 0
+    /// sends every root to the precision doubling, <see cref="int.MaxValue"/> every root to the mega-kernel.</para>
     /// </remarks>
     /// <exception cref="ArgumentOutOfRangeException">The value is negative.</exception>
     public int SqrtPrecisionDoublingThresholdWords
@@ -142,7 +142,7 @@ public class GpuWorkspace : IGpuResourceScope
             ArgumentOutOfRangeException.ThrowIfNegative(value);
             field = value;
         }
-    } = 45;
+    } = 5956;
 
     /// <summary>
     /// Gets the tuning parameters of the big-float transcendental functions (<c>Exp</c>, <c>Log</c>, <c>Pow</c>) run on

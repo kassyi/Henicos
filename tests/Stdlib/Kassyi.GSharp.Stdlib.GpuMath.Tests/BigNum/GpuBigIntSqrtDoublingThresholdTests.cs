@@ -6,9 +6,9 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 // Properties checked here (property-test-design §1), for the switch between the mega-kernel and the precision doubling
 // of the inverse square root:
 // - Sqrt is the floor on both sides of the threshold, and a root takes the doubling exactly when it is wider than
-//   GpuWorkspace.SqrtPrecisionDoublingThresholdWords, also at the default of a new workspace (45 root words).
+//   GpuWorkspace.SqrtPrecisionDoublingThresholdWords, also at the default of a new workspace (5956 root words).
 // - Only the operand of SqrtFloor (bit length 32w or 32w - 1, its margin) takes the doubling.
-// - The threshold rejects a negative value and starts at 45.
+// - The threshold rejects a negative value and starts at 5956.
 // The path is read from GpuWorkspace.InverseSqrtDoublingRuns; every expected value is computed on the host.
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Stdlib)]
@@ -70,7 +70,7 @@ public class GpuBigIntSqrtDoublingThresholdTests
     public static TheoryData<int, string> DefaultThresholdInputs()
     {
         var data = new TheoryData<int, string>();
-        foreach (var rootWords in new[] { 45, 46 })
+        foreach (var rootWords in new[] { 5956, 5957 })
         {
             foreach (var kind in s_rootOperandKinds)
             {
@@ -81,20 +81,20 @@ public class GpuBigIntSqrtDoublingThresholdTests
         return data;
     }
 
-    // On a workspace nobody configured (default 45 root words), a root of 45 words keeps the mega-kernel and a root of
-    // 46 words takes the doubling, and both give the floor for the operands at the ends of the range: bit length 64r
-    // and 64r - 1, all ones, the lowest value, the square of the largest root and one below it, and a negative D in a
-    // wide stage.
-    // mutant: GpuWorkspace.cs:145 `} = 45;` -> `} = 44;` (45 counts a doubling run)
-    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:69 `>` -> `>=` (45 counts a doubling run)
+    // On a workspace nobody configured (default 5956 root words), a root of 5956 words keeps the mega-kernel and a
+    // root of 5957 words takes the doubling, and both give the floor for the operands at the ends of the range: bit
+    // length 64r and 64r - 1, all ones, the lowest value, the square of the largest root and one below it, and a
+    // negative D in a wide stage.
+    // mutant: GpuWorkspace.cs:145 `} = 5956;` -> `} = 5955;` (5956 counts a doubling run)
+    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:69 `>` -> `>=` (5956 counts a doubling run)
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(DefaultThresholdInputs))]
-    public void Sqrt_DefaultThresholdAt45And46RootWords_IsFloorAndSwitchesPath(int rootWords, string kind)
+    public void Sqrt_DefaultThresholdAt5956And5957RootWords_IsFloorAndSwitchesPath(int rootWords, string kind)
     {
         CudaCapability.EnsureGpuAvailable();
         var a = GpuBigIntInverseSqrtDoublingTests.BuildRootOperand(kind, rootWords);
-        using var ctx = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(2 * rootWords * 8, GpuExecutionEngine.GSharpAot);
         using var operand = GpuBigUInt.FromBigInteger(ctx, a, 2 * rootWords);
         using var result = new GpuBigUInt(ctx, 2 * rootWords);
         var runsBefore = ctx.InverseSqrtDoublingRuns;
@@ -102,8 +102,8 @@ public class GpuBigIntSqrtDoublingThresholdTests
         GpuBigIntDivRem.Sqrt(operand, result);
 
         GpuBigIntSqrtTests.AssertIsFloorSquareRoot(a, result.ToBigInteger(), $"{kind} r={rootWords}");
-        // The path follows the default: one doubling run above 45 root words, none at 45.
-        Assert.Equal(rootWords > 45 ? 1 : 0, ctx.InverseSqrtDoublingRuns - runsBefore);
+        // The path follows the default: one doubling run above 5956 root words, none at 5956.
+        Assert.Equal(rootWords > 5956 ? 1 : 0, ctx.InverseSqrtDoublingRuns - runsBefore);
         ctx.ThrowIfDeviceErrors();
     }
 
@@ -209,16 +209,16 @@ public class GpuBigIntSqrtDoublingThresholdTests
         Assert.True(a < (r + 1) * (r + 1), "the root is below the floor");
     }
 
-    // A new workspace starts at the documented default of 45 root words, the largest root whose mega-kernel transforms
-    // fit 512 points.
-    // mutant: GpuWorkspace.cs:145 `} = 45;` -> `} = 44;`
+    // A new workspace starts at the documented default of 5956 root words, the largest root whose mega-kernel
+    // transforms fit 65536 points.
+    // mutant: GpuWorkspace.cs:145 `} = 5956;` -> `} = 5955;`
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void SqrtPrecisionDoublingThresholdWords_NewWorkspace_Is45()
+    public void SqrtPrecisionDoublingThresholdWords_NewWorkspace_Is5956()
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
 
-        Assert.Equal(45, ctx.SqrtPrecisionDoublingThresholdWords);
+        Assert.Equal(5956, ctx.SqrtPrecisionDoublingThresholdWords);
     }
 }
