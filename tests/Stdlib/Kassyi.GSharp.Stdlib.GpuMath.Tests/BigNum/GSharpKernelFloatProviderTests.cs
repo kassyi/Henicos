@@ -487,25 +487,26 @@ public class GSharpKernelFloatProviderTests : IDisposable
             $"{(inverse ? "rsqrt" : "sqrt")}({value}): actual {BigFloatReference.Describe(resSig.ToBigInteger(), res.Exponent, false)}");
     }
 
-    // On a workspace with the default threshold (45 root words), a significand of 45 words keeps the mega-kernel and
-    // one of 46 or 300 words takes the precision doubling; either way the result is RZ_p of the root, p = 32 words.
+    // On a workspace with the default threshold (5956 root words), a significand of 5956 words keeps the mega-kernel
+    // and one of 5957 or 6500 words takes the precision doubling; either way the result is RZ_p of the root, p = 32
+    // words.
     // The other float tests stop at 16 words, so without this test no float root reaches the doubling by default.
-    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:69 `>` -> `>=` (45 counts a doubling run)
-    // mutant: GpuWorkspace.cs:145 `} = 45;` -> `} = 46;` (46 counts no doubling run)
+    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:69 `>` -> `>=` (5956 counts a doubling run)
+    // mutant: GpuWorkspace.cs:145 `} = 5956;` -> `} = 5957;` (5957 counts no doubling run)
     [SkippableTheory]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
-    [InlineData(2u, 0, 45)]
-    [InlineData(2u, 0, 46)]
-    [InlineData(2u, 1, 46)]
-    [InlineData(3u, 0, 46)]
-    [InlineData(9u, 0, 46)]
-    [InlineData(0xFFFFFFFFu, 7, 46)]
-    [InlineData(2u, 0, 300)]
+    [InlineData(2u, 0, 5956)]
+    [InlineData(2u, 0, 5957)]
+    [InlineData(2u, 1, 5957)]
+    [InlineData(3u, 0, 5957)]
+    [InlineData(9u, 0, 5957)]
+    [InlineData(0xFFFFFFFFu, 7, 5957)]
+    [InlineData(2u, 0, 6500)]
     public void Sqrt_SignificandAroundDefaultThreshold_IsRoundedTowardZero(uint value, int exponent, int resultWords)
     {
-        using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        using var workspace = new GpuWorkspace(resultWords * 8, GpuExecutionEngine.GSharpAot);
         var context = CreateContext(workspace);
         using var sig = new GpuBigUInt(workspace, [value]);
         using var resSig = new GpuBigUInt(workspace, resultWords);
@@ -519,8 +520,8 @@ public class GSharpKernelFloatProviderTests : IDisposable
         Assert.False(res.IsNegative);
         Assert.Equal(expectedSig, resSig.ToBigInteger());
         Assert.Equal(expectedExp, (long)res.Exponent);
-        // The path follows the size of the root: one doubling run above 45 words, none at 45.
-        Assert.Equal(resultWords > 45 ? 1 : 0, workspace.InverseSqrtDoublingRuns - runsBefore);
+        // The path follows the size of the root: one doubling run above 5956 words, none at 5956.
+        Assert.Equal(resultWords > 5956 ? 1 : 0, workspace.InverseSqrtDoublingRuns - runsBefore);
         workspace.ThrowIfDeviceErrors();
     }
 
