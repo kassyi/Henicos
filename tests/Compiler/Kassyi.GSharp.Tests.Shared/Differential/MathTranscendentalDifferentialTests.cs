@@ -272,16 +272,22 @@ public class MathTranscendentalDifferentialTests
                     );
             },
             Launch = static (b, s) => MathDifferentialKernels.LaunchTranscendentalSpecialValuesKernel(
-                b.Get<float>("fx"),
-                b.Get<float>("logF"),
-                b.Get<float>("powBaseF"),
-                b.Get<float>("powExpF"),
-                b.Get<double>("dx"),
-                b.Get<double>("logD"),
-                b.Get<double>("powBaseD"),
-                b.Get<double>("powExpD"),
-                b.Get<float>("rf"),
-                b.Get<double>("rd"),
+                singleInputs: new TranscendentalSingleSpecialInputs
+                {
+                    GeneralValues = b.Get<float>("fx"),
+                    LogValues = b.Get<float>("logF"),
+                    PowerBases = b.Get<float>("powBaseF"),
+                    PowerExponents = b.Get<float>("powExpF"),
+                },
+                doubleInputs: new TranscendentalDoubleSpecialInputs
+                {
+                    GeneralValues = b.Get<double>("dx"),
+                    LogValues = b.Get<double>("logD"),
+                    PowerBases = b.Get<double>("powBaseD"),
+                    PowerExponents = b.Get<double>("powExpD"),
+                },
+                singleResults: b.Get<float>("rf"),
+                doubleResults: b.Get<double>("rd"),
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX
             ),
@@ -330,12 +336,15 @@ public class MathTranscendentalDifferentialTests
                     .Out<float>("r", rows, s_singleTranscendentalColumnPolicies);
             },
             Launch = static (b, s) => MathDifferentialKernels.LaunchSingleTranscendentalMatrixKernel(
-                b.Get<float>("trigX"),
-                b.Get<float>("expX"),
-                b.Get<float>("logX"),
-                b.Get<float>("powBase"),
-                b.Get<float>("powExp"),
-                b.Get<float>("r"),
+                inputs: new SingleTranscendentalInputs
+                {
+                    TrigArguments = b.Get<float>("trigX"),
+                    ExpArguments = b.Get<float>("expX"),
+                    LogArguments = b.Get<float>("logX"),
+                    PowerBases = b.Get<float>("powBase"),
+                    PowerExponents = b.Get<float>("powExp"),
+                },
+                results: b.Get<float>("r"),
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX
             ),
@@ -424,14 +433,20 @@ public class MathTranscendentalDifferentialTests
                 .Out<double>("r", rows, s_doubleAndPromotedColumnPolicies);
         },
         Launch = static (b, s) => MathDifferentialKernels.LaunchDoubleAndPromotedSingleTranscendentalMatrixKernel(
-            b.Get<double>("trigD"),
-            b.Get<double>("expD"),
-            b.Get<double>("logD"),
-            b.Get<double>("powBaseD"),
-            b.Get<double>("powExpD"),
-            b.Get<float>("fArg"),
-            b.Get<float>("fExp"),
-            b.Get<double>("r"),
+            doubleInputs: new DoubleTranscendentalInputs
+            {
+                TrigArguments = b.Get<double>("trigD"),
+                ExpArguments = b.Get<double>("expD"),
+                LogArguments = b.Get<double>("logD"),
+                PowerBases = b.Get<double>("powBaseD"),
+                PowerExponents = b.Get<double>("powExpD"),
+            },
+            promotedSingleInputs: new PromotedSingleTranscendentalInputs
+            {
+                Arguments = b.Get<float>("fArg"),
+                Exponents = b.Get<float>("fExp"),
+            },
+            results: b.Get<double>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
@@ -477,11 +492,14 @@ public class MathTranscendentalDifferentialTests
                     .Out<float>("r", rows, s_fastMathColumnPolicies);
             },
             Launch = static (b, s) => MathDifferentialKernels.LaunchFastMathMatrixKernel(
-                b.Get<float>("x"),
-                b.Get<float>("expX"),
-                b.Get<float>("logUnitX"),
-                b.Get<float>("logWideX"),
-                b.Get<float>("r"),
+                inputs: new FastMathInputs
+                {
+                    Values = b.Get<float>("x"),
+                    ExpArguments = b.Get<float>("expX"),
+                    UnitLogArguments = b.Get<float>("logUnitX"),
+                    WideLogArguments = b.Get<float>("logWideX"),
+                },
+                results: b.Get<float>("r"),
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX
             ),

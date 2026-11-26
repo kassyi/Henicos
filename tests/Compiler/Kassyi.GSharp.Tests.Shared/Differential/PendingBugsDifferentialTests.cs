@@ -13,83 +13,65 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public class PendingBugsDifferentialTests
 {
-    internal static readonly DifferentialCase s_selectTakeZeroSideEffect =
-        new($"{nameof(PendingBugsDifferentialKernels)}.{nameof(PendingBugsDifferentialKernels.SelectTakeZeroSideEffectKernel)}")
+    internal static readonly DifferentialCase s_selectTakeZeroSideEffect = DiffCases.Create(
+        PendingBugsDifferentialKernels.LaunchSelectTakeZeroSideEffectKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
+            .In("input", DiffValues.Int32(rng, rows * PendingBugsDifferentialKernels.WindowSize))
+            .Out<int>("output", rows, PendingBugsDifferentialKernels.SelectTakeZeroColumns, OutputPolicy.Exact),
+        shape: LaunchShape.ForRows(16, blockX: 8),
+        inputName: "input",
+        outputName: "output",
+        reference: static (b, _) =>
         {
-            Shape = LaunchShape.ForRows(16, blockX: 8),
-            Inputs = static (rng, rows) => new DiffBuffers()
-                .In("input", DiffValues.Int32(rng, rows * PendingBugsDifferentialKernels.WindowSize))
-                .Out<int>("output", rows, PendingBugsDifferentialKernels.SelectTakeZeroColumns, OutputPolicy.Exact),
-            Launch = static (b, s) => PendingBugsDifferentialKernels.LaunchSelectTakeZeroSideEffectKernel(
-                b.Get<int>("input"),
-                b.Get<int>("output"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = static (b, _) =>
-            {
-                var output = b.Get<int>("output");
-                Array.Clear(output);
-            },
-        };
+            var output = b.Get<int>("output");
+            Array.Clear(output);
+        });
 
-    internal static readonly DifferentialCase s_forUnrollOverflowBound =
-        new($"{nameof(PendingBugsDifferentialKernels)}.{nameof(PendingBugsDifferentialKernels.ForUnrollOverflowBoundKernel)}")
+    internal static readonly DifferentialCase s_forUnrollOverflowBound = DiffCases.Create(
+        PendingBugsDifferentialKernels.LaunchForUnrollOverflowBoundKernel,
+        inputs: static (_, rows) => new DiffBuffers()
+            .Out<int>("output", rows, PendingBugsDifferentialKernels.ForUnrollOverflowColumns, OutputPolicy.Exact),
+        shape: LaunchShape.ForRows(64, blockX: 32),
+        bufferName: "output",
+        seeds: [1],
+        reference: static (b, _) =>
         {
-            Shape = LaunchShape.ForRows(64, blockX: 32),
-            Seeds = [1],
-            Inputs = static (_, rows) => new DiffBuffers()
-                .Out<int>("output", rows, PendingBugsDifferentialKernels.ForUnrollOverflowColumns, OutputPolicy.Exact),
-            Launch = static (b, s) => PendingBugsDifferentialKernels.LaunchForUnrollOverflowBoundKernel(
-                b.Get<int>("output"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = static (b, _) =>
+            var output = b.Get<int>("output");
+            int rows = output.Length / 3;
+            for (int tid = 0; tid < rows; tid++)
             {
-                var output = b.Get<int>("output");
-                int rows = output.Length / 3;
-                for (int tid = 0; tid < rows; tid++)
-                {
-                    int baseOut = tid * 3;
-                    output[baseOut + 0] = 0;
-                    output[baseOut + 1] = 0;
-                    output[baseOut + 2] = 4;
-                }
-            },
-        };
+                int baseOut = tid * 3;
+                output[baseOut + 0] = 0;
+                output[baseOut + 1] = 0;
+                output[baseOut + 2] = 4;
+            }
+        });
 
-    internal static readonly DifferentialCase s_gridStrideLoopUniformWarpShuffle =
-        new($"{nameof(PendingBugsDifferentialKernels)}.{nameof(PendingBugsDifferentialKernels.GridStrideLoopUniformWarpShuffleKernel)}")
+    internal static readonly DifferentialCase s_gridStrideLoopUniformWarpShuffle = DiffCases.Create(
+        PendingBugsDifferentialKernels.LaunchGridStrideLoopUniformWarpShuffleKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
+            .In("input", DiffValues.Int32(rng, rows * 2))
+            .Out<int>("output", rows, PendingBugsDifferentialKernels.GridStrideUniformShuffleColumns, OutputPolicy.Exact),
+        shape: LaunchShape.ForRows(128, blockX: 64),
+        inputName: "input",
+        outputName: "output",
+        seeds: [1],
+        reference: static (b, _) =>
         {
-            Shape = LaunchShape.ForRows(128, blockX: 64),
-            Seeds = [1],
-            Inputs = static (rng, rows) => new DiffBuffers()
-                .In("input", DiffValues.Int32(rng, rows * 2))
-                .Out<int>("output", rows, PendingBugsDifferentialKernels.GridStrideUniformShuffleColumns, OutputPolicy.Exact),
-            Launch = static (b, s) => PendingBugsDifferentialKernels.LaunchGridStrideLoopUniformWarpShuffleKernel(
-                b.Get<int>("input"),
-                b.Get<int>("output"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = static (b, _) =>
+            var input = b.Get<int>("input");
+            var output = b.Get<int>("output");
+            int totalThreads = output.Length / 2;
+            for (int step = 0; step < 2; step++)
             {
-                var input = b.Get<int>("input");
-                var output = b.Get<int>("output");
-                int totalThreads = output.Length / 2;
-                for (int step = 0; step < 2; step++)
+                int stepBase = step * totalThreads;
+                for (int tid = 0; tid < totalThreads; tid++)
                 {
-                    int stepBase = step * totalThreads;
-                    for (int tid = 0; tid < totalThreads; tid++)
-                    {
-                        int laneId = tid & 31;
-                        int srcTid = laneId + 1 < 32 ? tid + 1 : tid;
-                        output[tid * 2 + step] = input[stepBase + srcTid];
-                    }
+                    int laneId = tid & 31;
+                    int srcTid = laneId + 1 < 32 ? tid + 1 : tid;
+                    output[tid * 2 + step] = input[stepBase + srcTid];
                 }
-            },
-        };
+            }
+        });
 
     internal static readonly DifferentialCase s_zeroSharedMemBytes =
         new($"{nameof(PendingBugsDifferentialKernels)}.{nameof(PendingBugsDifferentialKernels.HelperDynamicSharedMemoryZeroBytesKernel)}")

@@ -279,4 +279,22 @@ public static partial class GotoScopeKernels
     skip:
         data[1] = 7;
     }
+
+    // The goto jumps past a nullable local with an initializer: System_Nullable<T> has a default constructor, so C++
+    // cannot split the declaration into one that the jump may pass
+    [GpuKernel]
+    public static void GotoPastNullableKernel(uint[] result)
+    {
+        int tid = ThreadIndex.X;
+        if (tid % 2 == 0)
+        {
+            goto skip;
+        }
+
+        uint? v = tid > 3 ? (uint)tid : null;
+        result[tid] = v ?? 9u;
+
+    skip:
+        result[tid] += 1u;
+    }
 }

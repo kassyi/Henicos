@@ -189,7 +189,10 @@ internal static class MathMaxMinScenarios
         var singleResult = new float[2];
         var wideResult = new double[2];
 
-        run(() => MathMaxMinKernels.LaunchMixedOperandMaxKernel(single, wide, whole, singleResult, wideResult, blockDimX: 1));
+        run(() => MathMaxMinKernels.LaunchMixedOperandMaxKernel(
+            inputs: new MixedOperandInputs { Singles = single, Doubles = wide, Int32Values = whole },
+            results: new MixedOperandResults { Singles = singleResult, Doubles = wideResult },
+            blockDimX: 1));
 
         Assert.Equal(Math.Max(single[0], whole[0]), singleResult[0]);
         Assert.Equal(Math.Min(single[0], 2), singleResult[1]);

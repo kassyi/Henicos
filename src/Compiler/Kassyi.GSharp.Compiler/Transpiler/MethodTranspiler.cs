@@ -89,6 +89,7 @@ public static class MethodTranspiler
         requiredIncludes = context.Emitter.RequiredIncludes;
         context.Emitter.IsSuspendingDeviceFunction = plan.IsSuspendingOn(dialect);
         context.Emitter.StackWarp = StackWarpEmitter.GetFrame(in plan, dialect);
+        var activeMaskBody = StackWarpEmitter.GetActiveMaskBody(in plan, dialect);
 
         var lowered = plan.GetLoweredFor(dialect);
         context.Emitter.IteratorExpansionCounter = lowered?.RegionCount ?? 0;
@@ -119,7 +120,7 @@ public static class MethodTranspiler
             }
 
             context.Emitter.CurrentKernelForm = forms[i];
-            if (!TryWriteOneForm(in plan, lowered, frame, resumeLocals, ref context, out var failure))
+            if (!TryWriteOneForm(in plan, lowered, frame, resumeLocals, activeMaskBody, ref context, out var failure))
             {
                 requiredIncludes = [];
                 return failure;
@@ -451,13 +452,13 @@ public static class MethodTranspiler
         new("A lowered state machine has no frame.");
 
     private static bool TryWriteOneForm(in MethodEmissionPlan plan, LoweredStateMachine? lowered,
-        StateMachineFrame? frame, ImmutableArray<ResumeLocal> resumeLocals, ref TranspileContext context,
-        [NotNullWhen(false)] out string? failureOutput)
+        StateMachineFrame? frame, ImmutableArray<ResumeLocal> resumeLocals, BlockSyntax? activeMaskBody,
+        ref TranspileContext context, [NotNullWhen(false)] out string? failureOutput)
     {
         WriteStateMachineHeader(in plan, lowered, frame, ref context);
         try
         {
-            WriteMethodBody(in plan, lowered, frame, resumeLocals, ref context);
+            WriteMethodBody(in plan, lowered, frame, resumeLocals, activeMaskBody, ref context);
             failureOutput = null;
             return true;
         }
@@ -472,8 +473,11 @@ public static class MethodTranspiler
         }
     }
 
+    // activeMaskBody: the stack body that the native stack form writes for a method that reaches Warp.ActiveMask()
+    // (StackWarpEmitter.GetActiveMaskBody), in place of the declaration's body
     private static void WriteMethodBody(in MethodEmissionPlan plan, LoweredStateMachine? lowered,
-        StateMachineFrame? frame, ImmutableArray<ResumeLocal> resumeLocals, ref TranspileContext context)
+        StateMachineFrame? frame, ImmutableArray<ResumeLocal> resumeLocals, BlockSyntax? activeMaskBody,
+        ref TranspileContext context)
     {
         using (context.Emitter.Writer.Scope())
         {
@@ -498,6 +502,10 @@ public static class MethodTranspiler
             if (lowered != null)
             {
                 WriteStateMachineBody(in plan, lowered, frame ?? throw MissingFrame(), resumeLocals, ref context);
+            }
+            else if (activeMaskBody != null)
+            {
+                context.Visitor.Visit(activeMaskBody);
             }
             else if (plan.Declaration.Body != null)
             {

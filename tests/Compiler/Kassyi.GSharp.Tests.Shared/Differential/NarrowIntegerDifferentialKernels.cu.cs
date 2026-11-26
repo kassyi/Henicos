@@ -5,6 +5,14 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
+public struct MixedSignDivRemOperands
+{
+    [GpuReadOnly] public long[] Signed64Values;
+    [GpuReadOnly] public int[] NonZeroSigned32Divisors;
+    [GpuReadOnly] public uint[] NonZeroUnsigned32Divisors;
+    [GpuReadOnly] public long[] NonZeroSigned64Divisors;
+}
+
 /// <summary>
 /// Differential kernels for narrow integers, narrow/signed enums, mixed-sign remainder/division, bit-operation
 /// return signedness, and compound/tuple assignment target evaluation order.
@@ -298,19 +306,20 @@ public static partial class NarrowIntegerDifferentialKernels
 
     // Mixed-sign and mixed-width division, remainder, and arithmetic (with safe non-zero divisors)
     [GpuKernel]
-    public static void MixedSignDivRemMatrixKernel(long[] l, int[] iNz, uint[] uNz, long[] lNz, long[] r)
+    public static void MixedSignDivRemMatrixKernel(MixedSignDivRemOperands operands, long[] results)
     {
         int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (t >= l.Length)
+        if (t >= operands.Signed64Values.Length)
         {
             return;
         }
 
         int o = t * 14;
-        long lv = l[t];
-        int iv = iNz[t];
-        uint uv = uNz[t];
-        long lDiv = lNz[t];
+        long lv = operands.Signed64Values[t];
+        int iv = operands.NonZeroSigned32Divisors[t];
+        uint uv = operands.NonZeroUnsigned32Divisors[t];
+        long lDiv = operands.NonZeroSigned64Divisors[t];
+        var r = results;
 
         short sv = (short)lv;
         sbyte sbv = (sbyte)lv;

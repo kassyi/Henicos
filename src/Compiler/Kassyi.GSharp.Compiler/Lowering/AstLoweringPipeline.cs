@@ -51,7 +51,11 @@ public static class AstLoweringPipeline
         // labeled break or continue to them finds its target only by the mark; the state machine turns those into plain
         // jumps and gotos right after the regions, and so does the stack body
         var resolvedBody = new LabeledJumpRewriter().Rewrite(structuredBody);
-        return new StackLoweredBody(resolvedBody, reconvergence?.RegionCount ?? 0);
+        // [WHY] The stack models write the body as it is, where the state machine moves every local into its frame:
+        // the locals that the passes left out of the scope of their uses, untyped or not definitely assigned are
+        // declared again (StackBodyLocals). The state machine never runs this step
+        var localsBody = StackBodyLocals.Normalize(resolvedBody, bodyModel);
+        return new StackLoweredBody(localsBody, reconvergence?.RegionCount ?? 0);
     }
 
     // The prepared body after the passes that keep the structure of the source (CreateStructuredPasses)

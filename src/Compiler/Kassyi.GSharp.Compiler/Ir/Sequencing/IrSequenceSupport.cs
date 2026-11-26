@@ -33,6 +33,23 @@ internal static class IrSequenceSupport
         _ => false
     };
 
+    /// <summary>
+    /// Whether the pass leaves the arguments of <paramref name="node"/>, a call or a struct creation, in place because
+    /// it cannot order them as the syntax path does: a <see langword="params"/> array, which the IR holds as one
+    /// argument and the syntax path as the arguments written.
+    /// </summary>
+    public static bool SkipsArgumentsOf(IrExpression node) => node switch
+    {
+        IrCall call => HasParamArray(call.Arguments),
+        IrStructCreation creation => HasParamArray(creation.Arguments),
+        _ => false
+    };
+
+    private static bool HasParamArray(ImmutableArray<IrArgument> arguments) =>
+        arguments
+            .AsStackEnumerable()
+            .Any(static argument => argument.Kind == IrArgumentKind.ParamArray);
+
     private static bool HoldsSequence(IrExpression target) =>
         IrNodeChildren.Exists(target, static node => node is IrSequence);
 }

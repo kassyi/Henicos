@@ -29,13 +29,22 @@ Script conventions and the catalog of agent scripts are in [agent-scripts.md](..
   emitters (as `GpuExecutionSpace` and `GpuMacroClassifier` do). Two similar lines in one file are not a reason.
 - Where it goes:
   - Roslyn-only queries with no G# meaning: `Extensions/`.
-  - Used outside the transpiler (analyzers, generator, marshaling, models): at the project root, a named static class
-    when it is one type (`GpuExecutionSpace`), a folder of its own when several types belong together (`ErrorSites/`,
-    `Dialects/`: the dialect interface the whole compiler uses sits beside its implementation, not under `Transpiler/`).
-  - Transpiler-only: the subfolder of its feature under `Transpiler/Helpers/` (`NullChecks/`, `Numeric/`, `Literals/`,
-    `StackArrays/`, `Calls/`, `Locals/`, `ResumeLocals/`), with the namespace of that folder added to `GlobalUsings.cs`
-    when the folder is new; `Transpiler/Helpers/` itself only for helpers used across features (`EvaluationOrder`). A
-    type that only one helper uses goes in the folder of that helper.
-  - Used by one rule only: next to that rule under `Transpiler/Rules/`, not in `Transpiler/Helpers/`.
+  - Language decisions (pure queries returning a value from a type, symbol, `IOperation`, or analysis result, without
+    writing C++ or taking `TranspileContext`): `Semantics/`. Keep every type in the single namespace
+    `Kassyi.GSharp.Compiler.Semantics`; subfolders under `Semantics/` (`Numeric/`, `Calls/`, `Managed/`) are for
+    organization only.
+  - IR writers and context-free C++ spelling helpers (shared formatting functions that write to `SourceWriter` without
+    `TranspileContext`): `Backends/`.
+  - Used outside the transpiler by analyzers, generator, marshaling, or models (when not a language decision or backend
+    writer): at the project root, a named static class when it is one type (`GpuExecutionSpace`), a folder of its own
+    when several types belong together (`ErrorSites/`, `Dialects/`: the dialect interface the whole compiler uses sits
+    beside its implementation, not under `Transpiler/`).
+  - Legacy syntax transpiler emission only: the subfolder of its feature under `Transpiler/Helpers/` (`NullChecks/`,
+    `Numeric/`, `Literals/`, `StackArrays/`, `Calls/`, `Locals/`, `ResumeLocals/`), or `Transpiler/Helpers/` itself for
+    emission helpers used across features; rule-local emission belongs next to its rule under `Transpiler/Rules/`. Do not
+    add new language decisions to `Transpiler/Helpers/` or `Transpiler/Rules/`. `GlobalUsings.cs` opens
+    `Kassyi.GSharp.Compiler.Semantics` once its first type exists; add no new `Kassyi.GSharp.Compiler.*` namespace to it
+    beyond that (`scripts/agent/update_usings.js` never promotes one). `CompilerLayerArchitectureTests` counts references by symbol,
+    so a global using does not hide a layer violation from it.
   - Generator plumbing: `Helpers/`.
 - Then add a row to this file in the same change.

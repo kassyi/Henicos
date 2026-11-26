@@ -37,6 +37,13 @@ internal interface IExpressionWalker<TNode, TValue, TTarget>
     /// <param name="target">Its target.</param>
     void Enter(TNode node, TTarget target);
 
+    /// <summary>
+    /// Called before <see cref="Enter"/> of the <paramref name="index"/>-th operand of <paramref name="node"/>.
+    /// </summary>
+    /// <param name="node">The operator node.</param>
+    /// <param name="index">0 for the first operand, 1 for the second.</param>
+    void BeginOperand(TNode node, int index);
+
     /// <summary>Evaluates a node without operands, which evaluates itself.</summary>
     /// <param name="node">The node.</param>
     /// <param name="target">Its target.</param>

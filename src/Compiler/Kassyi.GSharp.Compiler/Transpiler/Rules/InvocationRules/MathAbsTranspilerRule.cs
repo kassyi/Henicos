@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Backends.Cpp;
+
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules;
 
 /// <summary>
@@ -47,7 +49,7 @@ internal sealed class MathAbsTranspilerRule : IInvocationTranspilerRule
         {
             ArithmeticConversions.AppendArgument(argument, parameterType, ref context);
             writer.Append(',');
-            ArrayNullCheck.AppendSite(writer, site);
+            NullCheckSiteWriter.AppendSite(writer, site);
         }
 
         return true;

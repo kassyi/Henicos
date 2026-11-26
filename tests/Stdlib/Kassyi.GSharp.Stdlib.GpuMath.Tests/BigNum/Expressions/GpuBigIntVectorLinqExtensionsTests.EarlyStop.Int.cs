@@ -311,6 +311,18 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         }
     }
 
+    private static (T? Value, Type? Error) Outcome<T>(Func<T> evaluate)
+    {
+        try
+        {
+            return (evaluate(), null);
+        }
+        catch (Exception ex) when (ex is ArithmeticException or InvalidOperationException or ArgumentException)
+        {
+            return (default, ex.GetType());
+        }
+    }
+
     // Any (all: false) or All of a / b > 0 through System.Linq
     private static bool Quantify(BigInteger[] a, BigInteger[] b, bool all)
     {

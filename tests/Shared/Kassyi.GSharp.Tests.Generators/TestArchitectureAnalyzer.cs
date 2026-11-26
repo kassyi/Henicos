@@ -32,10 +32,22 @@ public class TestArchitectureAnalyzer : DiagnosticAnalyzer
         category: "GSharpTestArchitecture",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor WindowsOnlyTestMustHavePlatformAttribute = new(
+        id: "HNT0011",
+        title: "Windows-only test must declare [Platform(TestPlatform.Windows)]",
+        messageFormat: "Test method '{0}' skips on Linux, or returns there before it checks anything. Add [Platform(TestPlatform.Windows)] to the method or to the concrete class that runs it.",
+        category: "GSharpTestArchitecture",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true,
+        customTags: WellKnownDiagnosticTags.CompilationEnd);
 #pragma warning restore RS2008
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
-        ImmutableArray.Create(TestMethodMustHaveCategoryTrait, RawTraitAttributeNotAllowed);
+        ImmutableArray.Create(
+            TestMethodMustHaveCategoryTrait,
+            RawTraitAttributeNotAllowed,
+            WindowsOnlyTestMustHavePlatformAttribute);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -62,6 +74,11 @@ public class TestArchitectureAnalyzer : DiagnosticAnalyzer
                 context => AnalyzeMethod(context, factAttribute, traitAttribute),
                 SyntaxKind.MethodDeclaration
             );
+
+            var platformAnalysis = new PlatformSkipAnalysis(factAttribute, new KnownPlatformTypes(compilation));
+            compilationContext.RegisterOperationBlockAction(platformAnalysis.AnalyzeOperationBlock);
+            compilationContext.RegisterSymbolAction(platformAnalysis.CollectDerivedClass, SymbolKind.NamedType);
+            compilationContext.RegisterCompilationEndAction(platformAnalysis.ReportMissingPlatformAttributes);
         });
     }
 

@@ -27,6 +27,10 @@ const plugin = {
   shortName(command: string, short: string): string | undefined {
     return justShortName(command, short);
   },
+
+  remoteOffload() {
+    return { allowedPrograms: ["just"] };
+  },
 } satisfies QueuePlugin;
 
 export default plugin;

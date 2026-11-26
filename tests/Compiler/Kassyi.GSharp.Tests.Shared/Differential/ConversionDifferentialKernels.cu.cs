@@ -5,6 +5,45 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
+public struct IntegerConversionInputs
+{
+    [GpuReadOnly] public int[] Signed32Values;
+    [GpuReadOnly] public uint[] Unsigned32Values;
+    [GpuReadOnly] public long[] Signed64Values;
+    [GpuReadOnly] public ulong[] Unsigned64Values;
+}
+
+public struct DirectFloatDoubleCastInputs
+{
+    [GpuReadOnly] public float[] SingleValues;
+    [GpuReadOnly] public double[] DoubleValues;
+    [GpuReadOnly] public long[] Signed64Values;
+    [GpuReadOnly] public ulong[] Unsigned64Values;
+}
+
+public struct DirectFloatDoubleCastResults
+{
+    public long[] SignedResults;
+    public ulong[] UnsignedResults;
+    public float[] SingleResults;
+    public double[] DoubleResults;
+}
+
+public struct IntegerCastAndShiftInputs
+{
+    [GpuReadOnly] public int[] Signed32Values;
+    [GpuReadOnly] public uint[] Unsigned32Values;
+    [GpuReadOnly] public long[] Signed64Values;
+    [GpuReadOnly] public ulong[] Unsigned64Values;
+    [GpuReadOnly] public int[] ShiftCounts;
+}
+
+public struct IntegerCastAndShiftResults
+{
+    public long[] SignedResults;
+    public ulong[] UnsignedResults;
+}
+
 /// <summary>A 32-bit signed enum for conversion and narrow-integer differential tests.</summary>
 public enum DiffIntEnum : int
 {
@@ -354,19 +393,20 @@ public static partial class ConversionDifferentialKernels
 
     // Integer -> float conversions (both explicit cast and implicit assignment/deconstruction)
     [GpuKernel]
-    public static void IntToFloatConversionMatrixKernel(int[] i32, uint[] u, long[] l, ulong[] ul, float[] r)
+    public static void IntToFloatConversionMatrixKernel(IntegerConversionInputs inputs, float[] results)
     {
         int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (t >= i32.Length)
+        if (t >= inputs.Signed32Values.Length)
         {
             return;
         }
 
         int o = t * 7;
-        int iv = i32[t];
-        uint uv = u[t];
-        long lv = l[t];
-        ulong ulv = ul[t];
+        int iv = inputs.Signed32Values[t];
+        uint uv = inputs.Unsigned32Values[t];
+        long lv = inputs.Signed64Values[t];
+        ulong ulv = inputs.Unsigned64Values[t];
+        var r = results;
 
         float implL = lv;
         float implUl = ulv;
@@ -385,19 +425,20 @@ public static partial class ConversionDifferentialKernels
 
     // Integer -> double conversions (both explicit cast and implicit assignment)
     [GpuKernel]
-    public static void IntToDoubleConversionMatrixKernel(int[] i32, uint[] u, long[] l, ulong[] ul, double[] r)
+    public static void IntToDoubleConversionMatrixKernel(IntegerConversionInputs inputs, double[] results)
     {
         int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (t >= i32.Length)
+        if (t >= inputs.Signed32Values.Length)
         {
             return;
         }
 
         int o = t * 6;
-        int iv = i32[t];
-        uint uv = u[t];
-        long lv = l[t];
-        ulong ulv = ul[t];
+        int iv = inputs.Signed32Values[t];
+        uint uv = inputs.Unsigned32Values[t];
+        long lv = inputs.Signed64Values[t];
+        ulong ulv = inputs.Unsigned64Values[t];
+        var r = results;
 
         double implL = lv;
         double implUl = ulv;
@@ -429,17 +470,22 @@ public static partial class ConversionDifferentialKernels
     // Direct casts between float/double and all 9 integer types (#724, #890), 64-bit integer rounding ties, and double <-> float
     [GpuKernel]
     public static void DirectFloatDoubleCastMatrixKernel(
-        float[] f, double[] d, long[] i64, ulong[] u64,
-        long[] rSigned, ulong[] rUnsigned, float[] rFloat, double[] rDouble)
+        DirectFloatDoubleCastInputs inputs, DirectFloatDoubleCastResults results)
     {
         int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (t >= f.Length)
+        if (t >= inputs.SingleValues.Length)
         {
             return;
         }
 
-        float fv = f[t];
-        double dv = d[t];
+        float fv = inputs.SingleValues[t];
+        double dv = inputs.DoubleValues[t];
+        var i64 = inputs.Signed64Values;
+        var u64 = inputs.Unsigned64Values;
+        var rSigned = results.SignedResults;
+        var rUnsigned = results.UnsignedResults;
+        var rFloat = results.SingleResults;
+        var rDouble = results.DoubleResults;
 
         int os = t * 10;
         rSigned[os] = (sbyte)fv;
@@ -479,20 +525,21 @@ public static partial class ConversionDifferentialKernels
     // Integer-to-integer widening/narrowing casts, shift count masks (s & 31 / s & 63), sign extension, and unary minus promotion
     [GpuKernel]
     public static void IntegerCastAndShiftMaskMatrixKernel(
-        int[] i32, uint[] u32, long[] i64, ulong[] u64, int[] sh,
-        long[] rSigned, ulong[] rUnsigned)
+        IntegerCastAndShiftInputs inputs, IntegerCastAndShiftResults results)
     {
         int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (t >= i32.Length)
+        if (t >= inputs.Signed32Values.Length)
         {
             return;
         }
 
-        int iv = i32[t];
-        uint uv = u32[t];
-        long lv = i64[t];
-        ulong ulv = u64[t];
-        int s = sh[t];
+        int iv = inputs.Signed32Values[t];
+        uint uv = inputs.Unsigned32Values[t];
+        long lv = inputs.Signed64Values[t];
+        ulong ulv = inputs.Unsigned64Values[t];
+        int s = inputs.ShiftCounts[t];
+        var rSigned = results.SignedResults;
+        var rUnsigned = results.UnsignedResults;
 
         sbyte sb = (sbyte)iv;
         byte b = (byte)uv;

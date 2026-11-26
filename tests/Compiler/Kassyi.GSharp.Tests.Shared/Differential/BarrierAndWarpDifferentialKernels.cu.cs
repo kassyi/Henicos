@@ -447,6 +447,7 @@ public static partial class BarrierAndWarpDifferentialKernels
     // so resuming after Gpu.SyncThreads() overwrites the mutated parameter with its original host argument on both
     // the managed and native CPU state-machine paths.
     // -------------------------------------------------------------------------
+    // The parameter list is the subject of this test: #1000 tests top-level value parameters written via ref ternary across Gpu.SyncThreads().
     [GpuKernel]
     public static void RefTernaryParameterWriteAcrossBarrierReproKernel(
         int[] conds,

@@ -27,41 +27,29 @@ public class ConversionDifferentialTests
         '\uFFFF',
     ];
 
-    internal static readonly DifferentialCase s_foreachFloatToInt = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.ForeachFloatToIntMatrixKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_foreachFloatToInt = DiffCases.Create<float, double, long>(
+        ConversionDifferentialKernels.LaunchForeachFloatToIntMatrixKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("f", DiffValues.Single(rng, rows))
             .In("d", DoubleValues(rng, rows))
             .Out<long>("r", rows, ConversionDifferentialKernels.ForeachFloatToIntColumns, OutputPolicy.Exact),
-        Launch = static (b, s) => ConversionDifferentialKernels.LaunchForeachFloatToIntMatrixKernel(
-            b.Get<float>("f"),
-            b.Get<double>("d"),
-            b.Get<long>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(64),
+        firstInputName: "f",
+        secondInputName: "d",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_enumCast = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.EnumCastMatrixKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_enumCast = DiffCases.Create<float, double, int, long>(
+        ConversionDifferentialKernels.LaunchEnumCastMatrixKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("f", DiffValues.Single(rng, rows))
             .In("d", DoubleValues(rng, rows))
             .In("i", DiffValues.Int32(rng, rows))
             .Out<long>("r", rows, ConversionDifferentialKernels.EnumCastColumns, OutputPolicy.Exact),
-        Launch = static (b, s) => ConversionDifferentialKernels.LaunchEnumCastMatrixKernel(
-            b.Get<float>("f"),
-            b.Get<double>("d"),
-            b.Get<int>("i"),
-            b.Get<long>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(64),
+        firstInputName: "f",
+        secondInputName: "d",
+        thirdInputName: "i",
+        outputName: "r");
 
     internal static readonly DifferentialCase s_intToFloat = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.IntToFloatConversionMatrixKernel)}")
     {
@@ -78,11 +66,14 @@ public class ConversionDifferentialTests
                 .Out<float>("r", rows, ConversionDifferentialKernels.IntToFloatColumns, OutputPolicy.Bitwise);
         },
         Launch = static (b, s) => ConversionDifferentialKernels.LaunchIntToFloatConversionMatrixKernel(
-            b.Get<int>("i"),
-            b.Get<uint>("u"),
-            b.Get<long>("l"),
-            b.Get<ulong>("ul"),
-            b.Get<float>("r"),
+            inputs: new IntegerConversionInputs
+            {
+                Signed32Values = b.Get<int>("i"),
+                Unsigned32Values = b.Get<uint>("u"),
+                Signed64Values = b.Get<long>("l"),
+                Unsigned64Values = b.Get<ulong>("ul"),
+            },
+            results: b.Get<float>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
@@ -104,11 +95,14 @@ public class ConversionDifferentialTests
                 .Out<double>("r", rows, ConversionDifferentialKernels.IntToDoubleColumns, OutputPolicy.Bitwise);
         },
         Launch = static (b, s) => ConversionDifferentialKernels.LaunchIntToDoubleConversionMatrixKernel(
-            b.Get<int>("i"),
-            b.Get<uint>("u"),
-            b.Get<long>("l"),
-            b.Get<ulong>("ul"),
-            b.Get<double>("r"),
+            inputs: new IntegerConversionInputs
+            {
+                Signed32Values = b.Get<int>("i"),
+                Unsigned32Values = b.Get<uint>("u"),
+                Signed64Values = b.Get<long>("l"),
+                Unsigned64Values = b.Get<ulong>("ul"),
+            },
+            results: b.Get<double>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
@@ -145,14 +139,20 @@ public class ConversionDifferentialTests
             .Out<float>("rFloat", rows, ConversionDifferentialKernels.DirectFloatCastColumns, OutputPolicy.Bitwise)
             .Out<double>("rDouble", rows, ConversionDifferentialKernels.DirectDoubleCastColumns, OutputPolicy.Bitwise),
         Launch = static (b, s) => ConversionDifferentialKernels.LaunchDirectFloatDoubleCastMatrixKernel(
-            b.Get<float>("f"),
-            b.Get<double>("d"),
-            b.Get<long>("i64"),
-            b.Get<ulong>("u64"),
-            b.Get<long>("rSigned"),
-            b.Get<ulong>("rUnsigned"),
-            b.Get<float>("rFloat"),
-            b.Get<double>("rDouble"),
+            inputs: new DirectFloatDoubleCastInputs
+            {
+                SingleValues = b.Get<float>("f"),
+                DoubleValues = b.Get<double>("d"),
+                Signed64Values = b.Get<long>("i64"),
+                Unsigned64Values = b.Get<ulong>("u64"),
+            },
+            results: new DirectFloatDoubleCastResults
+            {
+                SignedResults = b.Get<long>("rSigned"),
+                UnsignedResults = b.Get<ulong>("rUnsigned"),
+                SingleResults = b.Get<float>("rFloat"),
+                DoubleResults = b.Get<double>("rDouble"),
+            },
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
@@ -177,13 +177,19 @@ public class ConversionDifferentialTests
                 .Out<ulong>("rUnsigned", rows, ConversionDifferentialKernels.IntegerUnsignedCastShiftColumns, OutputPolicy.Exact);
         },
         Launch = static (b, s) => ConversionDifferentialKernels.LaunchIntegerCastAndShiftMaskMatrixKernel(
-            b.Get<int>("i32"),
-            b.Get<uint>("u32"),
-            b.Get<long>("i64"),
-            b.Get<ulong>("u64"),
-            b.Get<int>("sh"),
-            b.Get<long>("rSigned"),
-            b.Get<ulong>("rUnsigned"),
+            inputs: new IntegerCastAndShiftInputs
+            {
+                Signed32Values = b.Get<int>("i32"),
+                Unsigned32Values = b.Get<uint>("u32"),
+                Signed64Values = b.Get<long>("i64"),
+                Unsigned64Values = b.Get<ulong>("u64"),
+                ShiftCounts = b.Get<int>("sh"),
+            },
+            results: new IntegerCastAndShiftResults
+            {
+                SignedResults = b.Get<long>("rSigned"),
+                UnsignedResults = b.Get<ulong>("rUnsigned"),
+            },
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),

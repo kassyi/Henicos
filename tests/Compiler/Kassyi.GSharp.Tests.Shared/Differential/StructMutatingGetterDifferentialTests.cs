@@ -10,26 +10,18 @@ public class StructMutatingGetterDifferentialTests
 {
     private const int Rows = 257;
 
-    private const string KernelName = nameof(StructMutatingGetterDifferentialKernels.MutatingGetterKernel);
-
-    internal static readonly DifferentialCase s_mutatingGetter = new(
-        $"{nameof(StructMutatingGetterDifferentialKernels)}.{KernelName}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_mutatingGetter = DiffCases.Create(
+        StructMutatingGetterDifferentialKernels.LaunchMutatingGetterKernel,
+        inputs: static (rng, rows) =>
         {
             var inputs = DiffValues.Int32(rng, rows);
             return new DiffBuffers()
                 .In("inputs", inputs)
                 .Out<int>("r", rows, StructMutatingGetterDifferentialKernels.MutatingGetterColumns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => StructMutatingGetterDifferentialKernels.LaunchMutatingGetterKernel(
-            b.Get<int>("inputs"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(Rows),
+        inputName: "inputs",
+        outputName: "r");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]

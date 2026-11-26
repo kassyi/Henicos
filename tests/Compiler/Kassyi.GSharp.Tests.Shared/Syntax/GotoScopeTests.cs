@@ -189,4 +189,16 @@ public class GotoScopeTests : TranspilerTestBase
             expectedFirst
         );
     }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Goto_PastNullableLocal_SkipsTheDeclaration()
+    {
+        var result = new uint[8];
+
+        GotoScopeKernels.LaunchGotoPastNullableKernel(result, blockDimX: 8);
+
+        // The even lanes jump past the local; the odd lanes 1 and 3 read 9, lanes 5 and 7 their index
+        Assert.Equal([1u, 10u, 1u, 10u, 1u, 6u, 1u, 8u], result);
+    }
 }

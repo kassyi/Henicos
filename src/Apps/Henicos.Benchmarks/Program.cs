@@ -89,6 +89,7 @@ internal class Program
                                          (mandelbrot, empty, fma, branch, memcopy, transpose)
               arithmetic [words] [iters] Run GpuBigFloat arithmetic benchmark (default: 2048 words, 1000 iters)
               arithmetic wide            Divide / Rsqrt with operands much wider than the result, cut on and off
+              arithmetic sqrt-path       GpuBigInt.Sqrt mega-kernel vs precision doubling at NTT boundaries
               gbi-linq [elements] [words] Run GpuBigInt + StackLinq + CUDA Graph benchmark
                                          Options:
                                            --benchmark         Run via BenchmarkDotNet instead of instant runner
@@ -213,6 +214,12 @@ internal class Program
         {
             Logger<Program>.Info("Running GpuBigFloatWideOperandBenchmark...");
             BenchmarkRunner.Run<GpuBigFloatWideOperandBenchmark>(args: bdnArgs);
+        }
+
+        if (target is "all" or "sqrt-path")
+        {
+            Logger<Program>.Info("Running GpuBigIntSqrtPathBenchmark...");
+            BenchmarkRunner.Run<GpuBigIntSqrtPathBenchmark>(args: bdnArgs);
         }
 
         return 0;

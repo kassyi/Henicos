@@ -17,6 +17,10 @@ public sealed class MarshalingBoundaryDiagnosticsTests
     private const string MultiDimParamTestCase = "Diagnostics/MultidimensionalParameterDiagnostics.cs";
     private const string NullableVector2DirectTestCase = "Diagnostics/NullableVector2DirectDiagnostics.cs";
     private const string NullableStructValueTestCase = "Diagnostics/NullableStructValueDiagnostics.cs";
+    private const string NullableDeepStructTestCase = "Diagnostics/NullableDeepStructDiagnostics.cs";
+    private const string UnmappedBclReturnTestCase = "Diagnostics/UnmappedBclReturnDiagnostics.cs";
+    private const string ImmutableArrayLengthTestCase = "Diagnostics/ImmutableArrayLengthDiagnostics.cs";
+    private const string NullableReturnNullTestCase = "Diagnostics/NullableReturnNullDiagnostics.cs";
 
     // Multidimensional array (int[,]) in kernel body -> GSH0003
     [Theory]
@@ -121,26 +125,7 @@ public sealed class MarshalingBoundaryDiagnosticsTests
     [Scenario(TestScenario.HappyPath)]
     public async Task NullableDeepStructParameter_NullableComplexStruct_ConvertsWithoutDiagnostic(string dialect)
     {
-        const string source = """
-            using Kassyi.GSharp.Core;
-
-            namespace TestNs;
-
-            public struct DeepBag
-            {
-                public int[] Data;
-                public int Tag;
-            }
-
-            public static partial class NullableDeepStructKernels
-            {
-                [GpuKernel]
-                public static void NullableDeepBagKernel(DeepBag? optBag, int[] output)
-                {
-                    output[0] = optBag.HasValue ? 1 : 0;
-                }
-            }
-            """;
+        var source = RoslynTestUtility.ReadTestCase(NullableDeepStructTestCase);
 
         var run = await KernelDiagnostics.RunCompilationAsync(RoslynTestUtility.CreateCompilation(source), dialect);
         var generated = string.Join('|', run.Output.SyntaxTrees.Select(static t => t.ToString()));
@@ -159,24 +144,7 @@ public sealed class MarshalingBoundaryDiagnosticsTests
     [Scenario(TestScenario.SadPath)]
     public async Task UnmappedBclStructReturn_UnmappedType_ReportsDiagnostic(string dialect)
     {
-        const string source = """
-            using System;
-            using System.Numerics;
-            using Kassyi.GSharp.Core;
-
-            namespace TestNs;
-
-            public static partial class UnmappedBclReturnKernels
-            {
-                [GpuKernel]
-                public static DateTime UnmappedReturnKernel(DateTime dt, Guid id, Matrix4x4 mat)
-                {
-                    return dt;
-                }
-            }
-            """;
-
-        var diagnostics = await KernelDiagnostics.RunAsync(source, dialect);
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(UnmappedBclReturnTestCase, dialect);
         Assert.Equal(
             [(DiagnosticOrigin.Analyzer, 10, 28, 10, 48)],
             diagnostics.Ranges(GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable.Id));
@@ -268,21 +236,7 @@ public sealed class MarshalingBoundaryDiagnosticsTests
     [Scenario(TestScenario.SadPath)]
     public async Task ImmutableArrayLength_GeneratorRun_EmitsLengthMember(string dialect)
     {
-        const string source = """
-            using System.Collections.Immutable;
-            using Kassyi.GSharp.Core;
-
-            namespace TestNs;
-
-            public static partial class ImmutableLengthKernels
-            {
-                [GpuKernel]
-                public static void ImmutableLengthKernel(ImmutableArray<int> imm, int[] output)
-                {
-                    output[0] = imm.Length;
-                }
-            }
-            """;
+        var source = RoslynTestUtility.ReadTestCase(ImmutableArrayLengthTestCase);
 
         var compilation = RoslynTestUtility.CreateCompilation(source);
         var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
@@ -301,21 +255,7 @@ public sealed class MarshalingBoundaryDiagnosticsTests
     [Scenario(TestScenario.SadPath)]
     public async Task NullableReturnNull_GeneratorRun_EmitsValidNullableReturn(string dialect)
     {
-        const string source = """
-            using Kassyi.GSharp.Core;
-
-            namespace TestNs;
-
-            public static partial class NullableReturnNullKernels
-            {
-                [GpuKernel]
-                public static int? ReturnNullKernel(int[] output)
-                {
-                    output[0] = 0;
-                    return null;
-                }
-            }
-            """;
+        var source = RoslynTestUtility.ReadTestCase(NullableReturnNullTestCase);
 
         var compilation = RoslynTestUtility.CreateCompilation(source);
         var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);

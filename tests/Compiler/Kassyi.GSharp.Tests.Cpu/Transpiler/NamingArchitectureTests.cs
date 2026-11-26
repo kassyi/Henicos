@@ -12,7 +12,8 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 /// </remarks>
 public partial class NamingArchitectureTests
 {
-    private static readonly string[] s_emitterDirectories = ["Transpiler", "Dialects", "Lowering", "ErrorSites"];
+    private static readonly string[] s_emitterDirectories =
+        ["Transpiler", "Dialects", "Lowering", "ErrorSites", "Backends"];
 
     // Each entry is "{file}:{expression}" and names the issue that owns the remaining verbatim emission.
     private static readonly HashSet<string> s_allowedRawNames = new(StringComparer.Ordinal)
@@ -271,7 +272,9 @@ public partial class NamingArchitectureTests
         var managed = Directory.EnumerateFiles(Path.Combine(compilerRoot, "Transpiler", "Managed"), "*.cs",
             SearchOption.AllDirectories);
         var emitterPaths = s_emitterDirectories
-            .SelectMany(directory => Directory.EnumerateFiles(Path.Combine(compilerRoot, directory), "*.cs",
+            .Select(directory => Path.Combine(compilerRoot, directory))
+            .Where(Directory.Exists)
+            .SelectMany(static directory => Directory.EnumerateFiles(directory, "*.cs",
                 SearchOption.AllDirectories)
             ).Except(managed, StringComparer.OrdinalIgnoreCase)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);

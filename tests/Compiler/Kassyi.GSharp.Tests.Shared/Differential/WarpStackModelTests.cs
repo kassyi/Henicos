@@ -70,4 +70,47 @@ public partial class WarpStackModelTests
             output => WarpStackModelKernels.LaunchStaleVisitsKernel(input, output, gridDimX: 2, blockDimX: 2),
             [22, 11, 41, 31]);
     }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void EndInsideBranch_LaneOfFirstBlockEndsInBranch_SecondBlockMeetsWithoutIt()
+    {
+        // Per block: the masks inside the branch, then the masks after it. Block 0: lane 1 alone in the branch, lanes
+        // 1 to 3 after it (lane 0 has ended); block 1: lanes 0 and 1 in the branch, every lane after it
+        RunOnEveryPath(16,
+            output => WarpStackModelKernels.LaunchEndInsideBranchKernel(output, gridDimX: 2, blockDimX: 4),
+            [0, 0x2, 0, 0, 0, 0xE, 0xE, 0xE, 0x3, 0x3, 0, 0, 0xF, 0xF, 0xF, 0xF]);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ContinuePastLocal_LanesContinueBeforeTheLocal_MeetAtTheEndOfEachIteration()
+    {
+        // Iteration 0: lanes 0 and 2 continue (0x5), lanes 1 and 3 take 0xA; iteration 1: lanes 0 and 1 continue (0x3),
+        // lanes 2 and 3 take 0xC * 2
+        RunOnEveryPath(4,
+            output => WarpStackModelKernels.LaunchContinuePastLocalKernel(output, blockDimX: 4),
+            [0x5 + 0x3, 0xA + 0x3, 0x5 + 0xC * 2, 0xA + 0xC * 2]);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ContinuePastNullable_LanesContinueBeforeTheNullable_ReadTheLanesThatTookTheBranch()
+    {
+        // Iteration 0: the odd lanes go on and lanes 5 and 7 take the mask 0xA0; iteration 1: the even lanes go on and
+        // lanes 4 and 6 take 0x50; a lane 3 or below adds 9 in the iteration it goes on
+        RunOnEveryPath(8,
+            output => WarpStackModelKernels.LaunchContinuePastNullableKernel(output, blockDimX: 8),
+            [9, 9, 9, 9, 0x50, 0xA0, 0x50, 0xA0]);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ContinuePastUsing_LanesContinueBeforeTheUsing_ReadTheLanesOfTheIteration()
+    {
+        // Iteration 0: the odd lanes 0xAA; iteration 1: the even lanes 0x55; each lane adds its index
+        RunOnEveryPath(8,
+            output => WarpStackModelKernels.LaunchContinuePastUsingKernel(output, blockDimX: 8),
+            [0x55, 0xAA + 1, 0x55 + 2, 0xAA + 3, 0x55 + 4, 0xAA + 5, 0x55 + 6, 0xAA + 7]);
+    }
 }

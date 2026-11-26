@@ -5,16 +5,22 @@ import type * as net from "node:net";
 import { idField, numberField, send, type Incoming, type ServerMessage } from "./protocol.ts";
 import { formatJobId, pickSuffixMatch } from "./job-id.ts";
 import type { Connection, MessageHandler } from "./server-connection.ts";
+import { describeRemote } from "./remote/spec.ts";
 import { describeResource } from "./resources.ts";
 import { describeJob, type ServerJob } from "./server-job.ts";
 import type { JobServer } from "./server.ts";
 
-function status(connection: Connection): void {
+function status(connection: Connection, message: Incoming): void {
   const server = connection.server;
   const scheduler = server.scheduler;
   scheduler.order();
   const forecast = scheduler.forecast();
   const view = (j: ServerJob) => ({ ...describeJob(j), ...server.outlook(j, forecast) });
+  const remotes = scheduler.remoteStates().map((state) => describeRemote(state, scheduler.running));
+  const requestedId = idField(message, "id");
+  const quarantine =
+    requestedId !== null && server.find(requestedId) === undefined ? server.quarantines.get(requestedId) : undefined;
+  const outcome = quarantine !== undefined && requestedId !== null ? server.outcomes.get(requestedId) : undefined;
   connection.reply({
     type: "status",
     pid: process.pid,
@@ -27,8 +33,12 @@ function status(connection: Connection): void {
     paused: scheduler.paused,
     ...(scheduler.paused ? { pausedAt: scheduler.pausedAt } : {}),
     resources: scheduler.resourceStates().map((state) => describeResource(state, scheduler.running)),
+    ...(remotes.length > 0 ? { remotes } : {}),
     running: scheduler.running.map(view),
     waiting: scheduler.waiting.map(view),
+    ...(quarantine !== undefined && requestedId !== null
+      ? { endedJob: { id: requestedId, ...(outcome !== undefined ? { outcome } : {}), quarantine } }
+      : {}),
   });
 }
 
@@ -46,7 +56,7 @@ function resolve(connection: Connection, message: Incoming): void {
     id: job.id,
     state: job.provisional !== null ? "lost unless its client reports" : job.phase,
   }));
-  const picked = pickSuffixMatch(digits, live, server.outcomes.keys());
+  const picked = pickSuffixMatch(digits, live, [...server.outcomes.keys(), ...server.quarantines.keys()]);
   connection.reply(
     "error" in picked
       ? { type: "error", code: "unknown-job", message: picked.error }
@@ -119,7 +129,7 @@ function setWeight(connection: Connection, message: Incoming): void {
 
 /**
  * start: grants a waiting job at once, over the pools; refused for a GPU turn, for a job whose client is away (nobody
- * would receive the grant) and before its predecessor ended.
+ * would receive the grant), before its predecessor ended, and for `--remote` when no accepting remote is free.
  */
 function startNow(server: JobServer, message: Incoming): ServerMessage {
   const id = idField(message, "id") ?? 0;
@@ -131,7 +141,9 @@ function startNow(server: JobServer, message: Incoming): ServerMessage {
     return {
       type: "error",
       code: "not-started",
-      message: `${formatJobId(id)} waits for the GPU, which runs one job at a time; move ${formatJobId(id)} --first puts it next`,
+      message:
+        `${formatJobId(id)} waits for the GPU, which runs one job at a time; ` +
+        `move ${formatJobId(id)} --first puts it next`,
     };
   }
   if (job.detached) {
@@ -139,8 +151,8 @@ function startNow(server: JobServer, message: Incoming): ServerMessage {
       type: "error",
       code: "not-started",
       message:
-        `the client of ${formatJobId(id)} is away (its connection dropped or the scheduler restarted): nobody would receive ` +
-        "the grant; start it once its client is back",
+        `the client of ${formatJobId(id)} is away (its connection dropped or the scheduler restarted): ` +
+        "nobody would receive the grant; start it once its client is back",
     };
   }
   if (server.scheduler.awaitsPredecessor(job)) {
@@ -148,6 +160,13 @@ function startNow(server: JobServer, message: Incoming): ServerMessage {
       type: "error",
       code: "not-started",
       message: `${formatJobId(id)} waits for ${formatJobId(job.after ?? 0)} to end`,
+    };
+  }
+  if (job.offload === "force" && server.scheduler.pickFreeRemoteForStart(job, Date.now()) === undefined) {
+    return {
+      type: "error",
+      code: "not-started",
+      message: `${formatJobId(id)} requires a remote worker (--remote), and none is healthy and free`,
     };
   }
   job.startNow = true;

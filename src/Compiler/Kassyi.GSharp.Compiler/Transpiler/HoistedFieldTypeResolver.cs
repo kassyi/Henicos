@@ -86,7 +86,8 @@ internal static class HoistedFieldTypeResolver
         return naturalType ?? convertedType;
     }
 
-    private static SpecialType? TryGetSpecialType(SyntaxKind kind) => kind switch
+    /// <summary>The special type that the predefined type keyword <paramref name="kind"/> names, or <see langword="null"/>.</summary>
+    internal static SpecialType? TryGetSpecialType(SyntaxKind kind) => kind switch
     {
         SyntaxKind.BoolKeyword => SpecialType.System_Boolean,
         SyntaxKind.ByteKeyword => SpecialType.System_Byte,

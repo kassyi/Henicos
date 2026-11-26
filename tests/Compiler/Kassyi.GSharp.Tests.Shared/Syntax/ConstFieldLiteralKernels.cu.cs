@@ -180,6 +180,7 @@ public static partial class ConstFieldLiteralKernels
     }
 
     // The generated launcher repeats these defaults in C#
+    // The parameter list is the subject of this test: tests default scalar/char/const/NaN values on kernel parameters emitted into generated launchers.
     [GpuKernel]
     public static void KernelDefaultKernel(
         float[] singles,

@@ -74,7 +74,7 @@ internal static class ManagedOperatorMacroExpander
         return SyntaxFactory.Block(expansion.Statements.ToImmutable());
     }
 
-    private sealed class Expansion(AssignmentExpressionSyntax assignment, SemanticModel semanticModel,
+    private sealed class Expansion(SyntaxNode site, SemanticModel semanticModel,
         CSharpSyntaxVisitor<SyntaxNode?> visitor, Func<IMethodSymbol, ExpressionSyntax> spellCallee,
         ManagedAccessorSet accessors)
     {
@@ -90,14 +90,14 @@ internal static class ManagedOperatorMacroExpander
         // test fails. <result> or the temporary <resultTemp> receives the left operand or the target's result
         public bool AddConditional(ExpressionSyntax? result, string? resultTemp, OperatorMacro macro)
         {
-            if (!TryPrepareCall(result, macro, assignment, semanticModel, out var call, out _) ||
+            if (!TryPrepareCall(result, macro, site, semanticModel, out var call, out _) ||
                 call.Result.Parameter is not { } resultParameter ||
                 call.Left.Expression is not { } left)
             {
                 return false;
             }
 
-            var plan = PlanConditional(call, macro, GetOperandEffects(call, macro, assignment, semanticModel));
+            var plan = PlanConditional(call, macro, GetOperandEffects(call, macro, site, semanticModel));
             var arguments = PlanArguments(call, macro, null, -1, semanticModel);
             var resultArgument = PrepareTarget(result, resultTemp, resultParameter, plan, FindResult(arguments),
                 out var target);
@@ -264,7 +264,7 @@ internal static class ManagedOperatorMacroExpander
         // the operands before them; the result is the temporary <resultTemp> when <result> is null
         public InvocationExpressionSyntax? CreateCall(ExpressionSyntax? result, string? resultTemp, OperatorMacro macro)
         {
-            if (!TryPrepareCall(result, macro, assignment, semanticModel, out var call, out _))
+            if (!TryPrepareCall(result, macro, site, semanticModel, out var call, out _))
             {
                 return null;
             }
@@ -274,7 +274,7 @@ internal static class ManagedOperatorMacroExpander
             ExpressionEffects[]? effects = null;
             if (!macro.Nested.IsDefaultOrEmpty)
             {
-                effects = GetOperandEffects(call, macro, assignment, semanticModel);
+                effects = GetOperandEffects(call, macro, site, semanticModel);
                 last = EvaluationOrder.LastSpilledOperand(effects);
             }
 
@@ -391,7 +391,7 @@ internal static class ManagedOperatorMacroExpander
             var variable = call.ContextVariable ??
                            throw new InvalidOperationException("A context argument has a variable.");
             var parameter = argument.Parameter;
-            ExpressionSyntax reference = FindLoweredReference(assignment, variable, semanticModel) is { } lowered
+            ExpressionSyntax reference = FindLoweredReference(site, variable, semanticModel) is { } lowered
                 ? Visit(lowered)
                 : SyntaxFactory.IdentifierName(SyntaxFactory.Identifier(variable.Name.ToCSharpIdentifier()));
             return WithModifier(reference, parameter.RefKind);

@@ -71,6 +71,13 @@
 // overrides it. A command run by a queued job (GSHARP_JOB_QUEUE_JOB is set) that calls `run` again runs at once,
 // without a second slot, with the same MSBuild node limit.
 //
+// Remote CPU offload: machine-local workers are configured in `<mainCheckout>/tmp/job-queue/remotes.local.json`
+// (see `scripts/human/job-queue/remotes.local.example.json` and `scripts/human/provision-remote-worker.js`).
+// Self-contained CPU test commands are delta-synced with pre-run SHA-256 + file-set verification, run over hardened
+// SSH under `flock` with sanitized live stdout/stderr and zero-tar validated artifact pull-back, and tracked in
+// separate `history-remote-<name>.json` / `accuracy-remote-<name>.json`. --local disables offload; --remote requires
+// it; `remote-reset [<name>] [--clean]` stops stuck remote processes (and wipes bin/obj on --clean).
+//
 // Screenshots: `--screenshots <dir>` draws the live view (status --watch) from a fixed sample status as SVG files,
 // the images of job-queue/README.md, with no scheduler.
 //

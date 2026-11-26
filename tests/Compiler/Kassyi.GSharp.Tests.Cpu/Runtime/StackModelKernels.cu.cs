@@ -3,6 +3,13 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Cpu.Runtime;
 
+public struct StackModelRefOutBuffers
+{
+    [GpuReadOnly]
+    public int[] Input;
+    public int[] Output;
+}
+
 [SkipSnapshotConsistency("Verified by StackModelTests under both managed barrier models")]
 public static partial class StackModelKernels
 {
@@ -64,8 +71,10 @@ public static partial class StackModelKernels
     }
 
     [GpuKernel]
-    public static void RefOutKernel(int[] input, int[] output, ref int refTotal, out int outValue, int n)
+    public static void RefOutKernel(StackModelRefOutBuffers buffers, ref int refTotal, out int outValue, int n)
     {
+        int[] input = buffers.Input;
+        int[] output = buffers.Output;
         outValue = 0;
         var s = new SharedMemory<int>(64);
         int tid = ThreadIndex.X;
@@ -116,6 +125,21 @@ public static partial class StackModelKernels
         s[tid] = input[tid];
         Gpu.SyncThreads();
         output[tid] = Warp.ShuffleXorSync(0xFFFFFFFFu, s[tid], 1);
+    }
+
+    // The even lanes ask for the active mask inside a branch, every lane after it, where the lanes meet again
+    [GpuKernel]
+    public static void ActiveMaskKernel(uint[] inBranch, uint[] afterBranch)
+    {
+        int tid = ThreadIndex.X;
+        uint mask = 0u;
+        if (tid % 2 == 0)
+        {
+            mask = Warp.ActiveMask();
+        }
+
+        inBranch[tid] = mask;
+        afterBranch[tid] = Warp.ActiveMask();
     }
 
     [GpuKernel(Cooperative = true)]

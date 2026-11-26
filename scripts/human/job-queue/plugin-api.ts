@@ -17,6 +17,7 @@ export {
 } from "./command-reader.ts";
 export { isTrivialStep, programOf } from "./estimate-key.ts";
 export { errorCode, errorMessage } from "./history.ts";
+export { hasEnvKey } from "./remote/env-policy.ts";
 export { dropShortWords } from "./short-name.ts";
 export type { CommandKeys, LegendEntry, PathPlace, ReadStep, ScreenLine, ShellName };
 export type AssertModule = typeof Assert;
@@ -35,6 +36,24 @@ export type ShareMode = "shared" | "exclusive";
 export interface ShareAnswer {
   readonly share: ShareMode;
   readonly stillValid?: () => Promise<boolean>;
+}
+
+export type OffloadDecision = "allow" | "local";
+
+/** Result of async `checkOffload`: "allow" permits remote offload; "local" forces local execution with an optional reason. */
+export interface OffloadAnswer {
+  readonly offload: OffloadDecision;
+  readonly reason?: string;
+}
+
+/** Caller request metadata passed to `checkOffload`. */
+export interface OffloadCheckRequest {
+  readonly remoteForced: boolean;
+  readonly places: Readonly<Record<string, PathPlace>>;
+  /** How long the host waits for this answer; a plugin that runs several steps shares it out. */
+  readonly timeoutMs?: number;
+  /** Aborted when the host stopped waiting: whatever the plugin started for the answer must stop. */
+  readonly signal?: AbortSignal;
 }
 
 /** Read-only client context passed to client/view hooks. */
@@ -70,6 +89,10 @@ export interface Classification {
   memoryMb?: number;
   /** Share mode for the requested resource; defaults to "exclusive". */
   share?: ShareMode;
+  /** True when the command is self-contained and eligible for transparent offload to a remote Linux CPU worker. */
+  offloadable?: boolean;
+  /** One-line reason why `offloadable` is false (surfaced on local fallback or `--remote` refusal). */
+  localReason?: string;
 }
 
 /** Result of check; the first refuse stops execution, hints are collected in order. */
@@ -136,6 +159,122 @@ export interface PanelJob {
   readonly session?: string;
 }
 
+/** Worktree-relative path specification to pull back after remote execution. */
+export interface RemoteCollectPathSpec {
+  readonly path: string;
+  readonly kind: "file" | "dir";
+}
+
+/** Parsed statement context passed to plugin `rewriteStatement` during remote command translation. */
+export interface RemoteStatementContext {
+  readonly program: string;
+  readonly subcommand: string;
+  /** Argument tokens after the program name (already translated to relative POSIX paths, unquoted). */
+  readonly args: readonly string[];
+  readonly keepBuildServersWarm: boolean;
+  readonly cpus: number;
+}
+
+/** Result of a plugin's statement rewrite for remote execution. */
+export interface RemoteStatementRewrite {
+  /** Rewritten argument tokens (after the program name, unquoted). */
+  args?: string[];
+  /** Additional worktree-relative paths to pull back after execution. */
+  collectPaths?: RemoteCollectPathSpec[];
+}
+
+/** Grant information passed to plugin `prepareRemoteCommand`. */
+export interface RemoteCommandGrant {
+  readonly cpus: number;
+  readonly keepBuildServersWarm: boolean;
+  /** Current environment map (leading assignments + defaults); plugins may avoid overriding explicit keys. */
+  readonly env: Readonly<Record<string, string>>;
+  /** Target platform override for case-folding checks (defaults to `process.platform`). */
+  readonly platform?: NodeJS.Platform;
+}
+
+/** Result of a plugin's post-translation bash command rewrite for remote execution. */
+export interface RemoteCommandRewrite {
+  command?: string;
+  env?: Record<string, string>;
+  note?: string;
+}
+
+/** Remote failure-artifact collection and local allowlist rule contributed by a plugin. */
+export interface RemoteFailureArtifactRule {
+  /** Worktree-relative directories to search on the remote worker (e.g. ["tests", "src"]). */
+  readonly searchDirs: readonly string[];
+  /** `find -name` glob pattern on the remote worker (e.g. "*.received.*"). */
+  readonly findName: string;
+  /** Allowlist regex tested against worktree-relative POSIX paths on the local side. */
+  readonly allowPattern: RegExp;
+  /** When true, the parent directory must exist in the local worktree manifest. */
+  readonly requireKnownLocalDir?: boolean;
+  /** When true, stale matching files are removed on the remote worker before each run. */
+  readonly cleanBeforeRun?: boolean;
+}
+
+/** Remote crash-summary diagnostic rule parsed in memory on non-zero exit (never written to local disk). */
+export interface RemoteCrashSummaryRule {
+  /** Worktree-relative directories to search on the remote worker (e.g. ["TestResults"]). */
+  readonly searchDirs: readonly string[];
+  /** `find -name` glob pattern on the remote worker (e.g. "Sequence_*.xml"). */
+  readonly findName: string;
+  /** Regex matching the worktree-relative POSIX path of the diagnostic file. */
+  readonly pathPattern: RegExp;
+  /** When true, stale matching files are removed on the remote worker before each run. */
+  readonly cleanBeforeRun?: boolean;
+  /** Parses diagnostic file contents and returns crashed/aborted test names. */
+  parse(content: string): string[];
+}
+
+/** Remote CPU offload rules and hooks contributed by a plugin. */
+export interface RemoteOffloadContribution {
+  /** Additional program basenames allowed in remote offload commands (e.g. ["dotnet"], ["just"]). */
+  readonly allowedPrograms?: readonly string[];
+  /** Options whose next token is a filesystem path (translated to relative POSIX). */
+  readonly pathValueOptions?: readonly string[];
+  /** Options whose next token is NOT a filesystem path (kept verbatim). */
+  readonly nonPathValueOptions?: readonly string[];
+  /** Program/subcommand-specific override for whether an option's value is a filesystem path. */
+  isOptionValuePath?(program: string, subcommand: string, option: string): boolean | undefined;
+  /** Additional file extensions (without leading dot) recognized as path-like tokens. */
+  readonly pathExtensions?: readonly string[];
+  /** Options whose translated path value should be collected back as a directory after execution. */
+  readonly collectDirOptions?: readonly string[];
+  /** Default environment variables set on the remote worker unless already set by the command. */
+  readonly defaultEnv?: Readonly<Record<string, string>>;
+  /** Safe non-path caller environment variable names allowed to forward to the remote worker. */
+  readonly allowedEnv?: readonly string[];
+  /** Recognized build/test/path/secret environment variable names that force local execution when set in caller env. */
+  readonly localOnlyEnv?: readonly string[];
+  /**
+   * Name prefixes (matched case-insensitively on every platform) of caller variables that force local execution, for
+   * families read by MSBuild or the runtime (e.g. ["DOTNET_", "MSBUILD"]). `allowedEnv` and the ignore lists win.
+   */
+  readonly localOnlyEnvPrefixes?: readonly string[];
+  /** Caller variable names that neither forward nor force local (set on every run of the machine, e.g. by the OS). */
+  readonly ignoredEnv?: readonly string[];
+  /** Name prefixes (case-insensitive) of caller variables that neither forward nor force local. */
+  readonly ignoredEnvPrefixes?: readonly string[];
+  /** Additional worktree-relative POSIX directory prefixes excluded from remote source sync. */
+  readonly syncExcludePrefixes?: readonly string[];
+  /** Additional `find -name` glob patterns excluded from remote source sync (e.g. ["*.received.*", "*.user"]). */
+  readonly syncExcludeFindNames?: readonly string[];
+  /** Per-statement argument rewriter (runs after path translation, before bash quoting). */
+  rewriteStatement?(stmt: RemoteStatementContext): RemoteStatementRewrite | undefined;
+  /** Post-translation bash command & env rewriter (e.g. build tool parallelism flags & env vars). */
+  prepareRemoteCommand?(command: string, grant: RemoteCommandGrant): RemoteCommandRewrite | undefined;
+  /** Failure artifact rules pulled back on non-zero exit through the local 6-gate validator. */
+  readonly failureArtifacts?: readonly RemoteFailureArtifactRule[];
+  /** Crash summary rules parsed in memory on non-zero exit. */
+  readonly crashSummaries?: readonly RemoteCrashSummaryRule[];
+  /** Process command names (Linux `comm`) to terminate during `remote-reset` (e.g. ["dotnet", "VBCSCompiler"]). */
+  readonly resetProcessNames?: readonly string[];
+  /** Worktree-relative directories to wipe during `remote-reset --clean` (e.g. ["TestResults"]). */
+  readonly resetCleanDirs?: readonly string[];
+}
+
 export interface QueuePlugin {
   /** Plugin name matching config plugins[].name. */
   readonly name: string;
@@ -160,6 +299,17 @@ export interface QueuePlugin {
    * the same as a ShareAnswer without `stillValid`.
    */
   checkShare?(command: string, context: ClientContext): Promise<ShareMode | ShareAnswer | undefined>;
+
+  /**
+   * [first, async] Asked after synchronous offload gates pass when a command is still eligible for remote CPU
+   * offload: "allow" or "local" ends the asking; undefined passes it to the next plugin. A throw, timeout, or invalid
+   * value fails closed to "local".
+   */
+  checkOffload?(
+    command: string,
+    request: OffloadCheckRequest,
+    context: ClientContext,
+  ): Promise<OffloadDecision | OffloadAnswer | undefined>;
 
   /** [first] Computes estimate keys for one step. */
   stepKeys?(step: ReadStep, context: StepContext): StepKeys | undefined;
@@ -188,6 +338,9 @@ export interface QueuePlugin {
 
   /** [first] Provides the lower panel for the watch view. */
   panel?(context: ClientContext): ViewPanel | undefined;
+
+  /** [all] Contributes remote CPU offload rules, command rewriters, sync exclusions, and failure artifact handlers. */
+  remoteOffload?(context: ClientContext): RemoteOffloadContribution | undefined;
 
   /** Pure helper functions exposed to repository plugins. */
   readonly api?: Readonly<Record<string, unknown>>;

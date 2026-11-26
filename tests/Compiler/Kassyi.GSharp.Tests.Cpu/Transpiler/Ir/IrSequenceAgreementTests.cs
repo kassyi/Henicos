@@ -1,9 +1,11 @@
 #nullable enable
 using Kassyi.GSharp.Compiler.Dialects;
+using Kassyi.GSharp.Compiler.Analysis;
 using Kassyi.GSharp.Compiler.Ir;
 using Kassyi.GSharp.Compiler.Ir.Decisions;
 using Kassyi.GSharp.Compiler.Ir.Expressions;
 using Kassyi.GSharp.Compiler.Ir.Sequencing;
+using Kassyi.GSharp.Compiler.Marshaling;
 using Kassyi.GSharp.Compiler.Transpiler;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
@@ -14,7 +16,9 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 /// and the same declarations, in the methods whose forms the pass covers (<see cref="IrSequenceAgreementScope"/>).
 /// </summary>
 /// <remarks>
-/// The CUDA path does not go through lowering, so its output is written from the tree the IR is built from.
+/// The sequences are those of the native writer, so the syntax path writes the method in the native dialect the
+/// decisions are made for (<see cref="HostDialects.Cpu"/>). It writes a method that waits at a barrier from a lowered
+/// state machine; such a method is not compared.
 /// </remarks>
 [Category(TestCategory.Compiler)]
 [Collection(TestCollections.CorpusScan)]
@@ -29,11 +33,12 @@ public class IrSequenceAgreementTests(ITestOutputHelper output)
         var compared = 0;
         var withSequences = 0;
         var nestedConversions = 0;
+        var withCalls = 0;
         IrCoverageInputs.ForEach((compilation, trees) =>
         {
             foreach (var (_, symbol, built) in IrCoverageInputs.GpuMethods(compilation, trees))
             {
-                switch (Compare(compilation, symbol, built, mismatches, ref nestedConversions))
+                switch (Compare(compilation, symbol, built, mismatches, ref nestedConversions, ref withCalls))
                 {
                     case ({ } reason, _):
                         excluded.AddOrUpdate(reason, 1, static (_, count) => count + 1);
@@ -51,7 +56,8 @@ public class IrSequenceAgreementTests(ITestOutputHelper output)
         });
 
         output.WriteLine($"Compared {compared} methods, {withSequences} with sequences, " +
-                         $"{nestedConversions} spilled operands below two implicit conversions");
+                         $"{nestedConversions} spilled operands below two implicit conversions, " +
+                         $"{withCalls} with a call or a creation of two operands or more");
         foreach (var pair in excluded.OrderBy(static p => p.Key, StringComparer.Ordinal))
         {
             output.WriteLine($"Excluded ({pair.Key}): {pair.Value}");
@@ -82,10 +88,8 @@ public class IrSequenceAgreementTests(ITestOutputHelper output)
                 symbol.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() is MethodDeclarationSyntax declaration)
             {
                 var sequenced = IrSequenceTestCases.Run(symbol.Name).Sequenced;
-                var text = MethodTranspiler.GenerateCudaSource(declaration,
-                    compilation.GetSemanticModel(declaration.SyntaxTree), null, isDevice: true,
-                    new GSharpCudaDialect(), out _);
-                var old = IrSequenceTemporaries.Of(text);
+                var old = IrSequenceTemporaries.OfSyntaxPath(declaration,
+                    compilation.GetSemanticModel(declaration.SyntaxTree));
                 var ir = IrSequenceTemporaries.Of(sequenced);
                 compared++;
                 if (old.OtherLambdas > 0 || !old.SameAs(ir))
@@ -100,7 +104,7 @@ public class IrSequenceAgreementTests(ITestOutputHelper output)
     }
 
     private static (string? Excluded, bool HasSequences) Compare(Compilation compilation, IMethodSymbol symbol,
-        IrMethod built, ConcurrentBag<string> mismatches, ref int nestedConversions)
+        IrMethod built, ConcurrentBag<string> mismatches, ref int nestedConversions, ref int withCalls)
     {
         if (symbol.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() is not MethodDeclarationSyntax declaration)
         {
@@ -122,12 +126,18 @@ public class IrSequenceAgreementTests(ITestOutputHelper output)
             return (reason, false);
         }
 
+        // The native dialect lowers a method that waits at a barrier into a state machine before it writes it; the IR
+        // is compared with the body as written
+        if (SuspensionAnalysis.RequiresStateMachine(symbol, compilation))
+        {
+            return ("lowered on the native path", false);
+        }
+
         var model = compilation.GetSemanticModel(declaration.SyntaxTree);
-        string text;
+        IrSequenceTemporaries old;
         try
         {
-            text = MethodTranspiler.GenerateCudaSource(declaration, model, null, isDevice: true,
-                new GSharpCudaDialect(), out _);
+            old = IrSequenceTemporaries.OfSyntaxPath(declaration, model);
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         {
@@ -136,7 +146,6 @@ public class IrSequenceAgreementTests(ITestOutputHelper output)
             return ($"syntax path fails: {exception.GetType().Name}", false);
         }
 
-        var old = IrSequenceTemporaries.Of(text);
         if (old.OtherLambdas > 0)
         {
             return ("other lambda", false);
@@ -149,8 +158,24 @@ public class IrSequenceAgreementTests(ITestOutputHelper output)
         }
 
         Interlocked.Add(ref nestedConversions, NestedConversions(sequenced));
+        if (HasCallOfTwoOperands(decided))
+        {
+            Interlocked.Increment(ref withCalls);
+        }
+
         return (null, !ir.Firsts.IsEmpty);
     }
+
+    // A call or a struct creation with two operands or more, whose arguments may need a sequence
+    private static bool HasCallOfTwoOperands(IrMethod decided) =>
+        IrNodeChildren.DescendantsAndSelf(decided.Body).Any(static node => node switch
+        {
+            IrCall call => (call.Receiver is null ? 0 : 1) +
+                           call.Arguments.Count(static a => a.Kind != IrArgumentKind.DefaultValue) >= 2,
+            IrStructCreation creation =>
+                creation.Arguments.Count(static a => a.Kind != IrArgumentKind.DefaultValue) >= 2,
+            _ => false
+        });
 
     // Reads of deduced temporaries below two implicit conversions or more, which change the type the decisions
     // of the parent read

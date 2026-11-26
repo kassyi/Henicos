@@ -4,6 +4,15 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
+public struct DeclarationAfterReturnBuffers
+{
+    [GpuReadOnly]
+    public int[] Input;
+    public int[] SumOutput;
+    public int[] StepOutput;
+    public int[] Counters;
+}
+
 /// <summary>
 /// Kernels whose <c>Gpu.SyncGrid(body)</c> bodies must run on every dialect, with a grid sync between their top-level
 /// statements (#626). Each statement after a gap reads what other blocks wrote before it.
@@ -202,8 +211,13 @@ public static partial class SyncGridBodyKernels
     // K12: locals declared after a return stay visible to the statements after them; their initializers do not run on
     // the threads that returned
     [GpuKernel(Cooperative = true)]
-    public static void DeclarationAfterReturnKernel(int[] a, int[] b, int[] c, int[] counter, int n)
+    public static void DeclarationAfterReturnKernel(DeclarationAfterReturnBuffers buffers, int count)
     {
+        int[] a = buffers.Input;
+        int[] b = buffers.SumOutput;
+        int[] c = buffers.StepOutput;
+        int[] counter = buffers.Counters;
+        int n = count;
         int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         Gpu.SyncGrid(() =>
         {

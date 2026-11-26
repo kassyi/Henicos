@@ -326,177 +326,89 @@ public readonly struct GpuBigIntExpr : IDisposable
         // expression belongs to the graph from here on; every failure below gives it back.
         GraphOwnership.Take(Node);
         var manager = (DefaultGpuMemoryManager)workspace.MemoryManager;
-        CaptureDeferral deferral;
+        GpuBigInt result = default;
+        SignSource sign = default;
+        var owned = false;
+        var bodyCompleted = false;
+        CapturedStreamGraph capturedGraph;
+        var node = Node;
         try
         {
-            deferral = manager.BeginDeferral();
-        }
-        catch
-        {
-            GraphOwnership.Release(Node);
-            throw;
-        }
+            capturedGraph = CapturedStreamGraph.Capture(workspace, () =>
+            {
+                result = EvaluateForCapture(node, workspace, targetResult, out sign);
 
-        try
-        {
-            workspace.Provider.BeginCapture(workspace.Stream);
-        }
-        catch
-        {
-            manager.EndDeferral(deferral);
-            GraphOwnership.Release(Node);
-            throw;
-        }
+                // The graph owns a result it allocated; a target stays with the caller, so the graph only borrows it
+                owned = !targetResult.HasValue && result.Value.OwnsBuffer;
+                if (!owned)
+                {
+                    result = new GpuBigInt(result.Value.AsBorrowed(), result.IsNegative);
+                }
 
-        GpuBigInt result;
-        SignSource sign;
-        try
-        {
-            result = EvaluateForCapture(workspace, targetResult, out sign);
+                bodyCompleted = true;
+            });
         }
         catch (Exception original)
         {
             try
             {
-                AbortCapture(workspace, manager, deferral, original);
+                if (bodyCompleted)
+                {
+                    using (workspace.ActivateContext())
+                    {
+                        ReleaseCapturedResultAfterFailure(manager, result, owned, sign, original);
+                    }
+                }
             }
             finally
             {
-                GraphOwnership.Release(Node);
+                GraphOwnership.Release(node);
             }
 
             throw;
         }
 
-        // The graph owns a result it allocated; a target stays with the caller, so the graph only borrows it
-        var owned = !targetResult.HasValue && result.Value.OwnsBuffer;
-        if (!owned)
-        {
-            result = new GpuBigInt(result.Value.AsBorrowed(), result.IsNegative);
-        }
-
-        var graph = IntPtr.Zero;
-        var graphExec = IntPtr.Zero;
-        CapturedResources captured;
-        try
-        {
-            graph = workspace.Provider.EndCapture(workspace.Stream);
-            captured = manager.EndDeferral(deferral);
-        }
-        catch (Exception original)
-        {
-            // The capture failed to end, or it ended and the deferral did not: give back what it took, including the
-            // graph when EndCapture returned one
-            ReleaseAfterFailure(workspace, manager, manager.EndDeferral(deferral), result, owned, sign, graph,
-                original);
-            throw;
-        }
-
-        try
-        {
-            graphExec = workspace.Provider.InstantiateGraph(graph);
-        }
-        catch (Exception original)
-        {
-            ReleaseAfterFailure(workspace, manager, captured, result, owned, sign, graph, original);
-            throw;
-        }
-
-        return new GpuBigIntExecutableGraph(workspace, graph, graphExec, result, owned, sign, captured, Node,
-            ownsExpression);
+        return new GpuBigIntExecutableGraph(capturedGraph, result, owned, sign, node, ownsExpression);
     }
 
     // The evaluation inside the capture. A signed operator node keeps a sign that a kernel writes on the device: the
     // graph records that kernel and reads the word after each launch, instead of fixing the sign of the capture.
-    private GpuBigInt EvaluateForCapture(GpuWorkspace workspace, GpuBigUInt? targetResult, out SignSource sign)
+    private static GpuBigInt EvaluateForCapture(IGpuBigIntExpression node, GpuWorkspace workspace,
+        GpuBigUInt? targetResult, out SignSource sign)
     {
-        var value = Node is ISignedOperator root
+        var value = node is ISignedOperator root
             ? SignedTree.EvaluateSigned(root, workspace, targetResult)
-            : SignedValue.FromHost(Node.Evaluate(workspace, targetResult));
+            : SignedValue.FromHost(node.Evaluate(workspace, targetResult));
         sign = value.Sign;
         return new GpuBigInt(value.Magnitude, value.Sign.HostNegative);
     }
 
-    // A capture ended but no executable graph came of it: destroy the partial graph, return the deferred buffers and an
-    // owned result, and give the expression back. As in AbortCapture, a failing step is thrown with the original (O14).
-    private void ReleaseAfterFailure(GpuWorkspace workspace, DefaultGpuMemoryManager manager,
-        CapturedResources captured, GpuBigInt result, bool ownsResult, SignSource sign, IntPtr graph,
-        Exception original)
+    // A capture body completed and allocated a result or device sign, then EndCapture or InstantiateGraph failed:
+    // CapturedStreamGraph already released the graph and deferred buffers, so free the unreturned result/sign handles.
+    private static void ReleaseCapturedResultAfterFailure(DefaultGpuMemoryManager manager, GpuBigInt result,
+        bool ownsResult, SignSource sign, Exception original)
     {
         List<Exception>? cleanupErrors = null;
-        if (graph != IntPtr.Zero)
-        {
-            RunCleanupStep((workspace, graph), static s => s.workspace.Provider.DestroyGraph(s.graph, IntPtr.Zero),
-                ref cleanupErrors);
-        }
-
-        RunCleanupStep((manager, captured), static s => s.manager.ReturnDeferred(s.captured.Buffers), ref cleanupErrors);
         if (ownsResult)
         {
-            RunCleanupStep((manager, result.Value.Handle), static s => s.manager.Free(s.Handle), ref cleanupErrors);
+            CapturedStreamGraph.RunCleanupStep((manager, result.Value.Handle),
+                static s => s.manager.Free(s.Handle), ref cleanupErrors);
         }
 
         if (sign.IsDevice)
         {
-            RunCleanupStep((manager, sign.Word.Handle), static s => s.manager.Free(s.Handle), ref cleanupErrors);
+            CapturedStreamGraph.RunCleanupStep((manager, sign.Word.Handle),
+                static s => s.manager.Free(s.Handle), ref cleanupErrors);
         }
 
-        GraphOwnership.Release(Node);
-        ThrowIfCleanupFailed("Creating the CUDA graph failed, and so did its cleanup.", original, cleanupErrors);
+        CapturedStreamGraph.ThrowIfCleanupFailed("Creating the CUDA graph failed, and so did its cleanup.", original,
+            cleanupErrors);
     }
 
-    // The failure path of a capture (O14): end the capture, drop the partial graph and give back the deferred buffers.
-    // When that succeeds, the caller rethrows the original exception; when a step fails too, both are thrown together.
+    // The failure path of a capture (O14): kept as an internal entry point for GraphOwnershipTests.
     internal static void AbortCapture(GpuWorkspace workspace, DefaultGpuMemoryManager manager, CaptureDeferral deferral,
-        Exception original)
-    {
-        List<Exception>? cleanupErrors = null;
-        var graph = IntPtr.Zero;
-        try
-        {
-            graph = workspace.Provider.EndCapture(workspace.Stream);
-        }
-        catch (Exception ex)
-        {
-            (cleanupErrors ??= []).Add(ex);
-        }
-
-        var captured = manager.EndDeferral(deferral);
-        if (graph != IntPtr.Zero)
-        {
-            RunCleanupStep((workspace, graph), static s => s.workspace.Provider.DestroyGraph(s.graph, IntPtr.Zero),
-                ref cleanupErrors);
-        }
-
-        RunCleanupStep((manager, captured), static s => s.manager.ReturnDeferred(s.captured.Buffers), ref cleanupErrors);
-        ThrowIfCleanupFailed("CUDA graph capture failed, and so did its cleanup.", original, cleanupErrors);
-    }
-
-    // Runs one cleanup step of a failure path; a step that throws is collected, so that the next steps still run
-    private static void RunCleanupStep<TState>(TState state, Action<TState> step, ref List<Exception>? errors)
-    {
-        try
-        {
-            step(state);
-        }
-        catch (Exception ex)
-        {
-            (errors ??= []).Add(ex);
-        }
-    }
-
-    // After the cleanup of a failure path: nothing to throw when every step succeeded (the caller rethrows the
-    // original), otherwise the original first and then the cleanup errors (O14)
-    private static void ThrowIfCleanupFailed(string message, Exception original, List<Exception>? errors)
-    {
-        if (errors is null)
-        {
-            return;
-        }
-
-        errors.Insert(0, original);
-        throw new AggregateException(message, errors);
-    }
+        Exception original) =>
+        CapturedStreamGraph.AbortCapture(workspace, manager, deferral, original);
 
     /// <summary>
     /// Releases any device buffers cached by the underlying expression nodes (such as vector reductions).

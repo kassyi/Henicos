@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime.Interop;
 
@@ -34,39 +35,25 @@ public sealed class ArrayViewFieldDifferentialTests
     // One case per container: the kernel reads (and writes) one field of the struct, the other fields are marshaled
     // beside it, so a divergence of one container fails its own case only
     internal static readonly DifferentialCase s_memory = ViewCase(
-        nameof(ArrayViewFieldDifferentialKernels.MemoryKernel),
-        static (fields, r, s) => ArrayViewFieldDifferentialKernels.LaunchMemoryKernel(
-            fields, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        ArrayViewFieldDifferentialKernels.LaunchMemoryKernel);
 
     internal static readonly DifferentialCase s_readOnlyMemory = ViewCase(
-        nameof(ArrayViewFieldDifferentialKernels.ReadOnlyMemoryKernel),
-        static (fields, r, s) => ArrayViewFieldDifferentialKernels.LaunchReadOnlyMemoryKernel(
-            fields, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        ArrayViewFieldDifferentialKernels.LaunchReadOnlyMemoryKernel);
 
     internal static readonly DifferentialCase s_segment = ViewCase(
-        nameof(ArrayViewFieldDifferentialKernels.SegmentKernel),
-        static (fields, r, s) => ArrayViewFieldDifferentialKernels.LaunchSegmentKernel(
-            fields, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        ArrayViewFieldDifferentialKernels.LaunchSegmentKernel);
 
     internal static readonly DifferentialCase s_immutableArray = ViewCase(
-        nameof(ArrayViewFieldDifferentialKernels.ImmutableArrayKernel),
-        static (fields, r, s) => ArrayViewFieldDifferentialKernels.LaunchImmutableArrayKernel(
-            fields, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        ArrayViewFieldDifferentialKernels.LaunchImmutableArrayKernel);
 
     internal static readonly DifferentialCase s_optionalMemory = ViewCase(
-        nameof(ArrayViewFieldDifferentialKernels.OptionalMemoryKernel),
-        static (fields, r, s) => ArrayViewFieldDifferentialKernels.LaunchOptionalMemoryKernel(
-            fields, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        ArrayViewFieldDifferentialKernels.LaunchOptionalMemoryKernel);
 
     internal static readonly DifferentialCase s_optionalSegment = ViewCase(
-        nameof(ArrayViewFieldDifferentialKernels.OptionalSegmentKernel),
-        static (fields, r, s) => ArrayViewFieldDifferentialKernels.LaunchOptionalSegmentKernel(
-            fields, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        ArrayViewFieldDifferentialKernels.LaunchOptionalSegmentKernel);
 
     internal static readonly DifferentialCase s_lengths = ViewCase(
-        nameof(ArrayViewFieldDifferentialKernels.LengthsKernel),
-        static (fields, r, s) => ArrayViewFieldDifferentialKernels.LaunchLengthsKernel(
-            fields, r, gridDimX: s.GridX, blockDimX: s.BlockX),
+        ArrayViewFieldDifferentialKernels.LaunchLengthsKernel,
         LengthColumns);
 
     internal static readonly DifferentialCase s_nestedByValue = new(
@@ -245,10 +232,10 @@ public sealed class ArrayViewFieldDifferentialTests
 
     // The views of every field are built over the input buffers; the kernel of the case uses one of them
     private static DifferentialCase ViewCase(
-        string kernel,
-        Action<ArrayViewFields, int[], LaunchShape> launch,
-        string[]? columns = null) =>
-        new($"{Kernels}.{kernel}")
+        DiffLaunch<ArrayViewFields, int[]> launch,
+        string[]? columns = null,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        new(DiffKernelNames.FromLaunchExpression(launchExpression, paramName: nameof(launch)))
         {
             Shape = LaunchShape.ForRows(Rows, blockX: Rows),
             Seeds = [0, 1],
@@ -279,7 +266,7 @@ public sealed class ArrayViewFieldDifferentialTests
                     Optional = present ? optional.AsMemory(1, 4) : null,
                     OptionalSegment = present ? null : new ArraySegment<int>(optional, 2, 3),
                 };
-                launch(fields, b.Get<int>("r"), s);
+                launch(fields, b.Get<int>("r"), s.GridX, s.GridY, s.GridZ, s.BlockX, s.BlockY, s.BlockZ, 0, default, default);
             },
         };
 }
