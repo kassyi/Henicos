@@ -247,7 +247,7 @@ internal static class CyclePlanner
         }
     }
 
-    // (C3) A statement of the loop's range that is outside the cycle, has not passed a gate and holds a split point:
+    // A statement of the loop's range that is outside the cycle, has not passed a gate and holds a split point:
     // the lanes that fall out of the loop there have left it in different passes
     private static bool HasUngatedSplit(
         SyntaxList<StatementSyntax> statements,

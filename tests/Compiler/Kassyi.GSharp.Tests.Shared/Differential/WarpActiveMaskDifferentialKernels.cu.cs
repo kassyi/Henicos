@@ -2205,4 +2205,32 @@ public static partial class WarpActiveMaskDifferentialKernels
 
         result[t + 96] = (uint)n;
     }
+
+    // The lanes of a goto loop leave by the else of an if whose then branch falls through after the last pass.
+    // Slots 0..3: the else call after n back gotos; 4: the then call; 5: after the if; 6..9: the header per pass; 10: n
+    [GpuKernel]
+    public static void GotoLoopLeftByElseOfIfThatFallsThroughKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * (6 + n)] = 1u;
+        if (((t >> n) & 1) != 0)
+        {
+            if (n < u + 3)
+            {
+                n++;
+                goto L1;
+            }
+
+            result[t + 32 * 4] = Warp.ActiveMask();
+        }
+        else
+        {
+            result[t + 32 * n] = Warp.ActiveMask();
+        }
+
+        result[t + 32 * 5] = Warp.ActiveMask();
+        result[t + 32 * 10] = (uint)n;
+    }
 }
