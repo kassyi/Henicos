@@ -189,6 +189,21 @@ public static partial class StackModelKernels
         output[tid] = acc;
     }
 
+    [GpuKernel]
+    public static void LargeLocalAcrossBarrierKernel(int[] input, int[] output)
+    {
+        var s = new SharedMemory<int>(32);
+        int tid = ThreadIndex.X;
+        int gid = BlockIndex.X * BlockDimension.X + tid;
+        Span<byte> buf = stackalloc byte[256 * 1024];
+        buf[0] = (byte)(input[gid] & 0xFF);
+        buf[256 * 1024 - 1] = (byte)((input[gid] >> 8) & 0xFF);
+        s[tid] = tid;
+        Gpu.SyncThreads();
+        int mirrored = s[BlockDimension.X - 1 - tid];
+        output[gid] = (buf[0] | (buf[256 * 1024 - 1] << 8)) + mirrored;
+    }
+
     [GpuDeviceFunction]
     private static int WaitAndRead(int value, int tid)
     {

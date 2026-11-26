@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.ExceptionServices;
 using Kassyi.GSharp.Core;
 
@@ -19,6 +20,9 @@ internal sealed class ManagedStackThreadPool
 
     [ThreadStatic]
     private static Action? t_threadsStartedForTest;
+
+    [ThreadStatic]
+    private static Action<int>? t_beforeThreadStartForTest;
 
     internal int CreatedThreadCount
     {
@@ -49,17 +53,7 @@ internal sealed class ManagedStackThreadPool
     // ManagedStackRunner.Run), so the workers go into a new array
     internal ManagedStackThread[] Rent(int count, bool nested)
     {
-        ManagedStackThread[] workers;
-        if (nested)
-        {
-            workers = new ManagedStackThread[count];
-        }
-        else
-        {
-            workers = t_rentedBuffer is { } buffer && buffer.Length >= count ? buffer : new ManagedStackThread[count];
-            t_rentedBuffer = workers;
-        }
-
+        var workers = AllocateWorkers(count, nested);
         var fromPool = PopIdle(workers, count);
         if (fromPool == count)
         {
@@ -81,6 +75,61 @@ internal sealed class ManagedStackThreadPool
             ReturnTakingTheGate(workers, fromPool + created, created);
             throw;
         }
+    }
+
+    // Like Rent, but returns false with the number of workers already obtained/started when starting an OS thread fails
+    // with OutOfMemoryException or ThreadStartException (the obtained workers are already returned to the pool)
+    internal bool TryRent(int count, bool nested, out ManagedStackThread[] workers, out int startedCount,
+        [NotNullWhen(false)] out Exception? failure)
+    {
+        var rented = AllocateWorkers(count, nested);
+        var fromPool = PopIdle(rented, count);
+        if (fromPool == count)
+        {
+            workers = rented;
+            startedCount = count;
+            failure = null;
+            return true;
+        }
+
+        var created = 0;
+        try
+        {
+            StartThreads(rented, fromPool, count, ref created);
+            t_threadsStartedForTest?.Invoke();
+            CountCreated(created);
+            workers = rented;
+            startedCount = count;
+            failure = null;
+            return true;
+        }
+        catch (Exception ex) when (ex is OutOfMemoryException or ThreadStartException)
+        {
+            // [WHY] The resource failure of the rent is what the caller wraps; an interruption of the wait for the
+            // gate here comes while that failure is already on its way, and is dropped (see ReturnTakingTheGate)
+            ReturnTakingTheGate(rented, fromPool + created, created);
+            workers = [];
+            startedCount = fromPool + created;
+            failure = ex;
+            return false;
+        }
+        catch
+        {
+            ReturnTakingTheGate(rented, fromPool + created, created);
+            throw;
+        }
+    }
+
+    private static ManagedStackThread[] AllocateWorkers(int count, bool nested)
+    {
+        if (nested)
+        {
+            return new ManagedStackThread[count];
+        }
+
+        var workers = t_rentedBuffer is { } buffer && buffer.Length >= count ? buffer : new ManagedStackThread[count];
+        t_rentedBuffer = workers;
+        return workers;
     }
 
     // Takes up to <count> idle threads into workers[0..]; how many it took
@@ -124,6 +173,14 @@ internal sealed class ManagedStackThreadPool
         set => t_threadsStartedForTest = value;
     }
 
+    // For tests only, per thread: runs immediately before starting each new OS thread, passed the number of workers
+    // obtained/started so far
+    internal static Action<int>? BeforeThreadStartForTest
+    {
+        get => t_beforeThreadStartForTest;
+        set => t_beforeThreadStartForTest = value;
+    }
+
     internal void Return(ManagedStackThread[] workers, int count)
     {
         if (ReturnTakingTheGate(workers, count, created: 0) is { } interrupted)
@@ -137,6 +194,7 @@ internal sealed class ManagedStackThreadPool
     {
         for (var i = from; i < count; i++)
         {
+            t_beforeThreadStartForTest?.Invoke(i);
             var self = new ManagedStackThread();
             // [WHY] The default stack size of the platform, as the thread that ran the state machine had: a smaller
             // stack would turn a deep recursion that ran before into a StackOverflow, which no handler can catch

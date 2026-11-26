@@ -166,20 +166,37 @@ internal sealed partial class ManagedExecutionRewriter
             SyntaxFactory.ArgumentList(callArguments));
     }
 
-    // In a stack form, a block barrier becomes the barrier of the managed stack model:
-    // global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier(); null for any other call
+    // In a stack form, a block barrier or grid barrier becomes the barrier of the managed stack model:
+    // global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier() or
+    // global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_grid_barrier(); null for any other call
     private InvocationExpressionSyntax? TryRewriteStackBarrier(InvocationExpressionSyntax node)
     {
-        if (bodyKind != ManagedBodyKind.StackBody ||
-            semanticModel.GetSymbol(node) is not IMethodSymbol method ||
-            SyncIntrinsicClassifier.Classify(method).Kind != SyncIntrinsicKind.BlockBarrier)
+        if (bodyKind != ManagedBodyKind.StackBody)
         {
             return null;
         }
 
-        return SyntaxFactory.InvocationExpression(
-            ManagedNames.CreateMemberAccess(GSharpInternalNames.StackModel.BlockBarrier)
-        ).WithTriviaFrom(node);
+        string? barrierName = null;
+        if (BarrierHelper.IsGridBarrier(node))
+        {
+            barrierName = GSharpInternalNames.StackModel.GridBarrier;
+        }
+        else if (semanticModel.GetSymbol(node) is IMethodSymbol method)
+        {
+            barrierName = SyncIntrinsicClassifier.Classify(method).Kind switch
+            {
+                SyncIntrinsicKind.BlockBarrier => GSharpInternalNames.StackModel.BlockBarrier,
+                SyncIntrinsicKind.GridBarrier when !GpuMacroClassifier.Classify(method).HasBody =>
+                    GSharpInternalNames.StackModel.GridBarrier,
+                _ => null
+            };
+        }
+
+        return barrierName is null
+            ? null
+            : SyntaxFactory.InvocationExpression(
+                ManagedNames.CreateMemberAccess(barrierName)
+            ).WithTriviaFrom(node);
     }
 
     // The frame passed to the callee: __gsharp_ctx.__gsharp_call_frame_<i> (&__gsharp_ctx->... in an unsafe context),

@@ -68,16 +68,24 @@ internal static class CSharpExecutionEmitter
 
     /// <summary>
     /// Writes the argument copies, fixed pins and <c>ManagedStackRunner.Run(...)</c> call of <paramref name="plan"/>;
-    /// the run of a kernel that reaches a warp collective passes <c>true</c> after the kernel name, so that its threads
-    /// meet there.
+    /// a kernel that reaches a warp collective or is cooperative passes those flags after the kernel name, so that its
+    /// threads meet there.
     /// </summary>
     public static void WriteStackRun(SourceWriter writer, in CSharpExecutionPlan plan, string kernelNameLiteral,
-        bool reachesWarpCollective)
+        bool reachesWarpCollective, bool isCooperative)
     {
         WriteCopies(writer, plan);
-        WritePinnedRun(writer, plan, reachesWarpCollective
-            ? $"{StackRunnerType}.Run({LaunchDimensions}, sharedMemBytes, {kernelNameLiteral}, true"
-            : $"{StackRunnerType}.Run({LaunchDimensions}, sharedMemBytes, {kernelNameLiteral}");
+        var call = (reachesWarpCollective, isCooperative) switch
+        {
+            (_, true) =>
+                $"{StackRunnerType}.Run({LaunchDimensions}, sharedMemBytes, {kernelNameLiteral}, " +
+                $"{(reachesWarpCollective ? "true" : "false")}, true",
+            (true, false) =>
+                $"{StackRunnerType}.Run({LaunchDimensions}, sharedMemBytes, {kernelNameLiteral}, true",
+            (false, false) =>
+                $"{StackRunnerType}.Run({LaunchDimensions}, sharedMemBytes, {kernelNameLiteral}"
+        };
+        WritePinnedRun(writer, plan, call);
     }
 
     // [<return type>[] __gsharp_csharp_result = __gsharp_auto_result;]

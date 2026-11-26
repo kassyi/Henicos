@@ -46,7 +46,7 @@ internal static class ManagedStackEligibility
     /// <summary>Whether the managed path can run <paramref name="kernel"/> with one stack per GPU thread.</summary>
     public static bool IsStackKernel(IMethodSymbol kernel, Compilation compilation)
     {
-        if (!kernel.IsStatic || kernel.IsCooperativeKernel())
+        if (!kernel.IsStatic)
         {
             return false;
         }
@@ -81,13 +81,9 @@ internal static class ManagedStackEligibility
             }
 
             var intrinsic = SyncIntrinsicClassifier.Classify(callee);
-            if (intrinsic.Kind == SyncIntrinsicKind.GridBarrier)
-            {
-                return false;
-            }
-
-            // A thread waits in its body at a block barrier, a warp collective or a call that reaches one
-            if (intrinsic.Kind is SyncIntrinsicKind.BlockBarrier or SyncIntrinsicKind.WarpShuffle ||
+            // A thread waits in its body at a block barrier, a grid barrier, a warp collective or a call that reaches one
+            if (intrinsic.Kind is SyncIntrinsicKind.BlockBarrier or SyncIntrinsicKind.GridBarrier
+                    or SyncIntrinsicKind.WarpShuffle ||
                 SuspensionAnalysis.IsSuspendingFunction(callee, compilation))
             {
                 waits = true;
@@ -159,7 +155,6 @@ internal static class ManagedStackEligibility
         }
 
         if (!SuspensionAnalysis.RequiresStateMachine(function, compilation) ||
-            SuspensionAnalysis.ReachesGridBarrier(function, compilation) ||
             !function.IsStatic ||
             !ManagedStateMachineAvailability.AreContainingTypesPartial(function) ||
             FileLocalNames.BlocksCopy(function, compilation))
@@ -167,8 +162,8 @@ internal static class ManagedStackEligibility
             return false;
         }
 
-        if (SuspensionAnalysis.ReachesWarpShuffle(function, compilation) &&
-            !WarpFrameLayout.TryGet(function, compilation, out _) ||
+        if ((SuspensionAnalysis.ReachesWarpShuffle(function, compilation) &&
+             !WarpFrameLayout.TryGet(function, compilation, out _)) ||
             StackBodyObstacles.DeclaresUsingWithActiveMask(function, compilation))
         {
             return false;

@@ -1,9 +1,12 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Runtime.Aot;
+using Kassyi.GSharp.Tests.Shared.Core;
 
 namespace Kassyi.GSharp.Tests.Cpu.Runtime;
 
@@ -883,6 +886,96 @@ public class ManagedStackRunnerTests
     public void StackWarpBegin_OutsideALaunch_ThrowsInvalidOperation()
     {
         Assert.Throws<InvalidOperationException>(() => ManagedGpuContext.__gsharp_stack_warp_begin(2));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void CooperativeLaunch_PhaseInRoundInfo_CountsFromOne()
+    {
+        const uint blocks = 3;
+        const uint threadsPerBlock = 2;
+        var recorded = new List<(int Phase, int BlockIndex, int Round)>();
+
+        using (ManagedStackRunner.UseThreadOrder(round =>
+               {
+                   recorded.Add((round.Phase, round.BlockIndex, round.Round));
+                   return [0, 1];
+               }))
+        {
+            ManagedStackRunner.Run(blocks, 1, 1, threadsPerBlock, 1, 1, 0, "Test.CoopPhases",
+                reachesWarpCollective: false, cooperative: true, _ =>
+                {
+                    ManagedGpuContext.__gsharp_stack_grid_barrier();
+                    ManagedGpuContext.__gsharp_stack_grid_barrier();
+                });
+        }
+
+        Assert.Equal(
+            [
+                (1, 0, 1), (1, 1, 1), (1, 2, 1),
+                (2, 0, 1), (2, 1, 1), (2, 2, 1),
+                (3, 0, 1), (3, 1, 1), (3, 2, 1)
+            ],
+            recorded);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void CooperativeKernels_UnderShuffledThreadOrder_GiveTheSameValues()
+    {
+        const int blocks = 3;
+        const int threadsPerBlock = 32;
+        const int total = blocks * threadsPerBlock;
+        const int shuffleThreadsPerBlock = 64;
+        const int shuffleTotal = blocks * shuffleThreadsPerBlock;
+
+        var expectedGlobal = new int[total];
+        var expectedSharedBuf = new int[total];
+        var expectedSharedOut = new int[total];
+        var expectedShuffleData = new int[shuffleTotal];
+        var expectedShuffleOut = new int[shuffleTotal];
+
+        using (GpuExecution.Use(KernelExecution.Managed))
+        {
+            GridSyncManagedKernels.LaunchGlobalBarrierKernel(
+                expectedGlobal, gridDimX: blocks, blockDimX: threadsPerBlock);
+            GridSyncPhaseKernels.LaunchSharedMemoryAcrossGridSyncKernel(
+                expectedSharedBuf, expectedSharedOut, threadsPerBlock,
+                gridDimX: blocks, blockDimX: threadsPerBlock, sharedMemBytes: threadsPerBlock * sizeof(int));
+            GridSyncPhaseKernels.LaunchShuffleBeforeGridSyncKernel(
+                expectedShuffleData, expectedShuffleOut, gridDimX: blocks, blockDimX: shuffleThreadsPerBlock);
+        }
+
+        for (int seed = 1; seed <= 4; seed++)
+        {
+            var random = new Random(seed);
+            using (ManagedStackRunner.UseThreadOrder(round =>
+                   {
+                       var order = Enumerable.Range(0, round.ThreadCount).ToArray();
+                       random.Shuffle(order);
+                       return order;
+                   }))
+            using (GpuExecution.Use(KernelExecution.Managed))
+            {
+                var actualGlobal = new int[total];
+                GridSyncManagedKernels.LaunchGlobalBarrierKernel(
+                    actualGlobal, gridDimX: blocks, blockDimX: threadsPerBlock);
+                Assert.Equal(expectedGlobal, actualGlobal);
+
+                var actualSharedBuf = new int[total];
+                var actualSharedOut = new int[total];
+                GridSyncPhaseKernels.LaunchSharedMemoryAcrossGridSyncKernel(
+                    actualSharedBuf, actualSharedOut, threadsPerBlock,
+                    gridDimX: blocks, blockDimX: threadsPerBlock, sharedMemBytes: threadsPerBlock * sizeof(int));
+                Assert.Equal(expectedSharedOut, actualSharedOut);
+
+                var actualShuffleData = new int[shuffleTotal];
+                var actualShuffleOut = new int[shuffleTotal];
+                GridSyncPhaseKernels.LaunchShuffleBeforeGridSyncKernel(
+                    actualShuffleData, actualShuffleOut, gridDimX: blocks, blockDimX: shuffleThreadsPerBlock);
+                Assert.Equal(expectedShuffleOut, actualShuffleOut);
+            }
+        }
     }
 
     private static void RunWarp(uint blocks, uint threads, string name, Action<long> body) =>

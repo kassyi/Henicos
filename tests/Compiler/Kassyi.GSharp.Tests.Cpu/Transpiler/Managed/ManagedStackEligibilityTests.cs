@@ -1,4 +1,5 @@
 #nullable enable
+using System.IO;
 using System.Linq;
 using Kassyi.GSharp.Compiler.Transpiler;
 using Kassyi.GSharp.Tests.Shared.Helpers;
@@ -13,6 +14,12 @@ public class ManagedStackEligibilityTests
         RoslynTestUtility.ReadTestCase("Analysis/ManagedStackEligibilityCases.cs")
     );
 
+    private static readonly Compilation s_cooperativeCompilation = RoslynTestUtility.CreateCompilation(
+        File.ReadAllText(RepositoryPaths.Combine(
+            "tests", "Compiler", "Kassyi.GSharp.Tests.Cpu", "Analysis", "Cases",
+            "ManagedStackCooperativeEligibilityCases.cs"))
+    );
+
     [Theory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData("EligibilityKernels", "BlockBarrierOnly", true)]
@@ -24,7 +31,7 @@ public class ManagedStackEligibilityTests
     [InlineData("EligibilityKernels", "ActiveMaskWithUsing", false)]
     [InlineData("EligibilityKernels", "CallsActiveMaskWithUsing", false)]
     [InlineData("EligibilityKernels", "ShuffleWithUsing", true)]
-    [InlineData("EligibilityKernels", "CooperativeKernel", false)]
+    [InlineData("EligibilityKernels", "CooperativeKernel", true)]
     [InlineData("EligibilityKernels", "WithoutBarrier", false)]
     [InlineData("InstanceEligibilityTarget", "InstanceKernelWithBarrier", false)]
     [InlineData("EligibilityKernels", "NonSpanRefStructParameter", false)]
@@ -168,10 +175,37 @@ public class ManagedStackEligibilityTests
         Assert.Contains("as a method group", ex.Message, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("CooperativeSyncGridModeKernel", true)]
+    [InlineData("CooperativeSyncGridBodyKernel", true)]
+    [InlineData("CallsGridBarrierDeviceFunction", true)]
+    public void IsStackKernel_CooperativeAndGridSyncShapes_MatchesExpectedEligibility(string methodName, bool expected)
+    {
+        var method = GetCooperativeMethod(methodName);
+        Assert.Equal(expected, ManagedStackEligibility.IsStackKernel(method, s_cooperativeCompilation));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void IsStackFunction_ReachesGridBarrier_ReturnsTrue()
+    {
+        var method = GetCooperativeMethod("GridDeviceWait");
+        Assert.True(ManagedStackEligibility.IsStackFunction(method, s_cooperativeCompilation));
+    }
+
     private static IMethodSymbol GetMethod(string typeName, string methodName)
     {
         var type = s_compilation.GetTypeByMetadataName($"ManagedStackEligibilityCases.{typeName}") ??
             throw new InvalidOperationException($"Type '{typeName}' not found.");
+        return type.GetMembers(methodName).OfType<IMethodSymbol>().Single();
+    }
+
+    private static IMethodSymbol GetCooperativeMethod(string methodName)
+    {
+        var type = s_cooperativeCompilation.GetTypeByMetadataName(
+                "ManagedStackCooperativeEligibilityCases.CooperativeEligibilityKernels") ??
+            throw new InvalidOperationException("Type 'CooperativeEligibilityKernels' not found.");
         return type.GetMembers(methodName).OfType<IMethodSymbol>().Single();
     }
 }

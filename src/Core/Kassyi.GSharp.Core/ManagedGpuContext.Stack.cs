@@ -30,6 +30,36 @@ public static partial class ManagedGpuContext
         }
     }
 
+    /// <summary>
+    /// Waits at a grid sync of the managed stack model until every block of the grid has reached the end of the phase.
+    /// For generated code only.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// Called outside a managed stack launch, or the launch is not <c>[GpuKernel(Cooperative = true)]</c>.
+    /// </exception>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    // ReSharper disable once UnusedMember.Global -- Public API for code generators
+    public static void __gsharp_stack_grid_barrier()
+    {
+        if (t_stackThread is not { Launch: { } launch } self)
+        {
+            throw new InvalidOperationException(
+                "G#: a grid sync of the stack model was reached outside a managed launch");
+        }
+
+        if (!launch.Cooperative)
+        {
+            throw GridSyncInKernelThatIsNotCooperative(launch.KernelName);
+        }
+
+        self.AtGridSync = true;
+        ManagedBaton.HandOver(launch.Scheduler, self.Go);
+        if (launch.Cancelled)
+        {
+            throw new ManagedLaunchCancelledException();
+        }
+    }
+
     internal static void BindStackThread(ManagedStackThread self)
     {
         if (self.Launch?.State is not { } state)
