@@ -185,6 +185,12 @@ public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, Sco
     {
     }
 
+    /// <inheritdoc/>
+    readonly void IExpressionWalker<IGpuBigUIntExpression, GpuBigIntMemoryHandle, bool>.BeginOperand(
+        IGpuBigUIntExpression node, int index)
+    {
+    }
+
     // A leaf, or a node implemented elsewhere, evaluates itself; the value owns what the node's memory owned
     /// <inheritdoc/>
     GpuBigIntMemoryHandle IExpressionWalker<IGpuBigUIntExpression, GpuBigIntMemoryHandle, bool>.EvaluateLeaf(

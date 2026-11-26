@@ -3,7 +3,7 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 
 // Any and All stop at the deciding element (see EarlyStop.Int.cs). This file: which chains defer their element
-// exceptions (not through Where, not through an expression implemented outside GpuMath), and the recording scope.
+// exceptions (not through an expression implemented outside GpuMath), and the recording scope.
 public partial class GpuBigIntVectorLinqExtensionsTests
 {
     private static readonly BigInteger[] s_whereX = [0, 0, 1, 7];
@@ -19,9 +19,9 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         var expected = Outcome(WhereChainReference);
         Assert.Equal(typeof(DivideByZeroException), expected.Error);
 
-        // System.Linq divides element 2 before the filter; after the compaction the deciding element has index 1 < 2,
-        // so recording by index would return true.
-        // mutant: BoolVectorQuantifier.CanDefer without the Where case (returns true)
+        // System.Linq divides element 2 before the filter; after the compaction the deciding element is at output
+        // index 1 < 2, so Where translates input index 2 through scan[2] = 0 <= 1 instead of recording raw index 2.
+        // mutant: WhereDeviceState.TranslateRecorded using `index` instead of `ReadWord(scan, index)` (returns true)
         using var x = CreateArray(s_whereX);
         using var y = CreateArray(s_whereY);
         using var m = CreateArray(s_whereMask);
@@ -99,7 +99,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var x = CreateArray(s_whereX);
         using var y = CreateArray(s_whereY);
         using var m = CreateArray(s_whereMask);
-        using var any = WhereChain(x, y, m, zero).Any();
+        using var any = new PassThroughBoolVectorExpression(WhereChain(x, y, m, zero)).Any();
         using var scope = PendingThrows.Begin();
         Assert.Equal(expected, Outcome(() => any.Evaluate(_context)));
         Assert.Null(scope.Instance.Exception);

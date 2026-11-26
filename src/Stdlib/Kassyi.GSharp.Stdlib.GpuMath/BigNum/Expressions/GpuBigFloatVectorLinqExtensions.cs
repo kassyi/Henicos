@@ -293,6 +293,9 @@ public static class GpuBigFloatVectorLinqExtensions
         /// on the device; <see cref="NotSupportedException"/>): write <c>v.Where(p.And(q))</c> instead of combining
         /// <c>v.Where(p)</c> with <c>w.Where(q)</c>. <c>v.Where(p).Where(m)</c> works when <c>m</c> has the capacity's
         /// length.</para>
+        /// <para>As in System.Linq, <c>Take(k)</c> after a <c>Where</c> runs the projections of the source only up to
+        /// the k-th selected element, and <c>Any</c> / <c>All</c> only up to the deciding one; <c>Skip(k)</c> after a
+        /// <c>Where</c> runs them for the skipped elements as well.</para>
         /// </remarks>
         /// <exception cref="ArgumentException">At evaluation: <paramref name="predicate"/> has another length.</exception>
         public IGpuBigFloatVectorExpression Where(IGpuBoolVectorExpression predicate)
