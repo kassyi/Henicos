@@ -115,7 +115,7 @@ public class GpuWorkspace : IGpuResourceScope
 
     /// <summary>
     /// Gets or sets the size of a square root, in 32-bit words, above which its inverse square root is computed by
-    /// precision doubling driven from the host instead of one cooperative mega-kernel. Default is 45 words.
+    /// precision doubling driven from the host instead of one cooperative mega-kernel. Default is 5956 words.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -127,11 +127,11 @@ public class GpuWorkspace : IGpuResourceScope
     /// </para>
     /// <para>
     /// The result is exactly the same either way; only the time differs. The size at which the two take the same time
-    /// depends on the GPU (its number of SMs and its launch latency), so measure it on yours and set it here. On the
-    /// GPU the default was measured on, the mega-kernel is the faster while its transforms fit 512 points, which holds
-    /// up to 45 root words. 0 sends every root to the precision doubling, <see cref="int.MaxValue"/> every root to the
-    /// mega-kernel.
-    /// </para>
+    /// depends on the GPU (its number of SMs and its launch latency), so measure it on yours and set it here. The
+    /// default, 5956 root words, is where the cooperative mega-kernel stops being the faster path: up to 5956 words
+    /// its transforms fit 65536 points, and from 5957 words they need 131072 points, where host-driven precision
+    /// doubling is faster. The value comes from the <c>arithmetic sqrt-path</c> benchmark on an idle machine. 0
+    /// sends every root to the precision doubling, <see cref="int.MaxValue"/> every root to the mega-kernel.</para>
     /// </remarks>
     /// <exception cref="ArgumentOutOfRangeException">The value is negative.</exception>
     public int SqrtPrecisionDoublingThresholdWords
@@ -142,7 +142,7 @@ public class GpuWorkspace : IGpuResourceScope
             ArgumentOutOfRangeException.ThrowIfNegative(value);
             field = value;
         }
-    } = 45;
+    } = 5956;
 
     /// <summary>
     /// Gets the tuning parameters of the big-float transcendental functions (<c>Exp</c>, <c>Log</c>, <c>Pow</c>) run on
@@ -537,6 +537,60 @@ public class GpuWorkspace : IGpuResourceScope
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) == 1, this);
         return new GpuBigUInt(this, MemoryManager.Allocate(numWords));
+    }
+
+    private uint _lastModPowNttBlockDim;
+
+    /// <summary>
+    /// Gets the block size of the most recent ModPow NTT mega-kernel launch on this workspace, which the tests read to
+    /// verify the launcher's block-size rule.
+    /// </summary>
+    internal uint LastModPowNttBlockDim => Volatile.Read(ref _lastModPowNttBlockDim);
+
+    /// <summary>Records the block size used to launch the ModPow NTT mega-kernel.</summary>
+    internal void RecordModPowNttBlockDim(uint blockDim) => Volatile.Write(ref _lastModPowNttBlockDim, blockDim);
+
+    private uint _lastInverseSqrtMegaBlockDim;
+    private uint _lastInverseSqrtMegaGridDim;
+    private uint _lastInverseSqrtMegaSharedMemBytes;
+    private uint _lastReciprocalMegaBlockDim;
+    private uint _lastReciprocalMegaGridDim;
+    private uint _lastReciprocalMegaSharedMemBytes;
+
+    /// <summary>
+    /// Gets the launch shape of the most recent <c>InverseSqrtNewtonRaphsonMegaKernel</c> launch on this workspace,
+    /// which tests read to verify block and grid dimensions.
+    /// </summary>
+    internal BigNum.Providers.Handlers.CooperativeMegaKernelLauncher.LaunchShape LastInverseSqrtMegaLaunchShape =>
+        new(
+            Volatile.Read(ref _lastInverseSqrtMegaBlockDim),
+            Volatile.Read(ref _lastInverseSqrtMegaGridDim),
+            Volatile.Read(ref _lastInverseSqrtMegaSharedMemBytes));
+
+    /// <summary>Records the launch shape used to launch <c>InverseSqrtNewtonRaphsonMegaKernel</c>.</summary>
+    internal void RecordInverseSqrtMegaLaunchShape(uint blockDim, uint gridDim, uint sharedMemBytes)
+    {
+        Volatile.Write(ref _lastInverseSqrtMegaBlockDim, blockDim);
+        Volatile.Write(ref _lastInverseSqrtMegaGridDim, gridDim);
+        Volatile.Write(ref _lastInverseSqrtMegaSharedMemBytes, sharedMemBytes);
+    }
+
+    /// <summary>
+    /// Gets the launch shape of the most recent <c>ReciprocalNewtonRaphsonMegaKernel</c> launch on this workspace,
+    /// which tests read to verify block and grid dimensions.
+    /// </summary>
+    internal BigNum.Providers.Handlers.CooperativeMegaKernelLauncher.LaunchShape LastReciprocalMegaLaunchShape =>
+        new(
+            Volatile.Read(ref _lastReciprocalMegaBlockDim),
+            Volatile.Read(ref _lastReciprocalMegaGridDim),
+            Volatile.Read(ref _lastReciprocalMegaSharedMemBytes));
+
+    /// <summary>Records the launch shape used to launch <c>ReciprocalNewtonRaphsonMegaKernel</c>.</summary>
+    internal void RecordReciprocalMegaLaunchShape(uint blockDim, uint gridDim, uint sharedMemBytes)
+    {
+        Volatile.Write(ref _lastReciprocalMegaBlockDim, blockDim);
+        Volatile.Write(ref _lastReciprocalMegaGridDim, gridDim);
+        Volatile.Write(ref _lastReciprocalMegaSharedMemBytes, sharedMemBytes);
     }
 }
 

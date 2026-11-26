@@ -467,29 +467,29 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1264904551u, "CrossAssembl
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(670209751u, "CrossAssemblyDifferentialKernels.cs", 204, 9, "CrossAssemblyFunctionsAndMacrosKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1112124315u, "CrossAssemblyDifferentialKernels.cs", 205, 9, "CrossAssemblyFunctionsAndMacrosKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1459478003u, "CrossAssemblyDifferentialKernels.cs", 206, 9, "CrossAssemblyFunctionsAndMacrosKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1986201236u, "CrossAssemblyDifferentialKernels.cs", 218, 20, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1292776019u, "CrossAssemblyDifferentialKernels.cs", 224, 9, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1336389350u, "CrossAssemblyDifferentialKernels.cs", 224, 21, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1147074706u, "CrossAssemblyDifferentialKernels.cs", 224, 41, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(249951870u, "CrossAssemblyDifferentialKernels.cs", 219, 20, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(615771419u, "CrossAssemblyDifferentialKernels.cs", 225, 9, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(288764354u, "CrossAssemblyDifferentialKernels.cs", 225, 20, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(428082929u, "CrossAssemblyDifferentialKernels.cs", 225, 39, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(531195804u, "CrossAssemblyDifferentialKernels.cs", 225, 21, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1685084212u, "CrossAssemblyDifferentialKernels.cs", 225, 41, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1945087559u, "CrossAssemblyDifferentialKernels.cs", 226, 9, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1636268295u, "CrossAssemblyDifferentialKernels.cs", 226, 20, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2120980496u, "CrossAssemblyDifferentialKernels.cs", 226, 20, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(5517147u, "CrossAssemblyDifferentialKernels.cs", 226, 39, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(853027031u, "CrossAssemblyDifferentialKernels.cs", 227, 9, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(746298369u, "CrossAssemblyDifferentialKernels.cs", 227, 20, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(87772968u, "CrossAssemblyDifferentialKernels.cs", 227, 39, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(132172639u, "CrossAssemblyDifferentialKernels.cs", 229, 9, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(581216763u, "CrossAssemblyDifferentialKernels.cs", 228, 9, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(166964043u, "CrossAssemblyDifferentialKernels.cs", 228, 20, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1778901738u, "CrossAssemblyDifferentialKernels.cs", 228, 39, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(585355375u, "CrossAssemblyDifferentialKernels.cs", 230, 9, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2146545932u, "CrossAssemblyDifferentialKernels.cs", 231, 9, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1250706400u, "CrossAssemblyDifferentialKernels.cs", 231, 26, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2064953523u, "CrossAssemblyDifferentialKernels.cs", 231, 9, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2039871768u, "CrossAssemblyDifferentialKernels.cs", 232, 9, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(417913427u, "CrossAssemblyDifferentialKernels.cs", 232, 30, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1483746850u, "CrossAssemblyDifferentialKernels.cs", 232, 26, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1674261940u, "CrossAssemblyDifferentialKernels.cs", 233, 9, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(348991198u, "CrossAssemblyDifferentialKernels.cs", 241, 26, "CrossAssemblyBarrierExchangeKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(653716133u, "CrossAssemblyDifferentialKernels.cs", 246, 61, "CrossAssemblyBarrierExchangeKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1123911447u, "CrossAssemblyDifferentialKernels.cs", 247, 9, "CrossAssemblyBarrierExchangeKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(610098826u, "CrossAssemblyDifferentialKernels.cs", 247, 36, "CrossAssemblyBarrierExchangeKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(315987489u, "CrossAssemblyDifferentialKernels.cs", 233, 30, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1512363592u, "CrossAssemblyDifferentialKernels.cs", 234, 9, "CrossAssemblyExplicitLayoutArrayKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1269683792u, "CrossAssemblyDifferentialKernels.cs", 242, 26, "CrossAssemblyBarrierExchangeKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(142024991u, "CrossAssemblyDifferentialKernels.cs", 247, 61, "CrossAssemblyBarrierExchangeKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(41842855u, "CrossAssemblyDifferentialKernels.cs", 248, 9, "CrossAssemblyBarrierExchangeKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1442014756u, "CrossAssemblyDifferentialKernels.cs", 248, 36, "CrossAssemblyBarrierExchangeKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -3887,20 +3887,20 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_5_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-if(__gsharp_id_5_tid>=__gsharp_array_ref(__gsharp_id_0_swaps, 1986201236u).length)
+if(__gsharp_id_5_tid>=__gsharp_array_ref(__gsharp_id_0_swaps, 249951870u).length)
 {
 __gsharp_state = -1;return;
 }
 int __gsharp_id_6_o = __gsharp_mul_i32(__gsharp_id_5_tid,4);
-__gsharp_array_at(__gsharp_id_4_r, __gsharp_id_6_o+0, 1292776019u)=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_array_at(__gsharp_id_0_swaps, __gsharp_id_5_tid, 1336389350u).__gsharp_mb_A,3),__gsharp_array_at(__gsharp_id_0_swaps, __gsharp_id_5_tid, 1147074706u).__gsharp_mb_B);
-__gsharp_array_at(__gsharp_id_4_r, __gsharp_add_i32(__gsharp_id_6_o,1), 615771419u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_1_packeds, __gsharp_id_5_tid, 288764354u).__gsharp_mb_Tag,__gsharp_array_at(__gsharp_id_1_packeds, __gsharp_id_5_tid, 428082929u).__gsharp_mb_Value);
-__gsharp_array_at(__gsharp_id_4_r, __gsharp_add_i32(__gsharp_id_6_o,2), 1945087559u)=__gsharp_array_at(__gsharp_id_2_sizeds, __gsharp_id_5_tid, 1636268295u).__gsharp_mb_A;
-__gsharp_array_at(__gsharp_id_4_r, __gsharp_add_i32(__gsharp_id_6_o,3), 853027031u)=__gsharp_array_at(__gsharp_id_3_unions, __gsharp_id_5_tid, 746298369u).__gsharp_mb_Bits^__gsharp_array_at(__gsharp_id_3_unions, __gsharp_id_5_tid, 87772968u).__gsharp_mb_Tag;
-__gsharp_array_at(__gsharp_id_0_swaps, __gsharp_id_5_tid, 132172639u).__gsharp_mb_A=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_swaps, __gsharp_id_5_tid, 132172639u).__gsharp_mb_A,5);
-__gsharp_array_at(__gsharp_id_0_swaps, __gsharp_id_5_tid, 585355375u).__gsharp_mb_B=__gsharp_sub_i32(__gsharp_array_at(__gsharp_id_0_swaps, __gsharp_id_5_tid, 585355375u).__gsharp_mb_B,3);
-__gsharp_array_at(__gsharp_id_2_sizeds, __gsharp_id_5_tid, 2146545932u).__gsharp_mb_A=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_array_at(__gsharp_id_2_sizeds, __gsharp_id_5_tid, 1250706400u).__gsharp_mb_A,2),1);
-__gsharp_array_at(__gsharp_id_3_unions, __gsharp_id_5_tid, 2039871768u).__gsharp_mb_Value=-__gsharp_array_at(__gsharp_id_3_unions, __gsharp_id_5_tid, 417913427u).__gsharp_mb_Value;
-__gsharp_array_at(__gsharp_id_3_unions, __gsharp_id_5_tid, 1674261940u).__gsharp_mb_Tag=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_3_unions, __gsharp_id_5_tid, 1674261940u).__gsharp_mb_Tag,9);
+__gsharp_array_at(__gsharp_id_4_r, __gsharp_id_6_o+0, 615771419u)=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_array_at(__gsharp_id_0_swaps, __gsharp_id_5_tid, 531195804u).__gsharp_mb_A,3),__gsharp_array_at(__gsharp_id_0_swaps, __gsharp_id_5_tid, 1685084212u).__gsharp_mb_B);
+__gsharp_array_at(__gsharp_id_4_r, __gsharp_add_i32(__gsharp_id_6_o,1), 1945087559u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_1_packeds, __gsharp_id_5_tid, 2120980496u).__gsharp_mb_Tag,__gsharp_array_at(__gsharp_id_1_packeds, __gsharp_id_5_tid, 5517147u).__gsharp_mb_Value);
+__gsharp_array_at(__gsharp_id_4_r, __gsharp_add_i32(__gsharp_id_6_o,2), 853027031u)=__gsharp_array_at(__gsharp_id_2_sizeds, __gsharp_id_5_tid, 746298369u).__gsharp_mb_A;
+__gsharp_array_at(__gsharp_id_4_r, __gsharp_add_i32(__gsharp_id_6_o,3), 581216763u)=__gsharp_array_at(__gsharp_id_3_unions, __gsharp_id_5_tid, 166964043u).__gsharp_mb_Bits^__gsharp_array_at(__gsharp_id_3_unions, __gsharp_id_5_tid, 1778901738u).__gsharp_mb_Tag;
+__gsharp_array_at(__gsharp_id_0_swaps, __gsharp_id_5_tid, 585355375u).__gsharp_mb_A=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_swaps, __gsharp_id_5_tid, 585355375u).__gsharp_mb_A,5);
+__gsharp_array_at(__gsharp_id_0_swaps, __gsharp_id_5_tid, 2064953523u).__gsharp_mb_B=__gsharp_sub_i32(__gsharp_array_at(__gsharp_id_0_swaps, __gsharp_id_5_tid, 2064953523u).__gsharp_mb_B,3);
+__gsharp_array_at(__gsharp_id_2_sizeds, __gsharp_id_5_tid, 2039871768u).__gsharp_mb_A=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_array_at(__gsharp_id_2_sizeds, __gsharp_id_5_tid, 1483746850u).__gsharp_mb_A,2),1);
+__gsharp_array_at(__gsharp_id_3_unions, __gsharp_id_5_tid, 1674261940u).__gsharp_mb_Value=-__gsharp_array_at(__gsharp_id_3_unions, __gsharp_id_5_tid, 315987489u).__gsharp_mb_Value;
+__gsharp_array_at(__gsharp_id_3_unions, __gsharp_id_5_tid, 1512363592u).__gsharp_mb_Tag=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_3_unions, __gsharp_id_5_tid, 1512363592u).__gsharp_mb_Tag,9);
 __gsharp_state=-1;
 return;
 }
@@ -4306,11 +4306,11 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_3_localTid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_4_globalTid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),__gsharp_ctx->__gsharp_id_3_localTid);
-if(__gsharp_ctx->__gsharp_id_4_globalTid>=__gsharp_array_ref(__gsharp_ctx->__gsharp_id_0_inputs, 348991198u).length)
+if(__gsharp_ctx->__gsharp_id_4_globalTid>=__gsharp_array_ref(__gsharp_ctx->__gsharp_id_0_inputs, 1269683792u).length)
 {
 __gsharp_state = -1;return;
 }
-__gsharp_ctx->__gsharp_arg_temp_0=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_inputs, __gsharp_ctx->__gsharp_id_4_globalTid, 653716133u);
+__gsharp_ctx->__gsharp_arg_temp_0=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_inputs, __gsharp_ctx->__gsharp_id_4_globalTid, 142024991u);
 __gsharp_warp_region_enter(__gsharp_root,__gsharp_ctx,0);
 goto __gsharp_switch_1_state_1;
 }
@@ -4322,7 +4322,7 @@ if(!__gsharp_fn_Kassyi__GSharp__Tests__DeviceLibrary__LibMath__Exchange(__gsharp
 __gsharp_state=1;
 return;
 }
-__gsharp_warp_reconverge_arrive(__gsharp_root,__gsharp_ctx,0,""CrossAssemblyDifferentialKernels.cs(246,25)"");
+__gsharp_warp_reconverge_arrive(__gsharp_root,__gsharp_ctx,0,""CrossAssemblyDifferentialKernels.cs(247,25)"");
 __gsharp_state=2;
 return;
 }
@@ -4331,7 +4331,7 @@ __gsharp_switch_1_state_2:
 {
 __gsharp_warp_reconverge_pass(__gsharp_root,__gsharp_ctx,0);
 int __gsharp_id_5_exchanged = __gsharp_ctx->__gsharp_call_temp_1;
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_r, __gsharp_ctx->__gsharp_id_4_globalTid, 1123911447u)=__gsharp_add_i32(__gsharp_id_5_exchanged,__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_inputs, __gsharp_ctx->__gsharp_id_4_globalTid, 610098826u));
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_r, __gsharp_ctx->__gsharp_id_4_globalTid, 41842855u)=__gsharp_add_i32(__gsharp_id_5_exchanged,__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_inputs, __gsharp_ctx->__gsharp_id_4_globalTid, 1442014756u));
 __gsharp_state=-1;
 return;
 }
@@ -4485,7 +4485,7 @@ __gsharp_ctx.__gsharp_state = 1;
 return;
 }
 
-__gsharp_warp_reconverge_arrive(0, ref __gsharp_ctx, 0, "CrossAssemblyDifferentialKernels.cs(246,25)");
+__gsharp_warp_reconverge_arrive(0, ref __gsharp_ctx, 0, "CrossAssemblyDifferentialKernels.cs(247,25)");
 __gsharp_ctx.__gsharp_state = 2;
 return;
 }

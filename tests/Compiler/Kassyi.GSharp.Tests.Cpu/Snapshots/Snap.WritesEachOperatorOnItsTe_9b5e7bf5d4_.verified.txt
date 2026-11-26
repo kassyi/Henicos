@@ -97,71 +97,71 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_8_l=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_9_o=__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_8_l,13);
-__gsharp_ctx->__gsharp_arg_temp_0=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_a, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(225,9)");
+__gsharp_ctx->__gsharp_arg_temp_0=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_a, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(227,9)");
 __gsharp_ctx->__gsharp_arg_temp_1=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Bump(__gsharp_ctx->__gsharp_id_0_a,__gsharp_ctx->__gsharp_id_8_l);
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,4294967295U,__gsharp_ctx->__gsharp_arg_temp_1,"Warp.ShuffleSync","SplitOperandOrderDifferentialKernels.cu.cs(225,17)");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,4294967295U,__gsharp_ctx->__gsharp_arg_temp_1,"Warp.ShuffleSync","SplitOperandOrderDifferentialKernels.cu.cs(227,17)");
 __gsharp_state=1;
 return;
 }
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_ctx->__gsharp_warp_temp_2=__gsharp_warp_shuffle_read_sync(__gsharp_root,__gsharp_ctx,0,4294967295U,__gsharp_ctx->__gsharp_arg_temp_1,__gsharp_ctx->__gsharp_id_8_l,32,"SplitOperandOrderDifferentialKernels.cu.cs(225,17)");
+__gsharp_ctx->__gsharp_warp_temp_2=__gsharp_warp_shuffle_read_sync(__gsharp_root,__gsharp_ctx,0,4294967295U,__gsharp_ctx->__gsharp_arg_temp_1,__gsharp_ctx->__gsharp_id_8_l,32,"SplitOperandOrderDifferentialKernels.cu.cs(227,17)");
 __gsharp_ctx->__gsharp_arg_temp_0=__gsharp_add_i32(__gsharp_ctx->__gsharp_arg_temp_0,__gsharp_ctx->__gsharp_warp_temp_2);
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_a, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(225,9)")=__gsharp_ctx->__gsharp_arg_temp_0;
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_ctx->__gsharp_id_9_o+0, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(226,9)")=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_a, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(226,25)");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_a, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(227,9)")=__gsharp_ctx->__gsharp_arg_temp_0;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_ctx->__gsharp_id_9_o+0, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(228,9)")=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_a, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(228,25)");
 __gsharp_ctx->__gsharp_id_10_local=__gsharp_ctx->__gsharp_id_8_l;
 __gsharp_ctx->__gsharp_arg_temp_3=__gsharp_ctx->__gsharp_id_10_local;
 __gsharp_ctx->__gsharp_arg_temp_4=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SetTo(&__gsharp_ctx->__gsharp_id_10_local,50);
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,1,4294967295U,__gsharp_ctx->__gsharp_arg_temp_4,"Warp.ShuffleSync","SplitOperandOrderDifferentialKernels.cu.cs(228,18)");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,1,4294967295U,__gsharp_ctx->__gsharp_arg_temp_4,"Warp.ShuffleSync","SplitOperandOrderDifferentialKernels.cu.cs(230,18)");
 __gsharp_state=2;
 return;
 }
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_ctx->__gsharp_warp_temp_5=__gsharp_warp_shuffle_read_sync(__gsharp_root,__gsharp_ctx,1,4294967295U,__gsharp_ctx->__gsharp_arg_temp_4,__gsharp_ctx->__gsharp_id_8_l,32,"SplitOperandOrderDifferentialKernels.cu.cs(228,18)");
+__gsharp_ctx->__gsharp_warp_temp_5=__gsharp_warp_shuffle_read_sync(__gsharp_root,__gsharp_ctx,1,4294967295U,__gsharp_ctx->__gsharp_arg_temp_4,__gsharp_ctx->__gsharp_id_8_l,32,"SplitOperandOrderDifferentialKernels.cu.cs(230,18)");
 __gsharp_ctx->__gsharp_arg_temp_3=__gsharp_add_i32(__gsharp_ctx->__gsharp_arg_temp_3,__gsharp_ctx->__gsharp_warp_temp_5);
 __gsharp_ctx->__gsharp_id_10_local=__gsharp_ctx->__gsharp_arg_temp_3;
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_9_o,1), "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(229,9)")=__gsharp_ctx->__gsharp_id_10_local;
-__gsharp_ctx->__gsharp_arg_temp_6=__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_b, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(230,32)");
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,2,4294967295U,__gsharp_ctx->__gsharp_id_5_x,"Warp.ShuffleSync","SplitOperandOrderDifferentialKernels.cu.cs(230,40)");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_9_o,1), "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(231,9)")=__gsharp_ctx->__gsharp_id_10_local;
+__gsharp_ctx->__gsharp_arg_temp_6=__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_b, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(232,32)");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,2,4294967295U,__gsharp_ctx->__gsharp_id_5_x,"Warp.ShuffleSync","SplitOperandOrderDifferentialKernels.cu.cs(232,40)");
 __gsharp_state=3;
 return;
 }
 case 3:
 __gsharp_switch_1_state_3:
 {
-__gsharp_ctx->__gsharp_warp_temp_7=__gsharp_warp_shuffle_read_sync(__gsharp_root,__gsharp_ctx,2,4294967295U,__gsharp_ctx->__gsharp_id_5_x,__gsharp_ctx->__gsharp_id_8_l,32,"SplitOperandOrderDifferentialKernels.cu.cs(230,40)");
+__gsharp_ctx->__gsharp_warp_temp_7=__gsharp_warp_shuffle_read_sync(__gsharp_root,__gsharp_ctx,2,4294967295U,__gsharp_ctx->__gsharp_id_5_x,__gsharp_ctx->__gsharp_id_8_l,32,"SplitOperandOrderDifferentialKernels.cu.cs(232,40)");
 __gsharp_ctx->__gsharp_arg_temp_6=__gsharp_add_i32(__gsharp_ctx->__gsharp_arg_temp_6,__gsharp_ctx->__gsharp_warp_temp_7);
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_b, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(230,32)")=__gsharp_ctx->__gsharp_arg_temp_6;
-__gsharp_ctx->__gsharp_arg_temp_8=__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_b, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(230,70)");
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,3,4294967295U,__gsharp_ctx->__gsharp_id_6_y,"Warp.ShuffleSync","SplitOperandOrderDifferentialKernels.cu.cs(230,76)");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_b, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(232,32)")=__gsharp_ctx->__gsharp_arg_temp_6;
+__gsharp_ctx->__gsharp_arg_temp_8=__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_b, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(232,70)");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,3,4294967295U,__gsharp_ctx->__gsharp_id_6_y,"Warp.ShuffleSync","SplitOperandOrderDifferentialKernels.cu.cs(232,76)");
 __gsharp_state=4;
 return;
 }
 case 4:
 __gsharp_switch_1_state_4:
 {
-__gsharp_ctx->__gsharp_warp_temp_9=__gsharp_warp_shuffle_read_sync(__gsharp_root,__gsharp_ctx,3,4294967295U,__gsharp_ctx->__gsharp_id_6_y,__gsharp_ctx->__gsharp_id_8_l,32,"SplitOperandOrderDifferentialKernels.cu.cs(230,76)");
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_9_o,2), "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(230,9)")=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Triple(__gsharp_ctx->__gsharp_arg_temp_6,__gsharp_ctx->__gsharp_arg_temp_8,__gsharp_ctx->__gsharp_warp_temp_9);
-__gsharp_ctx->__gsharp_arg_temp_10=__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_c, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(231,9)");
-__gsharp_ctx->__gsharp_arg_temp_11=__gsharp_array_at(__gsharp_ctx->__gsharp_id_3_d, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(231,17)");
+__gsharp_ctx->__gsharp_warp_temp_9=__gsharp_warp_shuffle_read_sync(__gsharp_root,__gsharp_ctx,3,4294967295U,__gsharp_ctx->__gsharp_id_6_y,__gsharp_ctx->__gsharp_id_8_l,32,"SplitOperandOrderDifferentialKernels.cu.cs(232,76)");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_9_o,2), "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(232,9)")=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Triple(__gsharp_ctx->__gsharp_arg_temp_6,__gsharp_ctx->__gsharp_arg_temp_8,__gsharp_ctx->__gsharp_warp_temp_9);
+__gsharp_ctx->__gsharp_arg_temp_10=__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_c, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(233,9)");
+__gsharp_ctx->__gsharp_arg_temp_11=__gsharp_array_at(__gsharp_ctx->__gsharp_id_3_d, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(233,17)");
 __gsharp_ctx->__gsharp_arg_temp_12=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__BumpBoth(__gsharp_ctx->__gsharp_id_2_c,__gsharp_ctx->__gsharp_id_3_d,__gsharp_ctx->__gsharp_id_8_l);
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,4,4294967295U,__gsharp_ctx->__gsharp_arg_temp_12,"Warp.ShuffleSync","SplitOperandOrderDifferentialKernels.cu.cs(231,25)");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,4,4294967295U,__gsharp_ctx->__gsharp_arg_temp_12,"Warp.ShuffleSync","SplitOperandOrderDifferentialKernels.cu.cs(233,25)");
 __gsharp_state=5;
 return;
 }
 case 5:
 __gsharp_switch_1_state_5:
 {
-__gsharp_ctx->__gsharp_warp_temp_13=__gsharp_warp_shuffle_read_sync(__gsharp_root,__gsharp_ctx,4,4294967295U,__gsharp_ctx->__gsharp_arg_temp_12,__gsharp_ctx->__gsharp_id_8_l,32,"SplitOperandOrderDifferentialKernels.cu.cs(231,25)");
+__gsharp_ctx->__gsharp_warp_temp_13=__gsharp_warp_shuffle_read_sync(__gsharp_root,__gsharp_ctx,4,4294967295U,__gsharp_ctx->__gsharp_arg_temp_12,__gsharp_ctx->__gsharp_id_8_l,32,"SplitOperandOrderDifferentialKernels.cu.cs(233,25)");
 __gsharp_ctx->__gsharp_arg_temp_11=__gsharp_add_i32(__gsharp_ctx->__gsharp_arg_temp_11,__gsharp_ctx->__gsharp_warp_temp_13);
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_3_d, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(231,17)")=__gsharp_ctx->__gsharp_arg_temp_11;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_3_d, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(233,17)")=__gsharp_ctx->__gsharp_arg_temp_11;
 __gsharp_ctx->__gsharp_arg_temp_10=__gsharp_add_i32(__gsharp_ctx->__gsharp_arg_temp_10,__gsharp_ctx->__gsharp_arg_temp_11);
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_c, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(231,9)")=__gsharp_ctx->__gsharp_arg_temp_10;
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_9_o,3), "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(232,9)")=__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_c, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(232,25)");
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_9_o,4), "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(233,9)")=__gsharp_array_at(__gsharp_ctx->__gsharp_id_3_d, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(233,25)");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_c, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(233,9)")=__gsharp_ctx->__gsharp_arg_temp_10;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_9_o,3), "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(234,9)")=__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_c, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(234,25)");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_9_o,4), "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(235,9)")=__gsharp_array_at(__gsharp_ctx->__gsharp_id_3_d, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(235,25)");
 __gsharp_ctx->__gsharp_id_11_i32=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_8_l,1);
 __gsharp_ctx->__gsharp_arg_temp_14=__gsharp_ctx->__gsharp_id_11_i32;
 __gsharp_ctx->__gsharp_arg_temp_15=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SetTo(&__gsharp_ctx->__gsharp_id_11_i32,1000);
@@ -177,7 +177,7 @@ return;
 }
 __gsharp_ctx->__gsharp_arg_temp_14=__gsharp_add_i32(__gsharp_ctx->__gsharp_arg_temp_14,__gsharp_ctx->__gsharp_call_temp_16);
 __gsharp_ctx->__gsharp_id_11_i32=__gsharp_ctx->__gsharp_arg_temp_14;
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_9_o,5), "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(236,9)")=__gsharp_ctx->__gsharp_id_11_i32;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_9_o,5), "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(238,9)")=__gsharp_ctx->__gsharp_id_11_i32;
 __gsharp_ctx->__gsharp_id_12_i64=__gsharp_ctx->__gsharp_id_8_l+1ll;
 __gsharp_ctx->__gsharp_arg_temp_17=__gsharp_ctx->__gsharp_id_12_i64;
 __gsharp_ctx->__gsharp_arg_temp_18=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SetToLong(&__gsharp_ctx->__gsharp_id_12_i64,1099511627776LL);
@@ -193,7 +193,7 @@ return;
 }
 __gsharp_ctx->__gsharp_arg_temp_17=__gsharp_add_i64(__gsharp_ctx->__gsharp_arg_temp_17,__gsharp_ctx->__gsharp_call_temp_19);
 __gsharp_ctx->__gsharp_id_12_i64=__gsharp_ctx->__gsharp_arg_temp_17;
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_9_o,6), "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(239,9)")=(int)(__gsharp_ctx->__gsharp_id_12_i64^(__gsharp_ctx->__gsharp_id_12_i64>>32));
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_9_o,6), "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(241,9)")=(int)(__gsharp_ctx->__gsharp_id_12_i64^(__gsharp_ctx->__gsharp_id_12_i64>>32));
 __gsharp_ctx->__gsharp_id_13_shifted=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_8_l,1);
 __gsharp_ctx->__gsharp_arg_temp_20=__gsharp_ctx->__gsharp_id_13_shifted;
 __gsharp_ctx->__gsharp_arg_temp_21=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SetTo(&__gsharp_ctx->__gsharp_id_13_shifted,3);
@@ -209,7 +209,7 @@ return;
 }
 __gsharp_ctx->__gsharp_arg_temp_20=__gsharp_shl_i32(__gsharp_ctx->__gsharp_arg_temp_20,__gsharp_ctx->__gsharp_call_temp_22);
 __gsharp_ctx->__gsharp_id_13_shifted=__gsharp_ctx->__gsharp_arg_temp_20;
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_9_o,7), "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(242,9)")=__gsharp_ctx->__gsharp_id_13_shifted;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_9_o,7), "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(244,9)")=__gsharp_ctx->__gsharp_id_13_shifted;
 __gsharp_ctx->__gsharp_id_14_unsignedShifted=__gsharp_neg_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_8_l,1));
 __gsharp_ctx->__gsharp_arg_temp_23=__gsharp_ctx->__gsharp_id_14_unsignedShifted;
 __gsharp_ctx->__gsharp_arg_temp_24=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SetTo(&__gsharp_ctx->__gsharp_id_14_unsignedShifted,64);
@@ -225,7 +225,7 @@ return;
 }
 __gsharp_ctx->__gsharp_arg_temp_23=__gsharp_ushr_i32(__gsharp_ctx->__gsharp_arg_temp_23,__gsharp_ctx->__gsharp_call_temp_25);
 __gsharp_ctx->__gsharp_id_14_unsignedShifted=__gsharp_ctx->__gsharp_arg_temp_23;
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_9_o,8), "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(245,9)")=__gsharp_ctx->__gsharp_id_14_unsignedShifted;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_9_o,8), "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(247,9)")=__gsharp_ctx->__gsharp_id_14_unsignedShifted;
 __gsharp_ctx->__gsharp_id_15_remainder=__gsharp_ctx->__gsharp_id_8_l+7.5f;
 __gsharp_ctx->__gsharp_arg_temp_26=__gsharp_ctx->__gsharp_id_15_remainder;
 __gsharp_ctx->__gsharp_arg_temp_27=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SetToFloat(&__gsharp_ctx->__gsharp_id_15_remainder,1.25f);
@@ -241,7 +241,7 @@ return;
 }
 __gsharp_ctx->__gsharp_arg_temp_26=fmodf(__gsharp_ctx->__gsharp_arg_temp_26,__gsharp_ctx->__gsharp_call_temp_28);
 __gsharp_ctx->__gsharp_id_15_remainder=__gsharp_ctx->__gsharp_arg_temp_26;
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_9_o,9), "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(248,9)")=__gsharp_to_i32(__gsharp_ctx->__gsharp_id_15_remainder*16.0f);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_9_o,9), "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(250,9)")=__gsharp_to_i32(__gsharp_ctx->__gsharp_id_15_remainder*16.0f);
 __gsharp_ctx->__gsharp_id_16_narrow=(unsigned char)(__gsharp_add_i32(250,__gsharp_ctx->__gsharp_id_8_l&3));
 __gsharp_ctx->__gsharp_arg_temp_29=__gsharp_ctx->__gsharp_id_16_narrow;
 __gsharp_ctx->__gsharp_arg_temp_30=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SetToByte(&__gsharp_ctx->__gsharp_id_16_narrow,3);
@@ -257,8 +257,8 @@ return;
 }
 __gsharp_ctx->__gsharp_arg_temp_29=(unsigned char)__gsharp_add_i32(__gsharp_ctx->__gsharp_arg_temp_29,(unsigned char)__gsharp_ctx->__gsharp_call_temp_31);
 __gsharp_ctx->__gsharp_id_16_narrow=__gsharp_ctx->__gsharp_arg_temp_29;
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_9_o,10), "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(251,9)")=__gsharp_ctx->__gsharp_id_16_narrow;
-__gsharp_ctx->__gsharp_id_17_difference=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_8_l,__gsharp_array_at(__gsharp_ctx->__gsharp_id_4_e, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(253,30)"));
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_9_o,10), "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(253,9)")=__gsharp_ctx->__gsharp_id_16_narrow;
+__gsharp_ctx->__gsharp_id_17_difference=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_8_l,__gsharp_array_at(__gsharp_ctx->__gsharp_id_4_e, __gsharp_ctx->__gsharp_id_8_l, "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(255,30)"));
 __gsharp_ctx->__gsharp_arg_temp_32=__gsharp_ctx->__gsharp_id_17_difference;
 __gsharp_ctx->__gsharp_arg_temp_33=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SetTo(&__gsharp_ctx->__gsharp_id_17_difference,5);
 goto __gsharp_switch_1_state_12;
@@ -273,7 +273,7 @@ return;
 }
 __gsharp_ctx->__gsharp_arg_temp_32=__gsharp_sub_i32(__gsharp_ctx->__gsharp_arg_temp_32,__gsharp_ctx->__gsharp_call_temp_34);
 __gsharp_ctx->__gsharp_id_17_difference=__gsharp_ctx->__gsharp_arg_temp_32;
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_9_o,11), "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(255,9)")=__gsharp_ctx->__gsharp_id_17_difference;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_9_o,11), "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(257,9)")=__gsharp_ctx->__gsharp_id_17_difference;
 __gsharp_ctx->__gsharp_id_18_both=(__gsharp_ctx->__gsharp_id_8_l&1)==0;
 __gsharp_ctx->__gsharp_arg_temp_35=__gsharp_ctx->__gsharp_id_18_both;
 __gsharp_ctx->__gsharp_arg_temp_36=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SetToBool(&__gsharp_ctx->__gsharp_id_18_both,true);
@@ -289,7 +289,7 @@ return;
 }
 __gsharp_ctx->__gsharp_arg_temp_35&=__gsharp_ctx->__gsharp_call_temp_37;
 __gsharp_ctx->__gsharp_id_18_both=__gsharp_ctx->__gsharp_arg_temp_35;
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_9_o,12), "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(258,9)")=(__gsharp_ctx->__gsharp_id_18_both?1:0);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_7_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_9_o,12), "G#: a null array is read at SplitOperandOrderDifferentialKernels.cu.cs(260,9)")=(__gsharp_ctx->__gsharp_id_18_both?1:0);
 __gsharp_state=-1;
 return;
 }
@@ -494,63 +494,63 @@ __gsharp_ctx.l = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.o = __gsharp_ctx.l * 13;
 __gsharp_ctx.__gsharp_arg_temp_0 = __gsharp_ctx.a[__gsharp_ctx.l];
 __gsharp_ctx.__gsharp_arg_temp_1 = global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.Bump(__gsharp_ctx.a, __gsharp_ctx.l);
-__gsharp_warp_publish(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.Full, __gsharp_ctx.__gsharp_arg_temp_1, "Warp.ShuffleSync", "SplitOperandOrderDifferentialKernels.cu.cs(225,17)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.Full, __gsharp_ctx.__gsharp_arg_temp_1, "Warp.ShuffleSync", "SplitOperandOrderDifferentialKernels.cu.cs(227,17)");
 __gsharp_ctx.__gsharp_state = 1;
 return;
 }
 
 case 1:
 {
-__gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.Full, __gsharp_ctx.__gsharp_arg_temp_1, __gsharp_ctx.l, 32, "SplitOperandOrderDifferentialKernels.cu.cs(225,17)");
+__gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.Full, __gsharp_ctx.__gsharp_arg_temp_1, __gsharp_ctx.l, 32, "SplitOperandOrderDifferentialKernels.cu.cs(227,17)");
 __gsharp_ctx.__gsharp_arg_temp_0 += __gsharp_ctx.__gsharp_warp_temp_2;
 __gsharp_ctx.a[__gsharp_ctx.l] = __gsharp_ctx.__gsharp_arg_temp_0;
 __gsharp_ctx.output[__gsharp_ctx.o + 0] = __gsharp_ctx.a[__gsharp_ctx.l];
 __gsharp_ctx.local = __gsharp_ctx.l;
 __gsharp_ctx.__gsharp_arg_temp_3 = __gsharp_ctx.local;
 __gsharp_ctx.__gsharp_arg_temp_4 = global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.SetTo(ref __gsharp_ctx.local, 50);
-__gsharp_warp_publish(0, ref __gsharp_ctx, 1, global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.Full, __gsharp_ctx.__gsharp_arg_temp_4, "Warp.ShuffleSync", "SplitOperandOrderDifferentialKernels.cu.cs(228,18)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 1, global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.Full, __gsharp_ctx.__gsharp_arg_temp_4, "Warp.ShuffleSync", "SplitOperandOrderDifferentialKernels.cu.cs(230,18)");
 __gsharp_ctx.__gsharp_state = 2;
 return;
 }
 
 case 2:
 {
-__gsharp_ctx.__gsharp_warp_temp_5 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 1, global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.Full, __gsharp_ctx.__gsharp_arg_temp_4, __gsharp_ctx.l, 32, "SplitOperandOrderDifferentialKernels.cu.cs(228,18)");
+__gsharp_ctx.__gsharp_warp_temp_5 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 1, global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.Full, __gsharp_ctx.__gsharp_arg_temp_4, __gsharp_ctx.l, 32, "SplitOperandOrderDifferentialKernels.cu.cs(230,18)");
 __gsharp_ctx.__gsharp_arg_temp_3 += __gsharp_ctx.__gsharp_warp_temp_5;
 __gsharp_ctx.local = __gsharp_ctx.__gsharp_arg_temp_3;
 __gsharp_ctx.output[__gsharp_ctx.o + 1] = __gsharp_ctx.local;
 __gsharp_ctx.__gsharp_arg_temp_6 = __gsharp_ctx.b[__gsharp_ctx.l];
-__gsharp_warp_publish(0, ref __gsharp_ctx, 2, global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.Full, __gsharp_ctx.x, "Warp.ShuffleSync", "SplitOperandOrderDifferentialKernels.cu.cs(230,40)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 2, global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.Full, __gsharp_ctx.x, "Warp.ShuffleSync", "SplitOperandOrderDifferentialKernels.cu.cs(232,40)");
 __gsharp_ctx.__gsharp_state = 3;
 return;
 }
 
 case 3:
 {
-__gsharp_ctx.__gsharp_warp_temp_7 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 2, global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.Full, __gsharp_ctx.x, __gsharp_ctx.l, 32, "SplitOperandOrderDifferentialKernels.cu.cs(230,40)");
+__gsharp_ctx.__gsharp_warp_temp_7 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 2, global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.Full, __gsharp_ctx.x, __gsharp_ctx.l, 32, "SplitOperandOrderDifferentialKernels.cu.cs(232,40)");
 __gsharp_ctx.__gsharp_arg_temp_6 += __gsharp_ctx.__gsharp_warp_temp_7;
 __gsharp_ctx.b[__gsharp_ctx.l] = __gsharp_ctx.__gsharp_arg_temp_6;
 __gsharp_ctx.__gsharp_arg_temp_8 = __gsharp_ctx.b[__gsharp_ctx.l];
-__gsharp_warp_publish(0, ref __gsharp_ctx, 3, global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.Full, __gsharp_ctx.y, "Warp.ShuffleSync", "SplitOperandOrderDifferentialKernels.cu.cs(230,76)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 3, global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.Full, __gsharp_ctx.y, "Warp.ShuffleSync", "SplitOperandOrderDifferentialKernels.cu.cs(232,76)");
 __gsharp_ctx.__gsharp_state = 4;
 return;
 }
 
 case 4:
 {
-__gsharp_ctx.__gsharp_warp_temp_9 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 3, global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.Full, __gsharp_ctx.y, __gsharp_ctx.l, 32, "SplitOperandOrderDifferentialKernels.cu.cs(230,76)");
+__gsharp_ctx.__gsharp_warp_temp_9 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 3, global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.Full, __gsharp_ctx.y, __gsharp_ctx.l, 32, "SplitOperandOrderDifferentialKernels.cu.cs(232,76)");
 __gsharp_ctx.output[__gsharp_ctx.o + 2] = global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.Triple(__gsharp_ctx.__gsharp_arg_temp_6, __gsharp_ctx.__gsharp_arg_temp_8, __gsharp_ctx.__gsharp_warp_temp_9);
 __gsharp_ctx.__gsharp_arg_temp_10 = __gsharp_ctx.c[__gsharp_ctx.l];
 __gsharp_ctx.__gsharp_arg_temp_11 = __gsharp_ctx.d[__gsharp_ctx.l];
 __gsharp_ctx.__gsharp_arg_temp_12 = global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.BumpBoth(__gsharp_ctx.c, __gsharp_ctx.d, __gsharp_ctx.l);
-__gsharp_warp_publish(0, ref __gsharp_ctx, 4, global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.Full, __gsharp_ctx.__gsharp_arg_temp_12, "Warp.ShuffleSync", "SplitOperandOrderDifferentialKernels.cu.cs(231,25)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 4, global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.Full, __gsharp_ctx.__gsharp_arg_temp_12, "Warp.ShuffleSync", "SplitOperandOrderDifferentialKernels.cu.cs(233,25)");
 __gsharp_ctx.__gsharp_state = 5;
 return;
 }
 
 case 5:
 {
-__gsharp_ctx.__gsharp_warp_temp_13 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 4, global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.Full, __gsharp_ctx.__gsharp_arg_temp_12, __gsharp_ctx.l, 32, "SplitOperandOrderDifferentialKernels.cu.cs(231,25)");
+__gsharp_ctx.__gsharp_warp_temp_13 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 4, global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.Full, __gsharp_ctx.__gsharp_arg_temp_12, __gsharp_ctx.l, 32, "SplitOperandOrderDifferentialKernels.cu.cs(233,25)");
 __gsharp_ctx.__gsharp_arg_temp_11 += __gsharp_ctx.__gsharp_warp_temp_13;
 __gsharp_ctx.d[__gsharp_ctx.l] = __gsharp_ctx.__gsharp_arg_temp_11;
 __gsharp_ctx.__gsharp_arg_temp_10 += __gsharp_ctx.__gsharp_arg_temp_11;

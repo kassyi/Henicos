@@ -29,6 +29,9 @@ public static class GpuBigIntVectorLinqExtensions
     /// <para>Two separately built <c>Where</c> results cannot be combined element-wise (their counts are known only on
     /// the device; <see cref="NotSupportedException"/>): write <c>v.Where(p.And(q))</c> instead of combining
     /// <c>v.Where(p)</c> with <c>w.Where(q)</c>. <c>v.Where(p).Where(m)</c> works when <c>m</c> has the capacity's length.</para>
+    /// <para>As in System.Linq, <c>Take(k)</c> after a <c>Where</c> runs the projections of the source only up to the
+    /// k-th selected element, and <c>Any</c> / <c>All</c> only up to the deciding one; <c>Skip(k)</c> after a
+    /// <c>Where</c> runs them for the skipped elements as well.</para>
     /// </remarks>
     /// <exception cref="ArgumentException">At evaluation: <paramref name="predicate"/> has another length.</exception>
     public static IGpuBigIntVectorExpression Where(
@@ -513,8 +516,8 @@ public static class GpuBigIntVectorLinqExtensions
     /// <remarks>
     /// Stops at the deciding element (the first <see langword="true"/> element), as System.Linq: an element after
     /// it whose projection throws (a zero divisor, the square root of a negative value) does not throw; the earliest
-    /// throwing element at or before it throws. A chain that contains a <c>Where</c>, or an expression implemented
-    /// outside GpuMath, is evaluated in full and throws for any element.
+    /// throwing element at or before it throws. An expression implemented outside GpuMath is evaluated in full and
+    /// throws for any element.
     /// </remarks>
     public static IGpuBoolExpr Any(this IGpuBoolVectorExpression source)
         => new VectorAnyTrueExpression(source);
@@ -527,8 +530,8 @@ public static class GpuBigIntVectorLinqExtensions
     /// <remarks>
     /// Stops at the deciding element (the first <see langword="false"/> element), as System.Linq: an element after
     /// it whose projection throws (a zero divisor, the square root of a negative value) does not throw; the earliest
-    /// throwing element at or before it throws. A chain that contains a <c>Where</c>, or an expression implemented
-    /// outside GpuMath, is evaluated in full and throws for any element.
+    /// throwing element at or before it throws. An expression implemented outside GpuMath is evaluated in full and
+    /// throws for any element.
     /// </remarks>
     public static IGpuBoolExpr All(this IGpuBoolVectorExpression source)
         => new VectorAllTrueExpression(source);

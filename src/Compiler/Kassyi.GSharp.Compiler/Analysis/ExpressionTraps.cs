@@ -133,11 +133,14 @@ internal static class ExpressionTraps
             : null;
 
     // A node that lowering synthesized, which has no operation: a temporary or a variable of the frame
-    // (__gsharp_ctx->x) reads a variable of the thread, which raises nothing; any other node may trap
+    // (__gsharp_ctx->x) reads a variable of the thread, which raises nothing; any other node may trap. Parentheses and
+    // the null-forgiving operator x!, which have no operation of their own, evaluate their operand and add nothing
     private static bool MayTrapUnresolved(ExpressionSyntax expression, SemanticModel model) => expression switch
     {
         IdentifierNameSyntax or LiteralExpressionSyntax => false,
         ParenthesizedExpressionSyntax parenthesized => MayTrap(parenthesized.Expression, model),
+        PostfixUnaryExpressionSyntax suppressed when suppressed.IsKind(SyntaxKind.SuppressNullableWarningExpression) =>
+            MayTrap(suppressed.Operand, model),
         MemberAccessExpressionSyntax access when MemberEffects.IsFrameAccess(access) => false,
         _ => true
     };

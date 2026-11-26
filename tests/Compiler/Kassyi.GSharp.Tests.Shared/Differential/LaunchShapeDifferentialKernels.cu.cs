@@ -4,6 +4,36 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
+public struct GridStrideLoopInputs
+{
+    [GpuReadOnly] public int[] Source;
+    public int MultiPassCount;
+    public int ShortPassCount;
+    public int Bias;
+}
+
+public struct GridStrideLoopResults
+{
+    public int[] MultiPassOutputs;
+    public int[] ShortPassOutputs;
+    public int[] ZeroGuardCounters;
+}
+
+public struct CrossAxisShuffleInputs
+{
+    [GpuReadOnly] public int[] Int32Values;
+    [GpuReadOnly] public float[] SingleValues;
+    [GpuReadOnly] public uint[] UInt32Values;
+}
+
+public struct CrossAxisShuffleResults
+{
+    public uint[] ActiveMasks;
+    public int[] ShuffledInt32Values;
+    public float[] ShuffledSingleValues;
+    public uint[] ShuffledUInt32Values;
+}
+
 /// <summary>
 /// Differential kernels for launch shape and 3D index mapping.
 /// </summary>
@@ -90,14 +120,17 @@ public static partial class LaunchShapeDifferentialKernels
     // -------------------------------------------------------------------------
     [GpuKernel]
     public static void GridStrideLoopMetamorphicKernel(
-        int[] src,
-        int[] dstMulti,
-        int[] dstShort,
-        int[] zeroGuard,
-        int multiN,
-        int shortN,
-        int bias)
+        GridStrideLoopInputs inputs,
+        GridStrideLoopResults results)
     {
+        var src = inputs.Source;
+        int multiN = inputs.MultiPassCount;
+        int shortN = inputs.ShortPassCount;
+        int bias = inputs.Bias;
+        var dstMulti = results.MultiPassOutputs;
+        var dstShort = results.ShortPassOutputs;
+        var zeroGuard = results.ZeroGuardCounters;
+
         // 1. Multi-iteration pass (multiN > totalThreads) using stateless overload
         Gpu.GridStrideLoop(multiN, i =>
         {
@@ -172,14 +205,17 @@ public static partial class LaunchShapeDifferentialKernels
     // -------------------------------------------------------------------------
     [GpuKernel]
     public static void CrossAxisWarpShuffleAndActiveMaskKernel(
-        int[] srcInt,
-        float[] srcFloat,
-        uint[] srcUInt,
-        uint[] outMask,
-        int[] outShflInt,
-        float[] outShflFloat,
-        uint[] outShflUInt)
+        CrossAxisShuffleInputs inputs,
+        CrossAxisShuffleResults results)
     {
+        var srcInt = inputs.Int32Values;
+        var srcFloat = inputs.SingleValues;
+        var srcUInt = inputs.UInt32Values;
+        var outMask = results.ActiveMasks;
+        var outShflInt = results.ShuffledInt32Values;
+        var outShflFloat = results.ShuffledSingleValues;
+        var outShflUInt = results.ShuffledUInt32Values;
+
         uint mask = Warp.ActiveMask();
 
         int bdx = BlockDimension.X;

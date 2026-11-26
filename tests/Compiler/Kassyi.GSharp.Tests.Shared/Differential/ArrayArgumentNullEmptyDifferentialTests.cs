@@ -5,9 +5,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using Xunit;
 
-using K = Kassyi.GSharp.Tests.Shared.Differential.ArrayArgumentNullEmptyDifferentialKernels;
-using R = Kassyi.GSharp.Tests.Shared.Differential.ArrayArgumentRead;
-
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
@@ -24,11 +21,11 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
 {
     private const string Kernels = nameof(ArrayArgumentNullEmptyDifferentialKernels);
 
-    private static readonly R[] s_arrayReads =
+    private static readonly ArrayArgumentRead[] s_arrayReads =
     [
-        R.IsNull, R.Length, R.Element, R.ForEach,
-        R.AsSpanLength, R.SpanLength,
-        R.ToNonNullable, R.InNullableFunction,
+        ArrayArgumentRead.IsNull, ArrayArgumentRead.Length, ArrayArgumentRead.Element, ArrayArgumentRead.ForEach,
+        ArrayArgumentRead.AsSpanLength, ArrayArgumentRead.SpanLength,
+        ArrayArgumentRead.ToNonNullable, ArrayArgumentRead.InNullableFunction,
     ];
 
     private static readonly (string Name, Func<int[]?> Create)[] s_arrayValues =
@@ -60,41 +57,41 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
     {
         foreach (var (valueName, create) in s_arrayValues)
         {
-            foreach (var read in (R[])
+            foreach (var read in (ArrayArgumentRead[])
                      [
-                         R.StackLinqSum, R.StackLinqStoredSum, R.StackLinqIndexedSum, R.StackLinqInDeviceFunction,
-                         R.StackLinqStaticSum,
+                         ArrayArgumentRead.StackLinqSum, ArrayArgumentRead.StackLinqStoredSum, ArrayArgumentRead.StackLinqIndexedSum, ArrayArgumentRead.StackLinqInDeviceFunction,
+                         ArrayArgumentRead.StackLinqStaticSum,
                      ])
             {
-                yield return Create(nameof(K.NullableArrayKernel), valueName, read,
-                    (o, s) => K.LaunchNullableArrayKernel(
+                yield return Create(nameof(ArrayArgumentNullEmptyDifferentialKernels.NullableArrayKernel), valueName, read,
+                    (o, s) => ArrayArgumentNullEmptyDifferentialKernels.LaunchNullableArrayKernel(
                         create(), read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
             }
 
             foreach (var read in s_arrayReads)
             {
-                yield return Create(nameof(K.NullableArrayKernel), valueName, read,
-                    (o, s) => K.LaunchNullableArrayKernel(
+                yield return Create(nameof(ArrayArgumentNullEmptyDifferentialKernels.NullableArrayKernel), valueName, read,
+                    (o, s) => ArrayArgumentNullEmptyDifferentialKernels.LaunchNullableArrayKernel(
                         create(), read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
                 // C# does not check the annotation of a parameter: a null reaches the body
-                yield return Create(nameof(K.NonNullableArrayKernel), valueName, read,
-                    (o, s) => K.LaunchNonNullableArrayKernel(
+                yield return Create(nameof(ArrayArgumentNullEmptyDifferentialKernels.NonNullableArrayKernel), valueName, read,
+                    (o, s) => ArrayArgumentNullEmptyDifferentialKernels.LaunchNonNullableArrayKernel(
                         create()!, read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
-                yield return Create(nameof(K.ObliviousArrayKernel), valueName, read,
-                    (o, s) => K.LaunchObliviousArrayKernel(
+                yield return Create(nameof(ArrayArgumentNullEmptyDifferentialKernels.ObliviousArrayKernel), valueName, read,
+                    (o, s) => ArrayArgumentNullEmptyDifferentialKernels.LaunchObliviousArrayKernel(
                         create()!, read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
             }
 
-            foreach (var read in (R[])[R.IsNull, R.Length, R.InNullableFunction])
+            foreach (var read in (ArrayArgumentRead[])[ArrayArgumentRead.IsNull, ArrayArgumentRead.Length, ArrayArgumentRead.InNullableFunction])
             {
-                yield return Create(nameof(K.NullableArrayAfterBarrierKernel), valueName, read,
-                    (o, s) => K.LaunchNullableArrayAfterBarrierKernel(
+                yield return Create(nameof(ArrayArgumentNullEmptyDifferentialKernels.NullableArrayAfterBarrierKernel), valueName, read,
+                    (o, s) => ArrayArgumentNullEmptyDifferentialKernels.LaunchNullableArrayAfterBarrierKernel(
                         create(), read, o, gridDimX: s.GridX, blockDimX: s.BlockX),
                     o => AfterBarrierModel(create(), read, o));
             }
 
-            yield return Create(nameof(K.NullableArrayForEachBarrierKernel), valueName, R.ForEach,
-                (o, s) => K.LaunchNullableArrayForEachBarrierKernel(
+            yield return Create(nameof(ArrayArgumentNullEmptyDifferentialKernels.NullableArrayForEachBarrierKernel), valueName, ArrayArgumentRead.ForEach,
+                (o, s) => ArrayArgumentNullEmptyDifferentialKernels.LaunchNullableArrayForEachBarrierKernel(
                     create(), o, gridDimX: s.GridX, blockDimX: s.BlockX),
                 o => ForEachModel(create(), o));
         }
@@ -106,10 +103,10 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
                      ("One", static () => [new DiffDeepBag { Data = [1], Tag = 7 }]),
                  ])
         {
-            foreach (var read in (R[])[R.IsNull, R.Length, R.ForEach, R.AsSpanLength])
+            foreach (var read in (ArrayArgumentRead[])[ArrayArgumentRead.IsNull, ArrayArgumentRead.Length, ArrayArgumentRead.ForEach, ArrayArgumentRead.AsSpanLength])
             {
-                yield return Create(nameof(K.ConvertedArrayKernel), valueName, read,
-                    (o, s) => K.LaunchConvertedArrayKernel(
+                yield return Create(nameof(ArrayArgumentNullEmptyDifferentialKernels.ConvertedArrayKernel), valueName, read,
+                    (o, s) => ArrayArgumentNullEmptyDifferentialKernels.LaunchConvertedArrayKernel(
                         create(), read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
             }
         }
@@ -117,9 +114,9 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
 
     // The read of NullableArrayAfterBarrierKernel for its one thread: the C# execution does not run a barrier, so this
     // model is its oracle, and it throws where the kernel's C# throws
-    private static void AfterBarrierModel(int[]? a, R read, int[] o) => o[0] = read switch
+    private static void AfterBarrierModel(int[]? a, ArrayArgumentRead read, int[] o) => o[0] = read switch
     {
-        R.IsNull => a is null ? 1 : 0,
+        ArrayArgumentRead.IsNull => a is null ? 1 : 0,
         _ => a!.Length, // Deliberately unchecked: Length and InNullableFunction read a.Length, null throws as in C#
     };
 
@@ -135,7 +132,7 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
     }
 
     // The launch is the oracle unless the case gives a model of the kernel's C#
-    private static DifferentialCase Create(string kernel, string value, R read, Action<int[], LaunchShape> launch,
+    private static DifferentialCase Create(string kernel, string value, ArrayArgumentRead read, Action<int[], LaunchShape> launch,
         Action<int[]>? model = null) =>
         new(DiffKernelNames.Of(typeof(ArrayArgumentNullEmptyDifferentialKernels), kernel, $"{value}.{read}"))
         {

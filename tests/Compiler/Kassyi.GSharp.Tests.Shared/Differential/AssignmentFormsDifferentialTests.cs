@@ -53,22 +53,26 @@ public class AssignmentFormsDifferentialTests
                     OutputPolicy.Bitwise);
         },
         Launch = static (b, s) => AssignmentFormsDifferentialKernels.LaunchFloatRemainderKernel(
-            b.Get<float>("a"),
-            b.Get<float>("b"),
-            b.Get<double>("c"),
-            b.Get<double>("d"),
-            b.Get<float>("rf"),
-            b.Get<double>("rd"),
+            operands: new FloatRemainderOperands
+            {
+                SingleDividends = b.Get<float>("a"),
+                SingleDivisors = b.Get<float>("b"),
+                DoubleDividends = b.Get<double>("c"),
+                DoubleDivisors = b.Get<double>("d"),
+            },
+            results: new FloatRemainderResults
+            {
+                SingleRemainders = b.Get<float>("rf"),
+                DoubleRemainders = b.Get<double>("rd"),
+            },
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,
     };
 
-    internal static readonly DifferentialCase s_nullableConversion = new(
-        $"{nameof(AssignmentFormsDifferentialKernels)}.{nameof(AssignmentFormsDifferentialKernels.NullableConversionKernel)}")
-    {
-        Shape = LaunchShape.ForRows(Rows),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_nullableConversion = DiffCases.Create<int, int, float, int>(
+        AssignmentFormsDifferentialKernels.LaunchNullableConversionKernel,
+        inputs: static (rng, rows) =>
         {
             var values = DiffValues.Int32(rng, rows);
             var fvalues = DiffValues.Single(rng, rows);
@@ -85,21 +89,14 @@ public class AssignmentFormsDifferentialTests
                 .Out<int>("dst", rows, AssignmentFormsDifferentialKernels.NullableConversionColumns,
                     OutputPolicy.Exact);
         },
-        Launch = static (b, s) => AssignmentFormsDifferentialKernels.LaunchNullableConversionKernel(
-            b.Get<int>("has"),
-            b.Get<int>("values"),
-            b.Get<float>("fvalues"),
-            b.Get<int>("dst"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShape.ForRows(Rows),
+        firstInputName: "has",
+        secondInputName: "values",
+        thirdInputName: "fvalues");
 
-    internal static readonly DifferentialCase s_nullArray = new(
-        $"{nameof(AssignmentFormsDifferentialKernels)}.{nameof(AssignmentFormsDifferentialKernels.NullArrayKernel)}")
-    {
-        Shape = LaunchShape.ForRows(Rows),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_nullArray = DiffCases.Create(
+        AssignmentFormsDifferentialKernels.LaunchNullArrayKernel,
+        inputs: static (rng, rows) =>
         {
             var has = new int[rows];
             for (int k = 0; k < rows; k++)
@@ -112,20 +109,14 @@ public class AssignmentFormsDifferentialTests
                 .In("a", DiffValues.Int32(rng, rows))
                 .Out<int>("r", rows, AssignmentFormsDifferentialKernels.NullArrayColumns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => AssignmentFormsDifferentialKernels.LaunchNullArrayKernel(
-            b.Get<int>("has"),
-            b.Get<int>("a"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShape.ForRows(Rows),
+        firstInputName: "has",
+        secondInputName: "a",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_discard = new(
-        $"{nameof(AssignmentFormsDifferentialKernels)}.{nameof(AssignmentFormsDifferentialKernels.DiscardKernel)}")
-    {
-        Shape = LaunchShape.ForRows(Rows),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_discard = DiffCases.Create(
+        AssignmentFormsDifferentialKernels.LaunchDiscardKernel,
+        inputs: static (rng, rows) =>
         {
             var (a, b) = DiffValues.Int32Pairs(rng, rows);
             return new DiffBuffers()
@@ -133,14 +124,8 @@ public class AssignmentFormsDifferentialTests
                 .In("b", b)
                 .Out<int>("r", rows, AssignmentFormsDifferentialKernels.DiscardColumns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => AssignmentFormsDifferentialKernels.LaunchDiscardKernel(
-            b.Get<int>("a"),
-            b.Get<int>("b"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShape.ForRows(Rows),
+        outputName: "r");
 
     internal static readonly DifferentialCase s_computedProperty = new(
         $"{nameof(AssignmentFormsDifferentialKernels)}.{nameof(AssignmentFormsDifferentialKernels.ComputedPropertyKernel)}")
@@ -159,30 +144,30 @@ public class AssignmentFormsDifferentialTests
                     OutputPolicy.Bitwise);
         },
         Launch = static (b, s) => AssignmentFormsDifferentialKernels.LaunchComputedPropertyKernel(
-            b.Get<int>("a"),
-            b.Get<int>("b"),
-            b.Get<float>("f"),
-            b.Get<int>("r"),
-            b.Get<float>("rf"),
+            operands: new ComputedPropertyOperands
+            {
+                FirstInt32Values = b.Get<int>("a"),
+                SecondInt32Values = b.Get<int>("b"),
+                SingleValues = b.Get<float>("f"),
+            },
+            results: new ComputedPropertyResults
+            {
+                Int32Results = b.Get<int>("r"),
+                SingleResults = b.Get<float>("rf"),
+            },
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,
     };
 
-    internal static readonly DifferentialCase s_deconstruction = new(
-        $"{nameof(AssignmentFormsDifferentialKernels)}.{nameof(AssignmentFormsDifferentialKernels.DeconstructionShapesKernel)}")
-    {
-        Shape = LaunchShape.ForRows(Rows),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_deconstruction = DiffCases.Create(
+        AssignmentFormsDifferentialKernels.LaunchDeconstructionShapesKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("values", DiffValues.Int32(rng, rows * 3))
             .Out<int>("r", rows, AssignmentFormsDifferentialKernels.DeconstructionColumns, OutputPolicy.Exact),
-        Launch = static (b, s) => AssignmentFormsDifferentialKernels.LaunchDeconstructionShapesKernel(
-            b.Get<int>("values"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShape.ForRows(Rows),
+        inputName: "values",
+        outputName: "r");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]

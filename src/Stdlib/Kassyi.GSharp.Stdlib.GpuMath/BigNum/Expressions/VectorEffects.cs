@@ -34,4 +34,20 @@ internal static class VectorEffects
     /// <param name="scalar">The scalar operand.</param>
     /// <returns><see langword="false"/> for a value; <see langword="true"/> for a compound scalar expression.</returns>
     public static bool MayThrow(IGpuBigIntExpression scalar) => scalar is not GpuBigIntLeafExpression;
+
+    /// <summary>
+    /// Evaluates <paramref name="scalar"/> outside any enclosing vector <see cref="PendingThrows"/> scope when the
+    /// scalar itself can throw.
+    /// </summary>
+    public static GpuBigInt EvaluateScalar(IGpuBigIntExpression scalar, GpuWorkspace workspace) =>
+        MayThrow(scalar) && PendingThrows.IsActive
+            ? EvaluateScalarSuspended(scalar, workspace)
+            : scalar.Evaluate(workspace);
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static GpuBigInt EvaluateScalarSuspended(IGpuBigIntExpression scalar, GpuWorkspace workspace)
+    {
+        using var _ = PendingThrows.Suspend();
+        return scalar.Evaluate(workspace);
+    }
 }

@@ -7,7 +7,14 @@ import * as path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { EntryScript, LogRotateBytes, type Policy } from "./constants.ts";
 import { errorCode, errorMessage } from "./history.ts";
-import { onMessages, send, wireVersion, type ClientMessage, type Incoming } from "./protocol.ts";
+import {
+  onMessages,
+  send,
+  wireVersion,
+  type ClientMessage,
+  type Incoming,
+  type QuarantineSummary,
+} from "./protocol.ts";
 import { prefix, resolveStateDirectory } from "./system.ts";
 
 /** Where the scheduler listens, and how a client starts it when none does. */
@@ -154,13 +161,22 @@ export class SchedulerLauncher {
     exitCode: number,
     cancelled: boolean,
     reporter: { pid: number; queuedAt: number },
+    quarantine?: QuarantineSummary,
   ): Promise<void> {
     for (let attempt = 0; attempt < 3; attempt++) {
       const socket = await this.connectOrStart().catch(() => null);
       if (socket === null) {
         return;
       }
-      const reply = await exchange(socket, { type: "report", id, completed, exitCode, cancelled, ...reporter });
+      const reply = await exchange(socket, {
+        type: "report",
+        id,
+        completed,
+        exitCode,
+        cancelled,
+        ...reporter,
+        ...(quarantine !== undefined ? { quarantine } : {}),
+      });
       // "reported", or an error from an older scheduler that cannot take it; null: the scheduler went away meanwhile
       if (reply !== null) {
         return;

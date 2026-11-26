@@ -38,6 +38,11 @@ public sealed class LaunchEpochTests
     private const string RecordLeftToLaterSynchronization =
         "Only the release build's Ptr launcher leaves its record to a later synchronization.";
 
+    // The data of the ElementAt tests, and the start of the source location of their error (the ElementAt call)
+    private static readonly int[] ElementAtData = [10, 20, 30, 40];
+    private const int ElementAtOutOfRange = 5;
+    private const string ElementAtLocation = "LaunchEpochKernels.cu.cs(62,21)";
+
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public unsafe void TryConsumeSlot_RecordStillBeingWritten_ConsumesItOnlyOnceCompleted()
@@ -330,7 +335,6 @@ public sealed class LaunchEpochTests
     public void GraphLaunch_FailingThread_ThrowsAtTheSynchronizationAfterEveryReplay()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-        Skip.If(DiffPaths.IsCudaCheckedBuild, DiffPaths.GraphCaptureInCheckedBuild);
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var stream = new CudaStream();
         var keys = new int[BlockSize];
@@ -353,6 +357,117 @@ public sealed class LaunchEpochTests
         }
     }
 
+    // [WHY] A captured launch does not run while it is captured, so no launcher can throw its error, in either build:
+    // the error of a replay, with the source location the device wrote, is thrown by the synchronization after it, and
+    // a replay in range after a failed one neither throws nor returns a stale value
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void GraphLaunch_ElementAtOutOfRange_ThrowsWithSourceLocationAtTheSynchronizationAfterEveryReplay()
+    {
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        using var stream = new CudaStream();
+        using var buffers = new ElementAtBuffers(1);
+        using var graph = CapturedGraph.Capture(stream, buffers.Launch);
+
+        Assert.Equal(ElementAtData[1], buffers.ReplayAndRead(graph, stream));
+
+        buffers.SetIndex(ElementAtOutOfRange);
+        for (int replay = 0; replay < 2; replay++)
+        {
+            graph.Launch(stream);
+            AssertElementAtError(Assert.Throws<ArgumentOutOfRangeException>(stream.Synchronize));
+        }
+
+        buffers.SetIndex(3);
+        Assert.Equal(ElementAtData[3], buffers.ReplayAndRead(graph, stream));
+    }
+
+    // [WHY] While every record is owned the launch takes no epoch of its own and the stream is not being captured: the
+    // checked launcher asks the driver, synchronizes and throws the error from the shared record itself
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void CheckedPtrLaunch_EveryRecordHeld_ThrowsAtTheLauncher()
+    {
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        Skip.IfNot(DiffPaths.IsCudaCheckedBuild, "Only the checked build's Ptr launcher reads the record itself.");
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        using var stream = new CudaStream();
+        using var buffers = new ElementAtBuffers(ElementAtOutOfRange);
+
+        using (LaunchErrorRecords.HoldEveryRecordForTest())
+        {
+            AssertElementAtError(Assert.Throws<ArgumentOutOfRangeException>(() => buffers.Launch(stream.Handle)));
+        }
+
+        Assert.False(DeviceErrorSlot.TryConsumeSlot(out _), "the launcher left its error for another synchronization");
+    }
+
+    // [WHY] The capture reads no record: an error that an earlier replay left unconsumed is not thrown by the capture
+    // of an unrelated launch, which would end the capture, but by the next synchronization
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void GraphCapture_AfterUnconsumedError_CaptureSucceedsAndTheSynchronizationThrows()
+    {
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        using var stream = new CudaStream();
+        using var buffers = new ElementAtBuffers(ElementAtOutOfRange);
+
+        using (var failing = CapturedGraph.Capture(stream, buffers.Launch))
+        {
+            failing.Launch(stream);
+            // The driver alone waits, so the error stays in the shared record
+            CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(stream.Handle));
+        }
+
+        using var second = CapturedGraph.Capture(stream, buffers.Launch);
+        AssertElementAtError(Assert.Throws<ArgumentOutOfRangeException>(stream.Synchronize));
+    }
+
+    // The error of ElementAtFromBufferKernel names the kernel and its place in the kernel file
+    private static void AssertElementAtError(ArgumentOutOfRangeException ex)
+    {
+        Assert.Equal(ElementAtLocation, ex.Data["GSharp.SourceLocation"]);
+        Assert.Equal(nameof(LaunchEpochKernels.ElementAtFromBufferKernel), ex.Data["GSharp.MemberName"]);
+    }
+
+    // The device buffers of ElementAtFromBufferKernel: ElementAtData, the index it reads, and its result
+    private sealed class ElementAtBuffers : IDisposable
+    {
+        private readonly GpuBuffer<int> _data = new(ElementAtData.Length);
+        private readonly GpuBuffer<int> _index = new(1);
+        private readonly GpuBuffer<int> _result = new(1);
+
+        public ElementAtBuffers(int index)
+        {
+            _data.CopyToDevice(ElementAtData);
+            SetIndex(index);
+        }
+
+        public void SetIndex(int index) => _index.CopyToDevice([index]);
+
+        public void Launch(IntPtr hStream) => LaunchEpochKernels.LaunchElementAtFromBufferKernelPtr(_data.ToProxy(),
+            _index.ToProxy(), _result.ToProxy(), blockDimX: 1, hStream: hStream);
+
+        // Replays the graph, synchronizes the stream and reads the result
+        public int ReplayAndRead(CapturedGraph graph, CudaStream stream)
+        {
+            graph.Launch(stream);
+            stream.Synchronize();
+            var result = new int[1];
+            _result.CopyToHost(result);
+            return result[0];
+        }
+
+        public void Dispose()
+        {
+            _result.Dispose();
+            _index.Dispose();
+            _data.Dispose();
+        }
+    }
+
     // [WHY] The same for a captured launch, which records into the shared record: the waiters leave on the abort word
     // of the capture epoch, which no host synchronization clears either
     [SkippableFact]
@@ -360,7 +475,6 @@ public sealed class LaunchEpochTests
     public Task GraphLaunch_RecordConsumedBeforeWaitersLook_WaitersStillLeave()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-        Skip.If(DiffPaths.IsCudaCheckedBuild, DiffPaths.GraphCaptureInCheckedBuild);
         return AssertWaitersLeaveAfterRecordConsumedAsync(captured: true);
     }
 

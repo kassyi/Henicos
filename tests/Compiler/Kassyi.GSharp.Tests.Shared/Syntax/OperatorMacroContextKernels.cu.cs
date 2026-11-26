@@ -9,6 +9,14 @@ public struct OperatorMacroContextState
     public uint Calls;
 }
 
+public struct OperatorMacroBinaryOperands
+{
+    [GpuReadOnly]
+    public uint[] Left;
+    [GpuReadOnly]
+    public uint[] Right;
+}
+
 public static partial class OperatorMacroContextOps
 {
     // Takes the context by reference: the caller sees the call count
@@ -49,9 +57,14 @@ public static partial class OperatorMacroContextKernels
 {
     // #477: the kernel's context parameter is not named like the target's parameter
     [GpuKernel]
-    public static void ParameterContextKernel(OperatorMacroContextState bigCtx, uint[] left, uint[] right,
-        uint[] result, uint[] calls)
+    public static void ParameterContextKernel(
+        OperatorMacroContextState bigCtx,
+        OperatorMacroBinaryOperands operands,
+        uint[] result,
+        uint[] calls)
     {
+        uint[] left = operands.Left;
+        uint[] right = operands.Right;
         OperatorMacroContextValue a = left;
         OperatorMacroContextValue b = right;
         OperatorMacroContextValue c = result;
@@ -82,17 +95,28 @@ public static partial class OperatorMacroContextKernels
     }
 
     [GpuKernel]
-    public static void RefParameterContextKernel(OperatorMacroContextState bigCtx, uint[] left, uint[] right,
-        uint[] result, uint[] calls)
+    public static void RefParameterContextKernel(
+        OperatorMacroContextState bigCtx,
+        OperatorMacroBinaryOperands operands,
+        uint[] result,
+        uint[] calls)
     {
+        uint[] left = operands.Left;
+        uint[] right = operands.Right;
         AddTwice(ref bigCtx, left, right, result);
         calls[0] = bigCtx.Calls;
     }
 
     // The context is a local that lives across a barrier, so the C++ dialects keep it in the state machine frame
     [GpuKernel]
-    public static void HoistedContextKernel(uint[] offset, uint[] left, uint[] right, uint[] result, uint[] calls)
+    public static void HoistedContextKernel(
+        uint[] offset,
+        OperatorMacroBinaryOperands operands,
+        uint[] result,
+        uint[] calls)
     {
+        uint[] left = operands.Left;
+        uint[] right = operands.Right;
         OperatorMacroContextState local = default;
         local.Offset = offset[0];
         Gpu.SyncThreads();

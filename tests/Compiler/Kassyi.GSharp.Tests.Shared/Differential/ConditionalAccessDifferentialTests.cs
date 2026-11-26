@@ -1,4 +1,5 @@
 #nullable enable
+using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
@@ -12,8 +13,22 @@ public class ConditionalAccessDifferentialTests
 {
     private const int Rows = 64;
 
+    private static DifferentialCase Case(
+        Int32RowsLaunch launch,
+        string[] columns,
+        string? suffix = null,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        DiffCases.Create(
+            launch,
+            inputs: (rng, rows) => new DiffBuffers()
+                .In("a", DiffValues.Int32(rng, rows))
+                .Out<int>("dst", rows, columns, OutputPolicy.Exact),
+            shapes: LaunchShapes.OneDimensionalMatrix(Rows),
+            suffix: suffix,
+            launchExpression: launchExpression);
+
     private static DifferentialCase Case(string kernel, string[] columns, Action<DiffBuffers, LaunchShape> launch) =>
-        new($"{nameof(ConditionalAccessDifferentialKernels)}.{kernel}")
+        new(DiffKernelNames.Of(typeof(ConditionalAccessDifferentialKernels), kernel))
         {
             Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
             Inputs = (rng, rows) => new DiffBuffers()
@@ -24,9 +39,40 @@ public class ConditionalAccessDifferentialTests
         };
 
     // A kernel with a barrier: expected gives the columns of a row from the input and the row
-    private static DifferentialCase BarrierCase(string kernel, string[] columns,
-        Action<DiffBuffers, LaunchShape> launch, Func<int[], int, int[]> expected, bool qualified = false) =>
-        new(qualified ? kernel : $"{nameof(ConditionalAccessDifferentialKernels)}.{kernel}")
+    private static DifferentialCase BarrierCase(
+        Int32PairLaunch launch,
+        string[] columns,
+        Func<int[], int, int[]> expected,
+        string? suffix = null,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        DiffCases.Create(
+            launch,
+            inputs: (rng, rows) => new DiffBuffers()
+                .In("a", DiffValues.Int32(rng, rows))
+                .Out<int>("dst", rows, columns, OutputPolicy.Exact),
+            shape: LaunchShape.ForRows(128, blockX: 64),
+            suffix: suffix,
+            reference: (b, _) =>
+            {
+                var a = b.Get<int>("a");
+                var dst = b.Get<int>("dst");
+                for (int t = 0; t < a.Length; t++)
+                {
+                    var row = expected(a, t);
+                    for (int c = 0; c < columns.Length; c++)
+                    {
+                        dst[t * columns.Length + c] = row[c];
+                    }
+                }
+            },
+            launchExpression: launchExpression);
+
+    private static DifferentialCase BarrierCase(
+        string kernel,
+        string[] columns,
+        Action<DiffBuffers, LaunchShape> launch,
+        Func<int[], int, int[]> expected) =>
+        new(DiffKernelNames.Of(typeof(ConditionalAccessDifferentialKernels), kernel))
         {
             Shape = LaunchShape.ForRows(128, blockX: 64),
             Inputs = (rng, rows) => new DiffBuffers()
@@ -46,20 +92,6 @@ public class ConditionalAccessDifferentialTests
                     }
                 }
             },
-        };
-
-    // A kernel that reads a second input array b
-    private static DifferentialCase CaseWithSecondInput(string kernel, string[] columns,
-        Action<DiffBuffers, LaunchShape> launch) =>
-        new($"{nameof(ConditionalAccessDifferentialKernels)}.{kernel}")
-        {
-            Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-            Inputs = (rng, rows) => new DiffBuffers()
-                .In("a", DiffValues.Int32(rng, rows))
-                .In("b", DiffValues.Int32(rng, rows))
-                .Out<int>("dst", rows, columns, OutputPolicy.Exact),
-            Launch = launch,
-            OracleIsLaunch = true,
         };
 
     private static bool IsNullRow(int[] a, int t) => (a[t] & 1) == 0;
@@ -113,80 +145,56 @@ public class ConditionalAccessDifferentialTests
     }
 
     internal static readonly DifferentialCase s_array = Case(
-        nameof(ConditionalAccessDifferentialKernels.ArrayConditionalAccessKernel),
-        ["length_has_value", "length", "element_has_value", "element", "length_or_default"],
-        static (b, s) => ConditionalAccessDifferentialKernels.LaunchArrayConditionalAccessKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        ConditionalAccessDifferentialKernels.LaunchArrayConditionalAccessKernel,
+        ["length_has_value", "length", "element_has_value", "element", "length_or_default"]);
 
     internal static readonly DifferentialCase s_nullableStruct = Case(
-        nameof(ConditionalAccessDifferentialKernels.NullableStructConditionalAccessKernel),
-        ["x_has_value", "x", "y_has_value", "y", "sum_with_defaults"],
-        static (b, s) => ConditionalAccessDifferentialKernels.LaunchNullableStructConditionalAccessKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        ConditionalAccessDifferentialKernels.LaunchNullableStructConditionalAccessKernel,
+        ["x_has_value", "x", "y_has_value", "y", "sum_with_defaults"]);
 
     internal static readonly DifferentialCase s_chain = Case(
-        nameof(ConditionalAccessDifferentialKernels.ChainedConditionalAccessKernel),
-        ["length_has_value", "length", "first_has_value", "first", "length_or_default"],
-        static (b, s) => ConditionalAccessDifferentialKernels.LaunchChainedConditionalAccessKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        ConditionalAccessDifferentialKernels.LaunchChainedConditionalAccessKernel,
+        ["length_has_value", "length", "first_has_value", "first", "length_or_default"]);
 
     internal static readonly DifferentialCase s_receiverOnce = Case(
-        nameof(ConditionalAccessDifferentialKernels.ReceiverEvaluatedOnceKernel),
-        ["receiver_evaluations", "x", "y"],
-        static (b, s) => ConditionalAccessDifferentialKernels.LaunchReceiverEvaluatedOnceKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        ConditionalAccessDifferentialKernels.LaunchReceiverEvaluatedOnceKernel,
+        ["receiver_evaluations", "x", "y"]);
 
     internal static readonly DifferentialCase s_assignment = Case(
-        nameof(ConditionalAccessDifferentialKernels.ConditionalAssignmentKernel),
-        ["assigned_or_sentinel", "right_side_evaluations", "assignment_value", "assigned_value_slot"],
-        static (b, s) => ConditionalAccessDifferentialKernels.LaunchConditionalAssignmentKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        ConditionalAccessDifferentialKernels.LaunchConditionalAssignmentKernel,
+        ["assigned_or_sentinel", "right_side_evaluations", "assignment_value", "assigned_value_slot"]);
 
     internal static readonly DifferentialCase s_stackArray = Case(
-        nameof(ConditionalAccessDifferentialKernels.StackArrayConditionalAccessKernel),
-        ["length", "element", "element_plus_one"],
-        static (b, s) => ConditionalAccessDifferentialKernels.LaunchStackArrayConditionalAccessKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        ConditionalAccessDifferentialKernels.LaunchStackArrayConditionalAccessKernel,
+        ["length", "element", "element_plus_one"]);
 
     internal static readonly DifferentialCase s_suspendingReceiver = BarrierCase(
-        nameof(ConditionalAccessDifferentialKernels.SuspendingReceiverKernel),
+        ConditionalAccessDifferentialKernels.LaunchSuspendingReceiverKernel,
         ["receiver_evaluations", "has_value", "x"],
-        static (b, s) => ConditionalAccessDifferentialKernels.LaunchSuspendingReceiverKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), gridDimX: s.GridX, blockDimX: s.BlockX),
         static (a, t) => IsNullRow(a, t) ? [1, 0, -1] : [1, 1, 7]);
 
     internal static readonly DifferentialCase s_accessBeforeBarrier = BarrierCase(
-        nameof(ConditionalAccessDifferentialKernels.AccessBeforeBarrierKernel),
+        ConditionalAccessDifferentialKernels.LaunchAccessBeforeBarrierKernel,
         ["index_evaluations", "has_value", "value"],
-        static (b, s) => ConditionalAccessDifferentialKernels.LaunchAccessBeforeBarrierKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), gridDimX: s.GridX, blockDimX: s.BlockX),
         static (a, t) => IsNullRow(a, t) ? [0, 0, -1] : [1, 1, a[1]]);
 
     internal static readonly DifferentialCase s_accessInBarrierLoop = BarrierCase(
-        nameof(ConditionalAccessDifferentialKernels.AccessInBarrierLoopKernel),
+        ConditionalAccessDifferentialKernels.LaunchAccessInBarrierLoopKernel,
         ["index_evaluations", "sum"],
-        static (b, s) => ConditionalAccessDifferentialKernels.LaunchAccessInBarrierLoopKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), gridDimX: s.GridX, blockDimX: s.BlockX),
         static (a, t) => IsNullRow(a, t) ? [0, -2] : [2, unchecked(a[0] + a[1])]);
 
     internal static readonly DifferentialCase s_suspendingCallBesideAccess = BarrierCase(
-        nameof(ConditionalAccessDifferentialKernels.SuspendingCallBesideAccessKernel),
+        ConditionalAccessDifferentialKernels.LaunchSuspendingCallBesideAccessKernel,
         ["index_evaluations", "call_evaluations", "access_then_call", "call_then_access"],
-        static (b, s) => ConditionalAccessDifferentialKernels.LaunchSuspendingCallBesideAccessKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), gridDimX: s.GridX, blockDimX: s.BlockX),
         static (a, t) => IsNullRow(a, t) ? [0, 2, 0, 0] : [2, 2, unchecked(a[1] + 1), unchecked(a[1] + 1)]);
 
     internal static readonly DifferentialCase s_compoundAssignment = Case(
-        nameof(ConditionalAccessDifferentialKernels.CompoundAssignmentKernel),
-        ["slot", "right_side_evaluations"],
-        static (b, s) => ConditionalAccessDifferentialKernels.LaunchCompoundAssignmentKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        ConditionalAccessDifferentialKernels.LaunchCompoundAssignmentKernel,
+        ["slot", "right_side_evaluations"]);
 
     internal static readonly DifferentialCase s_readAndWriteOrder = Case(
-        nameof(ConditionalAccessDifferentialKernels.ReadAndWriteOrderKernel),
-        ["slot", "read_then_write", "write_then_read"],
-        static (b, s) => ConditionalAccessDifferentialKernels.LaunchReadAndWriteOrderKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        ConditionalAccessDifferentialKernels.LaunchReadAndWriteOrderKernel,
+        ["slot", "read_then_write", "write_then_read"]);
 
     internal static readonly DifferentialCase s_accessInOtherBranch = BarrierCase(
         nameof(ConditionalAccessDifferentialKernels.SuspendingCallInOtherBranchKernel) + "Access",
@@ -203,10 +211,8 @@ public class ConditionalAccessDifferentialTests
         static (_, _) => [1, 0, 1]);
 
     internal static readonly DifferentialCase s_computedMember = Case(
-        nameof(ConditionalAccessDifferentialKernels.ComputedMemberKernel),
-        ["twice", "inner"],
-        static (b, s) => ConditionalAccessDifferentialKernels.LaunchComputedMemberKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        ConditionalAccessDifferentialKernels.LaunchComputedMemberKernel,
+        ["twice", "inner"]);
 
     internal static readonly DifferentialCase s_holderWithoutData = Case(
         nameof(ConditionalAccessDifferentialKernels.HolderParameterKernel) + "WithoutData",
@@ -223,10 +229,8 @@ public class ConditionalAccessDifferentialTests
             gridDimX: s.GridX, blockDimX: s.BlockX));
 
     internal static readonly DifferentialCase s_extensionCall = Case(
-        nameof(ConditionalAccessDifferentialKernels.ExtensionCallKernel),
-        ["has_value", "sum"],
-        static (b, s) => ConditionalAccessDifferentialKernels.LaunchExtensionCallKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        ConditionalAccessDifferentialKernels.LaunchExtensionCallKernel,
+        ["has_value", "sum"]);
 
     internal static readonly DifferentialCase s_nestedElementReceiver = Case(
         nameof(ConditionalAccessDifferentialKernels.NestedElementReceiverKernel),
@@ -273,8 +277,16 @@ public class ConditionalAccessDifferentialTests
         nameof(ConditionalAccessDifferentialKernels.VoidExtensionStatementKernel),
         ["chain_written", "element_of_chain_x", "unrolled_x"],
         static (b, s) => ConditionalAccessDifferentialKernels.LaunchVoidExtensionStatementKernel(
-            b.Get<int>("a"), new int[s.Rows], Points(s.Rows), Points(s.Rows), b.Get<int>("dst"),
-            gridDimX: s.GridX, blockDimX: s.BlockX),
+            inputValues: b.Get<int>("a"),
+            targets: new VoidExtensionStatementTargets
+            {
+                ChainValues = new int[s.Rows],
+                HolderPoints = Points(s.Rows),
+                UnrollPoints = Points(s.Rows),
+            },
+            results: b.Get<int>("dst"),
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
         static (a, t) =>
         [
             (a[t] & 3) < 2 ? 0 : 7,
@@ -286,8 +298,17 @@ public class ConditionalAccessDifferentialTests
         nameof(ConditionalAccessDifferentialKernels.VoidExtensionBodyKernel),
         ["device_function_x", "managed_version_x", "local_function_x", "lambda_x"],
         static (b, s) => ConditionalAccessDifferentialKernels.LaunchVoidExtensionBodyKernel(
-            b.Get<int>("a"), Points(s.Rows), Points(s.Rows), Points(s.Rows), Points(s.Rows), b.Get<int>("dst"),
-            gridDimX: s.GridX, blockDimX: s.BlockX),
+            inputValues: b.Get<int>("a"),
+            targets: new VoidExtensionBodyTargets
+            {
+                DeviceFunctionPoints = Points(s.Rows),
+                ManagedVersionPoints = Points(s.Rows),
+                LocalFunctionPoints = Points(s.Rows),
+                SingleThreadLambdaPoints = Points(s.Rows),
+            },
+            results: b.Get<int>("dst"),
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
         static (a, t) =>
         [
             (a[t] & 1) == 0 ? t : t + 1,
@@ -297,26 +318,22 @@ public class ConditionalAccessDifferentialTests
         ]);
 
     internal static readonly DifferentialCase s_twinFirst = BarrierCase(
-        nameof(ConditionalAccessTwinKernels) + "." + nameof(ConditionalAccessTwinKernels.TwinFirstFileKernel),
+        ConditionalAccessTwinKernels.LaunchTwinFirstFileKernel,
         ["overload", "same_signature"],
-        static (b, s) => ConditionalAccessTwinKernels.LaunchTwinFirstFileKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), gridDimX: s.GridX, blockDimX: s.BlockX),
-        static (a, t) => IsNullRow(a, t) ? [-1, -1] : [unchecked(a[0] + 1000), unchecked(a[2] + 3000)],
-        qualified: true);
+        static (a, t) => IsNullRow(a, t) ? [-1, -1] : [unchecked(a[0] + 1000), unchecked(a[2] + 3000)]);
 
     internal static readonly DifferentialCase s_twinSecond = BarrierCase(
-        nameof(ConditionalAccessTwinKernels) + "." + nameof(ConditionalAccessTwinKernels.TwinSecondFileKernel),
+        ConditionalAccessTwinKernels.LaunchTwinSecondFileKernel,
         ["overload", "same_signature"],
-        static (b, s) => ConditionalAccessTwinKernels.LaunchTwinSecondFileKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), gridDimX: s.GridX, blockDimX: s.BlockX),
-        static (a, t) => IsNullRow(a, t) ? [-1, -1] : [unchecked(a[1] + 2000), unchecked(a[3] + 4000)],
-        qualified: true);
+        static (a, t) => IsNullRow(a, t) ? [-1, -1] : [unchecked(a[1] + 2000), unchecked(a[3] + 4000)]);
 
-    internal static readonly DifferentialCase s_receiverReassigned = CaseWithSecondInput(
-        nameof(ConditionalAccessDifferentialKernels.ReceiverReassignedKernel),
-        ["element", "first_after_swap"],
-        static (b, s) => ConditionalAccessDifferentialKernels.LaunchReceiverReassignedKernel(
-            b.Get<int>("a"), b.Get<int>("b"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+    internal static readonly DifferentialCase s_receiverReassigned = DiffCases.Create(
+        ConditionalAccessDifferentialKernels.LaunchReceiverReassignedKernel,
+        inputs: (rng, rows) => new DiffBuffers()
+            .In("a", DiffValues.Int32(rng, rows))
+            .In("b", DiffValues.Int32(rng, rows))
+            .Out<int>("dst", rows, ["element", "first_after_swap"], OutputPolicy.Exact),
+        shapes: LaunchShapes.OneDimensionalMatrix(Rows));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]

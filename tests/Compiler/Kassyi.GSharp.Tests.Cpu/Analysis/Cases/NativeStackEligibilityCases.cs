@@ -231,6 +231,40 @@ namespace NativeStackEligibilityCases
             GridSyncHelper(data);
         }
 
+        public struct Guard : IDisposable
+        {
+            public int V;
+
+            public void Dispose() => V = 0;
+        }
+
+        [GpuKernel]
+        public static void UsingDeclarationActiveMaskKernel(int[] data)
+        {
+            using var guard = new Guard { V = ThreadIndex.X };
+            data[ThreadIndex.X] = (int)Warp.ActiveMask() + guard.V;
+        }
+
+        [GpuDeviceFunction]
+        public static uint UsingDeclarationActiveMaskHelper(int v)
+        {
+            using var guard = new Guard { V = v };
+            return Warp.ActiveMask() + (uint)guard.V;
+        }
+
+        [GpuKernel]
+        public static void UsingDeclarationInActiveMaskCalleeKernel(int[] data)
+        {
+            data[ThreadIndex.X] = (int)UsingDeclarationActiveMaskHelper(ThreadIndex.X);
+        }
+
+        [GpuKernel]
+        public static void UsingDeclarationShuffleKernel(int[] data)
+        {
+            using var guard = new Guard { V = ThreadIndex.X };
+            data[ThreadIndex.X] = Warp.ShuffleXorSync(0xFFFFFFFFu, guard.V, 1);
+        }
+
         [GpuKernel]
         public static void DirectRecursiveSuspendingKernel(int depth, int[] data)
         {
@@ -260,6 +294,105 @@ namespace NativeStackEligibilityCases
         public static void ConditionalOmittedCallKernel(int[] data)
         {
             OmittedBarrierCall();
+            data[0] = 1;
+        }
+
+        [GpuDeviceFunction]
+        public static void GridSyncStep(int i)
+        {
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            Kassyi.GSharp.Core.Gpu.SyncGrid();
+        }
+
+        [GpuDeviceFunction]
+        public static void ShuffleStep(int i)
+        {
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            _ = Warp.ShuffleXorSync(0xFFFFFFFFu, i, 1);
+        }
+
+        [GpuKernel]
+        public static void MethodGroupGridSyncKernel(int[] data)
+        {
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            Kassyi.GSharp.Core.Gpu.ForUnroll(0, 2, GridSyncStep);
+            data[0] = 1;
+        }
+
+        [GpuKernel]
+        public static void MethodGroupRecursiveKernel(int depth, int[] data)
+        {
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            Action<int, int[]> step = DirectlyRecursiveBarrier;
+            step(depth, data);
+        }
+
+        [GpuKernel]
+        public static void MethodGroupWarpKernel(int[] data)
+        {
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            Kassyi.GSharp.Core.Gpu.ForUnroll(0, 2, ShuffleStep);
+            data[0] = 1;
+        }
+
+        [GpuKernel]
+        public static void MethodGroupActiveMaskKernel(int[] data)
+        {
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            Func<uint> step = ActiveMaskHelper;
+            data[0] = (int)step();
+        }
+
+        [GpuKernel]
+        public static void MethodGroupUsingActiveMaskKernel(int[] data)
+        {
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            Func<int, uint> step = UsingDeclarationActiveMaskHelper;
+            data[0] = (int)step(ThreadIndex.X);
+        }
+
+        [GpuKernel]
+        public static void MethodGroupNameofKernel(int[] data)
+        {
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            var name = nameof(GridSyncStep);
+            data[0] = name.Length;
+        }
+
+        [GpuDeviceFunction]
+        public static void SelfGroup(int i)
+        {
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            Kassyi.GSharp.Core.Gpu.ForUnroll(0, 2, SelfGroup);
+        }
+
+        [GpuKernel]
+        public static void MethodGroupSelfCycleKernel(int[] data)
+        {
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            Kassyi.GSharp.Core.Gpu.ForUnroll(0, 2, SelfGroup);
+            data[0] = 1;
+        }
+
+        [GpuDeviceFunction]
+        public static void MutualGroupA(int i)
+        {
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            Kassyi.GSharp.Core.Gpu.ForUnroll(0, 2, MutualGroupB);
+        }
+
+        [GpuDeviceFunction]
+        public static void MutualGroupB(int i)
+        {
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            MutualGroupA(i);
+        }
+
+        [GpuKernel]
+        public static void MethodGroupMutualCycleKernel(int[] data)
+        {
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            Kassyi.GSharp.Core.Gpu.ForUnroll(0, 2, MutualGroupA);
             data[0] = 1;
         }
     }

@@ -44,27 +44,20 @@ public interface ITranspilerDialect
     }
 
     /// <summary>
-    /// Emits the target C++ type representation for the specified C# Roslyn type symbol.
+    /// Attempts to map a C# type to its dialect-defined C++ type name by fully qualified metadata name.
     /// </summary>
-    /// <param name="context">The active transpilation context used for source output and symbol lookup.</param>
-    /// <param name="typeSymbol">The Roslyn type symbol to convert, or <see langword="null"/> for unresolved or void types.</param>
-    /// <remarks>
-    /// <para><b>Performance:</b> Emits directly into the output stream without intermediate heap string allocations.</para>
-    /// </remarks>
-    void AppendType(ref TranspileContext context, ITypeSymbol? typeSymbol);
+    /// <param name="fullyQualifiedName">The fully qualified C# type name (without <c>global::</c>).</param>
+    /// <param name="mappedType">When this method returns <see langword="true"/>, contains the target C++ type name.</param>
+    /// <returns><see langword="true"/> if the dialect maps the type; otherwise, <see langword="false"/>.</returns>
+    bool TryMapType(string fullyQualifiedName, out string mappedType);
 
     /// <summary>
-    /// Emits the target C++ parameter type: an array as <c>GSharpArray&lt;T&gt;</c> (<c>const T</c> with
-    /// <c>[GpuReadOnly]</c>), a <c>SharedMemory&lt;T&gt;</c> as <c>T*</c>, and a pointer for <c>ref</c> / <c>out</c>
-    /// (and <c>in</c> outside kernels). No parameter is marked as non-aliasing: C# lets two of them address the same
-    /// memory.
+    /// Attempts to map a Roslyn type symbol to its dialect-defined C++ type name.
     /// </summary>
-    /// <param name="context">The active transpilation context used for source output.</param>
-    /// <param name="p">The syntax node defining the method parameter.</param>
-    /// <param name="typeSymbol">The resolved semantic type symbol for the parameter, or <see langword="null"/> if unresolvable.</param>
-    /// <param name="parameterSymbol">The resolved parameter symbol, or <see langword="null"/> if unresolvable.</param>
-    void AppendParameter(ref TranspileContext context, ParameterSyntax p, ITypeSymbol? typeSymbol,
-        IParameterSymbol? parameterSymbol);
+    /// <param name="typeSymbol">The Roslyn type symbol to look up.</param>
+    /// <param name="mappedType">When this method returns <see langword="true"/>, contains the target C++ type name.</param>
+    /// <returns><see langword="true"/> if the dialect maps the type; otherwise, <see langword="false"/>.</returns>
+    bool TryMapType(ITypeSymbol typeSymbol, out string mappedType);
 
     /// <summary>
     /// Attempts to map an invocation of a C# method to a target-specific intrinsic or macro expression.
@@ -85,7 +78,7 @@ public interface ITranspilerDialect
     bool TryMapMemberAccess(ITypeSymbol typeSymbol, string memberName, out string? mappedName, out bool isMethodCall);
 
     /// <summary>
-    /// Determines whether <see cref="AppendType"/> emits <paramref name="typeSymbol"/> as a dialect-defined type (for
+    /// Determines whether <paramref name="typeSymbol"/> is emitted as a dialect-defined type (for
     /// example <c>float2</c>) rather than as a struct that G# defines itself.
     /// </summary>
     /// <param name="typeSymbol">The type to check.</param>

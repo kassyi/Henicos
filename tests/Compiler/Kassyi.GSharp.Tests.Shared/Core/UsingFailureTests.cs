@@ -37,7 +37,10 @@ public class UsingFailureTests
     public void Single_BodyOrDisposeFails_DisposesOnceAndThrowsTheLastFailure(int bodyFail, int disposeFail,
         Type? exception, int[] order, int out0, int out1) =>
         AssertUsing(exception, order, [out0, out1, 0],
-            (log, source, outs) => UsingFailureKernels.LaunchSingleKernel(log, source, outs, bodyFail, disposeFail));
+            (log, source, outs) => UsingFailureKernels.LaunchSingleKernel(
+                buffers: new UsingFailureBuffers { Log = log, Source = source, Results = outs },
+                bodyFail: bodyFail,
+                disposeFail: disposeFail));
 
     [SkippableTheory]
     [Scenario(TestScenario.SadPath)]
@@ -50,7 +53,11 @@ public class UsingFailureTests
     public void Nested_BodyOrDisposeFails_DisposesInnerFirstAndThrowsTheLastFailure(int bodyFail, int failA, int failB,
         Type? exception, int[] order, int out0, int out1, int out2) =>
         AssertUsing(exception, order, [out0, out1, out2],
-            (log, source, outs) => UsingFailureKernels.LaunchNestedKernel(log, source, outs, bodyFail, failA, failB));
+            (log, source, outs) => UsingFailureKernels.LaunchNestedKernel(
+                buffers: new UsingFailureBuffers { Log = log, Source = source, Results = outs },
+                bodyFail: bodyFail,
+                failA: failA,
+                failB: failB));
 
     // outs[0] is the value the device function returned
     [SkippableTheory]
@@ -65,7 +72,16 @@ public class UsingFailureTests
         int failA, int failB, Type? exception, int[] order, int returned) =>
         AssertUsing(exception, order, [returned, 0, 0],
             (log, source, outs) =>
-                UsingFailureKernels.LaunchReturnKernel(log, source, outs, 5, early, bodyFail, failA, failB));
+                UsingFailureKernels.LaunchReturnKernel(
+                    buffers: new UsingFailureBuffers { Log = log, Source = source, Results = outs },
+                    options: new UsingReturnFailureOptions
+                    {
+                        Value = 5,
+                        ReturnEarly = early,
+                        BodyFail = bodyFail,
+                        OuterDisposeFail = failA,
+                        InnerDisposeFail = failB,
+                    }));
 
     [SkippableTheory]
     [Scenario(TestScenario.SadPath)]
@@ -78,7 +94,16 @@ public class UsingFailureTests
         Type? exception, int[] order, int out0, int out1) =>
         AssertUsing(exception, order, [out0, out1, 0],
             (log, source, outs) =>
-                UsingFailureKernels.LaunchLoopKernel(log, source, outs, 5, skip, stop, failAt, disposeFailAt));
+                UsingFailureKernels.LaunchLoopKernel(
+                    buffers: new UsingFailureBuffers { Log = log, Source = source, Results = outs },
+                    options: new UsingLoopFailureOptions
+                    {
+                        Iterations = 5,
+                        SkipIndex = skip,
+                        StopIndex = stop,
+                        BodyFailIndex = failAt,
+                        DisposeFailIndex = disposeFailAt,
+                    }));
 
     [SkippableTheory]
     [Scenario(TestScenario.SadPath)]
@@ -90,7 +115,15 @@ public class UsingFailureTests
         int failA, int failB, Type? exception, int[] order, int out0, int out1) =>
         AssertUsing(exception, order, [out0, out1, 0],
             (log, source, outs) =>
-                UsingFailureKernels.LaunchDeclaratorsKernel(log, source, outs, initFailB, bodyFail, failA, failB));
+                UsingFailureKernels.LaunchDeclaratorsKernel(
+                    buffers: new UsingFailureBuffers { Log = log, Source = source, Results = outs },
+                    options: new UsingDeclaratorsFailureOptions
+                    {
+                        SecondInitFail = initFailB,
+                        BodyFail = bodyFail,
+                        FirstDisposeFail = failA,
+                        SecondDisposeFail = failB,
+                    }));
 
     [SkippableTheory]
     [Scenario(TestScenario.SadPath)]
@@ -112,7 +145,10 @@ public class UsingFailureTests
         int disposeFail, Type? exception, int[] order, int out0, int out1) =>
         AssertUsing(exception, order, [out0, out1, 0],
             (log, source, outs) =>
-                UsingFailureKernels.LaunchLabeledDeclarationKernel(log, source, outs, bodyFail, disposeFail));
+                UsingFailureKernels.LaunchLabeledDeclarationKernel(
+                    buffers: new UsingFailureBuffers { Log = log, Source = source, Results = outs },
+                    bodyFail: bodyFail,
+                    disposeFail: disposeFail));
 
     // goto case, goto default and break out of a using in a switch section
     [SkippableTheory]
@@ -127,7 +163,11 @@ public class UsingFailureTests
         Type? exception, int[] order, int out0, int out1) =>
         AssertUsing(exception, order, [out0, out1, 0],
             (log, source, outs) =>
-                UsingFailureKernels.LaunchSwitchKernel(log, source, outs, mode, bodyFail, disposeFail));
+                UsingFailureKernels.LaunchSwitchKernel(
+                    buffers: new UsingFailureBuffers { Log = log, Source = source, Results = outs },
+                    mode: mode,
+                    bodyFail: bodyFail,
+                    disposeFail: disposeFail));
 
     // continue (from a switch inside the body) and break leave two nested usings in a loop
     [SkippableTheory]
@@ -142,7 +182,11 @@ public class UsingFailureTests
         int[] order, int out0, int out1, int out2) =>
         AssertUsing(exception, order, [out0, out1, out2],
             (log, source, outs) =>
-                UsingFailureKernels.LaunchNestedLoopKernel(log, source, outs, 4, stop, disposeFailAt));
+                UsingFailureKernels.LaunchNestedLoopKernel(
+                    buffers: new UsingFailureBuffers { Log = log, Source = source, Results = outs },
+                    n: 4,
+                    stop: stop,
+                    disposeFailAt: disposeFailAt));
 
     // gotos out of two usings, two of them to the same label, one backwards
     [SkippableTheory]
@@ -154,7 +198,10 @@ public class UsingFailureTests
     public void Goto_LeavesTwoUsings_DisposesBothBeforeTheLabel(int mode, int disposeFail, Type? exception,
         int[] order, int out0, int out1) =>
         AssertUsing(exception, order, [out0, out1, 0],
-            (log, source, outs) => UsingFailureKernels.LaunchGotoKernel(log, source, outs, mode, disposeFail));
+            (log, source, outs) => UsingFailureKernels.LaunchGotoKernel(
+                buffers: new UsingFailureBuffers { Log = log, Source = source, Results = outs },
+                mode: mode,
+                disposeFail: disposeFail));
 
     // A by-ref return out of a using declaration: the reference is kept while the resource is disposed
     [SkippableTheory]
@@ -165,7 +212,10 @@ public class UsingFailureTests
     public void RefReturn_LeavesUsing_WritesThroughTheKeptReference(int index, int disposeFail, Type? exception,
         int[] order, int out0, int out1) =>
         AssertUsing(exception, order, [out0, out1, 0],
-            (log, source, outs) => UsingFailureKernels.LaunchRefReturnKernel(log, source, outs, index, disposeFail));
+            (log, source, outs) => UsingFailureKernels.LaunchRefReturnKernel(
+                buffers: new UsingFailureBuffers { Log = log, Source = source, Results = outs },
+                index: index,
+                disposeFail: disposeFail));
 
     // A block lambda that returns a value out of its own using, called in the body of another using
     [SkippableTheory]
@@ -176,7 +226,10 @@ public class UsingFailureTests
     public void Lambda_ReturnsValueOutOfItsUsing_DisposesBothResources(int mode, Type? exception, int[] order,
         int out0, int out1) =>
         AssertUsing(exception, order, [out0, out1, 0],
-            (log, source, outs) => UsingFailureKernels.LaunchLambdaKernel(log, source, outs, mode, 0));
+            (log, source, outs) => UsingFailureKernels.LaunchLambdaKernel(
+                buffers: new UsingFailureBuffers { Log = log, Source = source, Results = outs },
+                mode: mode,
+                disposeFail: 0));
 
     // A check that the kernel's own code makes in the body (no callee): runs on CUDA as well
     private const DiffPath AllPaths = DiffPath.Managed | DiffPath.Native | DiffPath.Cuda;

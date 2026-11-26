@@ -44,7 +44,16 @@ public partial class SpanWriteDiagnosticsTests : SpanKernelPathTestBase
         }
 
         Run(managed, () => SpanWriteKernels.LaunchEvaluationOrderSpanWriteKernel(
-            src, dst1, dst2, dst3, counters, gridDimX: GridDimX, blockDimX: BlockDimX));
+            src: src,
+            targets: new EvaluationOrderSpanTargets
+            {
+                SliceCopyTarget = dst1,
+                FillTarget = dst2,
+                ArrayCopyTarget = dst3,
+                Counters = counters,
+            },
+            gridDimX: GridDimX,
+            blockDimX: BlockDimX));
 
         Assert.Equal(expectedCounters, counters);
         Assert.Equal(expectedDst1, dst1);

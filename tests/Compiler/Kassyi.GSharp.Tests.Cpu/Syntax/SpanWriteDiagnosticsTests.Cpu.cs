@@ -22,7 +22,7 @@ public partial class SpanWriteDiagnosticsTests
         if (!managed)
         {
             Assert.Contains("SpanWriteKernels.cu.cs", exception.Message);
-            Assert.Contains("366", exception.Message);
+            Assert.Contains("434", exception.Message);
         }
     }
 
@@ -42,7 +42,7 @@ public partial class SpanWriteDiagnosticsTests
         if (!managed)
         {
             Assert.Contains("SpanWriteKernels.cu.cs", exception.Message);
-            Assert.Contains("377", exception.Message);
+            Assert.Contains("445", exception.Message);
         }
     }
 
@@ -64,7 +64,7 @@ public partial class SpanWriteDiagnosticsTests
         if (!managed)
         {
             Assert.Contains("SpanWriteKernels.cu.cs", exception.Message);
-            Assert.Contains("388", exception.Message);
+            Assert.Contains("456", exception.Message);
         }
     }
 
@@ -84,7 +84,7 @@ public partial class SpanWriteDiagnosticsTests
         if (!managed)
         {
             Assert.Contains("SpanWriteKernels.cu.cs", exception.Message);
-            Assert.Contains("399", exception.Message);
+            Assert.Contains("467", exception.Message);
         }
     }
 
@@ -104,7 +104,7 @@ public partial class SpanWriteDiagnosticsTests
         if (!managed)
         {
             Assert.Contains("SpanWriteKernels.cu.cs", exception.Message);
-            Assert.Contains("410", exception.Message);
+            Assert.Contains("478", exception.Message);
         }
     }
 }

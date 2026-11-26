@@ -18,6 +18,7 @@ import {
 import { planBuildStep } from "./build-split.ts";
 import { dotnetKeys } from "./estimate-keys.ts";
 import { limitMsbuildNodes } from "./msbuild-nodes.ts";
+import { dotnetRemoteOffload } from "./remote.ts";
 
 const MsbuildArgsVariable = "GSHARP_JOB_QUEUE_MSBUILD_ARGS";
 
@@ -113,6 +114,10 @@ const plugin = {
 
   shortName(command: string, short: string): string | undefined {
     return dotnetShortName(command, short);
+  },
+
+  remoteOffload() {
+    return dotnetRemoteOffload();
   },
 
   api: {

@@ -48,6 +48,33 @@ public struct DiffScaledHolder
     public int Tag;
 }
 
+public struct FloatRemainderOperands
+{
+    [GpuReadOnly] public float[] SingleDividends;
+    [GpuReadOnly] public float[] SingleDivisors;
+    [GpuReadOnly] public double[] DoubleDividends;
+    [GpuReadOnly] public double[] DoubleDivisors;
+}
+
+public struct FloatRemainderResults
+{
+    public float[] SingleRemainders;
+    public double[] DoubleRemainders;
+}
+
+public struct ComputedPropertyOperands
+{
+    [GpuReadOnly] public int[] FirstInt32Values;
+    [GpuReadOnly] public int[] SecondInt32Values;
+    [GpuReadOnly] public float[] SingleValues;
+}
+
+public struct ComputedPropertyResults
+{
+    public int[] Int32Results;
+    public float[] SingleResults;
+}
+
 /// <summary>
 /// Differential kernels of assignment and conversion forms that the C++ paths had to spell differently from C#: the
 /// floating-point <c>%</c> and <c>%=</c> (#727), the <c>Nullable&lt;T&gt;</c> casts, <c>GetValueOrDefault</c> and
@@ -186,13 +213,20 @@ public static partial class AssignmentFormsDifferentialKernels
 
     /// <summary>The floating-point remainder in every form of #727: C# defines it as the C <c>fmod</c> result.</summary>
     [GpuKernel]
-    public static void FloatRemainderKernel(float[] a, float[] b, double[] c, double[] d, float[] rf, double[] rd)
+    public static void FloatRemainderKernel(FloatRemainderOperands operands, FloatRemainderResults results)
     {
         int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (t >= a.Length)
+        if (t >= operands.SingleDividends.Length)
         {
             return;
         }
+
+        var a = operands.SingleDividends;
+        var b = operands.SingleDivisors;
+        var c = operands.DoubleDividends;
+        var d = operands.DoubleDivisors;
+        var rf = results.SingleRemainders;
+        var rd = results.DoubleRemainders;
 
         int o = t * FloatSingleCount;
         rf[o] = a[t] % b[t];
@@ -373,13 +407,19 @@ public static partial class AssignmentFormsDifferentialKernels
     /// is found once, the getter runs before the right side, the setter last, and the value is the one C# defines.
     /// </summary>
     [GpuKernel]
-    public static void ComputedPropertyKernel(int[] a, int[] b, float[] f, int[] r, float[] rf)
+    public static void ComputedPropertyKernel(ComputedPropertyOperands operands, ComputedPropertyResults results)
     {
         int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (t >= a.Length)
+        if (t >= operands.FirstInt32Values.Length)
         {
             return;
         }
+
+        var a = operands.FirstInt32Values;
+        var b = operands.SecondInt32Values;
+        var f = operands.SingleValues;
+        var r = results.Int32Results;
+        var rf = results.SingleResults;
 
         int o = t * ComputedCount;
         int av = a[t];

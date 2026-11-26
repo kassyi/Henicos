@@ -16,6 +16,50 @@ public struct SpanWritePair : IEquatable<SpanWritePair>
     public override string ToString() => $"({A}, {B})";
 }
 
+public struct SpanSliceReadSource
+{
+    [GpuReadOnly]
+    public int[] Buffer;
+    public int Offset;
+    public int Count;
+}
+
+public struct SpanSliceWriteTarget
+{
+    public int[] Buffer;
+    public int Offset;
+    public int Count;
+}
+
+public struct SpanSliceCopyRange
+{
+    public int SourceOffset;
+    public int SourceCount;
+    public int DestinationOffset;
+    public int DestinationCount;
+}
+
+public struct ArraySliceSource
+{
+    [GpuReadOnly]
+    public int[] Buffer;
+    public int StartIndex;
+}
+
+public struct ArraySliceDestination
+{
+    public int[] Buffer;
+    public int StartIndex;
+}
+
+public struct EvaluationOrderSpanTargets
+{
+    public int[] SliceCopyTarget;
+    public int[] FillTarget;
+    public int[] ArrayCopyTarget;
+    public int[] Counters;
+}
+
 /// <summary>
 /// Kernels exercising <c>Span&lt;T&gt;</c>, <c>ReadOnlySpan&lt;T&gt;</c>, <c>MemoryExtensions</c>, and <c>System.Array</c>
 /// write / slice members (#731).
@@ -165,12 +209,20 @@ public static partial class SpanWriteKernels
     }
 
     [GpuKernel]
-    public static void TryCopyToSliceKernel(int[] src, int srcOffset, int srcCount, int[] dst, int dstOffset, int dstCount, int[] ok)
+    public static void TryCopyToSliceKernel(SpanSliceReadSource source, SpanSliceWriteTarget destination, int[] copied)
     {
         if (ThreadIndex.X != 0 || BlockIndex.X != 0)
         {
             return;
         }
+
+        int[] src = source.Buffer;
+        int srcOffset = source.Offset;
+        int srcCount = source.Count;
+        int[] dst = destination.Buffer;
+        int dstOffset = destination.Offset;
+        int dstCount = destination.Count;
+        int[] ok = copied;
 
         ReadOnlySpan<int> s = src.AsSpan(srcOffset, srcCount);
         Span<int> d = dst.AsSpan(dstOffset, dstCount);
@@ -178,12 +230,18 @@ public static partial class SpanWriteKernels
     }
 
     [GpuKernel]
-    public static void TryCopyToSameBufferKernel(int[] data, int srcOffset, int srcCount, int dstOffset, int dstCount, int[] ok)
+    public static void TryCopyToSameBufferKernel(int[] data, SpanSliceCopyRange range, int[] copied)
     {
         if (ThreadIndex.X != 0 || BlockIndex.X != 0)
         {
             return;
         }
+
+        int srcOffset = range.SourceOffset;
+        int srcCount = range.SourceCount;
+        int dstOffset = range.DestinationOffset;
+        int dstCount = range.DestinationCount;
+        int[] ok = copied;
 
         Span<int> span = data;
         ok[0] = span.Slice(srcOffset, srcCount).TryCopyTo(span.Slice(dstOffset, dstCount)) ? 1 : 0;
@@ -277,12 +335,17 @@ public static partial class SpanWriteKernels
     }
 
     [GpuKernel]
-    public static void ArrayCopy5Kernel(int[] src, int srcIdx, int[] dst, int dstIdx, int length)
+    public static void ArrayCopy5Kernel(ArraySliceSource source, ArraySliceDestination destination, int length)
     {
         if (ThreadIndex.X != 0 || BlockIndex.X != 0)
         {
             return;
         }
+
+        int[] src = source.Buffer;
+        int srcIdx = source.StartIndex;
+        int[] dst = destination.Buffer;
+        int dstIdx = destination.StartIndex;
 
         Array.Copy(src, srcIdx, dst, dstIdx, length);
     }
@@ -332,12 +395,17 @@ public static partial class SpanWriteKernels
     }
 
     [GpuKernel]
-    public static void EvaluationOrderSpanWriteKernel(int[] src, int[] dst1, int[] dst2, int[] dst3, int[] counters)
+    public static void EvaluationOrderSpanWriteKernel(int[] src, EvaluationOrderSpanTargets targets)
     {
         if (ThreadIndex.X != 0 || BlockIndex.X != 0)
         {
             return;
         }
+
+        int[] dst1 = targets.SliceCopyTarget;
+        int[] dst2 = targets.FillTarget;
+        int[] dst3 = targets.ArrayCopyTarget;
+        int[] counters = targets.Counters;
 
         var i = 1;
         Span<int> sub = src.AsSpan().Slice(i++, i++);

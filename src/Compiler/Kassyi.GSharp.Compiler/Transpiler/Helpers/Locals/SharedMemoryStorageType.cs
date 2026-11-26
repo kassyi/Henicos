@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Backends.Cpp;
+
 namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.Locals;
 
 /// <summary>
@@ -8,19 +10,12 @@ internal static class SharedMemoryStorageType
 {
     /// <summary>
     /// Appends the C++ storage type for <paramref name="typeSymbol"/> to the emitter writer: <c>T*</c> when
-    /// <paramref name="typeSymbol"/> is <c>SharedMemory&lt;T&gt;</c>, or <see cref="ITranspilerDialect.AppendType"/>
+    /// <paramref name="typeSymbol"/> is <c>SharedMemory&lt;T&gt;</c>, or <see cref="CppTypeWriter.AppendType{TServices}"/>
     /// otherwise.
     /// </summary>
     public static void Append(ref TranspileContext context, ITypeSymbol? typeSymbol)
     {
-        if (typeSymbol.IsSharedMemoryType() &&
-            typeSymbol is INamedTypeSymbol { TypeArguments.Length: 1 } sharedMemory)
-        {
-            context.Emitter.Dialect.AppendType(ref context, sharedMemory.TypeArguments[0]);
-            context.Emitter.Writer.Append('*');
-            return;
-        }
-
-        context.Emitter.Dialect.AppendType(ref context, typeSymbol);
+        var typeContext = DialectTranspilerExtensions.CreateTypeContext(ref context);
+        CppTypeWriter.AppendStorageType(in typeContext, typeSymbol);
     }
 }

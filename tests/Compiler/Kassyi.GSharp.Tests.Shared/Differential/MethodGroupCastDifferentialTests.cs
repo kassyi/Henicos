@@ -13,53 +13,32 @@ public class MethodGroupCastDifferentialTests
 {
     private const int Rows = 128;
 
-    internal static readonly DifferentialCase s_methodGroupCast = new(
-        nameof(MethodGroupCastDifferentialKernels) + "." +
-        nameof(MethodGroupCastDifferentialKernels.MethodGroupCastKernel))
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_methodGroupCast = DiffCases.Create(
+        MethodGroupCastDifferentialKernels.LaunchMethodGroupCastKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("inputs", DiffValues.Int32(rng, rows))
             .Out<int>("r", rows, OutputPolicy.Exact),
-        Launch = static (b, s) => MethodGroupCastDifferentialKernels.LaunchMethodGroupCastKernel(
-            b.Get<int>("inputs"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShape.ForRows(Rows, blockX: 64),
+        inputName: "inputs",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_userDelegate = new(
-        nameof(MethodGroupCastDifferentialKernels) + "." +
-        nameof(MethodGroupCastDifferentialKernels.UserDelegateKernel))
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_userDelegate = DiffCases.Create(
+        MethodGroupCastDifferentialKernels.LaunchUserDelegateKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("inputs", DiffValues.Int32(rng, rows))
             .Out<int>("r", rows, OutputPolicy.Exact),
-        Launch = static (b, s) => MethodGroupCastDifferentialKernels.LaunchUserDelegateKernel(
-            b.Get<int>("inputs"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShape.ForRows(Rows, blockX: 64),
+        inputName: "inputs",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_byRefDelegate = new(
-        nameof(MethodGroupCastDifferentialKernels) + "." +
-        nameof(MethodGroupCastDifferentialKernels.ByRefDelegateKernel))
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_byRefDelegate = DiffCases.Create(
+        MethodGroupCastDifferentialKernels.LaunchByRefDelegateKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("inputs", DiffValues.Int32(rng, rows))
             .Out<int>("r", rows, OutputPolicy.Exact),
-        Launch = static (b, s) => MethodGroupCastDifferentialKernels.LaunchByRefDelegateKernel(
-            b.Get<int>("inputs"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShape.ForRows(Rows, blockX: 64),
+        inputName: "inputs",
+        outputName: "r");
 
     [SkippableFact]
     public void MethodGroupCast_DeviceFunction_MatchesTheOracleOnEveryPath() =>

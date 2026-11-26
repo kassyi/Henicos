@@ -31,25 +31,224 @@ public partial class DigitSeparatorLiteralKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(427594482u, "DigitSeparatorLiteralKernels.cs", 18, 9, "DigitSeparatorKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1155531613u, "DigitSeparatorLiteralKernels.cs", 19, 9, "DigitSeparatorKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(851999617u, "DigitSeparatorLiteralKernels.cs", 20, 9, "DigitSeparatorKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2064509864u, "DigitSeparatorLiteralKernels.cs", 21, 9, "DigitSeparatorKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1941082750u, "DigitSeparatorLiteralKernels.cs", 22, 9, "DigitSeparatorKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(733848909u, "DigitSeparatorLiteralKernels.cs", 23, 9, "DigitSeparatorKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1710180544u, "DigitSeparatorLiteralKernels.cs", 28, 9, "DigitSeparatorKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(8512191u, "DigitSeparatorLiteralKernels.cs", 29, 9, "DigitSeparatorKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(70524151u, "DigitSeparatorLiteralKernels.cs", 30, 9, "DigitSeparatorKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(907573374u, "DigitSeparatorLiteralKernels.cs", 31, 9, "DigitSeparatorKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1158966692u, "DigitSeparatorLiteralKernels.cs", 32, 9, "DigitSeparatorKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2075241423u, "DigitSeparatorLiteralKernels.cs", 33, 9, "DigitSeparatorKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
 {
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 96)]
+public unsafe partial struct DigitSeparatorLiteralResults
+{
+public const string DebugName_Int32Values = "global::System.Int32[]";
+[global::System.Runtime.InteropServices.FieldOffset(0)]
+public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Int32Values;
+public const string DebugName_UInt32Values = "global::System.UInt32[]";
+[global::System.Runtime.InteropServices.FieldOffset(16)]
+public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy UInt32Values;
+public const string DebugName_Int64Values = "global::System.Int64[]";
+[global::System.Runtime.InteropServices.FieldOffset(32)]
+public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Int64Values;
+public const string DebugName_UInt64Values = "global::System.UInt64[]";
+[global::System.Runtime.InteropServices.FieldOffset(48)]
+public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy UInt64Values;
+public const string DebugName_SingleValues = "global::System.Single[]";
+[global::System.Runtime.InteropServices.FieldOffset(64)]
+public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy SingleValues;
+public const string DebugName_DoubleValues = "global::System.Double[]";
+[global::System.Runtime.InteropServices.FieldOffset(80)]
+public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy DoubleValues;
 }
-public const string DigitSeparatorKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralKernels__DigitSeparatorKernel {
+public static unsafe void Marshal_DigitSeparatorLiteralResults(ref global::Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralResults host, ref AotContexts.DigitSeparatorLiteralResults native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+{
+native = default;
+if (host.Int32Values != null)
+{
+global::System.Collections.Generic.List<global::System.IntPtr> pinnedHandles = allocatedPtrs ?? throw new global::System.ArgumentNullException("allocatedPtrs");
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Int32Values, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+pinnedHandles.Add(global::System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.Int32Values.Data = handle.AddrOfPinnedObject();
+native.Int32Values.Length = host.Int32Values.Length;
+}
+if (host.UInt32Values != null)
+{
+global::System.Collections.Generic.List<global::System.IntPtr> pinnedHandles = allocatedPtrs ?? throw new global::System.ArgumentNullException("allocatedPtrs");
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.UInt32Values, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+pinnedHandles.Add(global::System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.UInt32Values.Data = handle.AddrOfPinnedObject();
+native.UInt32Values.Length = host.UInt32Values.Length;
+}
+if (host.Int64Values != null)
+{
+global::System.Collections.Generic.List<global::System.IntPtr> pinnedHandles = allocatedPtrs ?? throw new global::System.ArgumentNullException("allocatedPtrs");
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Int64Values, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+pinnedHandles.Add(global::System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.Int64Values.Data = handle.AddrOfPinnedObject();
+native.Int64Values.Length = host.Int64Values.Length;
+}
+if (host.UInt64Values != null)
+{
+global::System.Collections.Generic.List<global::System.IntPtr> pinnedHandles = allocatedPtrs ?? throw new global::System.ArgumentNullException("allocatedPtrs");
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.UInt64Values, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+pinnedHandles.Add(global::System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.UInt64Values.Data = handle.AddrOfPinnedObject();
+native.UInt64Values.Length = host.UInt64Values.Length;
+}
+if (host.SingleValues != null)
+{
+global::System.Collections.Generic.List<global::System.IntPtr> pinnedHandles = allocatedPtrs ?? throw new global::System.ArgumentNullException("allocatedPtrs");
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.SingleValues, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+pinnedHandles.Add(global::System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.SingleValues.Data = handle.AddrOfPinnedObject();
+native.SingleValues.Length = host.SingleValues.Length;
+}
+if (host.DoubleValues != null)
+{
+global::System.Collections.Generic.List<global::System.IntPtr> pinnedHandles = allocatedPtrs ?? throw new global::System.ArgumentNullException("allocatedPtrs");
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.DoubleValues, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+pinnedHandles.Add(global::System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.DoubleValues.Data = handle.AddrOfPinnedObject();
+native.DoubleValues.Length = host.DoubleValues.Length;
+}
+}
+public static unsafe void Unmarshal_DigitSeparatorLiteralResults(ref global::Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralResults host, ref AotContexts.DigitSeparatorLiteralResults native, global::System.IntPtr hStream = default)
+{
+if (native.Int32Values.Data == global::System.IntPtr.Zero)
+{
+host.Int32Values = default;
+}
+if (native.UInt32Values.Data == global::System.IntPtr.Zero)
+{
+host.UInt32Values = default;
+}
+if (native.Int64Values.Data == global::System.IntPtr.Zero)
+{
+host.Int64Values = default;
+}
+if (native.UInt64Values.Data == global::System.IntPtr.Zero)
+{
+host.UInt64Values = default;
+}
+if (native.SingleValues.Data == global::System.IntPtr.Zero)
+{
+host.SingleValues = default;
+}
+if (native.DoubleValues.Data == global::System.IntPtr.Zero)
+{
+host.DoubleValues = default;
+}
+}
+public static void AliasHeldArrays_DigitSeparatorLiteralResults(ref global::Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralResults host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.Int32Values != null)
+{
+held.Add(host.Int32Values, 4, 0, false);
+}
+if (host.UInt32Values != null)
+{
+held.Add(host.UInt32Values, 4, 0, false);
+}
+if (host.Int64Values != null)
+{
+held.Add(host.Int64Values, 8, 0, false);
+}
+if (host.UInt64Values != null)
+{
+held.Add(host.UInt64Values, 8, 0, false);
+}
+if (host.SingleValues != null)
+{
+held.Add(host.SingleValues, 4, 0, false);
+}
+if (host.DoubleValues != null)
+{
+held.Add(host.DoubleValues, 8, 0, false);
+}
+}
+public static void CopyArrays_DigitSeparatorLiteralResults(ref global::Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralResults host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
+{
+_ = copies.Copy(ref host.Int32Values);
+_ = copies.Copy(ref host.UInt32Values);
+_ = copies.Copy(ref host.Int64Values);
+_ = copies.Copy(ref host.UInt64Values);
+_ = copies.Copy(ref host.SingleValues);
+_ = copies.Copy(ref host.DoubleValues);
+}
+public static bool HoldsArray_DigitSeparatorLiteralResults(global::Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralResults host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.Int32Values, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.UInt32Values, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Int64Values, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.UInt64Values, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.SingleValues, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.DoubleValues, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_DigitSeparatorLiteralResults(global::System.ReadOnlySpan<global::Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralResults> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_DigitSeparatorLiteralResults(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
+#pragma warning restore CS8500
+}
+public const string DigitSeparatorKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralResults__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralResults__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralResults
+{
+GSharpArray<int> __gsharp_mb_Int32Values;
+GSharpArray<unsigned int> __gsharp_mb_UInt32Values;
+GSharpArray<long long> __gsharp_mb_Int64Values;
+GSharpArray<unsigned long long> __gsharp_mb_UInt64Values;
+GSharpArray<float> __gsharp_mb_SingleValues;
+GSharpArray<double> __gsharp_mb_DoubleValues;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralResults)==96,""Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralResults: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralResults)==8,""Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralResults: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralResults,__gsharp_mb_Int32Values)==0,""Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralResults.Int32Values: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralResults,__gsharp_mb_UInt32Values)==16,""Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralResults.UInt32Values: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralResults,__gsharp_mb_Int64Values)==32,""Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralResults.Int64Values: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralResults,__gsharp_mb_UInt64Values)==48,""Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralResults.UInt64Values: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralResults,__gsharp_mb_SingleValues)==64,""Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralResults.SingleValues: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralResults,__gsharp_mb_DoubleValues)==80,""Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralResults.DoubleValues: offset"");
+#endif
+struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralKernels__DigitSeparatorKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralKernels__DigitSeparatorKernel* __gsharp_all_contexts = nullptr;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralKernels__DigitSeparatorKernel(GSharpArray<int> __gsharp_id_0_ints, GSharpArray<unsigned int> __gsharp_id_1_uints, GSharpArray<long long> __gsharp_id_2_longs, GSharpArray<unsigned long long> __gsharp_id_3_ulongs, GSharpArray<float> __gsharp_id_4_floats, GSharpArray<double> __gsharp_id_5_doubles, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralKernels__DigitSeparatorKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralKernels__DigitSeparatorKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralResults __gsharp_id_0_results, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralKernels__DigitSeparatorKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
@@ -59,13 +258,19 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_6_i = (int)threadIdx.x;
-__gsharp_array_at(__gsharp_id_0_ints, __gsharp_id_6_i, 427594482u)=1000000;
-__gsharp_array_at(__gsharp_id_1_uints, __gsharp_id_6_i, 1155531613u)=0xFFFF0000u;
-__gsharp_array_at(__gsharp_id_2_longs, __gsharp_id_6_i, 851999617u)=10000000000ll;
-__gsharp_array_at(__gsharp_id_3_ulongs, __gsharp_id_6_i, 2064509864u)=0b10101010ull;
-__gsharp_array_at(__gsharp_id_4_floats, __gsharp_id_6_i, 1941082750u)=1000.0f;
-__gsharp_array_at(__gsharp_id_5_doubles, __gsharp_id_6_i, 733848909u)=10.5e10;
+GSharpArray<int> __gsharp_id_1_ints = __gsharp_id_0_results.__gsharp_mb_Int32Values;
+GSharpArray<unsigned int> __gsharp_id_2_uints = __gsharp_id_0_results.__gsharp_mb_UInt32Values;
+GSharpArray<long long> __gsharp_id_3_longs = __gsharp_id_0_results.__gsharp_mb_Int64Values;
+GSharpArray<unsigned long long> __gsharp_id_4_ulongs = __gsharp_id_0_results.__gsharp_mb_UInt64Values;
+GSharpArray<float> __gsharp_id_5_floats = __gsharp_id_0_results.__gsharp_mb_SingleValues;
+GSharpArray<double> __gsharp_id_6_doubles = __gsharp_id_0_results.__gsharp_mb_DoubleValues;
+int __gsharp_id_7_i = (int)threadIdx.x;
+__gsharp_array_at(__gsharp_id_1_ints, __gsharp_id_7_i, 1710180544u)=1000000;
+__gsharp_array_at(__gsharp_id_2_uints, __gsharp_id_7_i, 8512191u)=0xFFFF0000u;
+__gsharp_array_at(__gsharp_id_3_longs, __gsharp_id_7_i, 70524151u)=10000000000ll;
+__gsharp_array_at(__gsharp_id_4_ulongs, __gsharp_id_7_i, 907573374u)=0b10101010ull;
+__gsharp_array_at(__gsharp_id_5_floats, __gsharp_id_7_i, 1158966692u)=1000.0f;
+__gsharp_array_at(__gsharp_id_6_doubles, __gsharp_id_7_i, 2075241423u)=10.5e10;
 __gsharp_state=-1;
 return;
 }
@@ -74,8 +279,9 @@ return;
 #undef __gsharp_yielded_for_grid_sync
 #undef __gsharp_yielded_for_block_barrier
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralKernels__DigitSeparatorKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_ints, GSharpArray<unsigned int> __gsharp_id_1_uints, GSharpArray<long long> __gsharp_id_2_longs, GSharpArray<unsigned long long> __gsharp_id_3_ulongs, GSharpArray<float> __gsharp_id_4_floats, GSharpArray<double> __gsharp_id_5_doubles)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralKernels__DigitSeparatorKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, const __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralResults* __gsharp_arg_0)
 {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralResults __gsharp_id_0_results = *__gsharp_arg_0;
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 #pragma omp parallel for schedule(dynamic)
@@ -109,7 +315,7 @@ if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contex
 try
 {
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
-__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralKernels__DigitSeparatorKernel(__gsharp_id_0_ints, __gsharp_id_1_uints, __gsharp_id_2_longs, __gsharp_id_3_ulongs, __gsharp_id_4_floats, __gsharp_id_5_doubles, &__gsharp_contexts[__gsharp_ctx_tid]);
+__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralKernels__DigitSeparatorKernel(__gsharp_id_0_results, &__gsharp_contexts[__gsharp_ctx_tid]);
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
 __gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in DigitSeparatorLiteralKernels.DigitSeparatorKernel, which is not [GpuKernel(Cooperative = true)]"");
@@ -161,12 +367,18 @@ return next;
 }
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralKernels__DigitSeparatorKernel(int[] ints, uint[] uints, long[] longs, ulong[] ulongs, float[] floats, double[] doubles, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralKernels__DigitSeparatorKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralKernels__DigitSeparatorKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralResults results, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralKernels__DigitSeparatorKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
+int[] ints = results.Int32Values;
+uint[] uints = results.UInt32Values;
+long[] longs = results.Int64Values;
+ulong[] ulongs = results.UInt64Values;
+float[] floats = results.SingleValues;
+double[] doubles = results.DoubleValues;
 int i = global::Kassyi.GSharp.Core.ThreadIndex.X;
 // C++ rejects '_' inside numbers, and "0x'FF" is invalid, so separators must be dropped
 ints[i] = 1_000_000;
@@ -183,23 +395,18 @@ return;
 }
 
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
-private unsafe delegate void __gsharp_delegate_DigitSeparatorKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ints, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy uints, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy longs, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ulongs, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy floats, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy doubles);
+private unsafe delegate void __gsharp_delegate_DigitSeparatorKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralKernels.AotContexts.DigitSeparatorLiteralResults* results);
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchDigitSeparatorKernel(global::System.Int32[] ints, global::System.UInt32[] uints, global::System.Int64[] longs, global::System.UInt64[] ulongs, global::System.Single[] floats, global::System.Double[] doubles, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchDigitSeparatorKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralResults results, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DigitSeparatorLiteralKernels.DigitSeparatorKernel");
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "DigitSeparatorLiteralKernels.DigitSeparatorKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-global::System.Int32[] __gsharp_csharp_arg_0 = ints;
-global::System.UInt32[] __gsharp_csharp_arg_1 = uints;
-global::System.Int64[] __gsharp_csharp_arg_2 = longs;
-global::System.UInt64[] __gsharp_csharp_arg_3 = ulongs;
-global::System.Single[] __gsharp_csharp_arg_4 = floats;
-global::System.Double[] __gsharp_csharp_arg_5 = doubles;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralKernels.DigitSeparatorKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2, __gsharp_csharp_arg_3, __gsharp_csharp_arg_4, __gsharp_csharp_arg_5));
+global::Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralResults __gsharp_csharp_arg_0 = results;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralKernels.DigitSeparatorKernel(__gsharp_csharp_arg_0));
 return;
 }
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
@@ -262,7 +469,7 @@ try
 {
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
-__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralKernels__DigitSeparatorKernel(ints, uints, longs, ulongs, floats, doubles, __gsharp_contexts[__gsharp_linear_tid]);
+__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralKernels__DigitSeparatorKernel(results, __gsharp_contexts[__gsharp_linear_tid]);
 if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative("DigitSeparatorLiteralKernels.DigitSeparatorKernel");
@@ -321,59 +528,26 @@ if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
 }
-fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(ints))
-fixed (global::System.UInt32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(uints))
-fixed (global::System.Int64* __gsharp_p_2 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(longs))
-fixed (global::System.UInt64* __gsharp_p_3 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(ulongs))
-fixed (global::System.Single* __gsharp_p_4 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(floats))
-fixed (global::System.Double* __gsharp_p_5 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(doubles))
+global::Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralKernels.AotContexts.DigitSeparatorLiteralResults __gsharp_native_0 = default;
+global::System.Collections.Generic.List<global::System.IntPtr> __gsharp_allocated_ptrs_0 = new();
+try
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (ints?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (uints?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = (longs?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_3, Length = (ulongs?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_4, Length = (floats?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_5, Length = (doubles?.Length ?? 0) });
+global::Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralKernels.AotContexts.Marshal_DigitSeparatorLiteralResults(ref results, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, &__gsharp_native_0);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
+global::Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralKernels.AotContexts.Unmarshal_DigitSeparatorLiteralResults(ref results, ref __gsharp_native_0, hStream);
+}
+finally
+{
+foreach (global::System.IntPtr __gsharp_handle in __gsharp_allocated_ptrs_0) global::System.Runtime.InteropServices.GCHandle.FromIntPtr(__gsharp_handle).Free();
 }
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchDigitSeparatorKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ints, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy uints, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy longs, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ulongs, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy floats, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy doubles, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchDigitSeparatorKernelPtr(global::Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralKernels.AotContexts.DigitSeparatorLiteralResults results, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (ints.Length < 0){
-throw new global::System.ArgumentOutOfRangeException("ints", ints.Length, "The array length must not be negative.");
-}
-if (ints.Data == global::System.IntPtr.Zero && ints.Length != 0){
-throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "ints");
-}
-if (uints.Length < 0){
-throw new global::System.ArgumentOutOfRangeException("uints", uints.Length, "The array length must not be negative.");
-}
-if (uints.Data == global::System.IntPtr.Zero && uints.Length != 0){
-throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "uints");
-}
-if (longs.Length < 0){
-throw new global::System.ArgumentOutOfRangeException("longs", longs.Length, "The array length must not be negative.");
-}
-if (longs.Data == global::System.IntPtr.Zero && longs.Length != 0){
-throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "longs");
-}
-if (ulongs.Length < 0){
-throw new global::System.ArgumentOutOfRangeException("ulongs", ulongs.Length, "The array length must not be negative.");
-}
-if (ulongs.Data == global::System.IntPtr.Zero && ulongs.Length != 0){
-throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "ulongs");
-}
-if (floats.Length < 0){
-throw new global::System.ArgumentOutOfRangeException("floats", floats.Length, "The array length must not be negative.");
-}
-if (floats.Data == global::System.IntPtr.Zero && floats.Length != 0){
-throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "floats");
-}
-if (doubles.Length < 0){
-throw new global::System.ArgumentOutOfRangeException("doubles", doubles.Length, "The array length must not be negative.");
-}
-if (doubles.Data == global::System.IntPtr.Zero && doubles.Length != 0){
-throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "doubles");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DigitSeparatorLiteralKernels.DigitSeparatorKernel");
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "DigitSeparatorLiteralKernels.DigitSeparatorKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
@@ -387,12 +561,12 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 {
 throw new global::System.NotSupportedException("LaunchDigitSeparatorKernelPtr runs only on the native CPU path: the managed CPU path (KernelExecution.Managed, or a build without the native library) does not run pointer launchers yet. Build the native library, or call LaunchDigitSeparatorKernel, which runs on both paths.");
 }
-delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralKernels__DigitSeparatorKernel", __gsharp_dll_path);
+delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralKernels.AotContexts.DigitSeparatorLiteralResults*, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralKernels.AotContexts.DigitSeparatorLiteralResults*, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__DigitSeparatorLiteralKernels__DigitSeparatorKernel", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
 }
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = ints.Data, Length = ints.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = uints.Data, Length = uints.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = longs.Data, Length = longs.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = ulongs.Data, Length = ulongs.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = floats.Data, Length = floats.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = doubles.Data, Length = doubles.Length });
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, &results);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 #pragma warning restore CS8500

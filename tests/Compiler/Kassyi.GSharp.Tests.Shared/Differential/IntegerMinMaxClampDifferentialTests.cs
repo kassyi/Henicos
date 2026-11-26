@@ -2,9 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Tests.Infrastructure;
 using Xunit;
-using K = Kassyi.GSharp.Tests.Shared.Differential.IntegerMinMaxClampDifferentialKernels;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
@@ -128,33 +128,15 @@ public class IntegerMinMaxClampDifferentialTests
     // Max and Min of one type: seed 0 is the cross product of its boundary table
     internal static readonly DifferentialCase[] s_maxMinCases =
     [
-        MaxMinCase(nameof(K.MaxMinSByteKernel), s_sbyteBoundaries, s_nextSByte,
-            static (a, b, d, s) =>
-                K.LaunchMaxMinSByteKernel(a, b, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        MaxMinCase(nameof(K.MaxMinByteKernel), s_byteBoundaries, s_nextByte,
-            static (a, b, d, s) =>
-                K.LaunchMaxMinByteKernel(a, b, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        MaxMinCase(nameof(K.MaxMinInt16Kernel), s_int16Boundaries, s_nextInt16,
-            static (a, b, d, s) =>
-                K.LaunchMaxMinInt16Kernel(a, b, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        MaxMinCase(nameof(K.MaxMinUInt16Kernel), s_uint16Boundaries, s_nextUInt16,
-            static (a, b, d, s) =>
-                K.LaunchMaxMinUInt16Kernel(a, b, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        MaxMinCase(nameof(K.MaxMinUInt32Kernel), s_uint32Boundaries, s_nextUInt32,
-            static (a, b, d, s) =>
-                K.LaunchMaxMinUInt32Kernel(a, b, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        MaxMinCase(nameof(K.MaxMinInt64Kernel), s_int64Boundaries, s_nextInt64,
-            static (a, b, d, s) =>
-                K.LaunchMaxMinInt64Kernel(a, b, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        MaxMinCase(nameof(K.MaxMinUInt64Kernel), s_uint64Boundaries, s_nextUInt64,
-            static (a, b, d, s) =>
-                K.LaunchMaxMinUInt64Kernel(a, b, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        MaxMinCase(nameof(K.MaxMinIntPtrKernel), s_int64Boundaries, s_nextInt64,
-            static (a, b, d, s) =>
-                K.LaunchMaxMinIntPtrKernel(a, b, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        MaxMinCase(nameof(K.MaxMinUIntPtrKernel), s_uint64Boundaries, s_nextUInt64,
-            static (a, b, d, s) =>
-                K.LaunchMaxMinUIntPtrKernel(a, b, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX)),
+        MaxMinCase(IntegerMinMaxClampDifferentialKernels.LaunchMaxMinSByteKernel, s_sbyteBoundaries, s_nextSByte),
+        MaxMinCase(IntegerMinMaxClampDifferentialKernels.LaunchMaxMinByteKernel, s_byteBoundaries, s_nextByte),
+        MaxMinCase(IntegerMinMaxClampDifferentialKernels.LaunchMaxMinInt16Kernel, s_int16Boundaries, s_nextInt16),
+        MaxMinCase(IntegerMinMaxClampDifferentialKernels.LaunchMaxMinUInt16Kernel, s_uint16Boundaries, s_nextUInt16),
+        MaxMinCase(IntegerMinMaxClampDifferentialKernels.LaunchMaxMinUInt32Kernel, s_uint32Boundaries, s_nextUInt32),
+        MaxMinCase(IntegerMinMaxClampDifferentialKernels.LaunchMaxMinInt64Kernel, s_int64Boundaries, s_nextInt64),
+        MaxMinCase(IntegerMinMaxClampDifferentialKernels.LaunchMaxMinUInt64Kernel, s_uint64Boundaries, s_nextUInt64),
+        MaxMinCase(IntegerMinMaxClampDifferentialKernels.LaunchMaxMinIntPtrKernel, s_int64Boundaries, s_nextInt64),
+        MaxMinCase(IntegerMinMaxClampDifferentialKernels.LaunchMaxMinUIntPtrKernel, s_uint64Boundaries, s_nextUInt64),
     ];
 
     // Clamp of one type with lo <= hi on every row
@@ -165,7 +147,7 @@ public class IntegerMinMaxClampDifferentialTests
     internal static readonly DifferentialCase[] s_clampReversedCases = ClampCases(reversed: true);
 
     private static string KernelName(string memberName, string? suffix = null) =>
-        DiffKernelNames.Of(typeof(K), memberName, suffix);
+        DiffKernelNames.Of(typeof(IntegerMinMaxClampDifferentialKernels), memberName, suffix);
 
     public static TheoryData<string> MaxMinCaseNames => [.. s_maxMinCases.Select(static c => c.Name)];
 
@@ -174,55 +156,89 @@ public class IntegerMinMaxClampDifferentialTests
     public static TheoryData<string> ClampReversedCaseNames => [.. s_clampReversedCases.Select(static c => c.Name)];
 
     private static DifferentialCase MaxMinCase<T>(
-        string kernel,
+        DiffLaunch<T[], T[], T[], int> launch,
         T[] boundaries,
         Func<DiffRandom, T> next,
-        Action<T[], T[], T[], LaunchShape> launch)
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "")
         where T : unmanaged =>
-        new(KernelName(kernel))
-        {
-            Shape = LaunchShapes.Linear(MatrixRows, 32),
-            Inputs = (rng, shape) =>
+        DiffCases.CreateRows<T, T, T>(
+            launch,
+            inputs: (rng, shape) =>
             {
                 var (a, b) = DiffValues.Pairs(rng, shape.Rows, boundaries, next);
                 return new DiffBuffers()
                     .In("a", a, readOnly: true)
                     .In("b", b, readOnly: true)
-                    .Out<T>("dst", shape.Rows, K.MaxMinColumns, OutputPolicy.Exact);
+                    .Out<T>("dst", shape.Rows, IntegerMinMaxClampDifferentialKernels.MaxMinColumns, OutputPolicy.Exact);
             },
-            Launch = (b, s) => launch(b.Get<T>("a"), b.Get<T>("b"), b.Get<T>("dst"), s),
-            OracleIsLaunch = true,
-        };
+            shape: LaunchShapes.Linear(MatrixRows, 32),
+            launchExpression: launchExpression);
 
     private static DifferentialCase[] ClampCases(bool reversed) =>
     [
-        ClampCase(nameof(K.ClampSByteKernel), reversed, s_sbyteBoundaries, s_nextSByte, s_sbyteClampRows,
-            static (v, lo, hi, d, s) =>
-                K.LaunchClampSByteKernel(v, lo, hi, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        ClampCase(nameof(K.ClampByteKernel), reversed, s_byteBoundaries, s_nextByte, s_byteClampRows,
-            static (v, lo, hi, d, s) =>
-                K.LaunchClampByteKernel(v, lo, hi, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        ClampCase(nameof(K.ClampInt16Kernel), reversed, s_int16Boundaries, s_nextInt16, s_int16ClampRows,
-            static (v, lo, hi, d, s) =>
-                K.LaunchClampInt16Kernel(v, lo, hi, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        ClampCase(nameof(K.ClampUInt16Kernel), reversed, s_uint16Boundaries, s_nextUInt16, s_uint16ClampRows,
-            static (v, lo, hi, d, s) =>
-                K.LaunchClampUInt16Kernel(v, lo, hi, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        ClampCase(nameof(K.ClampUInt32Kernel), reversed, s_uint32Boundaries, s_nextUInt32, s_uint32ClampRows,
-            static (v, lo, hi, d, s) =>
-                K.LaunchClampUInt32Kernel(v, lo, hi, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        ClampCase(nameof(K.ClampInt64Kernel), reversed, s_int64Boundaries, s_nextInt64, s_int64ClampRows,
-            static (v, lo, hi, d, s) =>
-                K.LaunchClampInt64Kernel(v, lo, hi, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        ClampCase(nameof(K.ClampUInt64Kernel), reversed, s_uint64Boundaries, s_nextUInt64, s_uint64ClampRows,
-            static (v, lo, hi, d, s) =>
-                K.LaunchClampUInt64Kernel(v, lo, hi, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        ClampCase(nameof(K.ClampIntPtrKernel), reversed, s_int64Boundaries, s_nextInt64, s_int64ClampRows,
-            static (v, lo, hi, d, s) =>
-                K.LaunchClampIntPtrKernel(v, lo, hi, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        ClampCase(nameof(K.ClampUIntPtrKernel), reversed, s_uint64Boundaries, s_nextUInt64, s_uint64ClampRows,
-            static (v, lo, hi, d, s) =>
-                K.LaunchClampUIntPtrKernel(v, lo, hi, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX)),
+        ClampCase(nameof(IntegerMinMaxClampDifferentialKernels.ClampSByteKernel), reversed, s_sbyteBoundaries, s_nextSByte, s_sbyteClampRows,
+            static (v, lo, hi, d, s) => IntegerMinMaxClampDifferentialKernels.LaunchClampSByteKernel(
+                inputs: new SByteClampInputs { Values = v, Minimums = lo, Maximums = hi },
+                results: d,
+                rows: s.Rows,
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX)),
+        ClampCase(nameof(IntegerMinMaxClampDifferentialKernels.ClampByteKernel), reversed, s_byteBoundaries, s_nextByte, s_byteClampRows,
+            static (v, lo, hi, d, s) => IntegerMinMaxClampDifferentialKernels.LaunchClampByteKernel(
+                inputs: new ByteClampInputs { Values = v, Minimums = lo, Maximums = hi },
+                results: d,
+                rows: s.Rows,
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX)),
+        ClampCase(nameof(IntegerMinMaxClampDifferentialKernels.ClampInt16Kernel), reversed, s_int16Boundaries, s_nextInt16, s_int16ClampRows,
+            static (v, lo, hi, d, s) => IntegerMinMaxClampDifferentialKernels.LaunchClampInt16Kernel(
+                inputs: new Int16ClampInputs { Values = v, Minimums = lo, Maximums = hi },
+                results: d,
+                rows: s.Rows,
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX)),
+        ClampCase(nameof(IntegerMinMaxClampDifferentialKernels.ClampUInt16Kernel), reversed, s_uint16Boundaries, s_nextUInt16, s_uint16ClampRows,
+            static (v, lo, hi, d, s) => IntegerMinMaxClampDifferentialKernels.LaunchClampUInt16Kernel(
+                inputs: new UInt16ClampInputs { Values = v, Minimums = lo, Maximums = hi },
+                results: d,
+                rows: s.Rows,
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX)),
+        ClampCase(nameof(IntegerMinMaxClampDifferentialKernels.ClampUInt32Kernel), reversed, s_uint32Boundaries, s_nextUInt32, s_uint32ClampRows,
+            static (v, lo, hi, d, s) => IntegerMinMaxClampDifferentialKernels.LaunchClampUInt32Kernel(
+                inputs: new UInt32ClampInputs { Values = v, Minimums = lo, Maximums = hi },
+                results: d,
+                rows: s.Rows,
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX)),
+        ClampCase(nameof(IntegerMinMaxClampDifferentialKernels.ClampInt64Kernel), reversed, s_int64Boundaries, s_nextInt64, s_int64ClampRows,
+            static (v, lo, hi, d, s) => IntegerMinMaxClampDifferentialKernels.LaunchClampInt64Kernel(
+                inputs: new Int64ClampInputs { Values = v, Minimums = lo, Maximums = hi },
+                results: d,
+                rows: s.Rows,
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX)),
+        ClampCase(nameof(IntegerMinMaxClampDifferentialKernels.ClampUInt64Kernel), reversed, s_uint64Boundaries, s_nextUInt64, s_uint64ClampRows,
+            static (v, lo, hi, d, s) => IntegerMinMaxClampDifferentialKernels.LaunchClampUInt64Kernel(
+                inputs: new UInt64ClampInputs { Values = v, Minimums = lo, Maximums = hi },
+                results: d,
+                rows: s.Rows,
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX)),
+        ClampCase(nameof(IntegerMinMaxClampDifferentialKernels.ClampIntPtrKernel), reversed, s_int64Boundaries, s_nextInt64, s_int64ClampRows,
+            static (v, lo, hi, d, s) => IntegerMinMaxClampDifferentialKernels.LaunchClampIntPtrKernel(
+                inputs: new Int64ClampInputs { Values = v, Minimums = lo, Maximums = hi },
+                results: d,
+                rows: s.Rows,
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX)),
+        ClampCase(nameof(IntegerMinMaxClampDifferentialKernels.ClampUIntPtrKernel), reversed, s_uint64Boundaries, s_nextUInt64, s_uint64ClampRows,
+            static (v, lo, hi, d, s) => IntegerMinMaxClampDifferentialKernels.LaunchClampUIntPtrKernel(
+                inputs: new UInt64ClampInputs { Values = v, Minimums = lo, Maximums = hi },
+                results: d,
+                rows: s.Rows,
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX)),
     ];
 
     // The value case runs the default seeds; the reversed case runs seed 0 with the bounds of row 0 swapped
@@ -258,7 +274,7 @@ public class IntegerMinMaxClampDifferentialTests
         };
 
     internal static readonly DifferentialCase s_integerSign =
-        new(KernelName(nameof(K.IntegerSignKernel)))
+        new(KernelName(nameof(IntegerMinMaxClampDifferentialKernels.IntegerSignKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
         Inputs = static (rng, shape) =>
@@ -273,15 +289,18 @@ public class IntegerMinMaxClampDifferentialTests
                 .In("sV", sV, readOnly: true)
                 .In("iV", iV, readOnly: true)
                 .In("lV", lV, readOnly: true)
-                .Out<int>("dst", rows, K.SignColumns, OutputPolicy.Exact);
+                .Out<int>("dst", rows, IntegerMinMaxClampDifferentialKernels.SignColumns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => K.LaunchIntegerSignKernel(
-            b.Get<sbyte>("sbV"),
-            b.Get<short>("sV"),
-            b.Get<int>("iV"),
-            b.Get<long>("lV"),
-            b.Get<int>("dst"),
-            s.Rows,
+        Launch = static (b, s) => IntegerMinMaxClampDifferentialKernels.LaunchIntegerSignKernel(
+            inputs: new IntegerSignInputs
+            {
+                Signed8Values = b.Get<sbyte>("sbV"),
+                Signed16Values = b.Get<short>("sV"),
+                Signed32Values = b.Get<int>("iV"),
+                Signed64Values = b.Get<long>("lV"),
+            },
+            results: b.Get<int>("dst"),
+            rows: s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,
@@ -316,7 +335,7 @@ public class IntegerMinMaxClampDifferentialTests
     }
 
     internal static readonly DifferentialCase s_mixedOperand =
-        new(KernelName(nameof(K.MixedOperandKernel)))
+        new(KernelName(nameof(IntegerMinMaxClampDifferentialKernels.MixedOperandKernel)))
     {
         Shape = LaunchShapes.Linear(128, 32),
         Seeds = [0],
@@ -327,23 +346,26 @@ public class IntegerMinMaxClampDifferentialTests
             .In("sb", Cycle(s_mixedSByte, shape.Rows), readOnly: true)
             .In("u", Cycle(s_mixedUInt32, shape.Rows), readOnly: true)
             .In("iv", Cycle(s_mixedInt32, shape.Rows), readOnly: true)
-            .Out<long>("r", shape.Rows, K.MixedOperandColumns, OutputPolicy.Exact),
-        Launch = static (b, s) => K.LaunchMixedOperandKernel(
-            b.Get<long>("l"),
-            b.Get<byte>("b"),
-            b.Get<ushort>("us"),
-            b.Get<sbyte>("sb"),
-            b.Get<uint>("u"),
-            b.Get<int>("iv"),
-            b.Get<long>("r"),
-            s.Rows,
+            .Out<long>("r", shape.Rows, IntegerMinMaxClampDifferentialKernels.MixedOperandColumns, OutputPolicy.Exact),
+        Launch = static (b, s) => IntegerMinMaxClampDifferentialKernels.LaunchMixedOperandKernel(
+            inputs: new MixedOperandInputs
+            {
+                Signed64Values = b.Get<long>("l"),
+                Unsigned8Values = b.Get<byte>("b"),
+                Unsigned16Values = b.Get<ushort>("us"),
+                Signed8Values = b.Get<sbyte>("sb"),
+                Unsigned32Values = b.Get<uint>("u"),
+                Signed32Values = b.Get<int>("iv"),
+            },
+            results: b.Get<long>("r"),
+            rows: s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_narrowResult =
-        new(KernelName(nameof(K.NarrowResultKernel)))
+        new(KernelName(nameof(IntegerMinMaxClampDifferentialKernels.NarrowResultKernel)))
     {
         Shape = LaunchShapes.Linear(128, 32),
         Seeds = [0],
@@ -352,21 +374,24 @@ public class IntegerMinMaxClampDifferentialTests
             .In("sb", Cycle(s_mixedSByte, shape.Rows), readOnly: true)
             .In("us", Cycle(s_mixedUInt16, shape.Rows), readOnly: true)
             .In("s", Cycle(s_mixedInt16, shape.Rows), readOnly: true)
-            .Out<long>("r", shape.Rows, K.NarrowResultColumns, OutputPolicy.Exact),
-        Launch = static (b, s) => K.LaunchNarrowResultKernel(
-            b.Get<byte>("b"),
-            b.Get<sbyte>("sb"),
-            b.Get<ushort>("us"),
-            b.Get<short>("s"),
-            b.Get<long>("r"),
-            s.Rows,
+            .Out<long>("r", shape.Rows, IntegerMinMaxClampDifferentialKernels.NarrowResultColumns, OutputPolicy.Exact),
+        Launch = static (b, s) => IntegerMinMaxClampDifferentialKernels.LaunchNarrowResultKernel(
+            inputs: new NarrowResultInputs
+            {
+                Unsigned8Values = b.Get<byte>("b"),
+                Signed8Values = b.Get<sbyte>("sb"),
+                Unsigned16Values = b.Get<ushort>("us"),
+                Signed16Values = b.Get<short>("s"),
+            },
+            results: b.Get<long>("r"),
+            rows: s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_narrowArgument =
-        new(KernelName(nameof(K.NarrowArgumentKernel)))
+        new(KernelName(nameof(IntegerMinMaxClampDifferentialKernels.NarrowArgumentKernel)))
     {
         Shape = LaunchShapes.Linear(128, 32),
         Seeds = [0],
@@ -374,13 +399,16 @@ public class IntegerMinMaxClampDifferentialTests
             .In("b", Cycle(s_mixedByte, shape.Rows), readOnly: true)
             .In("sb", Cycle(s_mixedSByte, shape.Rows), readOnly: true)
             .In("us", Cycle(s_mixedUInt16, shape.Rows), readOnly: true)
-            .Out<long>("r", shape.Rows, K.NarrowArgumentColumns, OutputPolicy.Exact),
-        Launch = static (b, s) => K.LaunchNarrowArgumentKernel(
-            b.Get<byte>("b"),
-            b.Get<sbyte>("sb"),
-            b.Get<ushort>("us"),
-            b.Get<long>("r"),
-            s.Rows,
+            .Out<long>("r", shape.Rows, IntegerMinMaxClampDifferentialKernels.NarrowArgumentColumns, OutputPolicy.Exact),
+        Launch = static (b, s) => IntegerMinMaxClampDifferentialKernels.LaunchNarrowArgumentKernel(
+            inputs: new NarrowArgumentInputs
+            {
+                Unsigned8Values = b.Get<byte>("b"),
+                Signed8Values = b.Get<sbyte>("sb"),
+                Unsigned16Values = b.Get<ushort>("us"),
+            },
+            results: b.Get<long>("r"),
+            rows: s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,

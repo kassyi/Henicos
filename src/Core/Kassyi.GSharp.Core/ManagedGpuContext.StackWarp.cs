@@ -7,7 +7,10 @@ namespace Kassyi.GSharp.Core;
 // instance of the call (the same records as the state machine, ManagedGpuContext.WarpRendezvous.cs), gives the baton to
 // the scheduler, and reads once the scheduler finds the lanes of its mask met there (WarpCanRun). The instance is the
 // same as in the state machine: the path of a frame is its offset in the visit counts of the GPU thread, fixed at
-// compile time per static call path, and a count adds up over every call through the same path.
+// compile time per static call path, and a count adds up over every call through the same path. A method that reaches
+// Warp.ActiveMask() also enters and leaves the reconvergence regions of the state machine, and a lane that arrives where
+// a region ends leaves its stack until the lanes that entered it with it have arrived (the same records and decision as
+// the state machine, WarpCanRun).
 public static partial class ManagedGpuContext
 {
     /// <summary>
@@ -299,6 +302,80 @@ public static partial class ManagedGpuContext
         __gsharp_warp_sync_read(0, ref at, site, mask, location);
     }
 
+    /// <summary>Internal: <c>Warp.ActiveMask()</c> on the managed stack model. Do not use directly.</summary>
+    /// <param name="frame">The offset of the caller's frame in the visit counts.</param>
+    /// <param name="site">The number of the call in the body of its function.</param>
+    /// <param name="location">The place of the call in the C# source, for the error messages.</param>
+    /// <returns>The lanes of the caller's warp that stopped at the same call in the same round.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static uint __gsharp_stack_warp_active_mask(int frame, int site, string location)
+    {
+        // [WHY] The lanes that reach the call together are the ones that published it in the same round, so the lane
+        // leaves its stack also when no other lane is on the way, as every collective does
+        var at = MeetStackWarp(frame, site, 0u, 0u, "Warp.ActiveMask", location);
+        return __gsharp_warp_active_mask_read(0, ref at, site, location);
+    }
+
+    /// <summary>
+    /// Internal: the calling lane enters a thread-dependent branch or loop of a method that reaches
+    /// <c>Warp.ActiveMask()</c>, on the managed stack model. Do not use directly.
+    /// </summary>
+    /// <param name="frame">The offset of the frame the branch is in, in the visit counts.</param>
+    /// <param name="site">The number of the branch in the body of its function.</param>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static void __gsharp_stack_warp_region_enter(int frame, int site)
+    {
+        var at = StackWarpRegionFrame(frame, site, "enters");
+        __gsharp_warp_region_enter(0, ref at, site);
+    }
+
+    /// <summary>
+    /// Internal: the calling lane leaves a branch by a jump out of it, on the managed stack model. Do not use directly.
+    /// </summary>
+    /// <param name="frame">The offset of the frame the branch is in, in the visit counts.</param>
+    /// <param name="site">The number of the branch in the body of its function.</param>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static void __gsharp_stack_warp_region_leave(int frame, int site)
+    {
+        var at = StackWarpRegionFrame(frame, site, "leaves");
+        __gsharp_warp_region_leave(0, ref at, site);
+    }
+
+    /// <summary>
+    /// Internal: the calling lane arrives where the innermost branch it is inside ends, waits until the lanes that
+    /// entered the branch with it have arrived or left, and leaves the branch, on the managed stack model. Do not use
+    /// directly.
+    /// </summary>
+    /// <param name="frame">The offset of the frame the branch is in, in the visit counts.</param>
+    /// <param name="site">The number of the branch in the body of its function.</param>
+    /// <param name="location">The place of the branch in the C# source, for the error message of a stall.</param>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static void __gsharp_stack_warp_reconverge(int frame, int site, string location)
+    {
+        var at = StackWarpRegionFrame(frame, site, "reconverges at");
+        __gsharp_warp_reconverge_arrive(0, ref at, site, location);
+        // [WHY] The scheduler runs the lane again once DecideReconvergence (WarpCanRun) lets it pass: the state
+        // machine returns after the arrival in the same way
+        WaitForScheduler(StackWarpSelf());
+        __gsharp_warp_reconverge_pass(0, ref at, site);
+    }
+
+    // The frame of a reconvergence region: the frame must lie in the counts that begin cleared for this GPU thread,
+    // which also rules out a region before begin. [WHY] Its offset is the path that the regions of the warp are matched
+    // by; one outside the counts of the kernel is a G# bug, never a path of its own
+    private static ManagedStackWarpFrame StackWarpRegionFrame(int frame, int site, string what)
+    {
+        var self = StackWarpSelf();
+        if (frame < 0 || site < 0 || frame >= self.WarpVisitCount)
+        {
+            throw new InvalidOperationException(
+                $"G#: internal error: a lane {what} branch {site} of frame {frame}, outside the " +
+                $"{self.WarpVisitCount} visit counts of its kernel (please report this G# bug)");
+        }
+
+        return new ManagedStackWarpFrame(self.WarpVisits, frame);
+    }
+
     // [WHY] Publishes, then always gives the baton to the scheduler, also when no lane of the mask is missing: the lanes
     // of a group must go on in the same round (WarpCanRun), and a lane publishes at most once per round, which the two
     // record slots of a lane rely on. The scheduler runs the lane again once the lanes of its mask met there
@@ -316,11 +393,18 @@ public static partial class ManagedGpuContext
                 "(please report this G# bug)");
         }
 
+        var at = new ManagedStackWarpFrame(self.WarpVisits, frame);
+        __gsharp_warp_publish(0, ref at, site, mask, value, name, location);
+        WaitForScheduler(self);
+        return at;
+    }
+
+    // Gives the baton to the scheduler until it runs the lane again (WarpCanRun), at a collective or where a branch ends
+    private static void WaitForScheduler(ManagedStackThread self)
+    {
         var launch = self.Launch ?? throw new InvalidOperationException(
             "G#: internal error: a warp collective of the stack model runs outside a launch " +
             "(please report this G# bug)");
-        var at = new ManagedStackWarpFrame(self.WarpVisits, frame);
-        __gsharp_warp_publish(0, ref at, site, mask, value, name, location);
         self.AtWarp = true;
         ManagedBaton.HandOver(launch.Scheduler, self.Go);
         self.AtWarp = false;
@@ -328,8 +412,6 @@ public static partial class ManagedGpuContext
         {
             throw new ManagedLaunchCancelledException();
         }
-
-        return at;
     }
 
     // The GPU thread that the calling OS thread runs on the managed stack model, in a launch whose scheduler runs the

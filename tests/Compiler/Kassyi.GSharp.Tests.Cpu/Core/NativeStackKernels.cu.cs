@@ -13,6 +13,14 @@ public struct NativeStackRecorder : IDisposable
     public void Dispose() => Log[Slot] = Marker;
 }
 
+public struct FailureAfterBarrierBuffers
+{
+    [GpuReadOnly]
+    public int[] Source;
+    public int[] Before;
+    public int[] After;
+}
+
 [SkipSnapshotConsistency("Covered by NativeStackModelGeneratorTests; tests native stack execution")]
 public static partial class NativeStackKernels
 {
@@ -136,8 +144,11 @@ public static partial class NativeStackKernels
 
     [GpuKernel]
     public static void FailureAfterBarrierKernel(
-        int[] source, int[] before, int[] after, int failingThread, int badIndex)
+        FailureAfterBarrierBuffers buffers, int failingThread, int badIndex)
     {
+        int[] source = buffers.Source;
+        int[] before = buffers.Before;
+        int[] after = buffers.After;
         int tid = ThreadIndex.X;
         before[tid] = tid + 100;
         Gpu.SyncThreads();

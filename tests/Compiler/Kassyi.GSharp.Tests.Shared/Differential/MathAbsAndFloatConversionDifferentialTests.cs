@@ -19,13 +19,9 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [Collection(TestCollections.IntegerTrapAndCheckedDifferential)]
 public class MathAbsAndFloatConversionDifferentialTests
 {
-    internal static readonly DifferentialCase s_mathAbsInt32 = new(
-        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.MathAbsInt32Kernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1],
-        OracleExceptions = OracleExceptionMode.MatchOracle,
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_mathAbsInt32 = DiffCases.Create(
+        IntegerTrapAndCheckedDifferentialKernels.LaunchMathAbsInt32Kernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             int[] safeVals = [0, 1, -1, 2, -2, int.MaxValue, int.MinValue + 1, -32768, -128];
@@ -44,22 +40,14 @@ public class MathAbsAndFloatConversionDifferentialTests
                 .In("vals", vals, readOnly: true)
                 .Out<int>("dst", rows, ["abs_int32"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchMathAbsInt32Kernel(
-            b.Get<int>("vals"),
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        inputName: "vals",
+        seeds: [0, 1],
+        oracleExceptions: OracleExceptionMode.MatchOracle);
 
-    internal static readonly DifferentialCase s_mathAbsInt64 = new(
-        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.MathAbsInt64Kernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1],
-        OracleExceptions = OracleExceptionMode.MatchOracle,
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_mathAbsInt64 = DiffCases.Create(
+        IntegerTrapAndCheckedDifferentialKernels.LaunchMathAbsInt64Kernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             long[] safeVals = [0, 1, -1, 2, -2, long.MaxValue, long.MinValue + 1, -4294967296L];
@@ -78,22 +66,14 @@ public class MathAbsAndFloatConversionDifferentialTests
                 .In("vals", vals, readOnly: true)
                 .Out<long>("dst", rows, ["abs_int64"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchMathAbsInt64Kernel(
-            b.Get<long>("vals"),
-            b.Get<long>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        inputName: "vals",
+        seeds: [0, 1],
+        oracleExceptions: OracleExceptionMode.MatchOracle);
 
-    internal static readonly DifferentialCase s_mathAbsInt16 = new(
-        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.MathAbsInt16Kernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1],
-        OracleExceptions = OracleExceptionMode.MatchOracle,
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_mathAbsInt16 = DiffCases.CreateRows<short, short>(
+        IntegerTrapAndCheckedDifferentialKernels.LaunchMathAbsInt16Kernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             short[] safeVals = [0, 1, -1, 2, -2, short.MaxValue, short.MinValue + 1, -128];
@@ -112,22 +92,14 @@ public class MathAbsAndFloatConversionDifferentialTests
                 .In("vals", vals, readOnly: true)
                 .Out<short>("dst", rows, ["abs_int16"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchMathAbsInt16Kernel(
-            b.Get<short>("vals"),
-            b.Get<short>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        inputName: "vals",
+        seeds: [0, 1],
+        oracleExceptions: OracleExceptionMode.MatchOracle);
 
-    internal static readonly DifferentialCase s_mathAbsSByte = new(
-        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.MathAbsSByteKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1],
-        OracleExceptions = OracleExceptionMode.MatchOracle,
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_mathAbsSByte = DiffCases.CreateRows<sbyte, sbyte>(
+        IntegerTrapAndCheckedDifferentialKernels.LaunchMathAbsSByteKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             sbyte[] safeVals = [0, 1, -1, 2, -2, sbyte.MaxValue, sbyte.MinValue + 1, -64];
@@ -146,22 +118,14 @@ public class MathAbsAndFloatConversionDifferentialTests
                 .In("vals", vals, readOnly: true)
                 .Out<sbyte>("dst", rows, ["abs_sbyte"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchMathAbsSByteKernel(
-            b.Get<sbyte>("vals"),
-            b.Get<sbyte>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        inputName: "vals",
+        seeds: [0, 1],
+        oracleExceptions: OracleExceptionMode.MatchOracle);
 
-    internal static readonly DifferentialCase s_mathAbsIntPtr = new(
-        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.MathAbsIntPtrKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1],
-        OracleExceptions = OracleExceptionMode.MatchOracle,
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_mathAbsIntPtr = DiffCases.Create(
+        IntegerTrapAndCheckedDifferentialKernels.LaunchMathAbsIntPtrKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             long[] safeVals =
@@ -183,20 +147,14 @@ public class MathAbsAndFloatConversionDifferentialTests
                 .In("vals", vals, readOnly: true)
                 .Out<long>("dst", rows, ["abs_nint"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchMathAbsIntPtrKernel(
-            b.Get<long>("vals"),
-            b.Get<long>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        inputName: "vals",
+        seeds: [0, 1],
+        oracleExceptions: OracleExceptionMode.MatchOracle);
 
-    internal static readonly DifferentialCase s_mathAbsSingle = new(
-        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.MathAbsSingleKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_mathAbsSingle = DiffCases.Create(
+        IntegerTrapAndCheckedDifferentialKernels.LaunchMathAbsSingleKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             var vals = DiffValues.Single(rng, rows);
@@ -209,20 +167,12 @@ public class MathAbsAndFloatConversionDifferentialTests
                 .In("vals", vals, readOnly: true)
                 .Out<float>("dst", rows, ["abs_single"], OutputPolicy.Bitwise);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchMathAbsSingleKernel(
-            b.Get<float>("vals"),
-            b.Get<float>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        inputName: "vals");
 
-    internal static readonly DifferentialCase s_mathAbsDouble = new(
-        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.MathAbsDoubleKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Inputs = static (_, shape) =>
+    internal static readonly DifferentialCase s_mathAbsDouble = DiffCases.CreateRows<double, double>(
+        IntegerTrapAndCheckedDifferentialKernels.LaunchMathAbsDoubleKernel,
+        inputs: static (_, shape) =>
         {
             int rows = shape.Rows;
             var vals = new double[rows];
@@ -235,14 +185,8 @@ public class MathAbsAndFloatConversionDifferentialTests
                 .In("vals", vals, readOnly: true)
                 .Out<double>("dst", rows, ["abs_double"], OutputPolicy.Bitwise);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchMathAbsDoubleKernel(
-            b.Get<double>("vals"),
-            b.Get<double>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        inputName: "vals");
 
     internal static readonly DifferentialCase s_floatDivisionByZero = new(
         KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.FloatDivisionByZeroKernel)))
@@ -265,21 +209,25 @@ public class MathAbsAndFloatConversionDifferentialTests
                 .Out<double>("dDst", rows, ["d_div_zero", "d_rem_zero"], OutputPolicy.Bitwise);
         },
         Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchFloatDivisionByZeroKernel(
-            b.Get<float>("fVals"),
-            b.Get<double>("dVals"),
-            b.Get<float>("fDst"),
-            b.Get<double>("dDst"),
-            s.Rows,
+            operands: new FloatDivisionOperands
+            {
+                SingleValues = b.Get<float>("fVals"),
+                DoubleValues = b.Get<double>("dVals"),
+            },
+            results: new FloatDivisionResults
+            {
+                SingleResults = b.Get<float>("fDst"),
+                DoubleResults = b.Get<double>("dDst"),
+            },
+            rows: s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,
     };
 
-    internal static readonly DifferentialCase s_floatToIntegerConversion = new(
-        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.FloatToIntegerConversionKernel)))
-    {
-        Shape = LaunchShapes.PartialWarp(74, 37),
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_floatToIntegerConversion = DiffCases.CreateRows<float, double, int>(
+        IntegerTrapAndCheckedDifferentialKernels.LaunchFloatToIntegerConversionKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             var fVals = DiffValues.Single(rng, rows);
@@ -298,15 +246,9 @@ public class MathAbsAndFloatConversionDifferentialTests
                     IntegerTrapAndCheckedDifferentialKernels.FloatToIntegerConversionColumns,
                     OutputPolicy.Exact);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchFloatToIntegerConversionKernel(
-            b.Get<float>("fVals"),
-            b.Get<double>("dVals"),
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.PartialWarp(74, 37),
+        firstInputName: "fVals",
+        secondInputName: "dVals");
 
     [SkippableFact]
     public void MathAbs_Int32_MatchesTheOracleOnEveryPath() =>

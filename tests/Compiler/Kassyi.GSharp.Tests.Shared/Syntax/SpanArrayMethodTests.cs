@@ -79,7 +79,11 @@ public partial class SpanArrayMethodTests : SpanKernelPathTestBase
         Run(managed, () => SpanWriteKernels.LaunchArrayCopy3Kernel(
             src, dst3, 5, gridDimX: GridDimX, blockDimX: BlockDimX));
         Run(managed, () => SpanWriteKernels.LaunchArrayCopy5Kernel(
-            src, 2, dst5, 3, 4, gridDimX: GridDimX, blockDimX: BlockDimX));
+            source: new ArraySliceSource { Buffer = src, StartIndex = 2 },
+            destination: new ArraySliceDestination { Buffer = dst5, StartIndex = 3 },
+            length: 4,
+            gridDimX: GridDimX,
+            blockDimX: BlockDimX));
 
         Assert.Equal(expected3, dst3);
         Assert.Equal(expected5, dst5);

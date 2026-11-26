@@ -7,7 +7,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 /// </summary>
 internal class VectorWhereExpression(
     [TakesOwnership] IGpuBigIntVectorExpression source,
-    [TakesOwnership] IGpuBoolVectorExpression predicate) : IGpuBigIntVectorExpression, IIntVectorOperator
+    [TakesOwnership] IGpuBoolVectorExpression predicate)
+    : IGpuBigIntVectorExpression, IIntVectorOperator, IIndexSpaceBoundary
 {
     public int Length => DeviceCounted.KnownLength(this);
 
@@ -55,6 +56,14 @@ internal class VectorWhereExpression(
     // The source and the predicate are read whole; the selection is cut to the window
     public VectorRequest OperandRequest(in VectorRequest request) => VectorRequest.Whole;
 
+    public void BeginOperand(int index)
+    {
+        if (_inputsMayThrow)
+        {
+            PendingThrows.OpenSpace();
+        }
+    }
+
     public VectorResult Apply(GpuWorkspace workspace, scoped in VectorRequest request, VectorResult first,
         VectorResult second)
     {
@@ -67,7 +76,13 @@ internal class VectorWhereExpression(
         var evaluatedSource = second.Int;
         var selected = _state.Select<IntVectorResultKind, GpuBigIntArrayView>(workspace, evaluatedSource.Storage,
             evaluatedSource.Count, first.Bool, Capacity, WordsPerElement, request.Offset, request.Count,
-            out var count);
+            out var count, out var scan);
+        if (_inputsMayThrow)
+        {
+            _state.RecordTranslated(workspace, evaluatedSource.Count, first.Bool.Count, scan, request.Offset,
+                request.EvalCount(Capacity));
+        }
+
         return VectorResult.Of(new VectorEvaluation(selected, count));
     }
 
@@ -82,7 +97,9 @@ internal class VectorWhereExpression(
         }
 
         var operandRequest = OperandRequest(request);
+        BeginOperand(0);
         var first = VectorWalk.EvaluateDirect(predicate, workspace, operandRequest, level);
+        BeginOperand(1);
         var second = VectorWalk.EvaluateDirect(source, workspace, operandRequest, level);
         return Apply(workspace, request, first, second);
     }

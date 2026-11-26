@@ -20,14 +20,17 @@ public partial class DeviceErrorChannelTests
 
         var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
             DeviceErrorChannelKernels.LaunchCoordinate3DTrapKernel(
-                data,
-                targetTx: 2,
-                targetTy: 1,
-                targetTz: 1,
-                targetBx: 1,
-                targetBy: 2,
-                targetBz: 1,
-                result,
+                data: data,
+                target: new TrapTargetCoordinates
+                {
+                    ThreadX = 2,
+                    ThreadY = 1,
+                    ThreadZ = 1,
+                    BlockX = 1,
+                    BlockY = 2,
+                    BlockZ = 1,
+                },
+                result: result,
                 gridDimX: 3,
                 gridDimY: 4,
                 gridDimZ: 2,

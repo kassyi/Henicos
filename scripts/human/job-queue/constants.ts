@@ -41,6 +41,10 @@ export const HistoryCommands = 500;
 export const RegrantMs = 5 * 1000; // how often the scheduler re-orders and grants while jobs wait
 // A probe result of a turn resource serves a grant for this long; an older one is measured again
 export const ProbeFreshMs = 5 * 1000;
+// A remote worker's health probe stays fresh for this long (avoids frequent SSH handshakes / ufw limit 22/tcp)
+export const RemoteProbeFreshMs = 60 * 1000;
+// After a failed remote probe, wait this long before probing again so jobs fall back to local at once
+export const RemoteProbeRetryMs = 15 * 1000;
 // The least time between two probes of one resource (the server starts them)
 export const ProbeIntervalMs = 5 * 1000;
 // How long a probe may run when the configuration gives no timeout
@@ -77,6 +81,17 @@ export const PolicyVariable = "GSHARP_JOB_QUEUE_POLICY";
 export const PortVariable = "GSHARP_JOB_QUEUE_PORT";
 export const SlotsVariable = "GSHARP_JOB_QUEUE_SLOTS";
 export const MemoryVariable = "GSHARP_JOB_QUEUE_MEMORY_MB";
+/** "0": disable transparent remote offload; "1": allow (default when configured). */
+export const OffloadVariable = "GSHARP_JOB_QUEUE_OFFLOAD";
+/** "0": keep --disable-build-servers / -nodeReuse:false on remote Linux runs instead of keeping VBCSCompiler warm. */
+export const KeepBuildServersWarmVariable = "GSHARP_JOB_QUEUE_REMOTE_WARM_SERVERS";
+
+export const RemoteModes = ["prefer-remote", "remote-only", "spillover", "off"] as const;
+export type RemoteMode = (typeof RemoteModes)[number];
+
+export function isRemoteMode(text: unknown): text is RemoteMode {
+  return typeof text === "string" && (RemoteModes as readonly string[]).includes(text);
+}
 
 export const Shells = ["bash", "pwsh", "powershell", "cmd", "sh"] as const;
 export type ShellName = (typeof Shells)[number];

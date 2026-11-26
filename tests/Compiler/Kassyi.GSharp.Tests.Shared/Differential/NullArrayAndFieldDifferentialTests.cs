@@ -35,76 +35,42 @@ public class NullArrayAndFieldDifferentialTests
         OracleIsLaunch = true,
     };
 
-    internal static readonly DifferentialCase s_nullArrayLengthTrap = new(
-        KernelName(nameof(BoundsAndMemoryDifferentialKernels.NullArrayLengthTrapKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        ExpectedException = static (_, _) => NullArrayRead(337, 18),
-        Inputs = static (_, shape) => new DiffBuffers()
+    internal static readonly DifferentialCase s_nullArrayLengthTrap = DiffCases.Create(
+        BoundsAndMemoryDifferentialKernels.LaunchNullArrayLengthTrapKernel,
+        inputs: static (_, shape) => new DiffBuffers()
             .Out<int>("dst", shape.Rows, ["trap_val"], OutputPolicy.Exact),
-        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchNullArrayLengthTrapKernel(
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        bufferName: "dst",
+        expectedException: static (_, _) => NullArrayRead(353, 18));
 
-    internal static readonly DifferentialCase s_nullArrayIndexerTrap = new(
-        KernelName(nameof(BoundsAndMemoryDifferentialKernels.NullArrayIndexerTrapKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        ExpectedException = static (_, _) => NullArrayRead(356, 18),
-        Inputs = static (_, shape) => new DiffBuffers()
+    internal static readonly DifferentialCase s_nullArrayIndexerTrap = DiffCases.Create(
+        BoundsAndMemoryDifferentialKernels.LaunchNullArrayIndexerTrapKernel,
+        inputs: static (_, shape) => new DiffBuffers()
             .Out<int>("dst", shape.Rows, ["trap_val"], OutputPolicy.Exact),
-        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchNullArrayIndexerTrapKernel(
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        bufferName: "dst",
+        expectedException: static (_, _) => NullArrayRead(372, 18));
 
-    internal static readonly DifferentialCase s_nullArrayForeachTrap = new(
-        KernelName(nameof(BoundsAndMemoryDifferentialKernels.NullArrayForeachTrapKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        ExpectedException = static (_, _) => NullArrayRead(376, 27),
-        Inputs = static (_, shape) => new DiffBuffers()
+    internal static readonly DifferentialCase s_nullArrayForeachTrap = DiffCases.Create(
+        BoundsAndMemoryDifferentialKernels.LaunchNullArrayForeachTrapKernel,
+        inputs: static (_, shape) => new DiffBuffers()
             .Out<int>("dst", shape.Rows, ["trap_val"], OutputPolicy.Exact),
-        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchNullArrayForeachTrapKernel(
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        bufferName: "dst",
+        expectedException: static (_, _) => NullArrayRead(392, 27));
 
-    internal static readonly DifferentialCase s_nullArrayReassignedParameterTrap = new(
-        KernelName(nameof(BoundsAndMemoryDifferentialKernels.NullArrayReassignedParameterTrapKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        ExpectedException = static (_, _) => NullArrayRead(405, 18),
-        Inputs = static (rng, shape) => new DiffBuffers()
+    internal static readonly DifferentialCase s_nullArrayReassignedParameterTrap = DiffCases.Create(
+        BoundsAndMemoryDifferentialKernels.LaunchNullArrayReassignedParameterTrapKernel,
+        inputs: static (rng, shape) => new DiffBuffers()
             .In("src", DiffValues.Int32(rng, shape.Rows), readOnly: true)
             .Out<int>("dst", shape.Rows, ["trap_val"], OutputPolicy.Exact),
-        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchNullArrayReassignedParameterTrapKernel(
-            b.Get<int>("src"),
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        inputName: "src",
+        expectedException: static (_, _) => NullArrayRead(421, 18));
 
-    internal static readonly DifferentialCase s_allThreadsNullDereferenceTrap = new(
-        KernelName(nameof(BoundsAndMemoryDifferentialKernels.AllThreadsNullDereferenceTrapKernel)))
-    {
-        Shape = new LaunchShape(2, 2, 2, 4, 4, 2, SimultaneousRows),
-        Seeds = [0, 1],
-        OracleExceptions = OracleExceptionMode.MatchOracle,
-        ExpectedException = static (rng, _) => rng.Seed == 1 ? NullArrayRead(568, 22) : null,
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_allThreadsNullDereferenceTrap = DiffCases.Create(
+        BoundsAndMemoryDifferentialKernels.LaunchAllThreadsNullDereferenceTrapKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             var flags = new int[rows];
@@ -117,50 +83,31 @@ public class NullArrayAndFieldDifferentialTests
                 .In("flags", flags, readOnly: true)
                 .Out<int>("dst", rows, ["trap_res"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchAllThreadsNullDereferenceTrapKernel(
-            b.Get<int>("flags"),
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            gridDimY: s.GridY,
-            gridDimZ: s.GridZ,
-            blockDimX: s.BlockX,
-            blockDimY: s.BlockY,
-            blockDimZ: s.BlockZ),
-        OracleIsLaunch = true,
-    };
+        shape: new LaunchShape(2, 2, 2, 4, 4, 2, SimultaneousRows),
+        inputName: "flags",
+        seeds: [0, 1],
+        oracleExceptions: OracleExceptionMode.MatchOracle,
+        expectedException: static (rng, _) => rng.Seed == 1 ? NullArrayRead(599, 22) : null);
 
     // A null read in a device function reports no site on CUDA (its message is not registered),
     // so only the type is checked
-    internal static readonly DifferentialCase s_gridStrideNullParameter = new(
-        KernelName(nameof(BoundsAndMemoryDifferentialKernels.GridStrideNullParameterKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1],
-        ExpectedException = static (rng, _) => rng.Seed == 1
-            ? new ExceptionPolicy(typeof(NullReferenceException), DiffPaths.CheckedPaths())
-            : null,
-        Inputs = static (rng, shape) => new DiffBuffers()
+    internal static readonly DifferentialCase s_gridStrideNullParameter = DiffCases.Create(
+        BoundsAndMemoryDifferentialKernels.LaunchGridStrideNullParameterKernel,
+        inputs: static (rng, shape) => new DiffBuffers()
             .In("src", DiffValues.Int32(rng, shape.Rows), readOnly: true)
             .In("flags", new[] { rng.Seed }, readOnly: true)
             .Out<int>("dst", shape.Rows, ["doubled"], OutputPolicy.Exact),
-        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchGridStrideNullParameterKernel(
-            b.Get<int>("src"),
-            b.Get<int>("flags"),
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        firstInputName: "src",
+        secondInputName: "flags",
+        seeds: [0, 1],
+        expectedException: static (rng, _) => rng.Seed == 1
+            ? new ExceptionPolicy(typeof(NullReferenceException), DiffPaths.CheckedPaths())
+            : null);
 
-    internal static readonly DifferentialCase s_allThreadsEmptyFirstTrap = new(
-        KernelName(nameof(BoundsAndMemoryDifferentialKernels.AllThreadsEmptyFirstTrapKernel)))
-    {
-        Shape = new LaunchShape(2, 2, 2, 4, 4, 2, SimultaneousRows),
-        Seeds = [0, 1],
-        OracleExceptions = OracleExceptionMode.MatchOracle,
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_allThreadsEmptyFirstTrap = DiffCases.Create(
+        BoundsAndMemoryDifferentialKernels.LaunchAllThreadsEmptyFirstTrapKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             var emptyArr = new int[4];
@@ -175,19 +122,11 @@ public class NullArrayAndFieldDifferentialTests
                 .In("flags", flags, readOnly: true)
                 .Out<int>("dst", rows, ["trap_res"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchAllThreadsEmptyFirstTrapKernel(
-            b.Get<int>("emptyArr"),
-            b.Get<int>("flags"),
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            gridDimY: s.GridY,
-            gridDimZ: s.GridZ,
-            blockDimX: s.BlockX,
-            blockDimY: s.BlockY,
-            blockDimZ: s.BlockZ),
-        OracleIsLaunch = true,
-    };
+        shape: new LaunchShape(2, 2, 2, 4, 4, 2, SimultaneousRows),
+        firstInputName: "emptyArr",
+        secondInputName: "flags",
+        seeds: [0, 1],
+        oracleExceptions: OracleExceptionMode.MatchOracle);
 
     [SkippableFact]
     public void NullArray_OptionalValid_MatchesTheOracleOnEveryPath() =>
@@ -223,25 +162,17 @@ public class NullArrayAndFieldDifferentialTests
     // as C# does; the type is the same
     [SkippableFact]
     public void NullValidation_NonNullableParameterNullArgument_ThrowsNullReferenceException() =>
-        DifferentialRunner.Run(new DifferentialCase(
-            KernelName(nameof(BoundsAndMemoryDifferentialKernels.NonNullableParameterNullArgumentKernel)))
-        {
-            Shape = LaunchShapes.Linear(DefaultRows, 32),
-            Seeds = [0, 1],
-            ExpectedException = static (rng, _) => rng.Seed == 1 ? NullArrayArgument(637, 25) : null,
-            Inputs = static (rng, shape) => new DiffBuffers()
+        DifferentialRunner.Run(DiffCases.Create(
+            BoundsAndMemoryDifferentialKernels.LaunchNonNullableParameterNullArgumentKernel,
+            inputs: static (rng, shape) => new DiffBuffers()
                 .In("src", DiffValues.Int32(rng, shape.Rows), readOnly: true)
                 .In("flags", new[] { rng.Seed }, readOnly: true)
                 .Out<int>("dst", shape.Rows, ["read"], OutputPolicy.Exact),
-            Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchNonNullableParameterNullArgumentKernel(
-                b.Get<int>("src"),
-                b.Get<int>("flags"),
-                b.Get<int>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX),
-            OracleIsLaunch = true,
-        });
+            shape: LaunchShapes.Linear(DefaultRows, 32),
+            firstInputName: "src",
+            secondInputName: "flags",
+            seeds: [0, 1],
+            expectedException: static (rng, _) => rng.Seed == 1 ? NullArrayArgument(668, 25) : null));
 
     // A null in a non-nullable array field of a struct argument reaches the kernel, as in a C# call, and throws where
     // the kernel reads it (holder.Data.Length in the index, evaluated before the element); a non-null one runs as the
@@ -253,7 +184,7 @@ public class NullArrayAndFieldDifferentialTests
         {
             Shape = LaunchShapes.Linear(DefaultRows, 32),
             Seeds = [0, 1],
-            ExpectedException = static (rng, _) => rng.Seed == 1 ? NullArrayRead(657, 34) : null,
+            ExpectedException = static (rng, _) => rng.Seed == 1 ? NullArrayRead(688, 34) : null,
             Inputs = static (rng, shape) => new DiffBuffers()
                 .InDeepScalar(
                     "holder",
@@ -289,7 +220,7 @@ public class NullArrayAndFieldDifferentialTests
         {
             Shape = LaunchShapes.Linear(DefaultRows, 32),
             Seeds = [0, 1],
-            ExpectedException = static (rng, _) => rng.Seed == 1 ? NullArrayArgument(691, 40) : null,
+            ExpectedException = static (rng, _) => rng.Seed == 1 ? NullArrayArgument(722, 40) : null,
             Inputs = static (rng, shape) => new DiffBuffers()
                 .InDeepScalar(
                     "holder",
@@ -323,23 +254,15 @@ public class NullArrayAndFieldDifferentialTests
     // place of the call on CUDA)
     [SkippableFact]
     public void NullValidation_GpuNotNull_ThrowsAtTheCall() =>
-        DifferentialRunner.Run(new DifferentialCase(
-            KernelName(nameof(BoundsAndMemoryDifferentialKernels.GpuNotNullKernel)))
-        {
-            Shape = LaunchShapes.Linear(DefaultRows, 32),
-            Seeds = [0, 1],
-            ExpectedException = static (rng, _) => rng.Seed == 1 ? NullArrayArgument(674, 23) : null,
-            Inputs = static (rng, shape) => new DiffBuffers()
+        DifferentialRunner.Run(DiffCases.Create(
+            BoundsAndMemoryDifferentialKernels.LaunchGpuNotNullKernel,
+            inputs: static (rng, shape) => new DiffBuffers()
                 .In("src", DiffValues.Int32(rng, shape.Rows), readOnly: true)
                 .In("flags", new[] { rng.Seed }, readOnly: true)
                 .Out<int>("dst", shape.Rows, ["value"], OutputPolicy.Exact),
-            Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchGpuNotNullKernel(
-                b.Get<int>("src"),
-                b.Get<int>("flags"),
-                b.Get<int>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX),
-            OracleIsLaunch = true,
-        });
+            shape: LaunchShapes.Linear(DefaultRows, 32),
+            firstInputName: "src",
+            secondInputName: "flags",
+            seeds: [0, 1],
+            expectedException: static (rng, _) => rng.Seed == 1 ? NullArrayArgument(705, 23) : null));
 }

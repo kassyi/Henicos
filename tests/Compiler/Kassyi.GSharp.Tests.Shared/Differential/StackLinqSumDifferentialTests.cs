@@ -13,35 +13,25 @@ public class StackLinqSumDifferentialTests
 {
     private const int Rows = 4;
 
-    internal static readonly DifferentialCase s_floatSum = new("StackLinqSumDifferentialKernels.FloatSumMatrixKernel")
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: 4),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_floatSum = DiffCases.Create(
+        StackLinqSumDifferentialKernels.LaunchFloatSumMatrixKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("data", BuildFloatInput(rng))
             .Out<float>("r", rows, StackLinqSumDifferentialKernels.Columns, OutputPolicy.Bitwise),
-        Launch = static (b, s) => StackLinqSumDifferentialKernels.LaunchFloatSumMatrixKernel(
-            b.Get<float>("data"),
-            b.Get<float>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
-        Reference = static (b, _) => FillReference(b, (float)System.Linq.Enumerable.Sum(b.Get<float>("data"))),
-    };
+        shape: LaunchShape.ForRows(Rows, blockX: 4),
+        inputName: "data",
+        outputName: "r",
+        reference: static (b, _) => FillReference(b, (float)System.Linq.Enumerable.Sum(b.Get<float>("data"))));
 
-    internal static readonly DifferentialCase s_doubleSum = new("StackLinqSumDifferentialKernels.DoubleSumMatrixKernel")
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: 4),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_doubleSum = DiffCases.Create<double, double>(
+        StackLinqSumDifferentialKernels.LaunchDoubleSumMatrixKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("data", BuildDoubleInput(rng))
             .Out<double>("r", rows, StackLinqSumDifferentialKernels.Columns, OutputPolicy.Bitwise),
-        Launch = static (b, s) => StackLinqSumDifferentialKernels.LaunchDoubleSumMatrixKernel(
-            b.Get<double>("data"),
-            b.Get<double>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
-        Reference = static (b, _) => FillReference(b, System.Linq.Enumerable.Sum(b.Get<double>("data"))),
-    };
+        shape: LaunchShape.ForRows(Rows, blockX: 4),
+        inputName: "data",
+        outputName: "r",
+        reference: static (b, _) => FillReference(b, System.Linq.Enumerable.Sum(b.Get<double>("data"))));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]

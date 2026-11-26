@@ -3,6 +3,26 @@ using Kassyi.ZeroAlloc.Linq;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
+public struct TwoStageRangeParameters
+{
+    public int Combination;
+    public int FirstCount;
+    public int SecondCount;
+}
+
+public struct TakeSkipBounds
+{
+    public int TakeCount;
+    public int SkipCount;
+}
+
+public struct ThreeStageRangeParameters
+{
+    public int FirstCount;
+    public int SecondCount;
+    public int ThirdCount;
+}
+
 /// <summary>
 /// The position stages of a fused StackLinq chain (Skip, Take, SkipLast, TakeLast) give the range of C# (#624 R1, #677),
 /// and each argument is evaluated once.
@@ -11,8 +31,11 @@ public static partial class StackLinqRangeKernels
 {
     // Every thread evaluates the chain sequentially and with AsParallel()
     [GpuKernel]
-    public static void TwoStageRangeKernel(int[] data, int combo, int a, int b, int[] result)
+    public static void TwoStageRangeKernel(int[] data, TwoStageRangeParameters range, int[] result)
     {
+        int combo = range.Combination;
+        int a = range.FirstCount;
+        int b = range.SecondCount;
         int gtid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         int sequential = -1;
         int parallel = -1;
@@ -146,8 +169,10 @@ public static partial class StackLinqRangeKernels
     // Take(a) followed by a stage that passes over elements (Skip, SkipWhile): once the Take has given a elements, C# does
     // not call the selector or predicate before it again, also when the Skip passed over the last one
     [GpuKernel]
-    public static void TakeSkipCountKernel(int[] data, int[] counter, int take, int skip, int[] result)
+    public static void TakeSkipCountKernel(int[] data, int[] counter, TakeSkipBounds bounds, int[] result)
     {
+        int take = bounds.TakeCount;
+        int skip = bounds.SkipCount;
         if ((ThreadIndex.X | ThreadIndex.Y | ThreadIndex.Z | BlockIndex.X | BlockIndex.Y | BlockIndex.Z) == 0)
         {
             result[0] = data.AsStackEnumerable().Select(x => System.Threading.Interlocked.Add(ref counter[0], 1) * 0 + x).Take(take).Skip(skip).Sum();
@@ -161,8 +186,11 @@ public static partial class StackLinqRangeKernels
 
     // Second review (M2): every three-stage chain, sequential (even slot) and AsParallel() (odd slot)
     [GpuKernel]
-    public static void ThreeStageSweepKernel(int[] data, int a, int b, int c, int[] result)
+    public static void ThreeStageSweepKernel(int[] data, ThreeStageRangeParameters range, int[] result)
     {
+        int a = range.FirstCount;
+        int b = range.SecondCount;
+        int c = range.ThirdCount;
         int g = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         result[g * 64 + 0] = data.AsStackEnumerable().Skip(a).Skip(b).Skip(c).Sum();
         result[g * 64 + 1] = data.AsStackEnumerable().Skip(a).Skip(b).Skip(c).AsParallel().Sum();

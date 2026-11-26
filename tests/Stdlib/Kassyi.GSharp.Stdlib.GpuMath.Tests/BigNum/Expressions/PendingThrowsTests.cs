@@ -112,4 +112,190 @@ public class PendingThrowsTests
         Assert.False(PendingThrows.IsElementException(new ArgumentException()));
         Assert.False(PendingThrows.IsElementException(new ArgumentOutOfRangeException()));
     }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void OpenSpace_NoScope_DoesNothing()
+    {
+        PendingThrows.OpenSpace();
+
+        Assert.False(PendingThrows.IsActive);
+        Assert.False(PendingThrows.TryRecord(0, new DivideByZeroException()));
+
+        var closed = PendingThrows.CloseSpace();
+
+        Assert.Equal(int.MaxValue, closed.Index);
+        Assert.Null(closed.Exception);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CloseSpace_RecordsInside_ReturnsThemAndRestoresOuter()
+    {
+        var a = new DivideByZeroException();
+        var b = new InvalidOperationException();
+
+        using var scope = PendingThrows.Begin();
+        Assert.True(PendingThrows.TryRecord(5, a));
+
+        PendingThrows.OpenSpace();
+        Assert.Equal(int.MaxValue, scope.Instance.MinIndex);
+        Assert.Null(scope.Instance.Exception);
+        Assert.True(PendingThrows.TryRecord(1, b));
+
+        var closed = PendingThrows.CloseSpace();
+
+        // mutant: PendingThrows.PopSpace not restoring _current from _outer
+        Assert.Equal(1, closed.Index);
+        Assert.Same(b, closed.Exception);
+        Assert.Equal(5, scope.Instance.MinIndex);
+        Assert.Same(a, scope.Instance.Exception);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void OpenSpace_Nested_KeepsEachLevel()
+    {
+        var ex0 = new DivideByZeroException();
+        var ex1 = new InvalidOperationException();
+        var ex1b = new ArgumentException();
+        var ex2 = new OverflowException();
+
+        using var scope = PendingThrows.Begin();
+        Assert.True(PendingThrows.TryRecord(10, ex0));
+
+        PendingThrows.OpenSpace();
+        Assert.True(PendingThrows.TryRecord(4, ex1));
+
+        PendingThrows.OpenSpace();
+        Assert.True(PendingThrows.TryRecord(7, ex2));
+
+        var inner2 = PendingThrows.CloseSpace();
+        Assert.Equal(7, inner2.Index);
+        Assert.Same(ex2, inner2.Exception);
+        Assert.Equal(4, scope.Instance.MinIndex);
+        Assert.Same(ex1, scope.Instance.Exception);
+
+        Assert.True(PendingThrows.TryRecord(2, ex1b));
+
+        var inner1 = PendingThrows.CloseSpace();
+        Assert.Equal(2, inner1.Index);
+        Assert.Same(ex1b, inner1.Exception);
+        Assert.Equal(10, scope.Instance.MinIndex);
+        Assert.Same(ex0, scope.Instance.Exception);
+
+        PendingThrows.OpenSpace();
+        var empty = PendingThrows.CloseSpace();
+        Assert.Equal(int.MaxValue, empty.Index);
+        Assert.Null(empty.Exception);
+        Assert.Equal(10, scope.Instance.MinIndex);
+        Assert.Same(ex0, scope.Instance.Exception);
+
+        const int DeepNesting = 20;
+        var deepExceptions = new Exception[DeepNesting];
+        for (var i = 0; i < DeepNesting; i++)
+        {
+            PendingThrows.OpenSpace();
+            deepExceptions[i] = new ArithmeticException($"depth-{i}");
+            Assert.True(PendingThrows.TryRecord(100 + i, deepExceptions[i]));
+        }
+
+        for (var i = DeepNesting - 1; i >= 0; i--)
+        {
+            var popped = PendingThrows.CloseSpace();
+            Assert.Equal(100 + i, popped.Index);
+            Assert.Same(deepExceptions[i], popped.Exception);
+        }
+
+        Assert.Equal(10, scope.Instance.MinIndex);
+        Assert.Same(ex0, scope.Instance.Exception);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void RecordedOnInterrupt_OpenSpace_ReturnsFirstInTime()
+    {
+        var a = new DivideByZeroException();
+        var b = new InvalidOperationException();
+
+        using var scope = PendingThrows.Begin();
+        PendingThrows.OpenSpace();
+        PendingThrows.TryRecord(7, a);
+        PendingThrows.TryRecord(2, b);
+
+        // mutant: PendingThrows.RecordedOnInterrupt returning _current.Best.Exception while a space is open
+        Assert.Same(a, scope.Instance.RecordedOnInterrupt);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void RecordedOnInterrupt_AllClosed_ReturnsBest()
+    {
+        var a = new DivideByZeroException();
+        var b = new InvalidOperationException();
+        var c = new OverflowException();
+
+        using var scope = PendingThrows.Begin();
+        PendingThrows.TryRecord(7, a);
+        PendingThrows.TryRecord(2, b);
+
+        // mutant: PendingThrows.RecordedOnInterrupt returning FirstOpen() when all spaces are closed
+        Assert.Same(b, scope.Instance.RecordedOnInterrupt);
+
+        PendingThrows.OpenSpace();
+        PendingThrows.TryRecord(1, c);
+        var closed = PendingThrows.CloseSpace();
+
+        Assert.Same(c, closed.Exception);
+        Assert.Same(b, scope.Instance.RecordedOnInterrupt);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void RecordedOnInterrupt_ClosedSpaceDiscardedThenReopened_DoesNotSurfaceDiscarded()
+    {
+        var a = new DivideByZeroException();
+        var b = new InvalidOperationException();
+        var c = new OverflowException();
+        var d = new ArithmeticException();
+
+        using var scope = PendingThrows.Begin();
+        PendingThrows.OpenSpace();
+        PendingThrows.TryRecord(1, a);
+        PendingThrows.CloseSpace();
+
+        // mutant: PendingThrows.Space.First kept once per scope instead of once per space
+        PendingThrows.OpenSpace();
+        Assert.Null(scope.Instance.RecordedOnInterrupt);
+
+        PendingThrows.TryRecord(2, b);
+        Assert.Same(b, scope.Instance.RecordedOnInterrupt);
+        PendingThrows.CloseSpace();
+
+        PendingThrows.TryRecord(5, c);
+        PendingThrows.OpenSpace();
+        Assert.Same(c, scope.Instance.RecordedOnInterrupt);
+
+        PendingThrows.OpenSpace();
+        PendingThrows.TryRecord(1, d);
+        Assert.Same(c, scope.Instance.RecordedOnInterrupt);
+
+        PendingThrows.CloseSpace();
+        PendingThrows.CloseSpace();
+        Assert.Same(c, scope.Instance.RecordedOnInterrupt);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CloseSpace_AtZeroDepthInActiveScope_ReturnsEmpty()
+    {
+        using var scope = PendingThrows.Begin();
+        PendingThrows.OpenSpace();
+        PendingThrows.CloseSpace();
+
+        var extra = PendingThrows.CloseSpace();
+
+        Assert.Equal(int.MaxValue, extra.Index);
+        Assert.Null(extra.Exception);
+    }
 }

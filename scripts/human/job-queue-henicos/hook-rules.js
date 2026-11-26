@@ -142,7 +142,6 @@ module.exports = {
     names: [
       'gpu-lock',
       'test-stability',
-      'long-checks',
       'test-memory',
       'test-sanitized',
       'mutate',

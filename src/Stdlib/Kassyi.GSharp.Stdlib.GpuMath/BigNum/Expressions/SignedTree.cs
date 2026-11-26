@@ -113,6 +113,10 @@ internal static class SignedTree
             }
         }
 
+        public void BeginOperand(IGpuBigIntExpression node, int index)
+        {
+        }
+
         // A leaf, or a node implemented elsewhere, evaluates itself
         public SignedValue EvaluateLeaf(IGpuBigIntExpression node, GpuBigUInt? target) =>
             SignedValue.FromHost(node.Evaluate(workspace, target));

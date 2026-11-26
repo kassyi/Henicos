@@ -2,6 +2,16 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Cuda;
 
+public struct RoundFailureBuffers
+{
+    [GpuReadOnly]
+    public int[] Keys;
+    [GpuReadOnly]
+    public int[] Control;
+    public int[] BlockValues;
+    public int[] Result;
+}
+
 /// <summary>
 /// Kernels for <see cref="CapturedBarrierTests"/>: grid barriers in both modes with a failure at a chosen round, and an
 /// mbarrier with a late arrival. A thread fails when its key is <see cref="FailKey"/>.
@@ -16,8 +26,12 @@ public static partial class CapturedBarrierKernels
     // The threads whose key is FailKey fail at the start of round control[0]; the others pass 2 * <rounds> grid
     // barriers and add up the value that thread 1 of the next block wrote before each first barrier, round + 1
     [GpuKernel(Cooperative = true)]
-    public static void FailAtRoundKernel(int[] keys, int rounds, int[] control, int[] blockValues, int[] result)
+    public static void FailAtRoundKernel(RoundFailureBuffers buffers, int rounds)
     {
+        int[] keys = buffers.Keys;
+        int[] control = buffers.Control;
+        int[] blockValues = buffers.BlockValues;
+        int[] result = buffers.Result;
         int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         int sum = 0;
         for (int round = 0; round < rounds; round++)
@@ -42,8 +56,12 @@ public static partial class CapturedBarrierKernels
 
     // The same with the Fast grid barrier
     [GpuKernel(Cooperative = true)]
-    public static void FastFailAtRoundKernel(int[] keys, int rounds, int[] control, int[] blockValues, int[] result)
+    public static void FastFailAtRoundKernel(RoundFailureBuffers buffers, int rounds)
     {
+        int[] keys = buffers.Keys;
+        int[] control = buffers.Control;
+        int[] blockValues = buffers.BlockValues;
+        int[] result = buffers.Result;
         int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         int sum = 0;
         for (int round = 0; round < rounds; round++)
