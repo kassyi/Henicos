@@ -44,12 +44,13 @@ This ensures that intermediate buffers can be efficiently reused, and the sequen
 
 Because operators only build an AST and do not execute any kernels natively, failing to evaluate the resulting expression leads to a silent "computation lost" bug (the GPU kernel is never dispatched).
 
-To prevent this, the G# Roslyn Analyzer introduces **GSH0005** (`GpuBigIntExpr` Direct Assignment). This diagnostic produces a **hard compiler error** if a `GpuBigIntExpr` is declared or assigned to a local variable without being resolved or evaluated.
+To prevent this, the G# Roslyn Analyzer introduces **GSH0005** (`GpuBigIntExpr` discarded without evaluation). This diagnostic produces a **hard compiler error** if a `GpuBigIntExpr` local is declared and neither evaluated, compiled, returned, nor disposed, or if a `GpuBigIntExpr` is assigned to a field without evaluation.
 
 ```csharp
 // Execution Context: Host (CPU)
-// ❌ INCORRECT: Triggers hard compiler error GSH0005
+// ❌ INCORRECT: Triggers hard compiler error GSH0005 (discarded without evaluation or disposal)
 // GpuBigIntExpr recipe = (gpuA + gpuB) * gpuC - gpuA;
+// int words = recipe.Node.NumWords;
 
 // ✨ CORRECT: Enforced evaluation
 using var gpuResult = ((gpuA + gpuB) * gpuC - gpuA).Evaluate(workspace);
