@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Ir.Linear;
+namespace Kassyi.GSharp.Compiler.Ir.Expressions;
 
 /// <summary>An argument passed to an <see cref="IrRuntimeCall"/>.</summary>
 /// <param name="Value">The argument expression.</param>

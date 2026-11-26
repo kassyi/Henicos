@@ -409,6 +409,19 @@ public class IrInvariantsTests
         AssertViolates("I23", WithResult(method, moved));
     }
 
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void I27_RuntimeCallInTheBuiltBody()
+    {
+        var method = IrTestCases.BuildCase("Literal");
+        var constant = IrTestCases.Result(method);
+        var call = new IrRuntimeCall(IrRuntimeFunction.WarpRegionEnter, WarpShuffleKind.None, 0,
+            ImmutableArray<IrRuntimeArgument>.Empty, null, Compilation.GetSpecialType(SpecialType.System_Void),
+            constant.Source.AsSynthesized());
+
+        AssertViolates("I27", WithStatement(method, new IrExpressionStatement(call, call.Source)));
+    }
+
     private static void AssertViolates(string number, IrMethod method)
     {
         var violations = IrInvariants.Verify(method, Compilation);

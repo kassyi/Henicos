@@ -8,7 +8,6 @@ internal sealed class IrNullAgreementCounts
 {
     public ConcurrentBag<string> Mismatches { get; } = [];
     public ConcurrentBag<string> FrameVariables { get; } = [];
-    public ConcurrentBag<string> SpillShifts { get; } = [];
     public ConcurrentBag<string> EmittedTargetDifferences { get; } = [];
     public ConcurrentDictionary<string, int> ExcludedReasons { get; } = new(StringComparer.Ordinal);
 
