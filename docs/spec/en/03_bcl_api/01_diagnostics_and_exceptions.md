@@ -31,7 +31,7 @@ During the build, the source generator of the `Kassyi.GSharp.Compiler` package (
 | [**GSH0002**](diagnostics/GSH0002.md) | Error | **String usage not supported.** You attempted to use the `string` type. |
 | [**GSH0003**](diagnostics/GSH0003.md) | Error | **Unsupported syntax.** Triggered when unknown/unsupported C# syntax nodes are encountered. |
 | [**GSH0004**](diagnostics/GSH0004.md) | Error | **Unsupported Return Type.** A GPU kernel or device function declared an unsupported return type. Kernels and device functions must return void or an unmanaged blittable type; a device function may also be a device iterator. |
-| [**GSH0005**](diagnostics/GSH0005.md) | Error | **GpuBigIntExpr Direct Assignment.** Triggered when a `GpuBigIntExpr` is assigned to a local variable without being resolved into `.Value`. Prevents silent "computation lost" bugs. |
+| [**GSH0005**](diagnostics/GSH0005.md) | Error | **GpuBigIntExpr is discarded without being evaluated.** Triggered when a `GpuBigIntExpr` local is neither evaluated nor disposed, or assigned to a field without evaluation. Prevents silent "computation lost" bugs. |
 | [**GSH0006**](diagnostics/GSH0006.md) | Error | **InlinePtx non-constant argument.** Triggered when `Gpu.InlinePtx` receives a dynamic string instead of a compile-time string literal. |
 | [**GSH0007**](diagnostics/GSH0007.md) | Error | **foreach on unsupported collection.** Triggered when iterating over types requiring a heap enumerator (e.g. `IEnumerable<T>`). Arrays, `Span<T>`, and `[InlineArray]` are fully supported. |
 | [**GSH0008**](diagnostics/GSH0008.md) | Error | **LINQ syntax not supported.** LINQ relies on delegates and dynamic allocations. Use imperative loops instead. |
