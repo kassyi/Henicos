@@ -1,5 +1,6 @@
 using Kassyi.GSharp.Tests.Generators;
 using Kassyi.GSharp.Tests.Infrastructure;
+using Microsoft.CodeAnalysis;
 
 namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 
@@ -60,5 +61,76 @@ public class TestArchitectureAnalyzerTests : AnalyzerTestBase
             new TestArchitectureAnalyzer(),
             nameof(Architecture_RawTraitAttribute_ReportsError)
         );
+    }
+
+    // HNT0011: Windows-only skip patterns and [SupportedOSPlatform("windows")] require [Platform(TestPlatform.Windows)]
+    // on the test method or its immediate containing class; outer enclosing classes do not propagate traits in xUnit,
+    // Unix/Linux skips and non-skip OS branches are not reported, and [Platform] does not satisfy HNT0002.
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Architecture_WindowsOnlySkipWithoutPlatformAttribute_ReportsHnt0011OnlyOnWindowsOnlyTests()
+    {
+        var (diagnostics, compilerErrors) = await GetAnalyzerDiagnosticsFromFileAsync(
+            "TestArchitecture/WindowsPlatformSkip.cs",
+            new TestArchitectureAnalyzer());
+
+        Assert.Empty(compilerErrors);
+
+        var hnt0011Targets = diagnostics
+            .Where(static d => d.Id == "HNT0011")
+            .Select(static d => d.GetMessage())
+            .ToList();
+
+        Assert.Equal(10, hnt0011Targets.Count);
+        foreach (var expectedMethod in new[]
+        {
+            "SkipIfNotOperatingSystemIsWindows",
+            "SkipIfNotOperatingSystemIsWindowsCompoundAnd",
+            "SkipIfNegatedOperatingSystemIsWindows",
+            "SkipIfRuntimeInformationIsOSPlatformWindows",
+            "IfNotWindowsThrowSkipException",
+            "IfWindowsElseSkip",
+            "SupportedOSPlatformWindowsMethod",
+            "HelperCallingWindowsSkip",
+            "UserDefinedPlatformAttributeDoesNotSatisfy",
+            "NestedMethod",
+        })
+        {
+            Assert.Contains(hnt0011Targets, msg => msg.Contains($"'{expectedMethod}'", StringComparison.Ordinal));
+        }
+
+        foreach (var unexpectedMethod in new[]
+        {
+            "AnnotatedOnMethod",
+            "AnnotatedOnClass",
+            "SkipIfOperatingSystemIsWindows",
+            "SkipIfNotOperatingSystemIsLinux",
+            "NonSkipConditionalBranch",
+            "RequireWindowsHost",
+            "PlatformOnlyStillNeedsCategory",
+        })
+        {
+            Assert.DoesNotContain(hnt0011Targets, msg => msg.Contains($"'{unexpectedMethod}'", StringComparison.Ordinal));
+        }
+
+        var hnt0002 = Assert.Single(diagnostics, static d => d.Id == "HNT0002");
+        Assert.Contains("'PlatformOnlyStillNeedsCategory'", hnt0002.GetMessage(), StringComparison.Ordinal);
+        Assert.Equal(
+            DiagnosticSeverity.Error,
+            TestArchitectureAnalyzer.WindowsOnlyTestMustHavePlatformAttribute.DefaultSeverity);
+    }
+
+    // HNT0011 belongs to test assemblies only.
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public async Task Architecture_WindowsOnlySkipOutsideTestAssembly_ProducesNoDiagnostics()
+    {
+        var (diagnostics, compilerErrors) = await GetAnalyzerDiagnosticsFromFileAsync(
+            "TestArchitecture/WindowsPlatformSkip.cs",
+            new TestArchitectureAnalyzer(),
+            assemblyName: "ProductAssembly");
+
+        Assert.Empty(compilerErrors);
+        Assert.Empty(diagnostics);
     }
 }

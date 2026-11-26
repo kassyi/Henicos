@@ -37,4 +37,32 @@ public abstract class AnalyzerTestBase
             .UseDirectory("Snapshots")
             .UseFileName($"Snap.{testName}");
     }
+
+    protected async Task<(IReadOnlyList<Diagnostic> AnalyzerDiagnostics, IReadOnlyList<Diagnostic> CompilerErrors)>
+        GetAnalyzerDiagnosticsFromFileAsync(
+            string relativeFilePath,
+            DiagnosticAnalyzer analyzer,
+            string assemblyName = "TestAssembly")
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Analyzers/" + relativeFilePath));
+        compilation = compilation
+            .WithAssemblyName(assemblyName)
+            .WithOptions(compilation.Options.WithAllowUnsafe(false));
+
+        var compilationWithAnalyzers = compilation.WithAnalyzers(ImmutableArray.Create(analyzer));
+        var diagnostics = await compilationWithAnalyzers.GetAllDiagnosticsAsync();
+
+        var analyzerDiagnostics = diagnostics
+            .Where(d => d.Id.StartsWith("GSH") || d.Id.StartsWith("HNT") || d.Id.StartsWith("SLQ"))
+            .OrderBy(d => d.Location.SourceSpan.Start)
+            .ToList();
+
+        var compilerErrors = diagnostics
+            .Where(d => d.Severity == DiagnosticSeverity.Error &&
+                !d.Id.StartsWith("GSH") && !d.Id.StartsWith("HNT") && !d.Id.StartsWith("SLQ"))
+            .ToList();
+
+        return (analyzerDiagnostics, compilerErrors);
+    }
 }
