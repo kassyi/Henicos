@@ -78,6 +78,12 @@ export function serve(options: ServeOptions): void {
   new JobServer(options).start();
 }
 
+/** The share of a GPU turn on its `grant` line: `shared` or `exclusive`, with its reason in parentheses when known. */
+function shareFlag(job: ServerJob): string {
+  const share = job.share === "shared" ? "shared" : "exclusive";
+  return job.shareReason !== undefined ? `${share}(${job.shareReason})` : share;
+}
+
 /** The scheduler process: the job table, the outcomes, the settle step, the timers and the TCP server. */
 export class JobServer {
   readonly options: ServeOptions;
@@ -316,10 +322,7 @@ export class JobServer {
     for (const job of granted) {
       job.phase = "running";
       job.epoch++;
-      const share =
-        job.gpuTurn === true
-          ? ` share=${job.share === "shared" ? "shared" : "exclusive"}${job.shareReason !== undefined ? `(${job.shareReason})` : ""}`
-          : "";
+      const share = job.gpuTurn === true ? ` share=${shareFlag(job)}` : "";
       const gpu = `${job.gpu ? " gpu" : ""}${job.gpuTurn ? " gpu-turn" : ""}${share}`;
       const remote = job.remote !== undefined ? ` remote=${job.remote}` : "";
       const flags = `${gpu}${remote}${job.backfilled ? " backfilled" : ""}`;
