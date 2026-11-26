@@ -4,6 +4,7 @@ using System.IO;
 using System.Numerics;
 using Kassyi.GSharp.Compiler.NativeApi;
 using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
@@ -36,6 +37,7 @@ public class CoreIntrinsicsTests
     [Scenario(TestScenario.SadPath)]
     public void GpuSyncAndControl_HostInvocation_ThrowsGpuOnlyException()
     {
+#pragma warning disable GSH0018, GSH0042 // The host call is what this test checks: the GpuOnlyException backstop
         // Sad Path: Hardware sync & control markers must throw GpuOnlyException when invoked on the host CPU
         Assert.Throws<GpuOnlyException>(() => Gpu.SyncThreads());
         Assert.Throws<GpuOnlyException>(() => Gpu.SyncGrid());
@@ -49,12 +51,14 @@ public class CoreIntrinsicsTests
         Assert.Throws<GpuOnlyException>(() => Gpu.GridStrideLoop(10, _ => { }));
         Assert.Throws<GpuOnlyException>(() => Gpu.GridStrideLoop(ref ctx, 10, (ref int c, int i) => { }));
         Assert.Throws<GpuOnlyException>(() => Gpu.SingleThread(() => { }));
+#pragma warning restore GSH0018, GSH0042
     }
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public void GpuArithmetics_HostInvocation_ThrowsGpuOnlyException()
     {
+#pragma warning disable GSH0018 // The host call is what this test checks: the GpuOnlyException backstop
         // Sad Path: Carry arithmetic intrinsics must throw GpuOnlyException (the atomics: the theory below)
         uint uintVal = 20;
         ulong ulongVal = 30;
@@ -69,52 +73,58 @@ public class CoreIntrinsicsTests
         Assert.Throws<GpuOnlyException>(() => Gpu.MultiplyHigh(ulongVal, 2ul));
         Assert.Throws<GpuOnlyException>(() => Gpu.FunnelShiftLeft(uintVal, uintVal, 2u));
         Assert.Throws<GpuOnlyException>(() => Gpu.FunnelShiftRight(uintVal, uintVal, 2u));
+
+        // Representative ManagedAtomics-forwarded stub host backstop (#728)
+        int atomicVal = 7;
+        Assert.Throws<GpuOnlyException>(() => Gpu.AtomicAdd(ref atomicVal, 1));
+        Assert.Equal(7, atomicVal);
+#pragma warning restore GSH0018
     }
 
-    // Every stub that forwards to ManagedAtomics, by "<name>(<element type>)"; each call starts from 7 and must leave it
+    // Every stub that forwards to ManagedAtomics, by "<name>(<element type>)"; each call starts from 7 and is
+    // launched on the managed CPU path so it reaches the forwarding stub and ManagedAtomics
     private static readonly Dictionary<string, Action> s_forwardedAtomicStubs = new()
     {
-        ["AtomicAdd(int)"] = static () => Run(7, static (ref int v) => Gpu.AtomicAdd(ref v, 1)),
-        ["AtomicAdd(uint)"] = static () => Run(7u, static (ref uint v) => Gpu.AtomicAdd(ref v, 1u)),
-        ["AtomicAdd(ulong)"] = static () => Run(7ul, static (ref ulong v) => Gpu.AtomicAdd(ref v, 1ul)),
-        ["AtomicAdd(float)"] = static () => Run(7f, static (ref float v) => Gpu.AtomicAdd(ref v, 1f)),
-        ["AtomicSub(int)"] = static () => Run(7, static (ref int v) => Gpu.AtomicSub(ref v, 1)),
-        ["AtomicSub(uint)"] = static () => Run(7u, static (ref uint v) => Gpu.AtomicSub(ref v, 1u)),
-        ["AtomicOr(uint)"] = static () => Run(7u, static (ref uint v) => Gpu.AtomicOr(ref v, 8u)),
-        ["AtomicOr(ulong)"] = static () => Run(7ul, static (ref ulong v) => Gpu.AtomicOr(ref v, 8ul)),
-        ["AtomicMax(uint)"] = static () => Run(7u, static (ref uint v) => Gpu.AtomicMax(ref v, 9u)),
-        ["AtomicMax(ulong)"] = static () => Run(7ul, static (ref ulong v) => Gpu.AtomicMax(ref v, 9ul)),
-        ["AtomicExch(int)"] = static () => Run(7, static (ref int v) => Gpu.AtomicExch(ref v, 1)),
-        ["AtomicExch(uint)"] = static () => Run(7u, static (ref uint v) => Gpu.AtomicExch(ref v, 1u)),
-        ["AtomicExch(ulong)"] = static () => Run(7ul, static (ref ulong v) => Gpu.AtomicExch(ref v, 1ul)),
-        ["AtomicExch(float)"] = static () => Run(7f, static (ref float v) => Gpu.AtomicExch(ref v, 1f)),
-        ["AtomicMin(int)"] = static () => Run(7, static (ref int v) => Gpu.AtomicMin(ref v, 1)),
-        ["AtomicMin(uint)"] = static () => Run(7u, static (ref uint v) => Gpu.AtomicMin(ref v, 1u)),
-        ["AtomicMin(ulong)"] = static () => Run(7ul, static (ref ulong v) => Gpu.AtomicMin(ref v, 1ul)),
-        ["AtomicInc(uint)"] = static () => Run(7u, static (ref uint v) => Gpu.AtomicInc(ref v, 9u)),
-        ["AtomicDec(uint)"] = static () => Run(7u, static (ref uint v) => Gpu.AtomicDec(ref v, 9u)),
-        ["AtomicCAS(int)"] = static () => Run(7, static (ref int v) => Gpu.AtomicCAS(ref v, 7, 1)),
-        ["AtomicCAS(uint)"] = static () => Run(7u, static (ref uint v) => Gpu.AtomicCAS(ref v, 7u, 1u)),
-        ["AtomicCAS(ulong)"] = static () => Run(7ul, static (ref ulong v) => Gpu.AtomicCAS(ref v, 7ul, 1ul)),
-        ["AtomicAnd(int)"] = static () => Run(7, static (ref int v) => Gpu.AtomicAnd(ref v, 1)),
-        ["AtomicAnd(uint)"] = static () => Run(7u, static (ref uint v) => Gpu.AtomicAnd(ref v, 1u)),
-        ["AtomicAnd(ulong)"] = static () => Run(7ul, static (ref ulong v) => Gpu.AtomicAnd(ref v, 1ul)),
-        ["AtomicXor(int)"] = static () => Run(7, static (ref int v) => Gpu.AtomicXor(ref v, 1)),
-        ["AtomicXor(uint)"] = static () => Run(7u, static (ref uint v) => Gpu.AtomicXor(ref v, 1u)),
-        ["AtomicXor(ulong)"] = static () => Run(7ul, static (ref ulong v) => Gpu.AtomicXor(ref v, 1ul)),
-        ["ReductionAdd(int)"] = static () => Run(7, static (ref int v) => Gpu.ReductionAdd(ref v, 1)),
-        ["ReductionAdd(uint)"] = static () => Run(7u, static (ref uint v) => Gpu.ReductionAdd(ref v, 1u)),
-        ["ReductionAdd(ulong)"] = static () => Run(7ul, static (ref ulong v) => Gpu.ReductionAdd(ref v, 1ul)),
-        ["ReductionAdd(float)"] = static () => Run(7f, static (ref float v) => Gpu.ReductionAdd(ref v, 1f)),
+        ["AtomicAdd(int)"] = static () => RunInt(0, 8, 7),
+        ["AtomicAdd(uint)"] = static () => RunUInt(0, 8u, 7u),
+        ["AtomicAdd(ulong)"] = static () => RunULong(0, 8ul, 7ul),
+        ["AtomicAdd(float)"] = static () => RunFloat(0, 8f, 7f),
+        ["AtomicSub(int)"] = static () => RunInt(1, 6, 7),
+        ["AtomicSub(uint)"] = static () => RunUInt(1, 6u, 7u),
+        ["AtomicOr(uint)"] = static () => RunUInt(2, 15u, 7u),
+        ["AtomicOr(ulong)"] = static () => RunULong(1, 15ul, 7ul),
+        ["AtomicMax(uint)"] = static () => RunUInt(3, 9u, 7u),
+        ["AtomicMax(ulong)"] = static () => RunULong(2, 9ul, 7ul),
+        ["AtomicExch(int)"] = static () => RunInt(2, 1, 7),
+        ["AtomicExch(uint)"] = static () => RunUInt(4, 1u, 7u),
+        ["AtomicExch(ulong)"] = static () => RunULong(3, 1ul, 7ul),
+        ["AtomicExch(float)"] = static () => RunFloat(1, 1f, 7f),
+        ["AtomicMin(int)"] = static () => RunInt(3, 1, 7),
+        ["AtomicMin(uint)"] = static () => RunUInt(5, 1u, 7u),
+        ["AtomicMin(ulong)"] = static () => RunULong(4, 1ul, 7ul),
+        ["AtomicInc(uint)"] = static () => RunUInt(6, 8u, 7u),
+        ["AtomicDec(uint)"] = static () => RunUInt(7, 6u, 7u),
+        ["AtomicCAS(int)"] = static () => RunInt(4, 1, 7),
+        ["AtomicCAS(uint)"] = static () => RunUInt(8, 1u, 7u),
+        ["AtomicCAS(ulong)"] = static () => RunULong(5, 1ul, 7ul),
+        ["AtomicAnd(int)"] = static () => RunInt(5, 1, 7),
+        ["AtomicAnd(uint)"] = static () => RunUInt(9, 1u, 7u),
+        ["AtomicAnd(ulong)"] = static () => RunULong(6, 1ul, 7ul),
+        ["AtomicXor(int)"] = static () => RunInt(6, 6, 7),
+        ["AtomicXor(uint)"] = static () => RunUInt(10, 6u, 7u),
+        ["AtomicXor(ulong)"] = static () => RunULong(7, 6ul, 7ul),
+        ["ReductionAdd(int)"] = static () => RunInt(7, 8, 0, checkReturned: false),
+        ["ReductionAdd(uint)"] = static () => RunUInt(11, 8u, 0u, checkReturned: false),
+        ["ReductionAdd(ulong)"] = static () => RunULong(8, 8ul, 0ul, checkReturned: false),
+        ["ReductionAdd(float)"] = static () => RunFloat(2, 8f, 0f, checkReturned: false),
     };
 
     public static TheoryData<string> ForwardedAtomicStubs => new(s_forwardedAtomicStubs.Keys);
 
-    // Outside a managed launch a stub that forwards to ManagedAtomics still throws, and throws before it writes (#728)
     [Theory]
-    [Scenario(TestScenario.SadPath)]
+    [Scenario(TestScenario.HappyPath)]
     [MemberData(nameof(ForwardedAtomicStubs))]
-    public void ForwardedAtomicStub_HostInvocation_ThrowsGpuOnlyExceptionAndLeavesValue(string stub)
+    public void ForwardedAtomicStub_ManagedLaunch_ForwardsToManagedAtomics(string stub)
     {
         Assert.True(s_forwardedAtomicStubs.TryGetValue(stub, out var invoke));
         invoke();
@@ -154,20 +164,75 @@ public class CoreIntrinsicsTests
         Assert.Equal(expected, new SortedSet<string>(s_forwardedAtomicStubs.Keys, StringComparer.Ordinal));
     }
 
-    private delegate void RefAction<T>(ref T value);
-
-    // The call throws GpuOnlyException and leaves the value as it was
-    private static void Run<T>(T initial, RefAction<T> call)
+    private static void RunInt(int op, int expectedValue, int expectedReturned, bool checkReturned = true)
     {
-        var value = initial;
-        Assert.Throws<GpuOnlyException>(() => call(ref value));
-        Assert.Equal(initial, value);
+        int[] value = [7];
+        int[] returned = [0];
+        using (GpuExecution.Use(KernelExecution.Managed))
+        {
+            ForwardedAtomicStubKernels.LaunchIntAtomicsKernel(op, value, returned);
+        }
+
+        Assert.Equal(expectedValue, value[0]);
+        if (checkReturned)
+        {
+            Assert.Equal(expectedReturned, returned[0]);
+        }
+    }
+
+    private static void RunUInt(int op, uint expectedValue, uint expectedReturned, bool checkReturned = true)
+    {
+        uint[] value = [7u];
+        uint[] returned = [0u];
+        using (GpuExecution.Use(KernelExecution.Managed))
+        {
+            ForwardedAtomicStubKernels.LaunchUIntAtomicsKernel(op, value, returned);
+        }
+
+        Assert.Equal(expectedValue, value[0]);
+        if (checkReturned)
+        {
+            Assert.Equal(expectedReturned, returned[0]);
+        }
+    }
+
+    private static void RunULong(int op, ulong expectedValue, ulong expectedReturned, bool checkReturned = true)
+    {
+        ulong[] value = [7ul];
+        ulong[] returned = [0ul];
+        using (GpuExecution.Use(KernelExecution.Managed))
+        {
+            ForwardedAtomicStubKernels.LaunchULongAtomicsKernel(op, value, returned);
+        }
+
+        Assert.Equal(expectedValue, value[0]);
+        if (checkReturned)
+        {
+            Assert.Equal(expectedReturned, returned[0]);
+        }
+    }
+
+    private static void RunFloat(int op, float expectedValue, float expectedReturned, bool checkReturned = true)
+    {
+        float[] value = [7f];
+        float[] returned = [0f];
+        using (GpuExecution.Use(KernelExecution.Managed))
+        {
+            ForwardedAtomicStubKernels.LaunchFloatAtomicsKernel(op, value, returned);
+        }
+
+        Assert.Equal(expectedValue, value[0]);
+        if (checkReturned)
+        {
+            Assert.Equal(expectedReturned, returned[0]);
+        }
     }
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public void CoordinateProperties_HostEvaluation_ThrowsGpuOnlyException()
     {
+#pragma warning disable GSH0018 // The host call is what this test checks: the GpuOnlyException backstop
         // Sad Path: Thread/Block coordinate markers must throw GpuOnlyException on CPU
         var dim = new Dim3();
         Assert.Throws<GpuOnlyException>(() => _ = dim.X);
@@ -189,12 +254,14 @@ public class CoreIntrinsicsTests
         Assert.Throws<GpuOnlyException>(() => _ = GridDimension.X);
         Assert.Throws<GpuOnlyException>(() => _ = GridDimension.Y);
         Assert.Throws<GpuOnlyException>(() => _ = GridDimension.Z);
+#pragma warning restore GSH0018
     }
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public void GpuShuffleAndMask_HostInvocation_ThrowsGpuOnlyException()
     {
+#pragma warning disable GSH0018 // The host call is what this test checks: the GpuOnlyException backstop
         // Sad Path: Shuffle and active mask intrinsics on Gpu class must throw GpuOnlyException
         Assert.Throws<GpuOnlyException>(() => Warp.ActiveMask());
 
@@ -212,24 +279,28 @@ public class CoreIntrinsicsTests
 
         Assert.Throws<GpuOnlyException>(() => Warp.ShuffleXorSync(0xFFFFFFFF, 42, 1));
         Assert.Throws<GpuOnlyException>(() => Warp.ShuffleXorSync(0xFFFFFFFF, 42.0f, 1));
+#pragma warning restore GSH0018
     }
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public void WarpIntrinsics_HostEvaluation_ThrowsGpuOnlyException()
     {
+#pragma warning disable GSH0018 // The host call is what this test checks: the GpuOnlyException backstop
         // Sad Path: Warp-level intrinsics must throw GpuOnlyException
         Assert.Throws<GpuOnlyException>(() => Warp.ShuffleDownSync(0xFFFFFFFF, 42, 1));
         Assert.Throws<GpuOnlyException>(() => Warp.ShuffleDownSync(0xFFFFFFFF, 42u, 1u));
         Assert.Throws<GpuOnlyException>(() => Warp.ShuffleDownSync(0xFFFFFFFF, 42.0f, 1u));
         Assert.Throws<GpuOnlyException>(() => Warp.ShuffleDownSync(0xFFFFFFFF, 42.0, 1u));
         Assert.Throws<GpuOnlyException>(() => Warp.ShuffleUpSync(0xFFFFFFFF, 42u, 1u));
+#pragma warning restore GSH0018
     }
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public void SharedMemory_HostEvaluation_ThrowsGpuOnlyException()
     {
+#pragma warning disable GSH0018 // The host call is what this test checks: the GpuOnlyException backstop
         // Happy Path: Constructing SharedMemory on host does not throw, since it's just a marker
         var _ = new SharedMemory<int>(128);
 
@@ -249,6 +320,7 @@ public class CoreIntrinsicsTests
             var sm = new SharedMemory<int>(128);
             ref int r = ref sm[0];
         });
+#pragma warning restore GSH0018
     }
 
     [Theory]
@@ -295,6 +367,7 @@ public class CoreIntrinsicsTests
     [Scenario(TestScenario.SadPath)]
     public void AddedPtxIntrinsics_HostInvocation_ThrowsGpuOnlyException()
     {
+#pragma warning disable GSH0018 // The host call is what this test checks: the GpuOnlyException backstop
         // Verify all Phase 3 PTX Intrinsics throw GpuOnlyException when invoked on the host CPU
         uint a = 10, b = 20;
         ulong c = 30, carry = 0;
@@ -341,5 +414,6 @@ public class CoreIntrinsicsTests
         Assert.Throws<GpuOnlyException>(() => Wmma.Load(ref fragC, in elemInt, 16, WmmaMemoryLayout.RowMajor));
         Assert.Throws<GpuOnlyException>(() => Wmma.Store(ref elemInt, in fragC, 16, WmmaMemoryLayout.RowMajor));
         Assert.Throws<GpuOnlyException>(() => Wmma.MultiplyAccumulate(ref fragC, in fragA, in fragB, in fragC));
+#pragma warning restore GSH0018
     }
 }

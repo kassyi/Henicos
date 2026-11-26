@@ -456,7 +456,7 @@ public struct EoCell
 }
 
 // Writes its receiver through 'this ref': the call changes the variable it is called on
-public static class EoCellExtensions
+public static partial class EoCellExtensions
 {
     [GpuDeviceFunction]
     public static void Inc(this ref EoCell cell) => cell.X += 1;

@@ -32,8 +32,14 @@ public sealed partial class DiffPointerScope
         return stagingPtr;
     }
 
-    private partial void DisposeStorage()
+    /// <summary>Copies staging memory back to the host buffers and releases all allocations.</summary>
+    public void Dispose()
     {
+        if (!BeginDispose())
+        {
+            return;
+        }
+
         foreach (var (buffer, stagingPtr, byteLength) in _hostAllocations)
         {
             try

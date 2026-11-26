@@ -5,7 +5,7 @@ using S = Kassyi.ZeroAlloc.Linq.StackLinqExtensions;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
-internal static class StackLinqOrderTestExtensions
+internal static partial class StackLinqOrderTestExtensions
 {
     [GpuDeviceFunction]
     public static int WeightedPair(this int first, int second) => first * 100 + second;

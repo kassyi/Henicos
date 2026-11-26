@@ -16,7 +16,7 @@ public class CppLiteralWriterTests
     [Scenario(TestScenario.HappyPath)]
     public void AppendNumeric_LongWithSeparators_DropsThemAndWritesLl()
     {
-        var writer = new SourceWriter();
+        using var writer = new SourceWriter();
         CppLiteralWriter.AppendNumeric("1_000L", SpecialType.System_Int64, writer);
 
         Assert.Equal("1000ll", writer.ToString());
@@ -26,7 +26,7 @@ public class CppLiteralWriterTests
     [Scenario(TestScenario.HappyPath)]
     public void AppendNumeric_ULongWithSuffix_WritesUll()
     {
-        var writer = new SourceWriter();
+        using var writer = new SourceWriter();
         CppLiteralWriter.AppendNumeric("5UL", SpecialType.System_UInt64, writer);
 
         Assert.Equal("5ull", writer.ToString());
@@ -36,7 +36,7 @@ public class CppLiteralWriterTests
     [Scenario(TestScenario.HappyPath)]
     public void AppendNumeric_UnsuffixedDecimalUInt_AddsU()
     {
-        var writer = new SourceWriter();
+        using var writer = new SourceWriter();
         CppLiteralWriter.AppendNumeric("3000000000", SpecialType.System_UInt32, writer);
 
         Assert.Equal("3000000000u", writer.ToString());
@@ -46,7 +46,7 @@ public class CppLiteralWriterTests
     [Scenario(TestScenario.HappyPath)]
     public void AppendNumeric_HexadecimalUInt_KeepsItWithoutSeparators()
     {
-        var writer = new SourceWriter();
+        using var writer = new SourceWriter();
         CppLiteralWriter.AppendNumeric("0xFFFF_FFFF", SpecialType.System_UInt32, writer);
 
         Assert.Equal("0xFFFFFFFF", writer.ToString());
@@ -56,7 +56,7 @@ public class CppLiteralWriterTests
     [Scenario(TestScenario.HappyPath)]
     public void AppendNumeric_FloatWithoutFraction_AddsPointZeroF()
     {
-        var writer = new SourceWriter();
+        using var writer = new SourceWriter();
         CppLiteralWriter.AppendNumeric("2f", SpecialType.System_Single, writer);
 
         Assert.Equal("2.0f", writer.ToString());
@@ -66,7 +66,7 @@ public class CppLiteralWriterTests
     [Scenario(TestScenario.HappyPath)]
     public void AppendNumeric_DoubleWithDSuffix_DropsIt()
     {
-        var writer = new SourceWriter();
+        using var writer = new SourceWriter();
         CppLiteralWriter.AppendNumeric("2d", SpecialType.System_Double, writer);
 
         Assert.Equal("2.0", writer.ToString());
@@ -76,7 +76,7 @@ public class CppLiteralWriterTests
     [Scenario(TestScenario.HappyPath)]
     public void AppendNumeric_FloatWithExponent_KeepsIt()
     {
-        var writer = new SourceWriter();
+        using var writer = new SourceWriter();
         CppLiteralWriter.AppendNumeric("1e3f", SpecialType.System_Single, writer);
 
         Assert.Equal("1e3f", writer.ToString());

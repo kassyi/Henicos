@@ -17,8 +17,8 @@ public class GpuBigIntegerTests
         using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
         using var uintVal = new GpuBigUInt(context, 4);
-        var posBigInt = new GpuBigInt(uintVal, isNegative: false);
-        var negBigInt = new GpuBigInt(uintVal, isNegative: true);
+        using var posBigInt = new GpuBigInt(uintVal, isNegative: false);
+        using var negBigInt = new GpuBigInt(uintVal, isNegative: true);
 
         Assert.False(posBigInt.IsNegative);
         Assert.True(negBigInt.IsNegative);

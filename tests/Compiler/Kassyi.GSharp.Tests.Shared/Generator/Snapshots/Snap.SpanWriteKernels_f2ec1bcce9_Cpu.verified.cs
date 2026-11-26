@@ -8040,7 +8040,7 @@ GSharpArray<int> __gsharp_id_2_dst1 = __gsharp_id_1_targets.__gsharp_mb_SliceCop
 GSharpArray<int> __gsharp_id_3_dst2 = __gsharp_id_1_targets.__gsharp_mb_FillTarget;
 GSharpArray<int> __gsharp_id_4_dst3 = __gsharp_id_1_targets.__gsharp_mb_ArrayCopyTarget;
 GSharpArray<int> __gsharp_id_5_counters = __gsharp_id_1_targets.__gsharp_mb_Counters;
-auto __gsharp_id_6_i = 1;
+int __gsharp_id_6_i = 1;
 GSharpArray<int> __gsharp_id_7_sub = ([&]() {
 auto __gsharp_seq_0 = __gsharp_id_0_src.AsSpan();
 int __gsharp_seq_1 = __gsharp_sub_i32((__gsharp_id_6_i=__gsharp_add_i32(__gsharp_id_6_i,1)),1);
@@ -8049,7 +8049,7 @@ return __gsharp_seq_0.Slice(__gsharp_seq_1,__gsharp_seq_2, ""G#: index was out o
 }());
 __gsharp_id_7_sub.CopyTo(__gsharp_id_2_dst1.AsSpan());
 __gsharp_array_at(__gsharp_id_5_counters, 0, 90063784u)=__gsharp_id_6_i;
-auto __gsharp_id_8_j = 1;
+int __gsharp_id_8_j = 1;
 ([&]() {
 auto __gsharp_seq_3 = __gsharp_id_3_dst2;
 int __gsharp_seq_4 = __gsharp_mul_i32(__gsharp_id_8_j,10);
@@ -8058,8 +8058,8 @@ int __gsharp_seq_6 = (__gsharp_id_8_j=__gsharp_add_i32(__gsharp_id_8_j,1));
 return __gsharp_array_argument(__gsharp_seq_3).AsSpan(__gsharp_seq_5,__gsharp_seq_6, 134690627u, 1629728622u).Fill(__gsharp_seq_4);
 }());
 __gsharp_array_at(__gsharp_id_5_counters, 1, 1292263696u)=__gsharp_id_8_j;
-auto __gsharp_id_9_k = 0;
-auto __gsharp_id_10_len = 2;
+int __gsharp_id_9_k = 0;
+int __gsharp_id_10_len = 2;
 ([&]() {
 auto __gsharp_seq_7 = __gsharp_id_0_src;
 int __gsharp_seq_8 = __gsharp_sub_i32((__gsharp_id_9_k=__gsharp_add_i32(__gsharp_id_9_k,1)),1);
@@ -8184,15 +8184,15 @@ int[] dst1 = targets.SliceCopyTarget;
 int[] dst2 = targets.FillTarget;
 int[] dst3 = targets.ArrayCopyTarget;
 int[] counters = targets.Counters;
-var i = 1;
+int i = 1;
 global::System.Span<int> sub = global::System.MemoryExtensions.AsSpan(src).Slice(i++, i++);
 sub.CopyTo(global::System.MemoryExtensions.AsSpan(dst1));
 counters[0] = i;
-var j = 1;
+int j = 1;
 global::System.Array.Fill(dst2, j * 10, j++, ++j);
 counters[1] = j;
-var k = 0;
-var len = 2;
+int k = 0;
+int len = 2;
 global::System.Array.Copy(src, k++, dst3, k++, ++len);
 counters[2] = k;
 counters[3] = len;

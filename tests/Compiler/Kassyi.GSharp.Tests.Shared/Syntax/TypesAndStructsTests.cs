@@ -17,7 +17,7 @@ public struct InlineVec4_TypesTest
     private float _element0;
 }
 
-public static class MacroOps_TypesTest
+public static partial class MacroOps_TypesTest
 {
     [GpuDeviceFunction]
     public static void AddVec(ref CustomVec_TypesTest res, CustomVec_TypesTest a, CustomVec_TypesTest b)

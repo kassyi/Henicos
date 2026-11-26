@@ -261,7 +261,7 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
     [GpuDeviceFunction]
     public static int SpanSum(ReadOnlySpan<int> s)
     {
-        var sum = 1000;
+        int sum = 1000;
         foreach (var v in s)
         {
             sum += v;

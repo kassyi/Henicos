@@ -31,16 +31,13 @@ public sealed class TargetSharedMemoryDifferentialTests : TranspilerTestBase
     private const string KernelPrefix =
         "__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__TargetSharedMemoryDifferentialKernels__";
 
-    private static int OptInLimit
+    private static int GetOptInLimit()
     {
-        get
-        {
-            using var scope = new GpuKernelLoader.CudaContextScope();
-            CudaException.ThrowIfError(CudaDriverApi.cuCtxGetDevice(out var device));
-            CudaException.ThrowIfError(CudaDriverApi.cuDeviceGetAttribute(out var value,
-                CudaDriverApi.CuDeviceAttribute.MaxSharedMemoryPerBlockOptin, device));
-            return value;
-        }
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        CudaException.ThrowIfError(CudaDriverApi.cuCtxGetDevice(out var device));
+        CudaException.ThrowIfError(CudaDriverApi.cuDeviceGetAttribute(out var value,
+            CudaDriverApi.CuDeviceAttribute.MaxSharedMemoryPerBlockOptin, device));
+        return value;
     }
 
     private static int StaticBytes(string kernel)
@@ -57,7 +54,7 @@ public sealed class TargetSharedMemoryDifferentialTests : TranspilerTestBase
     private static void SkipIfDeviceLimitDiffersFromTarget()
     {
 #if GSHARP_CUDA
-        var optIn = OptInLimit;
+        var optIn = GetOptInLimit();
         var staticBytes = StaticBytes(nameof(TargetSharedMemoryDifferentialKernels.FillAndSumKernel));
         Skip.If(optIn != (int)TargetOptInBytes || staticBytes != 0,
             $"The GPU path has MaxSharedMemoryPerBlockOptin = {optIn} and SharedSizeBytes = {staticBytes} " +

@@ -54,13 +54,13 @@ public struct Pair<T, U>
 
 // Device functions with the same name in two types used to form one C++ overload set, so B.Scale(intArg) called
 // A.Scale(int), which C# would never select.
-public static class FirstScaler
+public static partial class FirstScaler
 {
     [GpuDeviceFunction]
     public static int Scale(int value) => value * 10;
 }
 
-public static class SecondScaler
+public static partial class SecondScaler
 {
     [GpuDeviceFunction]
     public static int Scale(long value) => (int)value * 100;

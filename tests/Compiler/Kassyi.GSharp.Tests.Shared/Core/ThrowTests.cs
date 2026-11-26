@@ -35,6 +35,7 @@ public class ThrowTests
         Action<int[], int> Launch,
         bool CompareMessage = true);
 
+#pragma warning disable GSH0031 // The kernel body run as plain C# is the oracle
     private static readonly Dictionary<string, ThrowCase> s_forms = new()
     {
         ["Literal"] = new("LiteralKernel", ThrowKernels.LiteralKernel, (o, f) => ThrowKernels.LaunchLiteralKernel(o, f)),
@@ -99,6 +100,7 @@ public class ThrowTests
             },
             (o, f) => ThrowKernels.LaunchSuspendingKernel(o, f))
     };
+#pragma warning restore GSH0031
 
     [SkippableTheory]
     [Scenario(TestScenario.SadPath)]
@@ -213,12 +215,14 @@ public class ThrowTests
     [InlineData("UsingLoop")]
     public void Using_ThrowInTheBody_DisposesAsCSharpDoes(string form)
     {
+#pragma warning disable GSH0031 // The kernel body run as plain C# is the oracle
         Action<int[], int[], int> oracle = form switch
         {
             "UsingBody" => ThrowKernels.UsingBodyKernel,
             "UsingNested" => ThrowKernels.UsingNestedKernel,
             _ => ThrowKernels.UsingLoopKernel
         };
+#pragma warning restore GSH0031
         Action<int[], int[], int> launch = form switch
         {
             "UsingBody" => (l, o, f) => ThrowKernels.LaunchUsingBodyKernel(l, o, f),
@@ -233,9 +237,11 @@ public class ThrowTests
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
     public void Using_ThrowInACallee_DisposesAsCSharpDoes() =>
+#pragma warning disable GSH0031 // The kernel body run as plain C# is the oracle
         AssertUsing("UsingCallee", ThrowKernels.UsingCalleeKernel,
             (l, o, f) => ThrowKernels.LaunchUsingCalleeKernel(l, o, f),
             DiffPaths.Available.Where(p => (p.Path & CpuPaths) != 0).ToArray());
+#pragma warning restore GSH0031
 
     private static void AssertUsing(string form, Action<int[], int[], int> oracle, Action<int[], int[], int> launch,
         DiffPathRunner[] selected)

@@ -90,7 +90,7 @@ public class HostArrayViewsTests
     public void Pin_MemoryOfAMemoryManager_ReturnsTheAddressItOwnsAndRecordsOneHandle()
     {
         int[] data = [7, 8, 9, 10];
-        var manager = new HostAliasMemoryManager<int>(data, sizeof(int), data.Length - 1);
+        using var manager = new HostAliasMemoryManager<int>(data, sizeof(int), data.Length - 1);
         var handles = new List<IntPtr>();
         try
         {
