@@ -1,4 +1,4 @@
-# Direct references from Ir/ (excluding Ir/Linear/IrStateMachine*), Semantics/, Dialects/, and Backends/
+# Direct references from Ir/, Semantics/, Dialects/, and Backends/
 # to types or extension methods declared in Transpiler/ or Lowering/.
 - "IrAccessorDecider (Ir/Decisions/IrAccessorDecider.cs) -> PropertyAccessorCall (Transpiler/Rules/ExpressionRules/PropertyAccessorCall.cs)"
 - "IrArgumentCheck (Ir/Decisions/IrArgumentCheck.cs) -> ArgumentCheckKind (Transpiler/Helpers/NullChecks/ArgumentNullCheck.cs)"
@@ -19,7 +19,6 @@
 - "IrClassifier (Ir/Classifying/IrClassifier.cs) -> RemovedCalls (Transpiler/RemovedCalls.cs)"
 - "IrCoalesceDecision (Ir/Decisions/IrCoalesceDecision.cs) -> NullForm (Transpiler/Helpers/NullChecks/NullRepresentation.cs)"
 - "IrDecisionInvariants (Ir/Decisions/IrDecisionInvariants.cs) -> IntegerSemantics (Transpiler/Helpers/Numeric/IntegerSemantics.cs)"
-- "IrInvariants (Ir/IrInvariants.cs) -> RemovedCalls (Transpiler/RemovedCalls.cs)"
 - "IrLoweredInvariants (Ir/Splitting/IrLoweredInvariants.cs) -> RemovedCalls (Transpiler/RemovedCalls.cs)"
 - "IrNonNullProof (Ir/Decisions/IrNonNullProof.cs) -> ArrayNullCheck (Transpiler/Helpers/NullChecks/ArrayNullCheck.cs)"
 - "IrNonNullProof (Ir/Decisions/IrNonNullProof.cs) -> NonNullProof (Transpiler/Helpers/NullChecks/NonNullProof.cs)"

@@ -1,5 +1,4 @@
 using Kassyi.GSharp.Compiler.Ir.Expressions;
-using Kassyi.GSharp.Compiler.Ir.Linear;
 using Kassyi.GSharp.Compiler.Ir.Statements;
 
 namespace Kassyi.GSharp.Compiler.Ir;
@@ -37,12 +36,7 @@ internal static class IrNodeChildren
         IrStructCreation creation => [.. WithArguments(null, creation.Arguments), .. creation.Initializers],
         IrArrayCreation array => [array.Length, .. array.Elements],
         IrSequence sequence => [.. sequence.SideEffects, sequence.Value],
-        IrConditionalGoto conditionalGoto => [conditionalGoto.Condition],
-        IrResumeCall resume => resume.ResultTarget is { } target ? [resume.Call, target] : [resume.Call],
         IrRuntimeCall runtime => WithRuntimeArguments(runtime.Arguments),
-        IrStateJump jump => Optional(jump.Condition),
-        IrState state => [.. state.Statements],
-        IrStateMachine machine => [.. machine.States],
         _ => []
     };
 
@@ -77,7 +71,6 @@ internal static class IrNodeChildren
         IrAssignment assignment => assignment.Target == child,
         IrCompoundAssignment compound => compound.Target == child,
         IrIncrement increment => increment.Target == child,
-        IrResumeCall resume => resume.ResultTarget == child,
         _ => false
     };
 

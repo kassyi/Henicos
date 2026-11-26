@@ -2,11 +2,8 @@
 using System.IO;
 using Kassyi.GSharp.Compiler.Extensions;
 using Kassyi.GSharp.Compiler.Ir;
-using Kassyi.GSharp.Compiler.Ir.Classifying;
 using Kassyi.GSharp.Compiler.Ir.Decisions;
 using Kassyi.GSharp.Compiler.Ir.Expressions;
-using Kassyi.GSharp.Compiler.Ir.Linear;
-using Kassyi.GSharp.Compiler.Ir.Splitting;
 using Kassyi.GSharp.Compiler.Semantics;
 using Kassyi.GSharp.Compiler.Transpiler;
 using Kassyi.GSharp.Compiler.Transpiler.Helpers;
@@ -18,8 +15,7 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 
 /// <summary>
-/// Corpus-wide agreement checks between IR numeric decisions and syntax-based <see cref="IOperation"/> helpers, and
-/// between pre-split and post-split IR decisions (#1561).
+/// Corpus-wide agreement checks between IR numeric decisions and syntax-based <see cref="IOperation"/> helpers (#1561).
 /// </summary>
 [Category(TestCategory.Compiler)]
 [Collection(TestCollections.CorpusScan)]
@@ -88,74 +84,6 @@ public class IrDecisionAgreementTests(ITestOutputHelper output)
         Assert.True(binaryCount > 0 && unaryCount > 0 && stepCount > 0 && compoundCount > 0 &&
                     conversionCount > 0 && conditionalCount > 0 && constantCount > 0,
             "Expected non-zero comparison counts for every decision kind.");
-        Assert.True(mismatches.IsEmpty,
-            string.Join("\n", mismatches.OrderBy(static m => m, StringComparer.Ordinal).Take(100)));
-    }
-
-    [Fact]
-    [Scenario(TestScenario.HappyPath)]
-    public void EverySplitMethod_PostSplitDecisionsAgreeWithPreSplit()
-    {
-        var mismatches = new ConcurrentBag<string>();
-        int comparedMethods = 0;
-        int comparedNodes = 0;
-
-        IrCoverageInputs.ForEach((compilation, trees) =>
-        {
-            foreach (var (_, symbol, built) in IrCoverageInputs.GpuMethods(compilation, trees))
-            {
-                var syntaxRef = symbol.DeclaringSyntaxReferences.FirstOrDefault();
-                if (syntaxRef == null)
-                {
-                    continue;
-                }
-
-                var classified = IrClassifier.Classify(built, compilation);
-                if (IrSplitLowering.Apply(classified, compilation, out _) is not { } splitLowered)
-                {
-                    continue;
-                }
-
-                var isDevice = !symbol.HasAttribute(KnownAttributes.GpuKernel);
-                var linear = IrLinearizer.Linearize(splitLowered, compilation);
-                var machine = IrStateMachineBuilder.Build(linear, isDevice, built.Body.Source, compilation);
-                var where = IrCoverageInputs.Where(syntaxRef.SyntaxTree, symbol);
-
-                var preDecided = IrDecisions.Decide(built, IrDecisionTestContext.Create(compilation, built));
-                var postContext = IrDecisionTestContext.Create(compilation, machine, built);
-                var postDecided = IrDecisions.Decide(machine, postContext);
-
-                foreach (var violation in IrDecisionInvariants.Verify(postDecided))
-                {
-                    mismatches.Add($"{where}: post-split invariant: {violation}");
-                }
-
-                var preByKey = CollectUniqueNonSynthesized(preDecided.Body);
-                Interlocked.Increment(ref comparedMethods);
-
-                foreach (var node in IrNodeChildren.DescendantsAndSelf(postDecided))
-                {
-                    if (node is not IrExpression postExpr || postExpr.Source.Synthesized ||
-                        postExpr.Decision is null)
-                    {
-                        continue;
-                    }
-
-                    var key = (postExpr.Source.TreeOrdinal, postExpr.Source.Start, postExpr.Source.Length,
-                        postExpr.GetType());
-                    if (!preByKey.TryGetValue(key, out var preExpr) || preExpr is null)
-                    {
-                        continue;
-                    }
-
-                    Interlocked.Increment(ref comparedNodes);
-                    ComparePreAndPost(preExpr, postExpr, where, mismatches);
-                }
-            }
-        });
-
-        output.WriteLine($"Post-split compared: {comparedMethods} methods, {comparedNodes} nodes");
-        Assert.True(comparedMethods > 0 && comparedNodes > 0, "Expected non-zero post-split comparisons.");
         Assert.True(mismatches.IsEmpty,
             string.Join("\n", mismatches.OrderBy(static m => m, StringComparer.Ordinal).Take(100)));
     }
@@ -489,130 +417,6 @@ public class IrDecisionAgreementTests(ITestOutputHelper output)
         {
             mismatches.Add(
                 $"{where}: {syntax.Kind()} {syntax.Span}: TypeAtUse syntax {oldTypeAtUse.Name} IR {d.TypeAtUse.Name}");
-        }
-    }
-
-    private static Dictionary<(int TreeOrdinal, int Start, int Length, Type Kind), IrExpression?>
-        CollectUniqueNonSynthesized(IrNode root)
-    {
-        var map = new Dictionary<(int TreeOrdinal, int Start, int Length, Type Kind), IrExpression?>();
-        foreach (var node in IrNodeChildren.DescendantsAndSelf(root))
-        {
-            if (node is not IrExpression expr || expr.Source.Synthesized || expr.Decision is null)
-            {
-                continue;
-            }
-
-            var key = (expr.Source.TreeOrdinal, expr.Source.Start, expr.Source.Length, expr.GetType());
-            if (!map.TryAdd(key, expr))
-            {
-                map[key] = null;
-            }
-        }
-
-        return map;
-    }
-
-    private static void ComparePreAndPost(IrExpression pre, IrExpression post, string where,
-        ConcurrentBag<string> mismatches)
-    {
-        var label = $"{where}: {pre.GetType().Name} {pre.Source.Span}";
-        switch (pre, post)
-        {
-            case (IrBinary pb, IrBinary qb):
-            {
-                var pd = pb.Decided;
-                var qd = qb.Decided;
-                if (pd.Helper != qd.Helper ||
-                    pd.ShiftMask != qd.ShiftMask ||
-                    !SymbolEqualityComparer.Default.Equals(pd.NarrowEnumType, qd.NarrowEnumType) ||
-                    !SymbolEqualityComparer.Default.Equals(pd.PromotedType, qd.PromotedType) ||
-                    pd.ConvertsLeft != qd.ConvertsLeft ||
-                    pd.ConvertsRight != qd.ConvertsRight ||
-                    pd.FloatingRemainder != qd.FloatingRemainder ||
-                    !Equals(pd.Folded, qd.Folded) ||
-                    (pd.Site is not null) != (qd.Site is not null) ||
-                    !Equals(pd.ManagedDivision, qd.ManagedDivision))
-                {
-                    mismatches.Add($"{label}: post-split IrBinary decision mismatch");
-                }
-                break;
-            }
-            case (IrUnary pu, IrUnary qu):
-            {
-                var pd = pu.Decided;
-                var qd = qu.Decided;
-                if (pd.Helper != qd.Helper ||
-                    !SymbolEqualityComparer.Default.Equals(pd.NarrowEnumType, qd.NarrowEnumType) ||
-                    !SymbolEqualityComparer.Default.Equals(pd.PromotedType, qd.PromotedType) ||
-                    pd.ConvertsOperand != qd.ConvertsOperand ||
-                    !Equals(pd.Folded, qd.Folded))
-                {
-                    mismatches.Add($"{label}: post-split IrUnary decision mismatch");
-                }
-                break;
-            }
-            case (IrIncrement pi, IrIncrement qi):
-            {
-                var pd = pi.Decided;
-                var qd = qi.Decided;
-                if (pd.Helper != qd.Helper ||
-                    pd.UndoHelper != qd.UndoHelper ||
-                    !SymbolEqualityComparer.Default.Equals(pd.Narrowing, qd.Narrowing))
-                {
-                    mismatches.Add($"{label}: post-split IrIncrement decision mismatch");
-                }
-                break;
-            }
-            case (IrCompoundAssignment pc, IrCompoundAssignment qc):
-            {
-                var pd = pc.Decided;
-                var qd = qc.Decided;
-                if (pd.Helper != qd.Helper ||
-                    pd.ShiftMask != qd.ShiftMask ||
-                    !SymbolEqualityComparer.Default.Equals(pd.Narrowing, qd.Narrowing) ||
-                    pd.OperatorType != qd.OperatorType ||
-                    pd.FloatingRemainder != qd.FloatingRemainder ||
-                    pd.ConvertsValue != qd.ConvertsValue ||
-                    (pd.Site is not null) != (qd.Site is not null))
-                {
-                    mismatches.Add($"{label}: post-split IrCompoundAssignment decision mismatch");
-                }
-                break;
-            }
-            case (IrConversion pv, IrConversion qv):
-            {
-                var pd = pv.Decided;
-                var qd = qv.Decided;
-                if (pd.Form != qd.Form ||
-                    pd.Helper != qd.Helper ||
-                    pd.NeedsCast != qd.NeedsCast ||
-                    !Equals(pd.Folded, qd.Folded))
-                {
-                    mismatches.Add($"{label}: post-split IrConversion decision mismatch");
-                }
-                break;
-            }
-            case (IrConditional pcond, IrConditional qcond):
-            {
-                var pd = pcond.Decided;
-                var qd = qcond.Decided;
-                if (!SymbolEqualityComparer.Default.Equals(pd.PromotedType, qd.PromotedType) ||
-                    pd.ConvertsWhenTrue != qd.ConvertsWhenTrue ||
-                    pd.ConvertsWhenFalse != qd.ConvertsWhenFalse)
-                {
-                    mismatches.Add($"{label}: post-split IrConditional decision mismatch");
-                }
-                break;
-            }
-            case (IrConstant pconst, IrConstant qconst):
-            {
-                if (!SymbolEqualityComparer.Default.Equals(pconst.Decided.TypeAtUse, qconst.Decided.TypeAtUse))
-                {
-                    mismatches.Add($"{label}: post-split IrConstant TypeAtUse mismatch");
-                }
-                break;
-            }
         }
     }
 }

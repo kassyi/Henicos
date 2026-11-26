@@ -5,7 +5,7 @@ using Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 namespace Kassyi.GSharp.Tests.Cpu.Transpiler;
 
 /// <summary>
-/// Enforces the #2314 compiler layering gate: <c>Ir/</c> (excluding <c>Ir/Linear/IrStateMachine*</c>),
+/// Enforces the #2314 compiler layering gate: <c>Ir/</c>,
 /// <c>Semantics/</c>, <c>Dialects/</c>, and <c>Backends/</c> must not introduce new direct or indirect references
 /// to types or extension methods declared in <c>Transpiler/</c> or <c>Lowering/</c>.
 /// </summary>
@@ -31,7 +31,7 @@ public class CompilerLayerArchitectureTests(ITestOutputHelper output)
             name: "CompilerLayerDirect",
             expectedFile: DirectExpectedFile,
             headerComment:
-                "# Direct references from Ir/ (excluding Ir/Linear/IrStateMachine*), Semantics/, Dialects/, " +
+                "# Direct references from Ir/, Semantics/, Dialects/, " +
                 "and Backends/\r\n" +
                 "# to types or extension methods declared in Transpiler/ or Lowering/.",
             actualEdges: graph.DirectEdges);
@@ -49,8 +49,7 @@ public class CompilerLayerArchitectureTests(ITestOutputHelper output)
             name: "CompilerLayerIndirect",
             expectedFile: IndirectExpectedFile,
             headerComment:
-                "# Indirect references: types reachable from Tier 1 (excluding Transpiler/, Lowering/, " +
-                "and Ir/Linear/IrStateMachine*)\r\n" +
+                "# Indirect references: types reachable from Tier 1 (excluding Transpiler/ and Lowering/)\r\n" +
                 "# that reference types or extension methods declared in Transpiler/ or Lowering/.",
             actualEdges: graph.IndirectEdges);
     }
