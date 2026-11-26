@@ -390,13 +390,16 @@ async function statusSnapshot(
   };
 }
 
+/** The part of a `grant` log line before ` pid `, which `sim2.mts` reads with `/shared/.test(head)`. */
+function headOfGrant(line: string): string {
+  return line.split(" pid ")[0] ?? "";
+}
+
 /**
- * `grant` log lines, `status --json`, `JobStore` persistence/restore, `downgrade`, and `rebind` carry `shareReason`
- * while preserving `sim2.mts` (`/shared/.test(head)`) and older client/state compatibility.
+ * The `grant` log line and `describeJob` carry a valid `shareReason` of a GPU turn (an invalid one is dropped, a job
+ * that is not a turn has none), while `sim2.mts` (`/shared/.test(head)`) still reads the share of the line head.
  */
-export async function checkGrantLogAndStatusShareReason(assert: AssertModule): Promise<void> {
-  const headOfGrant = (line: string): string => line.split(" pid ")[0] ?? "";
-  // Case 1 & 2: grant log formatting, non-turn gating, sanitization, and sim2.mts /shared/.test(head) invariant
+export async function checkGrantLineShareReason(assert: AssertModule): Promise<void> {
   await withGpu({ slots: 2 }, async ({ server, port, lines }) => {
     const cases: {
       command: string;
@@ -508,8 +511,13 @@ export async function checkGrantLogAndStatusShareReason(assert: AssertModule): P
       await end(client, 0, assert);
     }
   });
+}
 
-  // Case 3 & 4: status --json projection (running + waiting) and JobStore persistence/restore
+/**
+ * `status --json` shows the `shareReason` of running and waiting jobs, and `JobStore` keeps it across a persist and
+ * restore, up to the grant line of a restored waiting job.
+ */
+export async function checkStatusAndRestoreShareReason(assert: AssertModule): Promise<void> {
   await withGpu({ slots: 2 }, async ({ server, port }, directory) => {
     const reqA = turnRequest("A", { share: "shared", shareReason: "categories" });
     const clientA = await connectRaw(port);
@@ -571,8 +579,10 @@ export async function checkGrantLogAndStatusShareReason(assert: AssertModule): P
     clientB.close();
     c.client.close();
   });
+}
 
-  // Case 5a: downgrade with explicit shareReason ("stale") and legacy payload-less downgrade ("downgrade")
+/** A downgrade with a `shareReason` ("stale") takes it; one without a payload (an older client) sets "downgrade". */
+export async function checkDowngradeShareReason(assert: AssertModule): Promise<void> {
   await withGpu({ slots: 2 }, async ({ server, port, lines }) => {
     const a = await queueTurn(port, "A", { share: "shared", shareReason: "list:0" });
     const b = await queueTurn(port, "B", { share: "shared", shareReason: "categories" });
@@ -602,8 +612,10 @@ export async function checkGrantLogAndStatusShareReason(assert: AssertModule): P
     );
     c.client.close();
   });
+}
 
-  // Case 5a-extra: downgrade with share: "shared" and shareReason: "not-shared" must enforce exclusive sanitization
+/** A downgrade that claims `share: "shared"` with the reason "not-shared" is still checked as exclusive: "downgrade". */
+export async function checkMalformedDowngradeShareReason(assert: AssertModule): Promise<void> {
   await withGpu({ slots: 2 }, async ({ server, port, lines }) => {
     const d = await queueTurn(port, "D", { share: "shared", shareReason: "list:0" });
     const blocker = await queueTurn(port, "Blocker", { share: "shared", shareReason: "categories" });
@@ -624,8 +636,13 @@ export async function checkGrantLogAndStatusShareReason(assert: AssertModule): P
     assert.strictEqual(/shared/.test(head), false, `sim2 head must not match /shared/: ${head}`);
     await end(d.client, 0, assert);
   });
+}
 
-  // Case 5b: rebind lowers shareReason to incoming new reason ("stale") or "rebind" when omitted/unchanged
+/**
+ * A shared turn that registers again as exclusive (running or waiting) takes the reason it sends ("stale"), or
+ * "rebind" when it sends none.
+ */
+export async function checkRebindShareReason(assert: AssertModule): Promise<void> {
   await withGpu({ slots: 2 }, async ({ server, port, lines }) => {
     const req1 = turnRequest("A", { share: "shared", shareReason: "list:0" });
     const first = await connectRaw(port);
@@ -664,7 +681,8 @@ export async function checkGrantLogAndStatusShareReason(assert: AssertModule): P
     );
     await end(again2, 0, assert);
 
-    // Waiting rebind: disconnected while waiting behind an exclusive blocker -> reconnects as exclusive -> grant logs new reason
+    // Waiting rebind: disconnected while waiting behind an exclusive blocker, it registers again as exclusive and its
+    // grant line logs the new reason
     const blocker = await queueTurn(port, "Blocker", { share: "exclusive", shareReason: "env-prefix" });
     assert.ok(blocker.granted !== null);
     const req3 = turnRequest("W", { share: "shared", shareReason: "list:0" });
@@ -695,5 +713,9 @@ export const SharedServerChecks: Record<string, (assert: AssertModule) => Promis
   checkFailedSharedTurnIsLogged,
   checkDowngradeSharedTurn,
   checkRebindLowersShare,
-  checkGrantLogAndStatusShareReason,
+  checkGrantLineShareReason,
+  checkStatusAndRestoreShareReason,
+  checkDowngradeShareReason,
+  checkMalformedDowngradeShareReason,
+  checkRebindShareReason,
 };
