@@ -83,6 +83,8 @@ The number of selected elements is computed on the device, and the host does not
 
 Two separately built `Where` results cannot be combined element-wise, because their counts are known only on the device (`NotSupportedException`): write `v.Where(p.And(q))`. `v.Where(p).Where(m)` works when `m` has the capacity's length.
 
+As in System.Linq, `Take(k)` after a `Where` runs the projections of the source only up to the k-th selected element, and `Any` / `All` only up to the deciding one; `Skip(k)` after a `Where` runs them for the skipped elements as well.
+
 ## SelectAdd / SelectSubtract / SelectMultiply
 
 Applies a scalar addition, subtraction, or multiplication to each element of a vectorized expression using a grid-stride parallel kernel.

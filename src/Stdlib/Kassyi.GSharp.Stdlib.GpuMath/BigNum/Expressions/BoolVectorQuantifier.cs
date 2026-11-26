@@ -54,7 +54,7 @@ internal static class BoolVectorQuantifier
         {
             decidedIndex = Reduce(workspace, source, all, decidingIndex: true);
         }
-        catch (Exception) when (pending.Exception is { } recorded)
+        catch (Exception) when (pending.RecordedOnInterrupt is { } recorded)
         {
             // The element exception was raised first (a later length mismatch, a failure, or a value computed after the
             // recorded element): it wins, as in a sequential evaluation

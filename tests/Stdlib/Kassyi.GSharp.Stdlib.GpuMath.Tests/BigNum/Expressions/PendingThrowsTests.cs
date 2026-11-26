@@ -249,4 +249,53 @@ public class PendingThrowsTests
         Assert.Same(c, closed.Exception);
         Assert.Same(b, scope.Instance.RecordedOnInterrupt);
     }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void RecordedOnInterrupt_ClosedSpaceDiscardedThenReopened_DoesNotSurfaceDiscarded()
+    {
+        var a = new DivideByZeroException();
+        var b = new InvalidOperationException();
+        var c = new OverflowException();
+        var d = new ArithmeticException();
+
+        using var scope = PendingThrows.Begin();
+        PendingThrows.OpenSpace();
+        PendingThrows.TryRecord(1, a);
+        PendingThrows.CloseSpace();
+
+        // mutant: PendingThrows._first stored scope-wide instead of per space frame
+        PendingThrows.OpenSpace();
+        Assert.Null(scope.Instance.RecordedOnInterrupt);
+
+        PendingThrows.TryRecord(2, b);
+        Assert.Same(b, scope.Instance.RecordedOnInterrupt);
+        PendingThrows.CloseSpace();
+
+        PendingThrows.TryRecord(5, c);
+        PendingThrows.OpenSpace();
+        Assert.Same(c, scope.Instance.RecordedOnInterrupt);
+
+        PendingThrows.OpenSpace();
+        PendingThrows.TryRecord(1, d);
+        Assert.Same(c, scope.Instance.RecordedOnInterrupt);
+
+        PendingThrows.CloseSpace();
+        PendingThrows.CloseSpace();
+        Assert.Same(c, scope.Instance.RecordedOnInterrupt);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CloseSpace_AtZeroDepthInActiveScope_ReturnsEmpty()
+    {
+        using var scope = PendingThrows.Begin();
+        PendingThrows.OpenSpace();
+        PendingThrows.CloseSpace();
+
+        var extra = PendingThrows.CloseSpace();
+
+        Assert.Equal(int.MaxValue, extra.Index);
+        Assert.Null(extra.Exception);
+    }
 }

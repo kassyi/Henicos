@@ -107,6 +107,8 @@ public static IGpuBigFloatVectorExpression Where(
     IGpuBoolVectorExpression predicate);
 ```
 
+As in System.Linq, `Take(k)` after a `Where` runs the projections of the source only up to the k-th selected element, and `Any` / `All` only up to the deciding one; `Skip(k)` after a `Where` runs them for the skipped elements as well.
+
 #### Exceptions
 
 `ArgumentNullException`<br>

@@ -3,9 +3,9 @@ using System.Runtime.ExceptionServices;
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 /// <summary>
-/// Records element-level exceptions on the current thread during <see cref="BoolVectorQuantifier"/> evaluation so
-/// <c>Any</c> and <c>All</c> can compare the earliest throwing element index <c>T</c> against the earliest deciding
-/// element index <c>D</c>.
+/// Records element-level exceptions on the current thread during <see cref="VectorWalk"/> and
+/// <see cref="BoolVectorQuantifier"/> evaluation so <c>Take</c>, <c>Count</c>, <c>Sum</c>, <c>Any</c>, and <c>All</c>
+/// observe exceptions in C# evaluation order.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -13,10 +13,11 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 /// node of an expression records first, as C# runs the inner projection of an element first).
 /// </para>
 /// <para>
-/// Index spaces can be nested with <see cref="OpenSpace"/> and <see cref="CloseSpace"/> so an operator can record its
-/// operands in separate spaces and remap the winning index into the enclosing space; <see cref="RecordedOnInterrupt"/>
-/// returns the lowest-index record of the root space when all spaces are closed, or the earliest-in-time record when an
-/// inner space is still open.
+/// Index spaces can be nested with <see cref="OpenSpace"/> and <see cref="CloseSpace"/> so
+/// <see cref="WhereDeviceState"/> can remap the winning operand failure through the predicate's exclusive prefix scan
+/// into its <c>Skip</c> / <c>Take</c> window (clamping skipped elements to 0 and discarding failures past the window).
+/// <see cref="RecordedOnInterrupt"/> returns the lowest-index record of the root space when all spaces are closed, or
+/// the earliest-in-time live record of the open spaces when an inner space is still open.
 /// </para>
 /// </remarks>
 internal sealed class PendingThrows
@@ -28,10 +29,9 @@ internal sealed class PendingThrows
 
     private readonly PendingThrows? _previous;
     private int _nextOrder;
-    private Best _best = Best.Empty;
-    private Best[]? _outer;
+    private Space _current = Space.Empty;
+    private Space[]? _outer;
     private int _depth;
-    private Exception? _first;
 
     private PendingThrows(PendingThrows? previous)
     {
@@ -44,18 +44,18 @@ internal sealed class PendingThrows
     /// <summary>
     /// Gets the lowest element index recorded in the current space, or <see cref="int.MaxValue"/> before a record.
     /// </summary>
-    public int MinIndex => _best.Index;
+    public int MinIndex => _current.Best.Index;
 
     /// <summary>
     /// Gets the exception of the lowest element index in the current space, or <see langword="null"/>.
     /// </summary>
-    public Exception? Exception => _best.Exception;
+    public Exception? Exception => _current.Best.Exception;
 
     /// <summary>
     /// Gets the exception to throw when evaluation is interrupted: the lowest-index record of the root space when all
-    /// spaces are closed, or the earliest-in-time record of the scope when an inner space is still open.
+    /// spaces are closed, or the earliest-in-time record of the open spaces when an inner space is still open.
     /// </summary>
-    public Exception? RecordedOnInterrupt => _depth == 0 ? _best.Exception : _first;
+    public Exception? RecordedOnInterrupt => _depth == 0 ? _current.Best.Exception : FirstOpen();
 
     /// <summary>Starts recording on the current thread until the returned scope is disposed.</summary>
     /// <returns>The scope, which restores the previous one when disposed.</returns>
@@ -140,32 +140,51 @@ internal sealed class PendingThrows
     [DoesNotReturn]
     public static void ThrowRecorded(Exception exception) => ExceptionDispatchInfo.Throw(exception);
 
+    private Exception? FirstOpen()
+    {
+        if (_outer is { } outer)
+        {
+            for (var i = 0; i < _depth; i++)
+            {
+                if (outer[i].First is { } first)
+                {
+                    return first;
+                }
+            }
+        }
+
+        return _current.First;
+    }
+
     private void Record(int index, Exception exception)
     {
-        _first ??= exception;
+        var first = _current.First ?? exception;
         var order = _nextOrder++;
-        if (_best.Exception is null || index < _best.Index || (index == _best.Index && order < _best.Order))
+        var best = _current.Best;
+        if (best.Exception is null || index < best.Index || (index == best.Index && order < best.Order))
         {
-            _best = new Best(index, order, exception);
+            best = new Best(index, order, exception);
         }
+
+        _current = new Space(best, first);
     }
 
     private void PushSpace()
     {
         if (_outer is null)
         {
-            _outer = ArrayPool<Best>.Shared.Rent(InitialOuterCapacity);
+            _outer = ArrayPool<Space>.Shared.Rent(InitialOuterCapacity);
         }
         else if (_depth == _outer.Length)
         {
-            var grown = ArrayPool<Best>.Shared.Rent(_outer.Length * 2);
+            var grown = ArrayPool<Space>.Shared.Rent(_outer.Length * 2);
             Array.Copy(_outer, grown, _depth);
-            ArrayPool<Best>.Shared.Return(_outer, clearArray: true);
+            ArrayPool<Space>.Shared.Return(_outer, clearArray: true);
             _outer = grown;
         }
 
-        _outer[_depth++] = _best;
-        _best = Best.Empty;
+        _outer[_depth++] = _current;
+        _current = Space.Empty;
     }
 
     private Recorded PopSpace()
@@ -175,8 +194,8 @@ internal sealed class PendingThrows
             return Recorded.Empty;
         }
 
-        var closed = new Recorded(_best.Index, _best.Exception);
-        _best = outer[--_depth];
+        var closed = new Recorded(_current.Best.Index, _current.Best.Exception);
+        _current = outer[--_depth];
         outer[_depth] = default;
         return closed;
     }
@@ -185,7 +204,7 @@ internal sealed class PendingThrows
     {
         if (_outer is not null)
         {
-            ArrayPool<Best>.Shared.Return(_outer, clearArray: true);
+            ArrayPool<Space>.Shared.Return(_outer, clearArray: true);
             _outer = null;
             _depth = 0;
         }
@@ -223,6 +242,11 @@ internal sealed class PendingThrows
     {
         /// <summary>Gets an empty record with no exception and <see cref="int.MaxValue"/> index.</summary>
         public static Recorded Empty => new(int.MaxValue, null);
+    }
+
+    private readonly record struct Space(Best Best, Exception? First)
+    {
+        public static Space Empty => new(Best.Empty, null);
     }
 
     private readonly record struct Best(int Index, int Order, Exception? Exception)

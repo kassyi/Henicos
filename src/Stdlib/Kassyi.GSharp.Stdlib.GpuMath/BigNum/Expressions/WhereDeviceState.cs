@@ -49,15 +49,17 @@ internal sealed class WhereDeviceState : IDisposable
         int wordsPerElement,
         int elementOffset,
         int? elementCount,
-        out DeviceElementCount count)
+        out DeviceElementCount count,
+        out DeviceElementCount inputCount,
+        out GpuBigUIntArrayView scan)
         where TKind : IVectorCompactKind<TResult>
         where TResult : struct, allows ref struct
     {
         var evalCount = elementCount ?? (capacity - elementOffset);
-        var inputCount = DeviceCounted.Combine(sourceCount, predicates.Count);
+        inputCount = DeviceCounted.Combine(sourceCount, predicates.Count);
 
         // 1. The scan of the predicates gives each selected element its position, and its total is the count
-        var scan = ScanFlags(workspace, predicates.Flags.DevicePointer, capacity, inputCount);
+        scan = ScanFlags(workspace, predicates.Flags.DevicePointer, capacity, inputCount);
 
         // 2. The selected elements move to their positions (all components in one launch)
         var selected = TKind.Selected(Cache, workspace, capacity, wordsPerElement);
@@ -66,6 +68,56 @@ internal sealed class WhereDeviceState : IDisposable
 
         count = Count(capacity).SkipFirst(elementOffset).TakeFirst(evalCount);
         return TKind.Slice(selected, elementOffset, evalCount);
+    }
+
+    /// <summary>
+    /// Closes the source and predicate index spaces opened by <see cref="IIndexSpaceBoundary.BeginOperand"/>, picks the
+    /// earlier failure in C# order (source before predicate at the same input index), translates it into the requested
+    /// window, and records it if it falls inside the window.
+    /// </summary>
+    public void RecordTranslated(
+        GpuWorkspace workspace,
+        DeviceElementCount inputCount,
+        scoped GpuBigUIntArrayView scan,
+        int offset,
+        int evalCount)
+    {
+        var fromSource = PendingThrows.CloseSpace();
+        var fromPredicate = PendingThrows.CloseSpace();
+        var recorded = fromSource.Exception is not null && fromSource.Index <= fromPredicate.Index
+            ? fromSource
+            : fromPredicate;
+        if (recorded.Exception is { } exception
+            && TranslateRecorded(workspace, recorded.Index, inputCount, scan, offset, evalCount) is { } index)
+        {
+            PendingThrows.RecordOrThrow(index, exception);
+        }
+    }
+
+    /// <summary>
+    /// Maps an input element index to the requested output window
+    /// [<paramref name="offset"/>, <paramref name="offset"/> + <paramref name="evalCount"/>), clamping skipped
+    /// elements to 0 and returning <see langword="null"/> past the window.
+    /// </summary>
+    public int? TranslateRecorded(
+        GpuWorkspace workspace,
+        int index,
+        DeviceElementCount inputCount,
+        scoped GpuBigUIntArrayView scan,
+        int offset,
+        int evalCount)
+    {
+        var n = inputCount.Read(workspace);
+        var mapped = index < n
+            ? workspace.Provider.ReadWord(scan.DevicePointer, index, workspace.Stream)
+            : workspace.Provider.ReadWord(_count.DevicePointer, 0, workspace.Stream);
+        var j = checked((int)mapped) - offset;
+        if (j < 0)
+        {
+            j = 0;
+        }
+
+        return j >= evalCount ? null : j;
     }
 
     /// <summary>

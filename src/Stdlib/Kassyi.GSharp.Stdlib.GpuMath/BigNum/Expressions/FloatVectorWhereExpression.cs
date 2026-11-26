@@ -6,7 +6,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 /// </summary>
 internal sealed class FloatVectorWhereExpression(
     [TakesOwnership] IGpuBigFloatVectorExpression source,
-    [TakesOwnership] IGpuBoolVectorExpression predicate) : IGpuBigFloatVectorExpression, IFloatVectorOperator
+    [TakesOwnership] IGpuBoolVectorExpression predicate)
+    : IGpuBigFloatVectorExpression, IFloatVectorOperator, IIndexSpaceBoundary
 {
     public int Length => DeviceCounted.KnownLength(this);
 
@@ -51,6 +52,14 @@ internal sealed class FloatVectorWhereExpression(
     // The source and the predicate are read whole; the selection is cut to the window
     public VectorRequest OperandRequest(in VectorRequest request) => VectorRequest.Whole;
 
+    public void BeginOperand(int index)
+    {
+        if (_inputsMayThrow)
+        {
+            PendingThrows.OpenSpace();
+        }
+    }
+
     public VectorResult Apply(GpuWorkspace workspace, scoped in VectorRequest request, VectorResult first,
         VectorResult second)
     {
@@ -63,7 +72,12 @@ internal sealed class FloatVectorWhereExpression(
         var evaluatedSource = second.Float;
         var selected = _state.Select<FloatVectorResultKind, GpuBigFloatArrayView>(workspace, evaluatedSource.Storage,
             evaluatedSource.Count, first.Bool, Capacity, WordsPerElement, request.Offset, request.Count,
-            out var count);
+            out var count, out var inputCount, out var scan);
+        if (_inputsMayThrow)
+        {
+            _state.RecordTranslated(workspace, inputCount, scan, request.Offset, request.EvalCount(Capacity));
+        }
+
         return VectorResult.Of(new FloatVectorEvaluation(selected, count));
     }
 
@@ -78,7 +92,9 @@ internal sealed class FloatVectorWhereExpression(
         }
 
         var operandRequest = OperandRequest(request);
+        BeginOperand(0);
         var first = VectorWalk.EvaluateDirect(predicate, workspace, operandRequest, level);
+        BeginOperand(1);
         var second = VectorWalk.EvaluateDirect(source, workspace, operandRequest, level);
         return Apply(workspace, request, first, second);
     }

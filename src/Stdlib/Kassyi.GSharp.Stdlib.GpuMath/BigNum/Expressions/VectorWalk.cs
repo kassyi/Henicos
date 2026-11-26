@@ -26,7 +26,9 @@ internal static class VectorWalk
     /// <returns>The result of the root.</returns>
     public static VectorResult Evaluate(IVectorOperator root, GpuWorkspace workspace,
         scoped in VectorRequest request) =>
-        EvaluateDirect(root, workspace, request, RecursionLevel.Walking(RecursionLimit));
+        PendingThrows.IsActive || !root.MayThrow
+            ? EvaluateDirect(root, workspace, request, RecursionLevel.Walking(RecursionLimit))
+            : EvaluateRecording(root, workspace, request, RecursionLimit);
 
     /// <summary>
     /// Evaluates <paramref name="root"/> with <paramref name="levels"/> levels by recursion and the levels below them
@@ -39,7 +41,35 @@ internal static class VectorWalk
     /// <returns>The result of the root.</returns>
     internal static VectorResult Evaluate(object root, GpuWorkspace workspace, scoped in VectorRequest request,
         int levels) =>
-        EvaluateDirect(root, workspace, request, RecursionLevel.Walking(levels));
+        PendingThrows.IsActive || root is not IVectorOperator op || !op.MayThrow
+            ? EvaluateDirect(root, workspace, request, RecursionLevel.Walking(levels))
+            : EvaluateRecording(op, workspace, request, levels);
+
+    // Evaluates a chain that can throw under a scope so Where/Take/Any/All see element exceptions in C# order
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static VectorResult EvaluateRecording(IVectorOperator root, GpuWorkspace workspace,
+        scoped in VectorRequest request, int levels)
+    {
+        using var scope = PendingThrows.Begin();
+        var pending = scope.Instance;
+        VectorResult result;
+        try
+        {
+            result = EvaluateDirect(root, workspace, request, RecursionLevel.Walking(levels));
+        }
+        catch (Exception) when (pending.RecordedOnInterrupt is { } recorded)
+        {
+            PendingThrows.ThrowRecorded(recorded);
+            throw;
+        }
+
+        if (pending.Exception is { } exception)
+        {
+            PendingThrows.ThrowRecorded(exception);
+        }
+
+        return result;
+    }
 
     /// <summary>
     /// Evaluates <paramref name="node"/> and the expression below it by recursion, one call of
@@ -107,6 +137,20 @@ internal static class VectorWalk
     // that the frame of this one stays small.
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static VectorResult EvaluateInput(object node, GpuWorkspace workspace, scoped in VectorRequest request) =>
+        node is not (GpuBigIntVectorLeafExpression or GpuBigFloatVectorLeafExpression) && PendingThrows.IsActive
+            ? EvaluateExternalSuspended(node, workspace, request)
+            : EvaluateInputCore(node, workspace, request);
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static VectorResult EvaluateExternalSuspended(object node, GpuWorkspace workspace,
+        scoped in VectorRequest request)
+    {
+        using var _ = PendingThrows.Suspend();
+        return EvaluateInputCore(node, workspace, request);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static VectorResult EvaluateInputCore(object node, GpuWorkspace workspace, scoped in VectorRequest request) =>
         node switch
         {
             IGpuBigIntVectorExpression vector => EvaluateInput(vector, workspace, request),
@@ -157,6 +201,10 @@ internal static class VectorWalk
         /// <inheritdoc/>
         public void BeginOperand(object node, int index)
         {
+            if (node is IIndexSpaceBoundary boundary)
+            {
+                boundary.BeginOperand(index);
+            }
         }
 
         // A vector node that evaluates no input for this request, or a node that evaluates itself
