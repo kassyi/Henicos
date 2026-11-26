@@ -340,10 +340,12 @@ Files pulled back from a remote Linux CPU worker (`ArtifactCollector` in `remote
 untrusted external downloads and **never** written into the local worktree (so `*.received.cs` snapshots or scripts
 can never be compiled or executed by a subsequent local build):
 
--   **Write target**: `<mainCheckout>/tmp/job-queue/remote-quarantine/<jobId>/<relPosix>` (outside every MSBuild project
-    and `.csproj` glob; uses the full numeric `jobId`). The directory is created lazily only when at least one pulled
-    artifact passes all validation gates. There is intentionally no automatic restore command; inspect diffs manually and
-    copy verified changes by hand if desired.
+-   **Write target**: `<mainCheckout>/tmp/job-queue/remote-quarantine/<jobId>/<relPosix>` (uses the full numeric
+    `jobId`). No MSBuild project picks these files up because the main checkout's root holds no project file and no
+    project's glob reaches `tmp/`. The directory is created lazily only when at least one pulled artifact passes all
+    validation gates; a folder that already exists under that `jobId` (an id reused after the state was reset) is
+    emptied first, removing links inside it without following them. There is intentionally no automatic restore
+    command; inspect diffs manually and copy verified changes by hand if desired.
 -   **`--results-directory` redirection**: Commands specifying `--results-directory <dir>` write to `<dir>` on the
     remote worker and pull results into the quarantine directory, not local `<dir>`. The 1-line end-of-job stderr summary
     and `status <id>` (`--json` too, for ended remote jobs with quarantine metadata) report the quarantine path, file
@@ -357,12 +359,14 @@ can never be compiled or executed by a subsequent local build):
     -   `failureArtifacts` (only on non-zero exit, matched against `knownLocalDirs` when `requireKnownLocalDir` is set):
         the text set above plus `*.received.(txt|cs|cu|cpp|c|h|hpp|json|xml|md)`.
     -   Binaries, executables, scripts, debug symbols, dumps, extensionless files, dotfiles, bare source files (`.cs`,
-        `.cu`, `.cpp`, `.c`, `.h`, `.hpp`), and `*.verified.*` snapshots are rejected. Gate 5 verifies that neither
-        `<stateDir>/remote-quarantine/<jobId>` nor any ancestor/target inside it is a symlink or junction.
--   **Retention cleanup**: `pruneQuarantineDirs` runs after each remote pull (excluding the current `jobId`), removing
-    directories older than 7 days (`MaxQuarantineAgeMs`) and pruning oldest directories first (`mtimeMs`, numeric ID
-    tie-breaker) down to at most 50 entries (`MaxQuarantineDirs`), clearing read-only attributes on Windows before removal
-    and never following symlinks or junctions.
+        `.cu`, `.cpp`, `.c`, `.h`, `.hpp`), and `*.verified.*` snapshots are rejected. Gate 5 verifies that no path segment
+        from `stateDir` itself down to the target file (`remote-quarantine`, `<jobId>`, every folder below it) is a
+        symlink or junction; the folders above `stateDir` are not checked.
+-   **Retention cleanup**: `pruneQuarantineDirs` runs after each remote pull (excluding the current `jobId`) and keeps a
+    directory while it is among the newest 200 (`MaxQuarantineDirs`, by `mtimeMs` with the numeric ID as tie-breaker)
+    or not older than 7 days (`MaxQuarantineAgeMs`); a directory that meets neither is removed, clearing read-only
+    attributes on Windows first and never following symlinks or junctions. `status <id>` marks the quarantine path
+    `(pruned)` (`"pruned": true` with `--json`) once its directory is gone.
 
 ## Remote offload routing and Windows-only tests
 

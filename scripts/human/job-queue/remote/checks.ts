@@ -15,7 +15,7 @@ import { PluginHost } from "../plugin-host.ts";
 import { Scheduler, type Estimate, type SchedulerJob } from "../scheduler.ts";
 import { gitBashPath } from "../shell.ts";
 import { RemoteArtifactChecks } from "./artifact-checks.ts";
-import { QuarantineFolderName, removeReadOnlyTree } from "./artifact-collector.ts";
+import { MaxQuarantineDirs, QuarantineFolderName, removeReadOnlyTree } from "./artifact-collector.ts";
 import {
   captureStderr,
   FakeRemoteTransport,
@@ -456,16 +456,18 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void | Promi
       assert.ok(!plainRedirStderr.includes("--results-directory"));
       assert.strictEqual(plainRedirRes?.quarantine?.resultsRedirected, false);
 
-      // RemoteRunner.execute invokes quarantine retention pruning after pull (keeping current jobId)
+      // RemoteRunner.execute invokes quarantine retention pruning after pull (keeping current jobId): with more than
+      // MaxQuarantineDirs folders, the ones older than 7 days beyond the newest MaxQuarantineDirs go
       const qRoot = path.join(stateDir, QuarantineFolderName);
       const nowMs = Date.now();
-      for (let i = 1; i <= 55; i++) {
+      const oldCount = MaxQuarantineDirs + 10;
+      for (let i = 1; i <= oldCount; i++) {
         const d = path.join(qRoot, String(i));
         fs.mkdirSync(d, { recursive: true });
         const f = path.join(d, "old.log");
         fs.writeFileSync(f, "old", { mode: 0o644 });
         fs.chmodSync(f, 0o444);
-        const t = new Date(nowMs - (60 - i) * 1000);
+        const t = new Date(nowMs - 8 * 86_400_000 - (oldCount + 5 - i) * 1000);
         fs.utimesSync(d, t, t);
       }
       transport.binaryHandler = () => makeFrame("tmp/out.log", "fresh");
@@ -484,7 +486,12 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void | Promi
           18743,
         );
       });
-      assert.strictEqual(fs.readdirSync(qRoot).length, 50, "RemoteRunner.execute prunes old quarantine dirs to cap");
+      assert.strictEqual(
+        fs.readdirSync(qRoot).length,
+        MaxQuarantineDirs,
+        "RemoteRunner.execute prunes old quarantine dirs to cap",
+      );
+      assert.ok(fs.existsSync(path.join(qRoot, String(oldCount))), "the newest old folder stays");
       assert.ok(!fs.existsSync(path.join(qRoot, "1")), "oldest quarantine dir was pruned");
       assert.ok(fs.existsSync(path.join(qRoot, "18743", "tmp", "out.log")), "current jobId dir is retained");
 

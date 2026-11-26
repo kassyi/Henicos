@@ -146,6 +146,8 @@ export const RemoteArtifactChecks: Record<string, (assert: AssertModule) => void
           makeFrame("tmp/trx /run.trx", "bad"),
           makeFrame("tmp/trx/sub./a.trx", "bad"),
           makeFrame("tmp/trx/run.trx ", "bad"),
+          makeFrame("tmp/trx/a:b.txt", "bad"),
+          makeFrame("tmp/trx/x.txt::$DATA", "bad"),
         ]),
         {
           quarantineDir: qHygiene,
@@ -159,7 +161,18 @@ export const RemoteArtifactChecks: Record<string, (assert: AssertModule) => void
         },
       );
       assert.deepStrictEqual(winHygiene.writtenFiles, []);
-      assert.strictEqual(winHygiene.rejectedFiles.length, 8, "rejects Windows reserved names & trailing dot/space");
+      assert.strictEqual(
+        winHygiene.rejectedFiles.length,
+        10,
+        "rejects Windows reserved names, trailing dot/space, colons",
+      );
+      for (const streamPath of ["tmp/trx/a:b.txt", "tmp/trx/x.txt::$DATA"]) {
+        assert.strictEqual(
+          winHygiene.rejectedFiles.find((r) => r.path === streamPath)?.reason,
+          "invalid path characters",
+          `Gate 1 rejects the NTFS stream form ${streamPath}`,
+        );
+      }
       assert.ok(!fs.existsSync(qHygiene), "lazy creation skips quarantineDir when 0 frames pass");
 
       // Case-colliding frames in one payload
@@ -221,19 +234,32 @@ export const RemoteArtifactChecks: Record<string, (assert: AssertModule) => void
       assert.ok(!fs.existsSync(path.join(wt, "tests", "Snapshots", "Snap.Foo.received.cs")));
       assert.strictEqual(fs.statSync(path.join(qCs, "tests", "Snapshots", "Snap.Foo.received.cs")).mode & 0o777, 0o444);
 
-      // Gate 5 junction/symlink escape guard along ancestor segments inside quarantineDir
+      // Gate 5 junction/symlink escape guard along ancestor segments inside quarantineDir: a link that appears after
+      // the folder was emptied (here: while the first file is locked) is refused, never followed
       const qJunction = path.join(tmp, "quarantine", "106");
-      fs.mkdirSync(path.join(qJunction, "tmp"), { recursive: true });
       const escapeLink = path.join(qJunction, "tmp", "escape");
-      fs.symlinkSync(outside, escapeLink, process.platform === "win32" ? "junction" : "dir");
-      const junctionRes = validateAndWriteArtifacts(makeFrame("tmp/escape/pwned.trx", "boom"), {
-        quarantineDir: qJunction,
-        worktree: wt,
-        allowReceived: false,
-        knownLocalDirs: new Set(),
-        collectPaths: [{ path: "tmp/escape", kind: "dir" }],
-      });
-      assert.deepStrictEqual(junctionRes.writtenFiles, []);
+      let linked = false;
+      const junctionRes = validateAndWriteArtifacts(
+        Buffer.concat([makeFrame("tmp/first/a.trx", "first"), makeFrame("tmp/escape/pwned.trx", "boom")]),
+        {
+          quarantineDir: qJunction,
+          worktree: wt,
+          allowReceived: false,
+          knownLocalDirs: new Set(),
+          collectPaths: [
+            { path: "tmp/first", kind: "dir" },
+            { path: "tmp/escape", kind: "dir" },
+          ],
+          chmod: (p, mode) => {
+            fs.chmodSync(p, mode);
+            if (!linked) {
+              linked = true;
+              fs.symlinkSync(outside, escapeLink, process.platform === "win32" ? "junction" : "dir");
+            }
+          },
+        },
+      );
+      assert.deepStrictEqual(junctionRes.writtenFiles, ["tmp/first/a.trx"]);
       assert.strictEqual(junctionRes.rejectedFiles.length, 1);
       assert.ok(junctionRes.rejectedFiles[0]?.reason.includes("symlink/junction"));
       assert.ok(!fs.existsSync(path.join(outside, "pwned.trx")));
@@ -515,6 +541,9 @@ export const RemoteArtifactChecks: Record<string, (assert: AssertModule) => void
         "Evil.c",
         "Evil.h",
         "Evil.hpp",
+        "S.received.exe",
+        "S.received.dll",
+        "S.received.ps1",
       ];
       const badCollectFrames = disallowedNames.map((name) => makeFrame(`tmp/trx/${name}`, "x"));
       // .received.cs is also blocked in collectPaths (must only arrive via failureArtifacts)
@@ -616,6 +645,30 @@ export const RemoteArtifactChecks: Record<string, (assert: AssertModule) => void
       );
       assert.strictEqual(goodRes.rejectedFiles.length, 0);
       assert.strictEqual(goodRes.writtenFiles.length, goodCollect.length + goodReceived.length);
+
+      // An existing <jobId> folder is emptied before the first write; a junction inside is removed, not followed
+      const qReused = path.join(stateDir, QuarantineFolderName, "310");
+      const outsideKeep = path.join(tmp, "reused-outside");
+      fs.mkdirSync(path.join(qReused, "tmp", "trx"), { recursive: true });
+      fs.mkdirSync(outsideKeep, { recursive: true });
+      fs.writeFileSync(path.join(outsideKeep, "keep.txt"), "keep");
+      const staleFile = path.join(qReused, "tmp", "trx", "stale.trx");
+      fs.writeFileSync(staleFile, "old run");
+      fs.chmodSync(staleFile, 0o444);
+      fs.symlinkSync(outsideKeep, path.join(qReused, "link"), process.platform === "win32" ? "junction" : "dir");
+      const reusedRes = validateAndWriteArtifacts(makeFrame("tmp/trx/new.trx", "new run"), {
+        quarantineDir: qReused,
+        stateDir,
+        worktree: wt,
+        allowReceived: false,
+        knownLocalDirs: new Set(),
+        collectPaths: [{ path: "tmp/trx", kind: "dir" }],
+      });
+      assert.deepStrictEqual(reusedRes.writtenFiles, ["tmp/trx/new.trx"]);
+      assert.ok(!fs.existsSync(staleFile), "the earlier run's file is gone before the new write");
+      assert.ok(!fs.existsSync(path.join(qReused, "link")), "the link inside is removed");
+      assert.ok(fs.existsSync(path.join(outsideKeep, "keep.txt")), "the link target is not followed");
+      assert.strictEqual(fs.readFileSync(path.join(qReused, "tmp", "trx", "new.trx"), "utf8"), "new run");
 
       // 3. Non-Windows ADS skip & Windows ADS failure warning-only (file kept at 0o444, never +x)
       const qLinuxSim = path.join(stateDir, QuarantineFolderName, "304");
@@ -827,7 +880,8 @@ export const RemoteArtifactChecks: Record<string, (assert: AssertModule) => void
       assert.strictEqual(aliasRes.rejectedFiles.length, 0);
       assert.ok(fs.existsSync(path.join(physState, QuarantineFolderName, "556", "tmp", "trx", "alias.trx")));
 
-      // 5. Retention pruning: oldest removed first (count + age cap), 0o444 cleared, symlinks ignored, excludeName kept
+      // 5. Retention pruning: a folder stays while among the newest maxDirs or within maxAgeMs, 0o444 cleared, symlinks
+      //    ignored, excludeName kept
       const qRoot = path.join(tmp, "retention-root");
       const symlinkEscapeTarget = path.join(tmp, "retention-outside");
       fs.mkdirSync(qRoot, { recursive: true });
@@ -850,16 +904,25 @@ export const RemoteArtifactChecks: Record<string, (assert: AssertModule) => void
       makeJobDir("5", 20 * 86_400_000); // excluded current jobId, must never be removed
       fs.symlinkSync(symlinkEscapeTarget, path.join(qRoot, "99"), process.platform === "win32" ? "junction" : "dir");
 
-      const pruned = pruneQuarantineDirs(qRoot, {
-        maxDirs: 3,
+      // Among the newest 4 keeps "1" although it is older than 7 days
+      const countKept = pruneQuarantineDirs(qRoot, {
+        maxDirs: 4,
         maxAgeMs: 7 * 86_400_000,
         excludeName: "5",
         now: baseNow,
       });
-      assert.deepStrictEqual(pruned.removed, ["1", "2"]);
-      assert.deepStrictEqual(pruned.kept.sort(), ["3", "4", "5"]);
+      assert.deepStrictEqual(countKept.removed, [], "a folder among the newest maxDirs stays at any age");
+      // Within 7 days keeps "2" although only the newest 2 count; "1" is neither and goes
+      const pruned = pruneQuarantineDirs(qRoot, {
+        maxDirs: 2,
+        maxAgeMs: 7 * 86_400_000,
+        excludeName: "5",
+        now: baseNow,
+      });
+      assert.deepStrictEqual(pruned.removed, ["1"]);
+      assert.deepStrictEqual(pruned.kept.sort(), ["2", "3", "4", "5"]);
       assert.ok(!fs.existsSync(path.join(qRoot, "1")));
-      assert.ok(!fs.existsSync(path.join(qRoot, "2")));
+      assert.ok(fs.existsSync(path.join(qRoot, "2")), "a folder within maxAgeMs stays beyond the count");
       assert.ok(fs.existsSync(path.join(qRoot, "3")));
       assert.ok(fs.existsSync(path.join(qRoot, "4")));
       assert.ok(fs.existsSync(path.join(qRoot, "5")), "excludeName must never be pruned");
@@ -946,7 +1009,7 @@ export const RemoteArtifactChecks: Record<string, (assert: AssertModule) => void
         fs.utimesSync(d, t, t);
       }
       const aliasPruned = pruneQuarantineDirs(aliasQRoot, {
-        maxDirs: 5,
+        maxDirs: 1,
         maxAgeMs: 7 * 86_400_000,
         now: baseNow,
         worktree: linkParent,
@@ -960,7 +1023,7 @@ export const RemoteArtifactChecks: Record<string, (assert: AssertModule) => void
       fs.mkdirSync(physPruneDir1, { recursive: true });
       fs.utimesSync(physPruneDir1, oldTime, oldTime);
       const physAliasPruned = pruneQuarantineDirs(path.join(physState, QuarantineFolderName), {
-        maxDirs: 5,
+        maxDirs: 1,
         maxAgeMs: 7 * 86_400_000,
         now: baseNow,
         worktree: linkParent,

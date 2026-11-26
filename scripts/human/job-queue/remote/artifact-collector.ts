@@ -23,7 +23,7 @@ export const MaxSingleArtifactBytes = 16 * 1024 * 1024;
 export const MaxTotalArtifactBytes = 32 * 1024 * 1024;
 export const MaxControlSeqLen = 4096;
 export const QuarantineFolderName = "remote-quarantine";
-export const MaxQuarantineDirs = 50;
+export const MaxQuarantineDirs = 200;
 export const MaxQuarantineAgeMs = 7 * 24 * 60 * 60 * 1000;
 
 type SanitizerState = "normal" | "esc" | "csi" | "osc" | "osc_esc" | "st_string" | "st_esc";
@@ -688,6 +688,17 @@ function prepareQuarantineRoot(
         }
       }
     }
+    // A folder left under the same job id (an id reused after the state was reset) is emptied before the first
+    // write, so that none of its files reads as this run's; a link inside is removed, never followed
+    const existing = lstatOrNull(quarantineTarget);
+    if (existing !== null) {
+      if (existing.isSymbolicLink() || !existing.isDirectory()) {
+        return { ok: false, reason: `quarantine root is not a directory: ${path.basename(quarantineTarget)}` };
+      }
+      for (const entry of fs.readdirSync(quarantineTarget)) {
+        removeReadOnlyTree(path.join(quarantineTarget, entry));
+      }
+    }
     fs.mkdirSync(quarantineTarget, { recursive: true });
     const realQuarantine = fs.realpathSync.native(quarantineTarget);
     if (stateDir !== undefined) {
@@ -975,8 +986,8 @@ export interface PruneQuarantineResult {
 }
 
 /**
- * Prunes oldest per-job subdirectories under `quarantineRoot` beyond `maxAgeMs` and `maxDirs`, clearing read-only
- * bits before removal and skipping symlinks/junctions (including symlinked ancestors).
+ * Prunes the per-job subdirectories under `quarantineRoot` that are neither among the newest `maxDirs` nor within
+ * `maxAgeMs`, clearing read-only bits before removal and skipping symlinks/junctions (including symlinked ancestors).
  */
 export function pruneQuarantineDirs(
   quarantineRoot: string,
@@ -1103,44 +1114,32 @@ export function pruneQuarantineDirs(
     });
   }
 
-  candidates.sort((a, b) => a.mtimeMs - b.mtimeMs || a.numId - b.numId || a.name.localeCompare(b.name));
+  // Newest first: a folder stays while it is among the newest maxDirs or not older than maxAgeMs (either keeps it;
+  // a negative limit keeps everything it would decide)
+  candidates.sort((a, b) => b.mtimeMs - a.mtimeMs || b.numId - a.numId || b.name.localeCompare(a.name));
 
   const removed: string[] = [];
-  const remaining: Candidate[] = [];
-  for (const candidate of candidates) {
-    if (candidate.name !== excludeName && maxAgeMs >= 0 && now - candidate.mtimeMs > maxAgeMs) {
-      try {
-        removeReadOnlyTree(candidate.fullPath);
-        removed.push(candidate.name);
-        continue;
-      } catch (err) {
-        warn(
-          `warning: failed to remove expired quarantine directory ${sanitizeRemoteLogText(candidate.name)}: ` +
-            `${sanitizeRemoteLogText(errorMessage(err))}`,
-        );
-      }
+  const kept: string[] = [];
+  candidates.forEach((candidate, rank) => {
+    const recent = maxDirs < 0 || rank < maxDirs;
+    const young = maxAgeMs < 0 || now - candidate.mtimeMs <= maxAgeMs;
+    if (candidate.name === excludeName || recent || young) {
+      kept.push(candidate.name);
+      return;
     }
-    remaining.push(candidate);
-  }
-
-  while (maxDirs >= 0 && remaining.length > maxDirs) {
-    const idx = remaining.findIndex((c) => c.name !== excludeName);
-    if (idx < 0) {
-      break;
-    }
-    const victim = remaining.splice(idx, 1)[0] as Candidate;
     try {
-      removeReadOnlyTree(victim.fullPath);
-      removed.push(victim.name);
+      removeReadOnlyTree(candidate.fullPath);
+      removed.push(candidate.name);
     } catch (err) {
       warn(
-        `warning: failed to prune quarantine directory ${sanitizeRemoteLogText(victim.name)}: ` +
+        `warning: failed to prune quarantine directory ${sanitizeRemoteLogText(candidate.name)}: ` +
           `${sanitizeRemoteLogText(errorMessage(err))}`,
       );
+      kept.push(candidate.name);
     }
-  }
+  });
 
-  return { removed, kept: remaining.map((c) => c.name) };
+  return { removed, kept };
 }
 
 function toDotRel(relPath: string): string {

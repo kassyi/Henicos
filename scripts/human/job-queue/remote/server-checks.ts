@@ -1,6 +1,7 @@
 // JobServer remote offload integration checks: startNow --remote refusal, rebind() job.remote sync,
 // QueuedRun adopt across scheduler restart, and exit 124 exclusion from remote history.
 
+import * as fs from "node:fs";
 import * as net from "node:net";
 import * as path from "node:path";
 import { status } from "../client-commands.ts";
@@ -282,7 +283,17 @@ export const RemoteServerChecks: Record<string, (assert: AssertModule) => void |
         });
         await until("quarantined job ended", () => server.outcomes.has(qJob.id));
 
+        // Once retention removed the folder, the summary says so
+        const prunedText = await captureStatusOutput(() => status(port, qJob.id, false));
+        assert.ok(prunedText.stdout.includes(`${qDir} (pruned) (2 file(s)`), "a removed folder shows (pruned)");
+        const prunedJson = JSON.parse((await captureStatusOutput(() => status(port, qJob.id, true))).stdout) as {
+          pruned?: boolean;
+        };
+        assert.strictEqual(prunedJson.pruned, true);
+        fs.mkdirSync(qDir, { recursive: true });
+
         const textRes = await captureStatusOutput(() => status(port, qJob.id, false));
+        assert.ok(!textRes.stdout.includes("(pruned)"), "an existing folder is not marked pruned");
         assert.strictEqual(textRes.exitCode, undefined);
         assert.ok(textRes.stdout.includes(formatJobId(qJob.id)));
         assert.ok(textRes.stdout.includes("ended (succeeded)"));

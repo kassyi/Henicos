@@ -214,6 +214,8 @@ export async function status(port: number, id: number, json: boolean, here: stri
     const endedJob = reply?.endedJob?.id === id ? reply.endedJob : undefined;
     if (reply !== null && endedJob !== undefined) {
       const q = endedJob.quarantine;
+      // Retention removes old job folders while the summary stays in the state file: say that the files are gone
+      const pruned = q.files > 0 && !fs.existsSync(q.dir);
       if (json) {
         process.stdout.write(
           `${JSON.stringify({
@@ -222,6 +224,7 @@ export async function status(port: number, id: number, json: boolean, here: stri
             state: "ended",
             ...(endedJob.outcome !== undefined ? { outcome: endedJob.outcome } : {}),
             quarantine: q,
+            ...(pruned ? { pruned: true } : {}),
           })}\n`,
         );
         return;
@@ -236,7 +239,7 @@ export async function status(port: number, id: number, json: boolean, here: stri
             : "";
       process.stdout.write(
         `${formatJobId(id)} = job ${id}, ended${outcomeText}\n` +
-          `  quarantine: ${q.dir} (${q.files} file(s), ${kb} KB)${dirsNote}\n`,
+          `  quarantine: ${q.dir}${pruned ? " (pruned)" : ""} (${q.files} file(s), ${kb} KB)${dirsNote}\n`,
       );
       return;
     }
