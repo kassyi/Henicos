@@ -68,6 +68,9 @@ internal sealed class PlatformSkipAnalysis(INamedTypeSymbol factAttribute, Known
             return;
         }
 
+        // A bare return ends the test only in the test body or a constructor; in a helper it only ends the helper
+        var endsWithReturn = isTestMethod ||
+            method.MethodKind is MethodKind.Constructor or MethodKind.StaticConstructor;
         var builder = new FactsBuilder(context.OperationBlocks, HasSupportedOSPlatformWindows(method));
         foreach (var block in context.OperationBlocks)
         {
@@ -91,7 +94,7 @@ internal sealed class PlatformSkipAnalysis(INamedTypeSymbol factAttribute, Known
                         AddCallee(builder.Callees, reference.Method);
                         break;
                     case IConditionalOperation conditional:
-                        AnalyzeConditional(conditional, builder);
+                        AnalyzeConditional(conditional, builder, endsWithReturn);
                         break;
                 }
             }
@@ -327,10 +330,11 @@ internal sealed class PlatformSkipAnalysis(INamedTypeSymbol factAttribute, Known
         _implementations.GetOrAdd(Normalize(member), static _ => []).Add(implementation);
 
     // if (L) return; / if (W) { ... } else throw new SkipException(...); / W ? x : throw new SkipException(...)
-    private void AnalyzeConditional(IConditionalOperation conditional, FactsBuilder builder)
+    private void AnalyzeConditional(IConditionalOperation conditional, FactsBuilder builder, bool endsWithReturn)
     {
-        var whenTrue = conditional.WhenTrue is { } trueBranch && BranchSkips(conditional, trueBranch);
-        var whenFalse = conditional.WhenFalse is { } falseBranch && BranchSkips(conditional, falseBranch);
+        var whenTrue = conditional.WhenTrue is { } trueBranch && BranchSkips(conditional, trueBranch, endsWithReturn);
+        var whenFalse = conditional.WhenFalse is { } falseBranch &&
+            BranchSkips(conditional, falseBranch, endsWithReturn);
         if (!whenTrue && !whenFalse)
         {
             return;
@@ -348,8 +352,9 @@ internal sealed class PlatformSkipAnalysis(INamedTypeSymbol factAttribute, Known
         }
     }
 
-    private bool BranchSkips(IConditionalOperation conditional, IOperation branch) =>
-        ContainsUnconditionalSkip(branch) || (IsBareReturn(branch) && !IsInsideFunction(conditional));
+    private bool BranchSkips(IConditionalOperation conditional, IOperation branch, bool endsWithReturn) =>
+        ContainsUnconditionalSkip(branch) ||
+        (endsWithReturn && IsBareReturn(branch) && !IsInsideFunction(conditional));
 
     // return; alone, so the method ends before it checks anything
     private static bool IsBareReturn(IOperation branch)

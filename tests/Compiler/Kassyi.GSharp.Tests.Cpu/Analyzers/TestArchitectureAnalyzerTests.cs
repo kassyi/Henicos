@@ -65,8 +65,8 @@ public class TestArchitectureAnalyzerTests : AnalyzerTestBase
         );
     }
 
-    // HNT0011: a test that skips on Linux, or returns there before it checks anything, directly, through a helper,
-    // an override, an interface implementation or a constructor of its class, needs [Platform(TestPlatform.Windows)]
+    // HNT0011: a test that skips on Linux directly, through a helper, an override, an interface implementation or a
+    // constructor of its class, or returns there before it checks anything in its body or a constructor, needs [Platform(TestPlatform.Windows)]
     // on the method or on the concrete class that runs it. An inherited test is reported at each concrete class that
     // runs it without the attribute; an attribute on an outer or base class does not count.
     [Fact]
@@ -105,7 +105,6 @@ public class TestArchitectureAnalyzerTests : AnalyzerTestBase
                 "ReturnIfNotWindows",
                 "ReturnIfLinuxInBlock",
                 "ReturnInElseOfWindowsHelper",
-                "ReturnThroughHelper",
                 "ReturnIfNotWindowsAsync",
                 "SkipThroughOverride",
                 "SkipThroughInterface",

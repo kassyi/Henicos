@@ -249,6 +249,7 @@ public class WidenedWindowsSkipTests
         }
     }
 
+    // A bare return in a helper ends only the helper: the test goes on, so it is not reported
     [Fact]
     public void ReturnThroughHelper()
     {
