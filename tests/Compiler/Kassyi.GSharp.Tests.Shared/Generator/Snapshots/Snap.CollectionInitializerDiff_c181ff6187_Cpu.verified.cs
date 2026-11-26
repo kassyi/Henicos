@@ -320,6 +320,19 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerDifferentialKernels__ShuffleElement(int __gsharp_warp_frame, int value) => global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_shuffle_xor_sync<int>(__gsharp_warp_frame, 0, "CollectionInitializerDifferentialKernels.cs(118,52)", 0xFFFFFFFFu, value, 1);
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static global::Kassyi.GSharp.Tests.Shared.Differential.CollectionInitializerMeters __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerDifferentialKernels__ShuffleMeters(int __gsharp_warp_frame, int value)
+{
+int exchanged = global::Kassyi.GSharp.Tests.Shared.Differential.CollectionInitializerDifferentialKernels.__gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerDifferentialKernels__ShuffleElement(__gsharp_warp_frame + 1, value);
+return new global::Kassyi.GSharp.Tests.Shared.Differential.CollectionInitializerMeters
+{
+Value = exchanged
+};
+}
+
 }
 }
 

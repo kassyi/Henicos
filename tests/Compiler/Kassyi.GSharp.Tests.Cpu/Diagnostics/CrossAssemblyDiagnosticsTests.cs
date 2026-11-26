@@ -425,8 +425,10 @@ public class CrossAssemblyDiagnosticsTests
     [InlineData("Cuda", 3, "", 1)]
     [InlineData("Cpu", 4, ", ManagedStateMachine = true, PrivateManagedFrame = true", 1)]
     [InlineData("Cuda", 4, ", ManagedStateMachine = true, PrivateManagedFrame = true", 1)]
-    [InlineData("Cpu", 5, ", ManagedStateMachine = true, PrivateManagedFrame = true", 0)]
-    [InlineData("Cuda", 5, ", ManagedStateMachine = true, PrivateManagedFrame = true", 0)]
+    [InlineData("Cpu", 5, ", ManagedStateMachine = true, PrivateManagedFrame = true", 1)]
+    [InlineData("Cuda", 5, ", ManagedStateMachine = true, PrivateManagedFrame = true", 1)]
+    [InlineData("Cpu", 6, ", ManagedStateMachine = true, PrivateManagedFrame = true", 0)]
+    [InlineData("Cuda", 6, ", ManagedStateMachine = true, PrivateManagedFrame = true", 0)]
     [Scenario(TestScenario.SadPath)]
     public async Task ImportedSuspendingFunction_RecordOfThePreviousFormat_ReportsGsh0089(
         string dialect,
@@ -446,6 +448,45 @@ public class CrossAssemblyDiagnosticsTests
             expected > 0 ? "written by another version of G#" : null);
         Assert.Equal(expected, ranges.Count);
         Assert.All(ranges, static range => Assert.Equal((Analyzer, 11, 43, 11, 48), range));
+    }
+
+    // A stack-only library function reports GSH0089 unless both CPU barrier models are Stack
+    [Theory]
+    [InlineData("Cpu", null, null, 1)]
+    [InlineData("Cuda", null, null, 1)]
+    [InlineData("Cpu", "Stack", null, 1)]
+    [InlineData("Cpu", null, "Stack", 1)]
+    [InlineData("Cpu", "Stack", "Stack", 0)]
+    [InlineData("Cuda", "Stack", "Stack", 0)]
+    [Scenario(TestScenario.SadPath)]
+    public async Task StackOnlyImportedFunction_ConsumerBarrierModels_ReportsGsh0089UnlessBothAreStack(
+        string dialect,
+        string? nativeModel,
+        string? managedModel,
+        int expected)
+    {
+        var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
+            HandWrittenExportRecords.Read(Folder + "HandWrittenStackOnlyRecord.cs"));
+        var options = new Dictionary<string, string>();
+        if (nativeModel is not null)
+        {
+            options["build_property.GSharpNativeBarrierModel"] = nativeModel;
+        }
+
+        if (managedModel is not null)
+        {
+            options["build_property.GSharpManagedBarrierModel"] = managedModel;
+        }
+
+        var diagnostics = await RunAsync(dialect, ConsumerOfTwiceOnly(),
+            options.Count > 0 ? options : null, library);
+
+        var ranges = diagnostics.Ranges(GSharpDiagnostics.DeviceExportUnusable.Id,
+            "'LibMath.Twice' of 'XasmLib' runs only on the stack models; build the consumer with " +
+            "GSharpNativeBarrierModel=Stack and GSharpManagedBarrierModel=Stack");
+        Assert.Equal(expected, ranges.Count);
+        Assert.All(ranges, static range => Assert.Equal((Analyzer, 11, 43, 11, 48), range));
+        Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.DeviceExportUnusable.Id, "managed state machine"));
     }
 
     // The consumer without the struct use (the hand-written library records only Twice)
@@ -586,13 +627,17 @@ public class CrossAssemblyDiagnosticsTests
     }
 
     private static async Task<ImmutableArray<ReportedDiagnostic>> RunAsync(string dialect, string consumer,
-        params MetadataReference[] libraries)
+        Dictionary<string, string>? options, params MetadataReference[] libraries)
     {
         var run = await KernelDiagnostics.RunCompilationAsync(DeviceLibraryBuilder.CreateConsumer(consumer, libraries),
-            dialect);
+            dialect, options);
         return run.Analyzer
             .Select(static d => ReportedDiagnostic.From(Analyzer, d))
             .Concat(run.Generator.Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Generator, d)))
             .ToImmutableArray();
     }
+
+    private static Task<ImmutableArray<ReportedDiagnostic>> RunAsync(string dialect, string consumer,
+        params MetadataReference[] libraries) =>
+        RunAsync(dialect, consumer, options: null, libraries);
 }

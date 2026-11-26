@@ -31,7 +31,7 @@ internal static class StackBodyObstacles
     /// <param name="compilation">The compilation that holds its declaration.</param>
     public static bool DeclaresUsingWithActiveMask(IMethodSymbol method, Compilation compilation)
     {
-        if (!SuspensionAnalysis.ReachesActiveMask(method, compilation) ||
+        if (!SuspensionAnalysis.ReachesActiveMaskOnStack(method, compilation) ||
             !method.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var declaration) ||
             !compilation.ContainsSyntaxTree(declaration.SyntaxTree))
         {

@@ -3,6 +3,8 @@ using System.Globalization;
 using System.IO;
 using System.Reflection;
 using Kassyi.GSharp.Compiler.Aot;
+using Kassyi.GSharp.Compiler.Helpers;
+using Kassyi.GSharp.Compiler.Marshaling;
 using Kassyi.GSharp.Compiler.Models;
 using Kassyi.GSharp.Hashing;
 using Kassyi.ZeroAlloc.Linq;
@@ -432,6 +434,211 @@ public class DeviceExportTests
     private static readonly SyntaxTree s_managedVersionsTree =
         RoslynTestUtility.GetTestCaseContext("Generators/DeviceExportManagedVersionLibrary.cs").Tree;
 
+    private static readonly SyntaxTree s_stackTraitsTree =
+        RoslynTestUtility.GetTestCaseContext("Generators/DeviceExportStackTraitsLibrary.cs").Tree;
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.HappyPath)]
+    public void DeviceExport_DefaultConfig_RecordsStackTraitsAndManagedStackForms(string dialect)
+    {
+        var records = Run(dialect, out var result, out var output, s_stackTraitsTree);
+
+        Assert.Null(result.Exception);
+        Assert.DoesNotContain(result.Diagnostics, static d => d.Severity == DiagnosticSeverity.Error);
+        Assert.Empty(output.GetDiagnostics().Where(static d => d.Severity == DiagnosticSeverity.Error));
+        ExportedRecord Find(string id) => records.Single(r => r.Id == id);
+
+        var waitBlock = Find("M:StackTraitsCase.StackTraitsLib.WaitBlock(System.Int32[],System.Int32)");
+        Assert.False(waitBlock.GetBool("ReachesWarpShuffle"));
+        Assert.False(waitBlock.GetBool("ReachesActiveMask"));
+        Assert.False(waitBlock.GetBool("ReachesGridBarrier"));
+        Assert.True(waitBlock.GetBool("ManagedStackForm"));
+        Assert.False(waitBlock.GetBool("StackOnly"));
+
+        var waitShuffle = Find("M:StackTraitsCase.StackTraitsLib.WaitShuffle(System.Int32)");
+        Assert.True(waitShuffle.GetBool("ReachesWarpShuffle"));
+        Assert.False(waitShuffle.GetBool("ReachesActiveMask"));
+        Assert.False(waitShuffle.GetBool("ReachesGridBarrier"));
+        Assert.True(waitShuffle.GetBool("ManagedStackForm"));
+
+        var waitGrid = Find("M:StackTraitsCase.StackTraitsLib.WaitGrid");
+        Assert.True(waitGrid.GetBool("ReachesGridBarrier"));
+        Assert.True(waitGrid.GetBool("ManagedStackForm"));
+        Assert.False(waitGrid.GetBool("StackOnly"));
+
+        var waitActiveMask = Find("M:StackTraitsCase.StackTraitsLib.WaitActiveMask");
+        Assert.True(waitActiveMask.GetBool("ReachesActiveMask"));
+        Assert.True(waitActiveMask.GetBool("ReachesWarpShuffle"));
+        Assert.True(waitActiveMask.GetBool("ManagedStackForm"));
+
+        var waitClosed = Find("M:StackTraitsCase.ClosedStackLib.WaitClosed(System.Int32[],System.Int32)");
+        Assert.True(waitClosed.GetBool("Suspends"));
+        Assert.False(waitClosed.GetBool("ManagedStackForm"));
+        Assert.False(waitClosed.GetBool("StackOnly"));
+
+        var pureAdd = Find("M:StackTraitsCase.StackTraitsLib.PureAdd(System.Int32)");
+        Assert.False(pureAdd.HasNamedArgument("ReachesWarpShuffle"));
+        Assert.False(pureAdd.HasNamedArgument("ReachesActiveMask"));
+        Assert.False(pureAdd.HasNamedArgument("ReachesGridBarrier"));
+        Assert.False(pureAdd.HasNamedArgument("ManagedStackForm"));
+        Assert.False(pureAdd.HasNamedArgument("StackOnly"));
+
+        var waitGeneric = Find("M:StackTraitsCase.StackTraitsLib.WaitGeneric``1(``0[],System.Int32)");
+        Assert.True(waitGeneric.GetBool("CudaFailed"));
+        Assert.True(waitGeneric.GetBool("CppFailed"));
+        Assert.False(waitGeneric.GetBool("ManagedStackForm"));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CollectDeviceExports_StackOnlyEligibility_SetsStackOnlyOnlyWithoutStateMachineForms()
+    {
+        var hostClass = new HostClassHeader(
+            HintName: "N__C.g.cs",
+            Namespace: "N",
+            Name: "C",
+            Keyword: "class",
+            Accessibility: "public",
+            IsPublic: true,
+            OuterDeclarations: default,
+            FullyQualifiedName: "global::N.C");
+
+        TranspiledDeviceMethodResult CreateMethod(string id, string methodName, bool suspends,
+            bool managedStateMachine, string frameName, bool cppFailed) =>
+            new(
+                Class: hostClass,
+                MethodName: methodName,
+                CudaSignature: $"__device__ void __gsharp_fn_N__C__{methodName}()",
+                CudaBody: $"__device__ void __gsharp_fn_N__C__{methodName}() {{}}",
+                CppSignature: cppFailed ? "" : $"inline void __gsharp_fn_N__C__{methodName}()",
+                CppBody: cppFailed ? "" : $"inline void __gsharp_fn_N__C__{methodName}() {{}}",
+                CudaIncludes: default,
+                CppIncludes: default,
+                InternalError: "",
+                Export: new DeviceExportRecord(
+                    Kind: DeviceExportRecord.FunctionKind,
+                    Id: id,
+                    Names: new DeviceExportRecord.ExportNames(
+                        CppName: $"__gsharp_fn_N__C__{methodName}",
+                        CppFullName: "",
+                        DefinedNames: default,
+                        DefinedIds: default,
+                        DefinedFullNames: default),
+                    Cuda: DeviceExportRecord.DialectText.Empty with { Body = "/*cuda*/" },
+                    Cpp: cppFailed
+                        ? DeviceExportRecord.DialectText.NotTranspiled
+                        : DeviceExportRecord.DialectText.Empty with { Body = "/*cpp*/" },
+                    Traits: DeviceExportRecord.FunctionTraits.None with
+                    {
+                        FrameName = frameName,
+                        Suspends = suspends,
+                        ManagedStateMachine = managedStateMachine
+                    },
+                    InternalError: ""));
+
+        const string StackOnlyId = "M:N.C.StackOnlyFn";
+        const string WithFrameId = "M:N.C.WithFrameFn";
+        const string WithManagedSmId = "M:N.C.WithManagedSmFn";
+        const string CppFailedId = "M:N.C.CppFailedFn";
+        const string MissingStackFormId = "M:N.C.MissingStackFormFn";
+        const string NonSuspendingId = "M:N.C.NonSuspendingFn";
+
+        ImmutableArray<TranspiledDeviceMethodResult> methods =
+        [
+            CreateMethod(StackOnlyId, "StackOnlyFn", suspends: true, managedStateMachine: false, frameName: "", cppFailed: false),
+            CreateMethod(WithFrameId, "WithFrameFn", suspends: true, managedStateMachine: false, frameName: "__gsharp_frame_N__C__WithFrameFn", cppFailed: false),
+            CreateMethod(WithManagedSmId, "WithManagedSmFn", suspends: true, managedStateMachine: true, frameName: "", cppFailed: false),
+            CreateMethod(CppFailedId, "CppFailedFn", suspends: true, managedStateMachine: false, frameName: "", cppFailed: true),
+            CreateMethod(MissingStackFormId, "MissingStackFormFn", suspends: true, managedStateMachine: false, frameName: "", cppFailed: false),
+            CreateMethod(NonSuspendingId, "NonSuspendingFn", suspends: false, managedStateMachine: false, frameName: "", cppFailed: false)
+        ];
+
+        EquatableArray<ManagedStackDeviceForm> stackForms = ImmutableArray.Create(
+            new ManagedStackDeviceForm(StackOnlyId, hostClass, "// stack only"),
+            new ManagedStackDeviceForm(WithFrameId, hostClass, "// with frame"),
+            new ManagedStackDeviceForm(WithManagedSmId, hostClass, "// with managed sm"),
+            new ManagedStackDeviceForm(CppFailedId, hostClass, "// cpp failed"),
+            new ManagedStackDeviceForm(NonSuspendingId, hostClass, "// non suspending")
+        ).AsEquatableArray();
+
+        var exports = GpuKernelGenerator.CollectDeviceExports(
+            methods,
+            kernelMethods: [],
+            standaloneStructs: [],
+            stackForms,
+            exportDeviceCode: true);
+
+        DeviceExportRecord FindRecord(string id) => exports.Functions.AsImmutableArray().Single(r => r.Id == id);
+
+        var stackOnly = FindRecord(StackOnlyId);
+        Assert.True(stackOnly.Traits.ManagedStackForm);
+        Assert.True(stackOnly.Traits.StackOnly);
+
+        var withFrame = FindRecord(WithFrameId);
+        Assert.True(withFrame.Traits.ManagedStackForm);
+        Assert.False(withFrame.Traits.StackOnly);
+
+        var withManagedSm = FindRecord(WithManagedSmId);
+        Assert.True(withManagedSm.Traits.ManagedStackForm);
+        Assert.False(withManagedSm.Traits.StackOnly);
+
+        var cppFailed = FindRecord(CppFailedId);
+        Assert.True(cppFailed.Traits.ManagedStackForm);
+        Assert.False(cppFailed.Traits.StackOnly);
+
+        var missingStackForm = FindRecord(MissingStackFormId);
+        Assert.False(missingStackForm.Traits.ManagedStackForm);
+        Assert.False(missingStackForm.Traits.StackOnly);
+
+        var nonSuspending = FindRecord(NonSuspendingId);
+        Assert.True(nonSuspending.Traits.ManagedStackForm);
+        Assert.False(nonSuspending.Traits.StackOnly);
+
+        var stackOnlySource = DeviceExportEmitter.Generate([stackOnly], [], DeviceExportRecord.CurrentPreludeHash);
+        Assert.Contains("ManagedStackForm = true", stackOnlySource, StringComparison.Ordinal);
+        Assert.Contains("StackOnly = true", stackOnlySource, StringComparison.Ordinal);
+
+        var withFrameSource = DeviceExportEmitter.Generate([withFrame], [], DeviceExportRecord.CurrentPreludeHash);
+        Assert.Contains("ManagedStackForm = true", withFrameSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("StackOnly = true", withFrameSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void ManagedStackForms_LeftOutGenericDeviceFunction_OmitsStackForm()
+    {
+        _ = Run("Cuda", out var result, out var output, s_stackTraitsTree);
+
+        Assert.Null(result.Exception);
+        Assert.Empty(output.GetDiagnostics().Where(static d => d.Severity == DiagnosticSeverity.Error));
+
+        var traitsForms = Assert.Single(result.GeneratedSources,
+            static s => s.HintName == "StackTraitsCase__StackTraitsLib.DeviceStateMachines.g.cs").SourceText.ToString();
+        Assert.Contains("__gsharp_stackmodel_StackTraitsCase__StackTraitsLib__WaitBlock(",
+            traitsForms, StringComparison.Ordinal);
+        Assert.DoesNotContain("__gsharp_stackmodel_StackTraitsCase__StackTraitsLib__WaitGeneric",
+            traitsForms, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void ManagedStackForms_DefaultCudaLibraryWithoutKernels_EmitsStackFormsWithUserAccessibility()
+    {
+        _ = Run("Cuda", out var result, out var output, s_stackTraitsTree);
+
+        Assert.Null(result.Exception);
+        Assert.Empty(output.GetDiagnostics().Where(static d => d.Severity == DiagnosticSeverity.Error));
+
+        var baseForms = Assert.Single(result.GeneratedSources,
+            static s => s.HintName == "StackTraitsCase__BaseStackLib.DeviceStateMachines.g.cs").SourceText.ToString();
+        Assert.Contains("public static int __gsharp_stackmodel_StackTraitsCase__BaseStackLib__WaitBlockPublic(",
+            baseForms, StringComparison.Ordinal);
+        Assert.Contains("protected static int __gsharp_stackmodel_StackTraitsCase__BaseStackLib__WaitProtected(",
+            baseForms, StringComparison.Ordinal);
+    }
+
     // #711: a library emits the managed versions of its functions that expand an operator macro on every dialect, with
     // the function's own accessibility, and records which functions have one; a consumer's managed code calls them
     [Theory]
@@ -580,6 +787,9 @@ public class DeviceExportTests
         public string Kind => (string)(attribute.ConstructorArguments[2].Value ?? "");
 
         public string Id => (string)(attribute.ConstructorArguments[3].Value ?? "");
+
+        public bool HasNamedArgument(string name) =>
+            attribute.NamedArguments.Any(a => a.Key == name);
 
         // A property left at its default (empty, false) is not written
         public string GetString(string name) =>

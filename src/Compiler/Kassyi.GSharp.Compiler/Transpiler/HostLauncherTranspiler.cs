@@ -77,7 +77,9 @@ internal static class HostLauncherTranspiler
         // The stack model meets the lanes of a warp in the rounds of the state machine: the same gate before a step,
         // the same check for a stall (StackThreads.hpp)
         if (effectiveHasContext &&
-            SuspensionAnalysis.ReachesWarpShuffle(methodSymbol, context.Query.SemanticModel.Compilation))
+            (usesStack
+                ? SuspensionAnalysis.ReachesWarpShuffleOnStack(methodSymbol, context.Query.SemanticModel.Compilation)
+                : SuspensionAnalysis.ReachesWarpShuffle(methodSymbol, context.Query.SemanticModel.Compilation)))
         {
             traits |= KernelStepTraits.ReachesWarpShuffle;
         }

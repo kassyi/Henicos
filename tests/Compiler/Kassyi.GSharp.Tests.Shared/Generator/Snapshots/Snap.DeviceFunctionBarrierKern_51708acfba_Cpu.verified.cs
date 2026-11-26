@@ -747,6 +747,79 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__ReverseThroughSharedMemory(int value, int length)
+{
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+global::Kassyi.GSharp.Core.SharedMemory<int> shared = new(256, 0x05d319981395abfcUL);
+shared[tid] = value;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+int reversed = shared[length - 1 - tid];
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier(); // Every read finishes before a later call overwrites the buffer
+return reversed;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__RotateThroughSharedMemory(int value, int length)
+{
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+global::Kassyi.GSharp.Core.SharedMemory<int> shared = new(256, 0xbb276e0ba5a15f7bUL);
+shared[tid] = value;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+int rotated = shared[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((tid + 1), length)];
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return rotated;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__WarpInclusiveScan(int __gsharp_warp_frame, int value)
+{
+uint lane = (uint)global::Kassyi.GSharp.Core.ThreadIndex.X & 31u;
+for (uint offset = 1u; offset < 32u; offset <<= 1)
+{
+int neighbor = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_shuffle_up_sync<int>(__gsharp_warp_frame, 0, "DeviceFunctionBarrierKernels.cs(44,28)", global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierKernels.FullMask, value, offset);
+if (lane >= offset)
+{
+value += neighbor;
+}
+}
+
+return value;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__ScaledReverse(int value, int length, int scale)
+{
+int bias = global::Kassyi.GSharp.Core.ThreadIndex.X * scale;
+int reversed = global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierKernels.__gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__ReverseThroughSharedMemory(value, length);
+return reversed + bias;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__ExchangeThroughSharedParameter(global::Kassyi.GSharp.Core.SharedMemory<int> shared, int value, int length)
+{
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+shared[tid] = value;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return shared[length - 1 - tid];
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__ReverseWithOriginal(int value, int length, out int reversed, out int original)
+{
+original = value;
+reversed = global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierKernels.__gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__ReverseThroughSharedMemory(value, length);
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__ReverseSpanWarp(int __gsharp_warp_frame, global::System.Span<int> data)
+{
+int lane = global::Kassyi.GSharp.Core.ThreadIndex.X & 31;
+int value = data[lane];
+int mirrored = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_shuffle_sync<int>(__gsharp_warp_frame, 0, "DeviceFunctionBarrierKernels.cs(85,24)", global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierKernels.FullMask, value, 31 - lane);
+data[lane] = mirrored;
+}
+
 }
 }
 

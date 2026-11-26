@@ -254,23 +254,30 @@ public class StateMachineFallbackGeneratorTests
     [Scenario(TestScenario.SadPath)]
     public void StateMachineFallbacks_ManagedImportedAndWarpLayoutAndFormFailures_EmitExpectedLines()
     {
-        var consumer = CreateImportedConsumerCompilation();
+        var consumer = CreateManagedImportedConsumerCompilation();
         var importedSources = RunGenerator(consumer, "Cpu", nativeModel: null, managedModel: "Stack");
         var importedFile = Assert.Single(importedSources, static s => s.HintName == StateMachineFallbackPipeline.HintName);
-        Assert.Contains("// managed\tKernels.CallRemoteKernel\tWarpLayout", importedFile.SourceText,
-            StringComparison.Ordinal);
+        Assert.DoesNotContain("CallRemoteBarrierKernel", importedFile.SourceText, StringComparison.Ordinal);
+        Assert.Contains("// managed\tImportedManagedKernels.CallRemoteShuffleKernel\tWarpLayout",
+            importedFile.SourceText, StringComparison.Ordinal);
+        Assert.Contains(
+            "// managed\tImportedManagedKernels.CallClosedBarrierKernel\tImportedSuspendingCall: calls ClosedHelpers.ClosedBarrier of ImportedManagedLib, which has no stack form",
+            importedFile.SourceText, StringComparison.Ordinal);
+        Assert.Contains(
+            "// managed\tImportedManagedKernels.PassClosedBarrierGroupKernel\tImportedSuspendingCall: passes ClosedHelpers.ClosedBarrierAt of ImportedManagedLib, which has no stack form, as a method group",
+            importedFile.SourceText, StringComparison.Ordinal);
 
-        var importedKernel = GetMethod(consumer, "ConsumerApp.Kernels", "CallRemoteKernel");
-        var importedKernelReason = ManagedStackEligibility.FindKernelReason(importedKernel, consumer);
-        Assert.NotNull(importedKernelReason);
-        Assert.Equal("WarpLayout", importedKernelReason.Value.Name);
-        Assert.Contains("visit counts", importedKernelReason.Value.Sentence, StringComparison.OrdinalIgnoreCase);
+        var remoteShuffleKernel = GetMethod(consumer, "ConsumerApp.ImportedManagedKernels", "CallRemoteShuffleKernel");
+        var remoteShuffleReason = ManagedStackEligibility.FindKernelReason(remoteShuffleKernel, consumer);
+        Assert.NotNull(remoteShuffleReason);
+        Assert.Equal("WarpLayout", remoteShuffleReason.Value.Name);
+        Assert.Contains("visit counts", remoteShuffleReason.Value.Sentence, StringComparison.OrdinalIgnoreCase);
 
-        var remoteCallee = GetMethod(consumer, "ImportedStackLib.Helpers", "RemoteBarrier");
-        var remoteCalleeReason = ManagedStackEligibility.FindFunctionReason(remoteCallee, consumer);
-        Assert.NotNull(remoteCalleeReason);
-        Assert.Equal("ImportedSuspendingCall", remoteCalleeReason.Value.Name);
-        Assert.Contains("another assembly", remoteCalleeReason.Value.Sentence, StringComparison.OrdinalIgnoreCase);
+        var closedCallee = GetMethod(consumer, "ImportedManagedLib.ClosedHelpers", "ClosedBarrier");
+        var closedCalleeReason = ManagedStackEligibility.FindFunctionReason(closedCallee, consumer);
+        Assert.NotNull(closedCalleeReason);
+        Assert.Equal("ImportedSuspendingCall", closedCalleeReason.Value.Name);
+        Assert.Contains("another assembly", closedCalleeReason.Value.Sentence, StringComparison.OrdinalIgnoreCase);
 
         var casesSources = RunGenerator(s_casesCompilation.Value, "Cpu", nativeModel: null, managedModel: "Stack");
         var casesFile = Assert.Single(casesSources, static s => s.HintName == StateMachineFallbackPipeline.HintName);
@@ -493,6 +500,87 @@ public class StateMachineFallbackGeneratorTests
         var (_, libOutput, _) = GeneratorTestRunner.RunGenerator(libCompilation, "Cpu");
         return RoslynTestUtility.CreateCompilation(
                 ReadCase("Analysis", "Cases", "NativeStackImportedCallRemoteCases.cs"))
+            .WithAssemblyName("ConsumerApp")
+            .AddReferences(libOutput.ToMetadataReference());
+    }
+
+    private static Compilation CreateManagedImportedConsumerCompilation()
+    {
+        const string LibrarySource = """
+            using Kassyi.GSharp.Core;
+
+            namespace ImportedManagedLib;
+
+            public static partial class Helpers
+            {
+                [GpuDeviceFunction]
+                public static void RemoteBarrier(int[] data)
+                {
+                    Gpu.SyncThreads();
+                    data[0] = 1;
+                }
+
+                [GpuDeviceFunction]
+                public static int RemoteShuffle(int value) => Warp.ShuffleXorSync(0xFFFFFFFFu, value, 1);
+            }
+
+            public static class ClosedHelpers
+            {
+                [GpuDeviceFunction]
+                public static void ClosedBarrier(int[] data)
+                {
+                    Gpu.SyncThreads();
+                    data[0] = 2;
+                }
+
+                [GpuDeviceFunction]
+                public static void ClosedBarrierAt(int i)
+                {
+                    Gpu.SyncThreads();
+                    _ = i;
+                }
+            }
+            """;
+
+        const string ConsumerSource = """
+            using Kassyi.GSharp.Core;
+            using ImportedManagedLib;
+
+            namespace ConsumerApp;
+
+            public static partial class ImportedManagedKernels
+            {
+                [GpuKernel]
+                public static void CallRemoteBarrierKernel(int[] data)
+                {
+                    Helpers.RemoteBarrier(data);
+                }
+
+                [GpuKernel]
+                public static void CallRemoteShuffleKernel(int[] data)
+                {
+                    data[ThreadIndex.X] = Helpers.RemoteShuffle(data[ThreadIndex.X]);
+                }
+
+                [GpuKernel]
+                public static void CallClosedBarrierKernel(int[] data)
+                {
+                    ClosedHelpers.ClosedBarrier(data);
+                }
+
+                [GpuKernel]
+                public static void PassClosedBarrierGroupKernel(int[] data)
+                {
+                    Gpu.SyncThreads();
+                    Gpu.ForUnroll(0, 2, ClosedHelpers.ClosedBarrierAt);
+                    data[ThreadIndex.X] += 1;
+                }
+            }
+            """;
+
+        var libCompilation = RoslynTestUtility.CreateCompilation(LibrarySource).WithAssemblyName("ImportedManagedLib");
+        var (_, libOutput, _) = GeneratorTestRunner.RunGenerator(libCompilation, "Cpu");
+        return RoslynTestUtility.CreateCompilation(ConsumerSource)
             .WithAssemblyName("ConsumerApp")
             .AddReferences(libOutput.ToMetadataReference());
     }

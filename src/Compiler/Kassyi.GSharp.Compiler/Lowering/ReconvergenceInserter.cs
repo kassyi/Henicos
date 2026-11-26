@@ -104,7 +104,10 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
     public static ReconvergenceInserter? TryCreate(SemanticModel? model, IMethodSymbol? owner, bool isDeviceFunction,
         bool stackForm = false)
     {
-        if (model == null || owner == null || !SuspensionAnalysis.ReachesActiveMask(owner, model.Compilation))
+        if (model == null || owner == null ||
+            !(stackForm
+                ? SuspensionAnalysis.ReachesActiveMaskOnStack(owner, model.Compilation)
+                : SuspensionAnalysis.ReachesActiveMask(owner, model.Compilation)))
         {
             return null;
         }

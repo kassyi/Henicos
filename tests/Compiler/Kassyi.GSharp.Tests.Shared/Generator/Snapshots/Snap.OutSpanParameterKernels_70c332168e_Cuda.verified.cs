@@ -191,6 +191,23 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__OutSpanParameterKernels__ReassignedAfterBarrier(int[] buffer, global::System.Span<int> s)
+{
+s = s.Slice(1);
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+global::Kassyi.GSharp.Tests.Shared.Syntax.OutSpanParameterKernels.Fill(buffer, out s);
+return s[0];
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__OutSpanParameterKernels__ReassignedAfterShuffle(int __gsharp_warp_frame, int[] buffer, global::System.Span<int> s)
+{
+s = s.Slice(1);
+int a = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_shuffle_sync<int>(__gsharp_warp_frame, 0, "OutSpanParameterKernels.cs(44,17)", global::Kassyi.GSharp.Tests.Shared.Syntax.OutSpanParameterKernels.FullMask, 0, 0) + global::Kassyi.GSharp.Tests.Shared.Syntax.OutSpanParameterKernels.FillAndReturn(buffer, out s);
+return a + s[0];
+}
+
 }
 }
 
