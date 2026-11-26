@@ -5,8 +5,6 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <param name="semanticModel">The semantic model that maps a node of a lowered body to its original location.</param>
 public readonly struct Reporter(Action<TranspileFailure>? reportFailure, SemanticModel semanticModel)
 {
-    internal Action<TranspileFailure>? FailureSink => reportFailure;
-
     /// <summary>
     /// Records that the output is incomplete because of <paramref name="node"/>, which the analyzer reports with
     /// <paramref name="descriptor"/>. A node of a lowered body is placed at its original location

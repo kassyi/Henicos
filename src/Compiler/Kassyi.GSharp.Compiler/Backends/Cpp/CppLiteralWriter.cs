@@ -12,7 +12,8 @@ internal static class CppLiteralWriter
     /// Writes the empty view of the array-like <paramref name="type"/>, <c>GSharpArray&lt;int&gt;()</c>: its <c>data</c>
     /// is <c>nullptr</c>, which is how a null array is represented.
     /// </summary>
-    public static void AppendEmptyView(in CppTypeContext context, ITypeSymbol type)
+    public static void AppendEmptyView<TServices>(in CppTypeContext<TServices> context, ITypeSymbol type)
+        where TServices : struct, ICppTypeServices
     {
         CppTypeWriter.AppendType(in context, type);
         context.Writer.Append("()");

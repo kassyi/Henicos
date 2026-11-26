@@ -10,7 +10,7 @@ internal static class SharedMemoryStorageType
 {
     /// <summary>
     /// Appends the C++ storage type for <paramref name="typeSymbol"/> to the emitter writer: <c>T*</c> when
-    /// <paramref name="typeSymbol"/> is <c>SharedMemory&lt;T&gt;</c>, or <see cref="CppTypeWriter.AppendType"/>
+    /// <paramref name="typeSymbol"/> is <c>SharedMemory&lt;T&gt;</c>, or <see cref="CppTypeWriter.AppendType{TServices}"/>
     /// otherwise.
     /// </summary>
     public static void Append(ref TranspileContext context, ITypeSymbol? typeSymbol)
@@ -20,6 +20,7 @@ internal static class SharedMemoryStorageType
     }
 
     /// <inheritdoc cref="Append(ref TranspileContext, ITypeSymbol?)"/>
-    public static void Append(in CppTypeContext context, ITypeSymbol? typeSymbol) =>
+    public static void Append<TServices>(in CppTypeContext<TServices> context, ITypeSymbol? typeSymbol)
+        where TServices : struct, ICppTypeServices =>
         CppTypeWriter.AppendStorageType(in context, typeSymbol);
 }

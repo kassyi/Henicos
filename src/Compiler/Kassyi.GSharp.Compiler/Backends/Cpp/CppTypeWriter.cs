@@ -9,12 +9,10 @@ internal static class CppTypeWriter
     /// <summary>
     /// Emits the target C++ type representation for <paramref name="typeSymbol"/> into <paramref name="context"/>.
     /// </summary>
-    public static void AppendType(in CppTypeContext context, ITypeSymbol? typeSymbol)
+    public static void AppendType<TServices>(in CppTypeContext<TServices> context, ITypeSymbol? typeSymbol)
+        where TServices : struct, ICppTypeServices
     {
-        if (context.SubstituteTypeParameters is { } substitute)
-        {
-            typeSymbol = substitute(typeSymbol, context.CurrentStructType, context.Compilation);
-        }
+        typeSymbol = context.Services.SubstituteTypeParameters(typeSymbol);
 
         if (typeSymbol is null)
         {
@@ -38,13 +36,10 @@ internal static class CppTypeWriter
             return;
         }
 
-        if (context.Compilation is { } compilation && context.UsedStructs is { } usedStructs)
-        {
-            context.RegisterUsedStruct?.Invoke(typeSymbol, context.CurrentStructType, compilation, usedStructs);
-        }
+        context.Services.RegisterUsedStruct(typeSymbol);
 
         if (typeSymbol is INamedTypeSymbol userType &&
-            context.TryGetUserTypeName?.Invoke(userType) is { } userTypeName)
+            context.Services.TryGetUserTypeName(userType) is { } userTypeName)
         {
             context.Writer.Append(userTypeName);
             return;
@@ -62,9 +57,10 @@ internal static class CppTypeWriter
 
     /// <summary>
     /// Appends the C++ storage type for <paramref name="typeSymbol"/>: <c>T*</c> when
-    /// <paramref name="typeSymbol"/> is <c>SharedMemory&lt;T&gt;</c>, or <see cref="AppendType"/> otherwise.
+    /// <paramref name="typeSymbol"/> is <c>SharedMemory&lt;T&gt;</c>, or <see cref="AppendType{TServices}"/> otherwise.
     /// </summary>
-    public static void AppendStorageType(in CppTypeContext context, ITypeSymbol? typeSymbol)
+    public static void AppendStorageType<TServices>(in CppTypeContext<TServices> context, ITypeSymbol? typeSymbol)
+        where TServices : struct, ICppTypeServices
     {
         if (typeSymbol.IsSharedMemoryType() &&
             typeSymbol is INamedTypeSymbol { TypeArguments.Length: 1 } sharedMemory)
@@ -82,11 +78,12 @@ internal static class CppTypeWriter
     /// <c>[GpuReadOnly]</c>), a <c>SharedMemory&lt;T&gt;</c> as <c>T*</c>, and a pointer for <c>ref</c> / <c>out</c>
     /// (and <c>in</c> outside kernels or when <paramref name="isPassedByAddress"/> holds).
     /// </summary>
-    public static void AppendParameter(
-        in CppTypeContext context,
+    public static void AppendParameter<TServices>(
+        in CppTypeContext<TServices> context,
         ITypeSymbol? typeSymbol,
         IParameterSymbol? parameterSymbol,
         bool isPassedByAddress)
+        where TServices : struct, ICppTypeServices
     {
         var isKernel = parameterSymbol?.ContainingSymbol is IMethodSymbol method &&
                        method.HasAttribute(KnownAttributes.GpuKernel);
@@ -125,19 +122,18 @@ internal static class CppTypeWriter
         }
     }
 
-    private static void ReportUnsubstitutedTypeParameter(in CppTypeContext context, ITypeParameterSymbol typeParam)
+    private static void ReportUnsubstitutedTypeParameter<TServices>(
+        in CppTypeContext<TServices> context,
+        ITypeParameterSymbol typeParam)
+        where TServices : struct, ICppTypeServices
     {
-        var location = context.CurrentLocation ??
-                       typeParam.Locations
-                           .AsStackEnumerable()
-                           .FirstOrDefault(static loc => loc.IsInSource) ??
-                       Location.None;
-        context.ReportUnsubstitutedTypeParameter?.Invoke(location, context.FailureSink);
+        context.Services.ReportUnsubstitutedTypeParameter(typeParam);
         context.Writer.Append("/*unsupported:TypeParameter*/");
     }
 
     // The forms written without the type's C++ name: arrays, delegates, pointers, WMMA fragments, dialect-mapped types
-    private static bool TryAppendSpecialType(in CppTypeContext context, ITypeSymbol typeSymbol)
+    private static bool TryAppendSpecialType<TServices>(in CppTypeContext<TServices> context, ITypeSymbol typeSymbol)
+        where TServices : struct, ICppTypeServices
     {
         if (typeSymbol.TryGetArrayLikeElementType(out var elementType))
         {
@@ -177,7 +173,8 @@ internal static class CppTypeWriter
                TryAppendMappedType(in context, typeSymbol);
     }
 
-    private static bool TryAppendWmmaType(in CppTypeContext context, ITypeSymbol typeSymbol)
+    private static bool TryAppendWmmaType<TServices>(in CppTypeContext<TServices> context, ITypeSymbol typeSymbol)
+        where TServices : struct, ICppTypeServices
     {
         if (typeSymbol.IsWmmaMarkerType())
         {
@@ -236,7 +233,10 @@ internal static class CppTypeWriter
 
     // System_Action of the Prelude is a variadic alias template, which C++17 names only with its argument list: the
     // Action of System without type arguments is System_Action<>, the alias with an empty argument list
-    private static bool TryAppendParameterlessAction(in CppTypeContext context, ITypeSymbol typeSymbol)
+    private static bool TryAppendParameterlessAction<TServices>(
+        in CppTypeContext<TServices> context,
+        ITypeSymbol typeSymbol)
+        where TServices : struct, ICppTypeServices
     {
         if (typeSymbol is not INamedTypeSymbol
             {
@@ -256,7 +256,8 @@ internal static class CppTypeWriter
     // A delegate type that is not Func or Action of System (those are the Prelude aliases) is the std::function of its
     // Invoke signature on the CPU: MyFn(int) returning int is std::function<int(int)>. A delegate with a ref, out or in
     // parameter keeps its name.
-    private static bool TryAppendDelegateType(in CppTypeContext context, ITypeSymbol typeSymbol)
+    private static bool TryAppendDelegateType<TServices>(in CppTypeContext<TServices> context, ITypeSymbol typeSymbol)
+        where TServices : struct, ICppTypeServices
     {
         if (typeSymbol is not INamedTypeSymbol
             {
@@ -288,7 +289,8 @@ internal static class CppTypeWriter
         return true;
     }
 
-    private static bool TryAppendMappedType(in CppTypeContext context, ITypeSymbol typeSymbol)
+    private static bool TryAppendMappedType<TServices>(in CppTypeContext<TServices> context, ITypeSymbol typeSymbol)
+        where TServices : struct, ICppTypeServices
     {
         if (!context.Dialect.TryMapType(typeSymbol, out var mappedType))
         {
@@ -299,7 +301,10 @@ internal static class CppTypeWriter
         return true;
     }
 
-    private static void AppendGenericArguments(in CppTypeContext context, INamedTypeSymbol namedType)
+    private static void AppendGenericArguments<TServices>(
+        in CppTypeContext<TServices> context,
+        INamedTypeSymbol namedType)
+        where TServices : struct, ICppTypeServices
     {
         context.Writer.Append("<");
         for (var i = 0; i < namedType.TypeArguments.Length; i++)
