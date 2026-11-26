@@ -15,6 +15,7 @@ import { PluginHost } from "../plugin-host.ts";
 import { Scheduler, type Estimate, type SchedulerJob } from "../scheduler.ts";
 import { gitBashPath } from "../shell.ts";
 import { RemoteArtifactChecks } from "./artifact-checks.ts";
+import { MaxQuarantineDirs, QuarantineFolderName, removeReadOnlyTree } from "./artifact-collector.ts";
 import {
   captureStderr,
   FakeRemoteTransport,
@@ -297,13 +298,16 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void | Promi
 
       const runner = new RemoteRunner(transport, stateDir, rules);
       const localManifest = { "tests/Snap/Case.cs": "a".repeat(64) };
+      let execRes: Awaited<ReturnType<RemoteRunner["execute"]>> | undefined;
       const stderrLog = await captureStderr(async () => {
-        const res = await runner.execute(
+        execRes = await runner.execute(
           { worktree: wt, remoteCwdRel: "", bashCommand: "echo test", env: {}, collectPaths: [] },
           () => {},
           localManifest,
+          undefined,
+          18739,
         );
-        assert.strictEqual(res.code, 1);
+        assert.strictEqual(execRes.code, 1);
       });
       assert.strictEqual(interactiveAttempt, 2, "retried once after exit 254 integrity mismatch");
       assert.strictEqual(transport.uploadCalls.length, 2, "initial sync + clean resync after 254");
@@ -323,12 +327,293 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void | Promi
         transport.interactiveCalls.every((s) => s.includes("sha256sum --quiet -c .job-queue-manifest.sha256")),
         "verifyIntegrity remains true on exit-254 retry",
       );
-      assert.strictEqual(fs.readFileSync(path.join(wt, "tests", "Snap", "Case.actual.txt"), "utf8"), "got-42");
+      const expectedQDir = path.join(stateDir, QuarantineFolderName, "18739");
+      const quarantinedCase = path.join(expectedQDir, "tests", "Snap", "Case.actual.txt");
+      assert.ok(!fs.existsSync(path.join(wt, "tests", "Snap", "Case.actual.txt")), "never writes artifact to worktree");
+      assert.strictEqual(fs.readFileSync(quarantinedCase, "utf8"), "got-42");
+      assert.strictEqual(fs.statSync(quarantinedCase).mode & 0o777, 0o444);
+      if (process.platform === "win32") {
+        assert.strictEqual(
+          fs.readFileSync(`${quarantinedCase}:Zone.Identifier`, "utf8"),
+          "[ZoneTransfer]\r\nZoneId=3\r\n",
+        );
+      }
+      const expectedKb = Math.max(1, Math.round(6 / 1024));
+      const summaryLines = stderrLog.trimEnd().split(/\r?\n/);
+      assert.ok(
+        summaryLines.some(
+          (line) =>
+            line.includes(`quarantined 1 file(s) (${expectedKb} KB) in ${expectedQDir}`) &&
+            !line.includes("--results-directory"),
+        ),
+        `expected 1-line quarantine summary with (${expectedKb} KB) in stderr, got: ${stderrLog}`,
+      );
+      assert.deepStrictEqual(execRes?.quarantine, {
+        dir: expectedQDir,
+        files: 1,
+        bytes: 6,
+        resultsRedirected: false,
+      });
       assert.ok(!fs.existsSync(path.join(wt, "CrashDir")), "crash summary parsed in memory, never written to disk");
+      assert.ok(!fs.existsSync(path.join(expectedQDir, "CrashDir")), "crash summary not written to quarantine either");
       assert.ok(
         stderrLog.includes("test host crashed/aborted while running: Suite.AbortedTest"),
         "crash summary actually parsed and logged",
       );
+
+      // --results-directory redirect summary (with files and with 0 files) vs plain redirection (no redirect notice)
+      transport.interactiveHandler = (script, callbacks) => {
+        const token = /__JQ_START_[0-9a-f]+__/.exec(script)?.[0];
+        if (token !== undefined) {
+          callbacks.onStdout(Buffer.from(`${token}\n`, "utf8"));
+        }
+        return { code: 0, signaled: false };
+      };
+      transport.binaryHandler = () => makeFrame("tmp/trx/run1.trx", "<TestRun />");
+      let redirectRes: Awaited<ReturnType<RemoteRunner["execute"]>> | undefined;
+      const redirectStderr = await captureStderr(async () => {
+        redirectRes = await runner.execute(
+          {
+            worktree: wt,
+            remoteCwdRel: "",
+            bashCommand: "dotnet test --results-directory tmp/trx",
+            env: {},
+            collectPaths: [{ path: "tmp/trx", kind: "dir" }],
+            redirectedResultsDirs: ["tmp/trx"],
+          },
+          () => {},
+          localManifest,
+          undefined,
+          18740,
+        );
+      });
+      const redirectQDir = path.join(stateDir, QuarantineFolderName, "18740");
+      const redirectKb = Math.max(1, Math.round("<TestRun />".length / 1024));
+      const redirectLines = redirectStderr.trimEnd().split(/\r?\n/);
+      assert.ok(
+        redirectLines.some((line) =>
+          line.includes(
+            `quarantined 1 file(s) (${redirectKb} KB) in ${redirectQDir} (--results-directory tmp/trx redirected here, not local)`,
+          ),
+        ),
+        `expected 1-line redirect summary with (${redirectKb} KB), got: ${redirectStderr}`,
+      );
+      assert.deepStrictEqual(redirectRes?.quarantine, {
+        dir: redirectQDir,
+        files: 1,
+        bytes: "<TestRun />".length,
+        resultsRedirected: true,
+        resultsDirs: ["tmp/trx"],
+      });
+
+      transport.binaryHandler = () => null;
+      let zeroRedirectRes: Awaited<ReturnType<RemoteRunner["execute"]>> | undefined;
+      const zeroRedirectStderr = await captureStderr(async () => {
+        zeroRedirectRes = await runner.execute(
+          {
+            worktree: wt,
+            remoteCwdRel: "",
+            bashCommand: "dotnet test --results-directory tmp/trx",
+            env: {},
+            collectPaths: [{ path: "tmp/trx", kind: "dir" }],
+            redirectedResultsDirs: ["tmp/trx"],
+          },
+          () => {},
+          localManifest,
+          undefined,
+          18741,
+        );
+      });
+      assert.ok(
+        zeroRedirectStderr.includes("--results-directory tmp/trx redirected to quarantine") &&
+          zeroRedirectStderr.includes("0 file(s) received"),
+      );
+      assert.deepStrictEqual(zeroRedirectRes?.quarantine, {
+        dir: path.join(stateDir, QuarantineFolderName, "18741"),
+        files: 0,
+        bytes: 0,
+        resultsRedirected: true,
+        resultsDirs: ["tmp/trx"],
+      });
+
+      transport.binaryHandler = () => makeFrame("tmp/out.log", "plain redir");
+      let plainRedirRes: Awaited<ReturnType<RemoteRunner["execute"]>> | undefined;
+      const plainRedirStderr = await captureStderr(async () => {
+        plainRedirRes = await runner.execute(
+          {
+            worktree: wt,
+            remoteCwdRel: "",
+            bashCommand: "node scripts/a.js > tmp/out.log",
+            env: {},
+            collectPaths: [{ path: "tmp/out.log", kind: "file" }],
+          },
+          () => {},
+          localManifest,
+          undefined,
+          18742,
+        );
+      });
+      assert.ok(!plainRedirStderr.includes("--results-directory"));
+      assert.strictEqual(plainRedirRes?.quarantine?.resultsRedirected, false);
+
+      // RemoteRunner.execute invokes quarantine retention pruning after pull (keeping current jobId): with more than
+      // MaxQuarantineDirs folders, the ones older than 7 days beyond the newest MaxQuarantineDirs go
+      const qRoot = path.join(stateDir, QuarantineFolderName);
+      const nowMs = Date.now();
+      const oldCount = MaxQuarantineDirs + 10;
+      for (let i = 1; i <= oldCount; i++) {
+        const d = path.join(qRoot, String(i));
+        fs.mkdirSync(d, { recursive: true });
+        const f = path.join(d, "old.log");
+        fs.writeFileSync(f, "old", { mode: 0o644 });
+        fs.chmodSync(f, 0o444);
+        const t = new Date(nowMs - 8 * 86_400_000 - (oldCount + 5 - i) * 1000);
+        fs.utimesSync(d, t, t);
+      }
+      transport.binaryHandler = () => makeFrame("tmp/out.log", "fresh");
+      await captureStderr(async () => {
+        await runner.execute(
+          {
+            worktree: wt,
+            remoteCwdRel: "",
+            bashCommand: "node scripts/a.js > tmp/out.log",
+            env: {},
+            collectPaths: [{ path: "tmp/out.log", kind: "file" }],
+          },
+          () => {},
+          localManifest,
+          undefined,
+          18743,
+        );
+      });
+      assert.strictEqual(
+        fs.readdirSync(qRoot).length,
+        MaxQuarantineDirs,
+        "RemoteRunner.execute prunes old quarantine dirs to cap",
+      );
+      assert.ok(fs.existsSync(path.join(qRoot, String(oldCount))), "the newest old folder stays");
+      assert.ok(!fs.existsSync(path.join(qRoot, "1")), "oldest quarantine dir was pruned");
+      assert.ok(fs.existsSync(path.join(qRoot, "18743", "tmp", "out.log")), "current jobId dir is retained");
+
+      // RemoteRunner.execute under F5.13 (<wt>/tmp -> <wt>/tests): blocks artifact write, skips prune, and omits
+      // runResult.quarantine + redirect-success notice even with --results-directory
+      const f513Wt = path.join(tmp, "runner-f513-wt");
+      const f513KeepFile = path.join(f513Wt, "tests", "job-queue", QuarantineFolderName, "1", "keep.txt");
+      fs.mkdirSync(path.join(f513Wt, "tests", "Snapshots"), { recursive: true });
+      fs.mkdirSync(path.dirname(f513KeepFile), { recursive: true });
+      fs.writeFileSync(f513KeepFile, "keep-runner-f513", { mode: 0o644 });
+      fs.chmodSync(f513KeepFile, 0o444);
+      const f513OldTime = new Date(Date.now() - 30 * 86_400_000);
+      fs.utimesSync(path.join(f513Wt, "tests", "job-queue", QuarantineFolderName, "1"), f513OldTime, f513OldTime);
+      fs.symlinkSync(
+        path.join(f513Wt, "tests"),
+        path.join(f513Wt, "tmp"),
+        process.platform === "win32" ? "junction" : "dir",
+      );
+      const f513StateDir = path.join(f513Wt, "tmp", "job-queue");
+      const f513Rules = {
+        ...rules,
+        failureArtifacts: [
+          {
+            searchDirs: ["tests"],
+            findName: "*.received.*",
+            allowPattern: /^tests\/[A-Za-z0-9_./-]+\.received\.cs$/,
+            requireKnownLocalDir: true,
+            cleanBeforeRun: false,
+          },
+        ],
+      };
+      const f513Manifest = { "tests/Snapshots/Foo.cs": "b".repeat(64) };
+      const f513Transport = new FakeRemoteTransport(makeRemote({ workspace: "~/demo" }));
+      f513Transport.interactiveHandler = (script, callbacks) => {
+        const token = /__JQ_START_[0-9a-f]+__/.exec(script)?.[0];
+        if (token !== undefined) {
+          callbacks.onStdout(Buffer.from(`${token}\n`, "utf8"));
+        }
+        return { code: 1, signaled: false };
+      };
+      f513Transport.binaryHandler = () => makeFrame("tests/Snapshots/Foo.received.cs", "// blocked");
+      const f513Runner = new RemoteRunner(f513Transport, f513StateDir, f513Rules);
+      let f513ExecRes: Awaited<ReturnType<RemoteRunner["execute"]>> | undefined;
+      const f513Stderr = await captureStderr(async () => {
+        f513ExecRes = await f513Runner.execute(
+          { worktree: f513Wt, remoteCwdRel: "", bashCommand: "dotnet test", env: {}, collectPaths: [] },
+          () => {},
+          f513Manifest,
+          undefined,
+          19003,
+        );
+      });
+      assert.strictEqual(f513ExecRes?.code, 1);
+      assert.strictEqual(
+        f513ExecRes?.quarantine,
+        undefined,
+        "blocked quarantine must leave execRes.quarantine undefined",
+      );
+      assert.ok(f513Stderr.includes("symlink/junction"), "logs symlink/junction rejection reason");
+      assert.ok(
+        !fs.existsSync(path.join(f513Wt, "tests", "job-queue", QuarantineFolderName, "19003")),
+        "Foo.received.cs must not be written through wt/tmp junction",
+      );
+      assert.ok(fs.existsSync(f513KeepFile), "RemoteRunner must not prune wt/tests via wt/tmp junction");
+
+      // Same F5.13 junction with --results-directory tmp/trx (both with files and with 0 files)
+      f513Transport.interactiveHandler = (script, callbacks) => {
+        const token = /__JQ_START_[0-9a-f]+__/.exec(script)?.[0];
+        if (token !== undefined) {
+          callbacks.onStdout(Buffer.from(`${token}\n`, "utf8"));
+        }
+        return { code: 0, signaled: false };
+      };
+      f513Transport.binaryHandler = () => makeFrame("tmp/trx/run1.trx", "<TestRun />");
+      let f513ResultsRes: Awaited<ReturnType<RemoteRunner["execute"]>> | undefined;
+      const f513ResultsStderr = await captureStderr(async () => {
+        f513ResultsRes = await f513Runner.execute(
+          {
+            worktree: f513Wt,
+            remoteCwdRel: "",
+            bashCommand: "dotnet test --results-directory tmp/trx",
+            env: {},
+            collectPaths: [{ path: "tmp/trx", kind: "dir" }],
+            redirectedResultsDirs: ["tmp/trx"],
+          },
+          () => {},
+          f513Manifest,
+          undefined,
+          19004,
+        );
+      });
+      assert.strictEqual(
+        f513ResultsRes?.quarantine,
+        undefined,
+        "rejected --results-directory quarantine must leave execRes.quarantine undefined",
+      );
+      assert.ok(!f513ResultsStderr.includes("redirected to quarantine"));
+      assert.ok(f513ResultsStderr.includes("could not be quarantined"));
+      assert.ok(fs.existsSync(f513KeepFile));
+
+      f513Transport.binaryHandler = () => null;
+      let f513ZeroResultsRes: Awaited<ReturnType<RemoteRunner["execute"]>> | undefined;
+      const f513ZeroResultsStderr = await captureStderr(async () => {
+        f513ZeroResultsRes = await f513Runner.execute(
+          {
+            worktree: f513Wt,
+            remoteCwdRel: "",
+            bashCommand: "dotnet test --results-directory tmp/trx",
+            env: {},
+            collectPaths: [{ path: "tmp/trx", kind: "dir" }],
+            redirectedResultsDirs: ["tmp/trx"],
+          },
+          () => {},
+          f513Manifest,
+          undefined,
+          19005,
+        );
+      });
+      assert.strictEqual(f513ZeroResultsRes?.quarantine, undefined);
+      assert.ok(!f513ZeroResultsStderr.includes("redirected to quarantine"));
+      assert.ok(f513ZeroResultsStderr.includes("could not be quarantined"));
+      assert.ok(fs.existsSync(f513KeepFile));
 
       // Pre-exec sentinel: exit 255 before start token -> transportFailed; after start token -> not transportFailed
       const sentinelTransport = new FakeRemoteTransport(makeRemote({ workspace: "~/demo" }));
@@ -458,7 +743,7 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void | Promi
       assert.strictEqual(resetRes.memMb, "4096");
       assert.ok(!fs.existsSync(path.join(stateDir, "remote-manifest-ubuntu.json")));
     } finally {
-      fs.rmSync(tmp, { recursive: true, force: true });
+      removeReadOnlyTree(tmp);
     }
   },
 

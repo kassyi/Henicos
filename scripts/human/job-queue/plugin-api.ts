@@ -17,6 +17,7 @@ export {
 } from "./command-reader.ts";
 export { isTrivialStep, programOf } from "./estimate-key.ts";
 export { errorCode, errorMessage } from "./history.ts";
+export { hasEnvKey } from "./remote/env-policy.ts";
 export { dropShortWords } from "./short-name.ts";
 export type { CommandKeys, LegendEntry, PathPlace, ReadStep, ScreenLine, ShellName };
 export type AssertModule = typeof Assert;
@@ -35,6 +36,24 @@ export type ShareMode = "shared" | "exclusive";
 export interface ShareAnswer {
   readonly share: ShareMode;
   readonly stillValid?: () => Promise<boolean>;
+}
+
+export type OffloadDecision = "allow" | "local";
+
+/** Result of async `checkOffload`: "allow" permits remote offload; "local" forces local execution with an optional reason. */
+export interface OffloadAnswer {
+  readonly offload: OffloadDecision;
+  readonly reason?: string;
+}
+
+/** Caller request metadata passed to `checkOffload`. */
+export interface OffloadCheckRequest {
+  readonly remoteForced: boolean;
+  readonly places: Readonly<Record<string, PathPlace>>;
+  /** How long the host waits for this answer; a plugin that runs several steps shares it out. */
+  readonly timeoutMs?: number;
+  /** Aborted when the host stopped waiting: whatever the plugin started for the answer must stop. */
+  readonly signal?: AbortSignal;
 }
 
 /** Read-only client context passed to client/view hooks. */
@@ -72,6 +91,8 @@ export interface Classification {
   share?: ShareMode;
   /** True when the command is self-contained and eligible for transparent offload to a remote Linux CPU worker. */
   offloadable?: boolean;
+  /** One-line reason why `offloadable` is false (surfaced on local fallback or `--remote` refusal). */
+  localReason?: string;
 }
 
 /** Result of check; the first refuse stops execution, hints are collected in order. */
@@ -168,6 +189,8 @@ export interface RemoteCommandGrant {
   readonly keepBuildServersWarm: boolean;
   /** Current environment map (leading assignments + defaults); plugins may avoid overriding explicit keys. */
   readonly env: Readonly<Record<string, string>>;
+  /** Target platform override for case-folding checks (defaults to `process.platform`). */
+  readonly platform?: NodeJS.Platform;
 }
 
 /** Result of a plugin's post-translation bash command rewrite for remote execution. */
@@ -221,6 +244,19 @@ export interface RemoteOffloadContribution {
   readonly collectDirOptions?: readonly string[];
   /** Default environment variables set on the remote worker unless already set by the command. */
   readonly defaultEnv?: Readonly<Record<string, string>>;
+  /** Safe non-path caller environment variable names allowed to forward to the remote worker. */
+  readonly allowedEnv?: readonly string[];
+  /** Recognized build/test/path/secret environment variable names that force local execution when set in caller env. */
+  readonly localOnlyEnv?: readonly string[];
+  /**
+   * Name prefixes (matched case-insensitively on every platform) of caller variables that force local execution, for
+   * families read by MSBuild or the runtime (e.g. ["DOTNET_", "MSBUILD"]). `allowedEnv` and the ignore lists win.
+   */
+  readonly localOnlyEnvPrefixes?: readonly string[];
+  /** Caller variable names that neither forward nor force local (set on every run of the machine, e.g. by the OS). */
+  readonly ignoredEnv?: readonly string[];
+  /** Name prefixes (case-insensitive) of caller variables that neither forward nor force local. */
+  readonly ignoredEnvPrefixes?: readonly string[];
   /** Additional worktree-relative POSIX directory prefixes excluded from remote source sync. */
   readonly syncExcludePrefixes?: readonly string[];
   /** Additional `find -name` glob patterns excluded from remote source sync (e.g. ["*.received.*", "*.user"]). */
@@ -263,6 +299,17 @@ export interface QueuePlugin {
    * the same as a ShareAnswer without `stillValid`.
    */
   checkShare?(command: string, context: ClientContext): Promise<ShareMode | ShareAnswer | undefined>;
+
+  /**
+   * [first, async] Asked after synchronous offload gates pass when a command is still eligible for remote CPU
+   * offload: "allow" or "local" ends the asking; undefined passes it to the next plugin. A throw, timeout, or invalid
+   * value fails closed to "local".
+   */
+  checkOffload?(
+    command: string,
+    request: OffloadCheckRequest,
+    context: ClientContext,
+  ): Promise<OffloadDecision | OffloadAnswer | undefined>;
 
   /** [first] Computes estimate keys for one step. */
   stepKeys?(step: ReadStep, context: StepContext): StepKeys | undefined;

@@ -9,7 +9,7 @@ import { QueuedRun } from "./client-queued-run.ts";
 import type { RunHost } from "./client-run-host.ts";
 import type { RunOptions } from "./client.ts";
 import type { PluginHost } from "./plugin-host.ts";
-import type { Placement } from "./protocol.ts";
+import type { Placement, QuarantineSummary } from "./protocol.ts";
 import { CommandShell, type ShellResult } from "./shell.ts";
 import { ProcessTable, prefix, resolveWorktree } from "./system.ts";
 
@@ -37,8 +37,9 @@ class StepRunHost implements RunHost {
     exitCode: number,
     cancelled: boolean,
     reporter: { pid: number; queuedAt: number },
+    quarantine?: QuarantineSummary,
   ): Promise<void> {
-    return this.inner.reportEnd(id, completed, exitCode, cancelled, reporter);
+    return this.inner.reportEnd(id, completed, exitCode, cancelled, reporter, quarantine);
   }
 
   runCommand(command: string, env: NodeJS.ProcessEnv, onChild: (child: ChildProcess) => void): Promise<ShellResult> {

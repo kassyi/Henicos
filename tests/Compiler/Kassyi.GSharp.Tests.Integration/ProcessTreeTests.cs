@@ -60,6 +60,7 @@ public sealed class ProcessTreeTests : IDisposable
     }
 
     [SkippableFact]
+    [Platform(TestPlatform.Windows)]
     [Scenario(TestScenario.SadPath)]
     public void Kill_TerminationOfTheJobFails_WalkKillsTheMembersOfTheJob()
     {

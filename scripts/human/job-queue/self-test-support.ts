@@ -21,7 +21,9 @@ import {
   TurnVariable,
 } from "./constants.ts";
 import { connect, request } from "./client-connect.ts";
+import { errorCode } from "./history.ts";
 import { onMessages, type Incoming, type StatusJob, type StatusReply } from "./protocol.ts";
+import { removeReadOnlyTree } from "./remote/artifact-collector.ts";
 import { ProcessTable } from "./system.ts";
 
 export const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
@@ -63,11 +65,21 @@ export function stopChild(child: ChildProcess): void {
  * when it stays, so that a cleanup failure never hides the failure of the test itself.
  */
 export function removeDirectory(directory: string): void {
-  try {
-    fs.rmSync(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
-  } catch (error) {
-    process.stderr.write(`could not remove ${directory}: ${error instanceof Error ? error.message : String(error)}
-`);
+  for (let attempt = 0; ; attempt++) {
+    try {
+      removeReadOnlyTree(directory);
+      return;
+    } catch (error) {
+      const code = errorCode(error);
+      if (attempt < 10 && (code === "EBUSY" || code === "EPERM" || code === "ENOTEMPTY")) {
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 200);
+        continue;
+      }
+      process.stderr.write(
+        `could not remove ${directory}: ${error instanceof Error ? error.message : String(error)}\n`,
+      );
+      return;
+    }
   }
 }
 

@@ -1,5 +1,6 @@
 // Offload, QueuedRun wire memoryMb, repo baseline config, and Data-vs-Command guard checks for job-queue-henicos.
 
+import { createRequire } from "node:module";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -7,14 +8,28 @@ import { QueuedRun } from "../job-queue/client-queued-run.ts";
 import type { RunOptions } from "../job-queue/client.ts";
 import { loadConfig } from "../job-queue/config.ts";
 import { EntryScript } from "../job-queue/constants.ts";
-import { PluginApiVersion, type AssertModule, type QueuePlugin } from "../job-queue/plugin-api.ts";
+import type { TargetDialectModule } from "../job-queue/lib/types.ts";
+import { PluginApiVersion, type AssertModule, type ClientContext, type QueuePlugin } from "../job-queue/plugin-api.ts";
 import { withConfigEnv } from "../job-queue/plugin-checks.ts";
 import { PluginHost, type BaseClientContext } from "../job-queue/plugin-host.ts";
 import { translateForRemote } from "../job-queue/remote/command-translator.ts";
+import { resolveCallerEnv } from "../job-queue/remote/env-policy.ts";
 import { resolveOffloadPreference } from "../job-queue/remote/executor.ts";
 import { buildRemoteFindPruneExpr, isExcludedSyncPath } from "../job-queue/remote/syncer.ts";
 import { FakeHost, FakeScheduler, until } from "../job-queue/self-test-client.ts";
 import { removeDirectory } from "../job-queue/self-test-support.ts";
+import type { ListResult } from "./name-filter.ts";
+import type { OffloadSourceProbe } from "./offload-sources.ts";
+import {
+  buildOffloadListJobArgs,
+  checkHenicosOffload,
+  combineFilterWithWindowsPlatform,
+  offloadListVerdict,
+  type OffloadListRunner,
+} from "./offload-probe.ts";
+
+const require = createRequire(import.meta.url);
+const { dialectOf, remoteOffloadOf, stripXmlComments } = require("./target-dialect.js") as TargetDialectModule;
 
 export function baseRunOptions(command: string, defaultTestMemoryMb = 0): RunOptions {
   return {
@@ -242,28 +257,50 @@ export function checkOffloadClassification(assert: AssertModule, host: PluginHos
   const genTests = "tests/Compiler/Kassyi.GSharp.Compiler.Generators.Tests";
   const gpuMathTests = "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests";
   const benchTests = "tests/Apps/Henicos.Benchmarks.Tests";
+  const collectEnvTests = "tests/Tools/Kassyi.GSharp.Tools.CollectEnv.Tests";
   const cases: readonly [string, boolean][] = [
-    [`dotnet test ${cpuTests}/Kassyi.GSharp.Tests.Cpu.csproj --filter 'FullyQualifiedName~WarpStackModelTests'`, true],
-    [`$env:DiffEngine_Disabled='true'; dotnet test ${cpuTests}/Kassyi.GSharp.Tests.Cpu.csproj`, true],
-    [`dotnet build ${cpuTests} && dotnet test --no-build ${cpuTests}`, true],
-    [`dotnet build ${cpuTests} -c Release && dotnet test --no-build ${cpuTests} -c Release`, true],
-    [`dotnet build ${cpuTests} && dotnet test --no-build ${cpuTests}/Kassyi.GSharp.Tests.Cpu.csproj`, true],
     [`dotnet test ${genTests}/Kassyi.GSharp.Compiler.Generators.Tests.csproj`, true],
-    [`dotnet test ${gpuMathTests} --filter 'Category!=GpuExecution'`, true],
+    [`cd ${genTests} && dotnet test`, true],
+    [`dotnet build ${genTests} && dotnet test --no-build ${genTests}`, true],
+    [`dotnet build ${genTests} -c Release && dotnet test --no-build ${genTests} -c Release`, true],
+    [`dotnet build ${collectEnvTests} && dotnet test ${collectEnvTests} --no-build`, true],
+    [`dotnet build tests/Shared/Kassyi.GSharp.Tests.Infrastructure && dotnet test ${collectEnvTests}`, true],
     [`dotnet test ${benchTests} --filter 'Category!=GpuExecution'`, true],
     [`dotnet test ${benchTests} --filter 'Category!=GpuExecution&Category!=Stress'`, true],
-    ["just test-differential-cpu", true],
+    // Regex-free: non-local project with "Windows" in filter stays eligible for checkOffload --list-tests
+    [`dotnet test ${collectEnvTests} --filter 'FullyQualifiedName~WindowsHelper'`, true],
+    // Option A: just test-sanitized stays offloadable in classify; checkOffload enforces local auto vs --remote Linux ASan+UBSan
     ["just test-sanitized", true],
     ["just -f justfile test-sanitized", true],
-    ["just -d . test-differential-cpu", true],
     ["just --set blame_crash '' test-sanitized", true],
+    // Marked <GSharpRemoteOffload>local</GSharpRemoteOffload> projects stay local with 1-line reason
+    [`dotnet test ${cpuTests}/Kassyi.GSharp.Tests.Cpu.csproj --filter 'FullyQualifiedName~WarpStackModelTests'`, false],
+    [`$env:DiffEngine_Disabled='true'; dotnet test ${cpuTests}/Kassyi.GSharp.Tests.Cpu.csproj`, false],
+    [`dotnet build ${cpuTests} && dotnet test --no-build ${cpuTests}`, false],
+    [`dotnet test ${gpuMathTests} --filter 'Category!=GpuExecution'`, false],
+    ["just test-differential-cpu", false],
+    ["just test-native-stack", false],
+    ["just test-managed-stack", false],
+    ["just -d . test-differential-cpu", false],
+    // Whole-solution runs stay local with 1-line reason
+    ["dotnet test", false],
+    ["dotnet test Henicos.slnx", false],
     // Ineligible: bare build, standalone or mismatched --no-build, CUDA, unfiltered GpuMath/Benchmarks, `|` filter
-    [`dotnet build ${cpuTests}/Kassyi.GSharp.Tests.Cpu.csproj`, false],
-    [`dotnet test --no-build ${cpuTests}/Kassyi.GSharp.Tests.Cpu.csproj`, false],
-    [`dotnet build ${cpuTests} -c Release && dotnet test --no-build ${cpuTests}`, false],
-    [`dotnet build ${cpuTests} && dotnet test --no-build ${cpuTests} -c Release`, false],
-    [`dotnet build ${genTests} && dotnet test --no-build ${cpuTests}`, false],
-    [`dotnet build ${cpuTests} -o tmp/out && dotnet test --no-build ${cpuTests}`, false],
+    [`dotnet build ${genTests}/Kassyi.GSharp.Compiler.Generators.Tests.csproj`, false],
+    [`dotnet test --no-build ${genTests}/Kassyi.GSharp.Compiler.Generators.Tests.csproj`, false],
+    [`dotnet build ${genTests} -c Release && dotnet test --no-build ${genTests}`, false],
+    [`dotnet build ${genTests} && dotnet test --no-build ${genTests} -c Release`, false],
+    [`dotnet build ${cpuTests} && dotnet test --no-build ${genTests}`, false],
+    [`dotnet build ${genTests} -o tmp/out && dotnet test --no-build ${genTests}`, false],
+    // -p that moves the output: the freshness check and the test list would read the default folders
+    [`dotnet test ${collectEnvTests} -p:UseArtifactsOutput=true`, false],
+    [`dotnet test ${collectEnvTests} '-p:A=1;OutDir=out/'`, false],
+    [`dotnet test ${collectEnvTests} --property GSharpOutputVariant=x`, false],
+    [`dotnet test ${collectEnvTests} -p:Foo=1`, true],
+    [`dotnet build ${cpuTests} && dotnet test ${collectEnvTests}`, false],
+    [`dotnet build ${gpuMathTests} && dotnet test ${collectEnvTests}`, false],
+    [`dotnet build tests/Compiler/Kassyi.GSharp.Tests.Cuda && dotnet test ${collectEnvTests}`, false],
+    [`dotnet build Henicos.slnx && dotnet test ${collectEnvTests}`, false],
     ["dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj", false],
     [`dotnet test ${gpuMathTests}/Kassyi.GSharp.Stdlib.GpuMath.Tests.csproj`, false],
     [`dotnet test ${gpuMathTests} --filter 'Category!=GpuExecution|Category=GpuExecution'`, false],
@@ -284,6 +321,28 @@ export function checkOffloadClassification(assert: AssertModule, host: PluginHos
     false,
   );
 
+  // Marked-local projects, CUDA builds, and whole-solution runs provide 1-line localReason
+  for (const [cmd, expectedToken] of [
+    [`dotnet test ${cpuTests}`, "GSharpRemoteOffload=local"],
+    [`dotnet test ${gpuMathTests} --filter 'Category!=GpuExecution'`, "Kassyi.GSharp.Stdlib.GpuMath.Tests"],
+    ["dotnet test tests/Compiler/Kassyi.GSharp.Tests.Integration", "Kassyi.GSharp.Tests.Integration"],
+    ["just test-differential-cpu", "Kassyi.GSharp.Tests.Cpu"],
+    ["dotnet test", "whole-solution"],
+    ["dotnet test Henicos.slnx", "Henicos.slnx"],
+    [`dotnet build ${cpuTests} && dotnet test ${collectEnvTests}`, "GSharpRemoteOffload=local"],
+    [`dotnet build ${gpuMathTests} && dotnet test ${collectEnvTests}`, "Kassyi.GSharp.Stdlib.GpuMath.Tests"],
+    [
+      `dotnet build tests/Compiler/Kassyi.GSharp.Tests.Cuda && dotnet test ${collectEnvTests}`,
+      "Kassyi.GSharp.Tests.Cuda",
+    ],
+    [`dotnet build Henicos.slnx && dotnet test ${collectEnvTests}`, "Henicos.slnx"],
+  ] as const) {
+    const cls = host.classify(cmd, null, ctx);
+    assert.strictEqual(cls.offloadable, false);
+    assert.ok(cls.localReason?.includes(expectedToken), `expected localReason for ${cmd} to mention ${expectedToken}`);
+    assert.ok(cls.localReason !== undefined && !/[\r\n]/.test(cls.localReason));
+  }
+
   // Full repo plugin stack contributes Henicos + dotnet + just remote offload rules
   const rules = host.remoteOffload(ctx);
   assert.strictEqual(rules.defaultEnv.GSHARP_TEST_NO_CUDA, "1");
@@ -301,7 +360,7 @@ export function checkOffloadClassification(assert: AssertModule, host: PluginHos
   assert.ok(prune.includes("! -iname '*.user'"));
   assert.ok(prune.includes("! -iname '*.log'"));
 
-  const plan = translateForRemote("just test-differential-cpu", {
+  const plan = translateForRemote("just test-sanitized", {
     cwd: repoRoot,
     worktree: repoRoot,
     shell: "pwsh",
@@ -311,12 +370,11 @@ export function checkOffloadClassification(assert: AssertModule, host: PluginHos
     env: {},
     remoteRules: rules,
   });
-  assert.ok(plan !== null, "Henicos + just + dotnet plugins translate just test-differential-cpu");
+  assert.ok(plan !== null, "Henicos + just + dotnet plugins translate just test-sanitized");
   assert.strictEqual(plan.env.GSHARP_TEST_NO_CUDA, "1");
   assert.strictEqual(plan.env.DiffEngine_Disabled, "true");
   assert.strictEqual(plan.env.MSBUILDCORELIMIT, "4");
 
-  // Regression: OffloadableJustRecipes (including with value-taking just flags) resolve to 2880 MB <= 6144 MB.
   const remote6g = {
     name: "ubuntu",
     host: "jobrunner@worker.example",
@@ -330,16 +388,52 @@ export function checkOffloadClassification(assert: AssertModule, host: PluginHos
     keepBuildServersWarm: true,
     probe: null,
   };
+
+  // Marked-local Tests.Cpu recipes route locally with 1-line reason and fail --remote
+  for (const cmd of ["just test-differential-cpu", "just test-native-stack", "just test-managed-stack"]) {
+    const cls = host.classify(cmd, null, ctx);
+    assert.strictEqual(cls.offloadable, false, `${cmd} must stay local`);
+    assert.strictEqual(cls.memoryMb, 2880, `${cmd} must resolve to Tests.Cpu (2880 MB)`);
+    const autoPref = resolveOffloadPreference({
+      options: { ...baseRunOptions(cmd), remotes: [remote6g] },
+      inGpuLock: false,
+      classifiedOffloadable: Boolean(cls.offloadable),
+      classifiedLocalReason: cls.localReason,
+      memoryMb: cls.memoryMb,
+      cwd: repoRoot,
+      worktree: repoRoot,
+      shell: "pwsh",
+      places: {},
+      remoteRules: rules,
+    });
+    assert.strictEqual(autoPref.ok, true);
+    if (autoPref.ok) {
+      assert.strictEqual(autoPref.offload, "never");
+      assert.ok(autoPref.reason?.includes("running locally:"));
+    }
+    const forcePref = resolveOffloadPreference({
+      options: { ...baseRunOptions(cmd), remote: true, remotes: [remote6g] },
+      inGpuLock: false,
+      classifiedOffloadable: Boolean(cls.offloadable),
+      classifiedLocalReason: cls.localReason,
+      memoryMb: cls.memoryMb,
+      cwd: repoRoot,
+      worktree: repoRoot,
+      shell: "pwsh",
+      places: {},
+      remoteRules: rules,
+    });
+    assert.strictEqual(forcePref.ok, false, `${cmd} with --remote must fail closed`);
+  }
+
+  // Option A: just test-sanitized resolves to 2880 MB <= 6144 MB; checkOffload gates auto (local) vs --remote (allow)
   for (const cmd of [
-    "just test-differential-cpu",
-    "just test-native-stack",
-    "just test-managed-stack",
     "just test-sanitized",
     "just -f justfile test-sanitized",
     "just --set blame_crash '' test-sanitized",
   ]) {
     const cls = host.classify(cmd, null, ctx);
-    assert.strictEqual(cls.offloadable, true, `${cmd} must be offloadable`);
+    assert.strictEqual(cls.offloadable, true, `${cmd} must be offloadable in classify`);
     assert.strictEqual(cls.memoryMb, 2880, `${cmd} must resolve to Tests.Cpu (2880 MB), not whole-solution sum`);
     const autoPref = resolveOffloadPreference({
       options: { ...baseRunOptions(cmd), remotes: [remote6g] },
@@ -405,4 +499,583 @@ export function checkOffloadClassification(assert: AssertModule, host: PluginHos
   ]) {
     assert.ok(host.check(refused, null, ctx).refuse !== undefined, `invoking long-checks must refuse: ${refused}`);
   }
+}
+
+export function checkHenicosEnvAllowlist(assert: AssertModule, host: PluginHost, repoRoot: string): void {
+  const ctx: BaseClientContext = {
+    cwd: repoRoot,
+    worktree: repoRoot,
+    configRoot: repoRoot,
+    shell: "pwsh",
+    env: {},
+    log: () => {},
+  };
+  const rules = host.remoteOffload(ctx);
+
+  for (const allowed of [
+    "TEST_SEED",
+    "CI",
+    "DiffEngine_Disabled",
+    "GSHARP_TEST_NO_CUDA",
+    "GSHARP_TEST_NO_CPU",
+    "GSHARP_TEST_VERBOSE",
+    "GSHARP_TEST_MEMORY_BUDGET_MB",
+    "GSHARP_TEST_MEMORY_DUMP",
+    "GSHARP_TEST_MEMORY_DUMP_AT_END",
+    "GSHARP_TEST_BUILD_TIMEOUT_SECONDS",
+    "GSHARP_MEMORY_FIXTURE_MB",
+    "GSharpNativeSanitizers",
+    "GSharpTestHeapHardLimit",
+    "VSTEST_CONNECTION_TIMEOUT",
+    "DOTNET_CLI_UI_LANGUAGE",
+    "DOTNET_NOLOGO",
+    "DOTNET_CLI_TELEMETRY_OPTOUT",
+    "VSLANG",
+  ]) {
+    assert.ok(rules.allowedEnv.has(allowed), `expected ${allowed} in allowedEnv`);
+  }
+
+  for (const localOnly of [
+    "GSHARP_TEST_MEMORY_REPORT",
+    "GSHARP_TEST_BUILD_LOG_DIR",
+    "GSHARP_CUDA_INCLUDE_DIR",
+    "GSHARP_SIGNING_KEY",
+    "GH_TOKEN",
+    "GSHARP_CUDA_TRAP_TESTS",
+    "GSHARP_CUDA_TRAP_PAUSE_MS",
+    "GSHARP_DIFF_FULL_CUDA_TRAPS",
+    "GSHARP_DIFF_CUDA_TRAP_TARGET",
+    "GSHARP_DIFF_CUDA_TRAP_RESULT_FILE",
+    "GSHARP_TEST_ISOLATED_METHOD",
+    "FUZZ_DIFF_LAUNCHER_PIDS",
+    "CUDA_VISIBLE_DEVICES",
+    "CXX",
+    "CPATH",
+    "CPLUS_INCLUDE_PATH",
+    "CCC_OVERRIDE_OPTIONS",
+    "GCC_EXEC_PREFIX",
+    "COMPILER_PATH",
+    "CL",
+    "_CL_",
+    "INCLUDE",
+    "ASAN_OPTIONS",
+    "UBSAN_OPTIONS",
+    "LD_PRELOAD",
+    "MSBUILDCORELIMIT",
+    "MSBUILDNODECOREALLOCATIONWEIGHT",
+  ]) {
+    assert.ok(rules.localOnlyEnv.has(localOnly), `expected ${localOnly} in localOnlyEnv`);
+    assert.strictEqual(rules.allowedEnv.has(localOnly), false, `${localOnly} must not be in allowedEnv`);
+  }
+
+  for (const excluded of [
+    "CUDA_PATH",
+    "CUDA_PATH_V13_3",
+    "DOTNET_ROOT",
+    "MSBUILDDISABLENODEREUSE",
+    "PATH",
+    "GSHARP_JOB_QUEUE_STATE_DIR",
+  ]) {
+    assert.strictEqual(rules.allowedEnv.has(excluded), false, `${excluded} must not be in allowedEnv`);
+    assert.strictEqual(rules.localOnlyEnv.has(excluded), false, `${excluded} must not be in localOnlyEnv`);
+  }
+
+  const testCmd = "dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu";
+  const fwdPlan = translateForRemote(testCmd, {
+    cwd: repoRoot,
+    worktree: repoRoot,
+    shell: "pwsh",
+    places: {},
+    cpus: 4,
+    keepBuildServersWarm: true,
+    env: {
+      TEST_SEED: "42",
+      CI: "true",
+      GSharpNativeSanitizers: "address,undefined",
+      GSHARP_TEST_VERBOSE: "1",
+      MSBUILDDISABLENODEREUSE: "1",
+    },
+    remoteRules: rules,
+  });
+  assert.ok(fwdPlan !== null);
+  assert.strictEqual(fwdPlan.env.TEST_SEED, "42");
+  assert.strictEqual(fwdPlan.env.CI, "true");
+  assert.strictEqual(fwdPlan.env.GSharpNativeSanitizers, "address,undefined");
+  assert.strictEqual(fwdPlan.env.GSHARP_TEST_VERBOSE, "1");
+  assert.strictEqual(fwdPlan.env.MSBUILDDISABLENODEREUSE, undefined);
+  assert.strictEqual(fwdPlan.env.DiffEngine_Disabled, "true");
+  assert.strictEqual(fwdPlan.env.GSHARP_TEST_NO_CUDA, "1");
+
+  const defaultKeepPlan = translateForRemote(testCmd, {
+    cwd: repoRoot,
+    worktree: repoRoot,
+    shell: "pwsh",
+    places: {},
+    cpus: 4,
+    keepBuildServersWarm: true,
+    env: { DiffEngine_Disabled: "false", GSHARP_TEST_NO_CUDA: "0" },
+    remoteRules: rules,
+  });
+  assert.ok(defaultKeepPlan !== null);
+  assert.strictEqual(defaultKeepPlan.env.DiffEngine_Disabled, "true");
+  assert.strictEqual(defaultKeepPlan.env.GSHARP_TEST_NO_CUDA, "1");
+
+  const remote6g = {
+    name: "ubuntu",
+    host: "jobrunner@worker.example",
+    workspace: "~/henicos",
+    slots: 1,
+    cpus: 4,
+    memoryMb: 6144,
+    mode: "prefer-remote" as const,
+    maxJobMinutes: 30,
+    sshOptions: [],
+    keepBuildServersWarm: true,
+    probe: null,
+  };
+
+  // Global machine/queue infra env vars do not trigger local fallback
+  const hostSafePref = resolveOffloadPreference({
+    options: { ...baseRunOptions(testCmd), remotes: [remote6g] },
+    inGpuLock: false,
+    classifiedOffloadable: true,
+    memoryMb: 2880,
+    cwd: repoRoot,
+    worktree: repoRoot,
+    shell: "pwsh",
+    places: {},
+    remoteRules: rules,
+    env: {
+      CUDA_PATH: "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3",
+      CUDA_PATH_V13_3: "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3",
+      DOTNET_ROOT: "C:\\Program Files\\dotnet",
+      MSBUILDDISABLENODEREUSE: "1",
+      PATH: "C:\\Windows\\System32",
+      GSHARP_JOB_QUEUE_STATE_DIR: "C:\\tmp\\state",
+      GSHARP_JOB_QUEUE_REMOTE_WARM_SERVERS: "0",
+      CI: "true",
+    },
+  });
+  assert.deepStrictEqual(hostSafePref, { ok: true, offload: "auto" });
+
+  // Local-only vars and path-valued allowlisted vars fall back locally (and refuse --remote)
+  for (const [envObj, expectedVar] of [
+    [{ GSHARP_SIGNING_KEY: "k" }, "GSHARP_SIGNING_KEY"],
+    [{ GSHARP_TEST_MEMORY_REPORT: "tmp/mem" }, "GSHARP_TEST_MEMORY_REPORT"],
+    [{ GSHARP_TEST_BUILD_LOG_DIR: "tmp/logs" }, "GSHARP_TEST_BUILD_LOG_DIR"],
+    [{ CXX: "clang++-18" }, "CXX"],
+    [{ GSHARP_CUDA_TRAP_TESTS: "1" }, "GSHARP_CUDA_TRAP_TESTS"],
+    [{ MSBUILDCORELIMIT: "8" }, "MSBUILDCORELIMIT"],
+    [{ TEST_SEED: "C:\\out" }, "TEST_SEED"],
+    [{ GSharpNativeSanitizers: "/tmp/a.so" }, "GSharpNativeSanitizers"],
+  ] as const) {
+    const localPref = resolveOffloadPreference({
+      options: { ...baseRunOptions(testCmd), remotes: [remote6g] },
+      inGpuLock: false,
+      classifiedOffloadable: true,
+      memoryMb: 2880,
+      cwd: repoRoot,
+      worktree: repoRoot,
+      shell: "pwsh",
+      places: {},
+      remoteRules: rules,
+      env: envObj,
+    });
+    assert.strictEqual(localPref.ok, true, `expected local fallback for ${expectedVar}`);
+    if (localPref.ok) {
+      assert.strictEqual(localPref.offload, "never");
+      assert.ok(localPref.reason?.includes(expectedVar), `expected reason to name ${expectedVar}`);
+    }
+    const remotePref = resolveOffloadPreference({
+      options: { ...baseRunOptions(testCmd), remote: true, remotes: [remote6g] },
+      inGpuLock: false,
+      classifiedOffloadable: true,
+      memoryMb: 2880,
+      cwd: repoRoot,
+      worktree: repoRoot,
+      shell: "pwsh",
+      places: {},
+      remoteRules: rules,
+      env: envObj,
+    });
+    assert.strictEqual(remotePref.ok, false, `expected --remote refusal for ${expectedVar}`);
+    if (!remotePref.ok) {
+      assert.ok(remotePref.error.includes(expectedVar));
+    }
+  }
+
+  // Caller variables read by MSBuild or the runtime: the local-only prefixes match case-insensitively on every
+  // platform, the allowlist wins over a prefix, and the ignore lists neither forward nor force local.
+  for (const platform of ["win32", "linux"] as const) {
+    for (const name of [
+      "GSharpSkipCpuCompilation",
+      "gsharpskipcpucompilation",
+      "DOTNET_gcServer",
+      "COMPlus_TieredCompilation",
+      "VSTEST_HOST_DEBUG",
+      "MSBuildSDKsPath",
+      "NUGET_PACKAGES",
+    ]) {
+      const res = resolveCallerEnv({ [name]: "1" }, rules, platform);
+      assert.ok(!res.ok && res.variable === name, `${platform}: ${name} must force local`);
+    }
+    for (const name of [
+      "MSBUILDDISABLENODEREUSE",
+      "DOTNET_SKIP_FIRST_TIME_EXPERIENCE",
+      "DOTNET_ROOT",
+      "GSHARP_JOB_QUEUE_OFFLOAD",
+      "GSHARP_GPU_HOLD_WATCH",
+      "GSHARP_GPU_TEST_SEAT",
+      "gsharp_job_queue_state_dir",
+    ]) {
+      const res = resolveCallerEnv({ [name]: "1" }, rules, platform);
+      assert.ok(res.ok && Object.keys(res.forwarded).length === 0, `${platform}: ${name} is ignored`);
+    }
+    const sanitizers = resolveCallerEnv({ GSharpNativeSanitizers: "address" }, rules, platform);
+    assert.ok(sanitizers.ok && sanitizers.forwarded.GSharpNativeSanitizers === "address", `${platform}: allowlist`);
+  }
+  for (const [name, platform] of [
+    ["Configuration", "win32"],
+    ["configuration", "win32"],
+    ["Configuration", "linux"],
+    ["Platform", "win32"],
+    ["OutDir", "win32"],
+  ] as const) {
+    assert.strictEqual(resolveCallerEnv({ [name]: "Release" }, rules, platform).ok, false, `${name} (${platform})`);
+  }
+
+  // Assignments written in the command go through the same policy: local-only names and path values keep the job
+  // local, other names pass as written, and win32 respells an allowlisted or default name canonically.
+  const proj = "tests/Shared/Kassyi.GSharp.Tests.Infrastructure.Tests/Kassyi.GSharp.Tests.Infrastructure.Tests.csproj";
+  const plan = (command: string, shell: "pwsh" | "bash", env: Record<string, string> = {}) =>
+    translateForRemote(command, {
+      cwd: repoRoot,
+      worktree: repoRoot,
+      shell,
+      places: {},
+      cpus: 2,
+      keepBuildServersWarm: true,
+      env,
+      remoteRules: rules,
+      platform: "win32",
+    });
+  assert.ok(plan(`dotnet test ${proj}`, "bash") !== null, "the plain command offloads");
+  for (const command of [
+    `GSHARP_TEST_BUILD_LOG_DIR=C:/logs dotnet test ${proj}`,
+    `LD_PRELOAD=/x.so dotnet test ${proj}`,
+    `GSHARP_CUDA_TRAP_TESTS=1 dotnet test ${proj}`,
+    `dotnet test ${proj} -e GSHARP_TEST_BUILD_LOG_DIR=C:/logs`,
+    `dotnet test ${proj} --environment GSHARP_CUDA_TRAP_TESTS=1`,
+    `dotnet test ${proj} --environment=DOTNET_gcServer=1`,
+    `GSharpSkipCpuCompilation=true dotnet test ${proj}`,
+    `TEST_SEED=C:/seed dotnet test ${proj}`,
+    `MY_TOOL_DIR=/opt/tool dotnet test ${proj}`,
+  ]) {
+    assert.strictEqual(plan(command, "bash"), null, `stays local: ${command}`);
+  }
+  assert.strictEqual(plan(`$env:DOTNET_gcServer='1'; dotnet test ${proj}`, "pwsh"), null, "pwsh leading local-only");
+  const passPlan = plan(`MY_FLAG=1 dotnet test ${proj} -e OTHER_FLAG=2`, "bash");
+  assert.ok(
+    passPlan !== null && passPlan.bashCommand.includes("MY_FLAG=1") && passPlan.bashCommand.includes("OTHER_FLAG=2"),
+  );
+
+  const keysLike = (env: Record<string, string>, name: string) =>
+    Object.keys(env).filter((key) => key.toLowerCase() === name.toLowerCase());
+  const seedPlan = plan(`$env:test_seed='2'; dotnet test ${proj}`, "pwsh", { TEST_SEED: "1" });
+  assert.ok(seedPlan !== null);
+  assert.deepStrictEqual(keysLike(seedPlan.env, "TEST_SEED"), ["TEST_SEED"]);
+  assert.strictEqual(seedPlan.env.TEST_SEED, "2");
+  const noCudaPlan = plan(`$env:gsharp_test_no_cuda='1'; dotnet test ${proj}`, "pwsh");
+  assert.ok(noCudaPlan !== null);
+  assert.deepStrictEqual(keysLike(noCudaPlan.env, "GSHARP_TEST_NO_CUDA"), ["GSHARP_TEST_NO_CUDA"]);
+  assert.strictEqual(noCudaPlan.env.GSHARP_TEST_NO_CUDA, "1");
+}
+/**
+ * Checks for `<GSharpRemoteOffload>local</GSharpRemoteOffload>` parsing, VSTest filter parenthesization,
+ * `--local` list-job args, `test-sanitized` Option A gating, and fail-closed `--list-tests` `&Platform=Windows` probing.
+ */
+export async function checkHenicosOffloadProbe(assert: AssertModule, repoRoot: string): Promise<void> {
+  // 1. remoteOffloadOf strips XML comments, ignores whitespace/case, returns null when absent
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-remote-offload-"));
+  try {
+    const localCsproj = path.join(tempDir, "Local.csproj");
+    fs.writeFileSync(
+      localCsproj,
+      "<Project><PropertyGroup><GSharpTargetDialect>Cpu</GSharpTargetDialect><GSharpRemoteOffload> LOCAL </GSharpRemoteOffload></PropertyGroup></Project>",
+    );
+    assert.strictEqual(remoteOffloadOf(localCsproj), "local");
+
+    const commentedCsproj = path.join(tempDir, "Commented.csproj");
+    fs.writeFileSync(
+      commentedCsproj,
+      "<Project><PropertyGroup><!-- <GSharpRemoteOffload>local</GSharpRemoteOffload> --></PropertyGroup></Project>",
+    );
+    assert.strictEqual(remoteOffloadOf(commentedCsproj), null, "XML comments must be ignored");
+    // A comment rebuilt from the pieces of a removed one is removed too (both readers share stripXmlComments)
+    const rebuiltCsproj = path.join(tempDir, "Rebuilt.csproj");
+    fs.writeFileSync(
+      rebuiltCsproj,
+      "<Project><!<!-- -->-- <GSharpRemoteOffload>local</GSharpRemoteOffload><GSharpTargetDialect>Cuda</GSharpTargetDialect> --></Project>",
+    );
+    assert.strictEqual(remoteOffloadOf(rebuiltCsproj), null, "rebuilt comment hides the marker");
+    assert.strictEqual(dialectOf(rebuiltCsproj), null, "rebuilt comment hides the dialect");
+    assert.strictEqual(stripXmlComments("a<!-- x -->b<!-- y -->c"), "abc");
+    assert.strictEqual(remoteOffloadOf(path.join(tempDir, "Missing.csproj")), null);
+  } finally {
+    removeDirectory(tempDir);
+  }
+
+  // Real repository marked-local .csproj check
+  assert.strictEqual(
+    remoteOffloadOf(path.join(repoRoot, "tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj")),
+    "local",
+  );
+  assert.strictEqual(
+    remoteOffloadOf(
+      path.join(repoRoot, "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/Kassyi.GSharp.Stdlib.GpuMath.Tests.csproj"),
+    ),
+    "local",
+  );
+  assert.strictEqual(
+    remoteOffloadOf(
+      path.join(repoRoot, "tests/Compiler/Kassyi.GSharp.Tests.Integration/Kassyi.GSharp.Tests.Integration.csproj"),
+    ),
+    "local",
+  );
+  assert.strictEqual(
+    remoteOffloadOf(
+      path.join(
+        repoRoot,
+        "tests/Compiler/Kassyi.GSharp.Compiler.Generators.Tests/Kassyi.GSharp.Compiler.Generators.Tests.csproj",
+      ),
+    ),
+    null,
+  );
+
+  // 2. combineFilterWithWindowsPlatform + buildOffloadListJobArgs
+  assert.strictEqual(combineFilterWithWindowsPlatform([], false), "Platform=Windows");
+  assert.strictEqual(combineFilterWithWindowsPlatform(["A|B"], false), "(A|B)&Platform=Windows");
+  assert.strictEqual(
+    combineFilterWithWindowsPlatform(["Platform!=Windows"], false),
+    "(Platform!=Windows)&Platform=Windows",
+  );
+  assert.strictEqual(combineFilterWithWindowsPlatform(["A", "B"], false), null);
+  assert.strictEqual(combineFilterWithWindowsPlatform([" "], false), null);
+  assert.strictEqual(combineFilterWithWindowsPlatform(["A"], true), null);
+
+  const listJobArgs = buildOffloadListJobArgs(["dotnet", "test", "X.csproj", "--no-build", "--list-tests"], "pwsh");
+  assert.deepStrictEqual(listJobArgs, [
+    EntryScript,
+    "run",
+    "--local",
+    "--shell",
+    "pwsh",
+    "--",
+    "dotnet",
+    "test",
+    "X.csproj",
+    "--no-build",
+    "--list-tests",
+  ]);
+
+  // 3. offloadListVerdict fail-closed cases
+  const noMatch: ListResult = {
+    exitCode: 0,
+    output:
+      "Test run for tests/X/bin/Debug/net10.0/X.dll (.NETCoreApp,Version=v10.0)\r\n" +
+      "No test matches the given testcase filter `Platform=Windows` in X.dll\r\n",
+  };
+  assert.deepStrictEqual(offloadListVerdict(noMatch, repoRoot), { offload: "allow" });
+  assert.strictEqual(
+    offloadListVerdict({ exitCode: 0, output: `${noMatch.output}    MyTests.WindowsOnlyTest\n` }, repoRoot).offload,
+    "local",
+    "mixed multi-TFM output with listed Windows test must stay local",
+  );
+  assert.strictEqual(offloadListVerdict({ exitCode: 1, output: noMatch.output }, repoRoot).offload, "local");
+  assert.strictEqual(offloadListVerdict({ exitCode: null, output: noMatch.output }, repoRoot).offload, "local");
+  assert.strictEqual(
+    offloadListVerdict(
+      { exitCode: 0, output: "Test run for X.dll (.NETCoreApp,Version=v10.0)\nNo test is available in X.dll\n" },
+      repoRoot,
+    ).offload,
+    "local",
+  );
+  assert.strictEqual(
+    offloadListVerdict({ exitCode: 0, output: "No test matches the given testcase filter `x`\n" }, repoRoot).offload,
+    "local",
+    "missing Test run for line must fail closed",
+  );
+
+  // 4. checkHenicosOffload with fake OffloadListRunner
+  const ctx: ClientContext = {
+    cwd: repoRoot,
+    worktree: repoRoot,
+    configRoot: repoRoot,
+    shell: "pwsh",
+    env: {},
+    options: {},
+    log: () => {},
+  };
+  // The list logic below runs as for a project whose sources name TestPlatform.Windows and whose build is fresh
+  const listSources: OffloadSourceProbe = {
+    scan: () => ({ kind: "windows-tests", newestInputMs: 0 }),
+    assemblyTimes: () => [1],
+  };
+  const calls: string[][] = [];
+  let nextResult: ListResult | Error = noMatch;
+  const fakeRunner: OffloadListRunner = (args) => {
+    calls.push([...args]);
+    return nextResult instanceof Error ? Promise.reject(nextResult) : Promise.resolve(nextResult);
+  };
+
+  // Option A: just test-sanitized
+  assert.strictEqual(
+    (
+      await checkHenicosOffload(
+        "just test-sanitized",
+        { remoteForced: false, places: {} },
+        ctx,
+        fakeRunner,
+        listSources,
+      )
+    ).offload,
+    "local",
+  );
+  assert.deepStrictEqual(
+    await checkHenicosOffload("just test-sanitized", { remoteForced: true, places: {} }, ctx, fakeRunner, listSources),
+    { offload: "allow" },
+  );
+  assert.strictEqual(
+    (
+      await checkHenicosOffload(
+        "just test-sanitized --filter FullyQualifiedName~Msvc",
+        { remoteForced: true, places: {} },
+        ctx,
+        fakeRunner,
+        listSources,
+      )
+    ).offload,
+    "local",
+  );
+  assert.strictEqual(calls.length, 0, "just test-sanitized must not run dotnet --list-tests");
+
+  // Eligible non-local dotnet test with A|B filter forwards -c Release, omits -v n, parenthesizes (A|B)&Platform=Windows
+  const genProj = "tests/Compiler/Kassyi.GSharp.Compiler.Generators.Tests";
+  const allowRes = await checkHenicosOffload(
+    `dotnet test ${genProj} -c Release -v n --filter "Name~A|Name~B"`,
+    { remoteForced: false, places: {} },
+    ctx,
+    fakeRunner,
+    listSources,
+  );
+  assert.deepStrictEqual(allowRes, { offload: "allow" });
+  assert.strictEqual(calls.length, 1);
+  assert.ok(calls[0]?.includes("-c") && calls[0]?.includes("Release"));
+  assert.ok(!calls[0]?.includes("-v"), "verbosity must not be forwarded to --list-tests");
+  assert.strictEqual(calls[0]?.at(-1), "(Name~A|Name~B)&Platform=Windows");
+
+  // Matching Windows test routes locally with 1-line reason
+  nextResult = {
+    exitCode: 0,
+    output:
+      "Test run for tests/X/bin/Debug/net10.0/X.dll (.NETCoreApp,Version=v10.0)\n" +
+      "The following Tests are available:\n    N.WinTests.OnlyOnWindows\n",
+  };
+  const winMatch = await checkHenicosOffload(
+    `dotnet test ${genProj}`,
+    { remoteForced: false, places: {} },
+    ctx,
+    fakeRunner,
+    listSources,
+  );
+  assert.strictEqual(winMatch.offload, "local");
+  assert.ok(winMatch.reason?.includes("Platform=Windows"));
+
+  // Runner rejection fails closed
+  nextResult = new Error("spawn failed");
+  const errRes = await checkHenicosOffload(
+    `dotnet test ${genProj}`,
+    { remoteForced: false, places: {} },
+    ctx,
+    fakeRunner,
+    listSources,
+  );
+  assert.strictEqual(errRes.offload, "local");
+  assert.ok(errRes.reason?.includes("spawn failed"));
+
+  // Fail-closed filters never invoke the runner
+  const beforeUnreadable = calls.length;
+  for (const badCmd of [
+    `dotnet test ${genProj} --filter:Name~A`,
+    `dotnet test ${genProj} --filter ""`,
+    `dotnet test ${genProj} --filter Name~A --filter Name~B`,
+    `dotnet test ${genProj} -p:VSTestTestCaseFilter=Name~A`,
+    `dotnet test ${genProj} -- RunConfiguration.TestCaseFilter=Name~A`,
+  ]) {
+    const res = await checkHenicosOffload(badCmd, { remoteForced: false, places: {} }, ctx, fakeRunner, listSources);
+    assert.strictEqual(res.offload, "local", `unreadable filter must stay local: ${badCmd}`);
+  }
+  assert.strictEqual(
+    calls.length,
+    beforeUnreadable,
+    "unreadable filters must fail closed without spawning --list-tests",
+  );
+
+  // Compound command: if second step matches Platform=Windows, whole command stays local
+  let stepIdx = 0;
+  const compoundRunner: OffloadListRunner = () => {
+    stepIdx++;
+    return Promise.resolve(
+      stepIdx === 1
+        ? noMatch
+        : {
+            exitCode: 0,
+            output: "Test run for B.dll (.NETCoreApp,Version=v10.0)\n    B.WinTest\n",
+          },
+    );
+  };
+  const compoundRes = await checkHenicosOffload(
+    `dotnet test ${genProj} && dotnet test tests/ZeroAlloc/Kassyi.ZeroAlloc.Linq.Tests`,
+    { remoteForced: false, places: {} },
+    ctx,
+    compoundRunner,
+    listSources,
+  );
+  assert.strictEqual(compoundRes.offload, "local");
+  assert.strictEqual(stepIdx, 2);
+
+  // Compound build+test: local/CUDA/solution build fails closed without invoking --list-tests; pure managed build allows
+  const collectProj = "tests/Tools/Kassyi.GSharp.Tools.CollectEnv.Tests";
+  const infraProj = "tests/Shared/Kassyi.GSharp.Tests.Infrastructure";
+  let buildProbeCalls = 0;
+  const buildProbeRunner: OffloadListRunner = () => {
+    buildProbeCalls++;
+    return Promise.resolve(noMatch);
+  };
+  for (const blockedBuildCmd of [
+    `dotnet build tests/Compiler/Kassyi.GSharp.Tests.Cpu && dotnet test ${collectProj}`,
+    `dotnet build tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests && dotnet test ${collectProj}`,
+    `dotnet build tests/Compiler/Kassyi.GSharp.Tests.Cuda && dotnet test ${collectProj}`,
+    `dotnet build Henicos.slnx && dotnet test ${collectProj}`,
+  ]) {
+    const res = await checkHenicosOffload(
+      blockedBuildCmd,
+      { remoteForced: false, places: {} },
+      ctx,
+      buildProbeRunner,
+      listSources,
+    );
+    assert.strictEqual(res.offload, "local", `compound blocked build must stay local: ${blockedBuildCmd}`);
+    assert.ok(res.reason !== undefined && res.reason !== "" && !/[\r\n]/.test(res.reason));
+  }
+  assert.strictEqual(buildProbeCalls, 0, "blocked compound build must fail closed without spawning --list-tests");
+  const allowedCompoundBuild = await checkHenicosOffload(
+    `dotnet build ${infraProj} && dotnet test ${collectProj}`,
+    { remoteForced: false, places: {} },
+    ctx,
+    buildProbeRunner,
+    listSources,
+  );
+  assert.deepStrictEqual(allowedCompoundBuild, { offload: "allow" });
+  assert.strictEqual(buildProbeCalls, 1);
 }
