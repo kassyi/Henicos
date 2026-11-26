@@ -19,8 +19,8 @@ public partial class CudaStreamKernels
         }
 
         // Dummy delay loop to occupy the GPU stream
-        var val = 0;
-        for (var i = 0; i < iterations; i++)
+        int val = 0;
+        for (int i = 0; i < iterations; i++)
         {
             val += i;
         }

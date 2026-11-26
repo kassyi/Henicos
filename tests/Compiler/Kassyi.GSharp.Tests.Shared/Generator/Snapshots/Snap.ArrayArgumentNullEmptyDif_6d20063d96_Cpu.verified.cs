@@ -9,7 +9,7 @@ internal static class GSharpSharedCpuDeviceCode
 public const string Source = @"inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ArrayArgumentNullEmptyDifferentialKernels__SpanSum(GSharpArray<int> __gsharp_id_0_s);
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ArrayArgumentNullEmptyDifferentialKernels__SpanSum(GSharpArray<int> __gsharp_id_0_s){
-auto __gsharp_id_1_sum = 1000;
+int __gsharp_id_1_sum = 1000;
 for(auto __gsharp_id_2_v : __gsharp_id_0_s)
 {
 __gsharp_id_1_sum=__gsharp_add_i32(__gsharp_id_1_sum,__gsharp_id_2_v);

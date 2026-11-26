@@ -31,7 +31,7 @@ public struct SharedPairSlot<TFirst, TSecond>
 /// <summary>
 /// A non-generic device function allocating static shared memory (#543).
 /// </summary>
-public static class SharedCalleeHelper
+public static partial class SharedCalleeHelper
 {
     [GpuDeviceFunction]
     public static int NonGenericCalleeBuffer(bool write, int lane, int inputValue)

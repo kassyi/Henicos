@@ -31,7 +31,7 @@ public partial struct ConstantImpl_OpTest : IConstantProvider_OpTest
     public static int GetMagic() => 77;
 }
 
-public class OperatorsAndInterfacesTarget
+public partial class OperatorsAndInterfacesTarget
 {
     [Kassyi.GSharp.Core.GpuDeviceFunction]
     public static int GetMagicHelper() => ConstantImpl_OpTest.GetMagic();

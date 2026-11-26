@@ -221,7 +221,7 @@ public struct CallTargetBox
     public void Set(int v) => Value = v;
 }
 
-public static class CallTargetHelpers
+public static partial class CallTargetHelpers
 {
     public static int Unmarked(int v) => v * 2;
 
@@ -248,7 +248,9 @@ public static class CallTargetCases
 
     public static int CallsMath(int v) => Math.Abs(v);
 
+#pragma warning disable GSH0018, GSH0042 // Syntax input parsed by RoslynTestUtility.GetCallerSourceContext for CallTargetClassifierTests
     public static void CallsIntrinsic() => Gpu.SyncThreads();
+#pragma warning restore GSH0018, GSH0042
 
     public static int CallsInterlocked(int[] counter) => Interlocked.Add(ref counter[0], 1);
 
@@ -271,6 +273,7 @@ public static class CallTargetCases
 
     public static int CallsGetValueOrDefault(int? v) => v.GetValueOrDefault();
 
+#pragma warning disable GSH0018 // Syntax input parsed by RoslynTestUtility.GetCallerSourceContext for CallTargetClassifierTests (includes intentional GSH0003 misused-macro cases)
     public static void CallsSingleThreadLambda()
     {
         Gpu.SingleThread(() => CallTargetHelpers.Body());
@@ -282,6 +285,7 @@ public static class CallTargetCases
     }
 
     public static void CallsSingleThreadInExpression() => Gpu.SingleThread(() => CallTargetHelpers.Body());
+#pragma warning restore GSH0018
 
     public static int CallsMemorySlice(Memory<int> m) => m.Slice(1, 2).Length + m.Slice(1).Length;
 

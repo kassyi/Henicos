@@ -19,7 +19,8 @@ public static partial class DifferentialRunner
         DifferentialCase Case,
         IReadOnlyList<DiffPathRunner> Paths,
         List<KnownDivergence> Entries,
-        DifferentialReport Report
+        DifferentialReport Report,
+        bool RecordRun = false
     )
     {
         public KnownDivergence? FindEntry(string column, DiffPath path, LaunchShape shape)
@@ -44,13 +45,15 @@ public static partial class DifferentialRunner
         EnsureEnvironmentReady();
         var effectiveSeeds = seeds ?? testCase.Seeds;
         string? testSeed = effectiveSeeds is null ? DifferentialSeeds.TestSeed : null;
-        var report = Evaluate(
+        var report = EvaluateCore(
             testCase,
             effectiveSeeds ?? DifferentialSeeds.For(testSeed),
             DiffPaths.Available,
             KnownDivergences.All,
             testSeed,
-            checkStale: seeds is null
+            checkStale: seeds is null,
+            runPreflight: true,
+            recordRun: true
         );
         if (report.HasFailures)
         {
@@ -161,6 +164,15 @@ public static partial class DifferentialRunner
         bool checkStale = true
     ) => EvaluateCore(testCase, seeds, paths, known, testSeed, checkStale, runPreflight: true);
 
+    internal static DifferentialReport EvaluateRecordingForTests(
+        DifferentialCase testCase,
+        IReadOnlyList<int> seeds,
+        IReadOnlyList<DiffPathRunner> paths,
+        IReadOnlyList<KnownDivergence> known,
+        string? testSeed = null,
+        bool checkStale = true
+    ) => EvaluateCore(testCase, seeds, paths, known, testSeed, checkStale, runPreflight: true, recordRun: true);
+
     private static DifferentialReport EvaluateCore(
         DifferentialCase testCase,
         IReadOnlyList<int> seeds,
@@ -168,7 +180,8 @@ public static partial class DifferentialRunner
         IReadOnlyList<KnownDivergence> known,
         string? testSeed,
         bool checkStale,
-        bool runPreflight
+        bool runPreflight,
+        bool recordRun = false
     )
     {
         ValidateCase(testCase, seeds, paths);
@@ -190,7 +203,7 @@ public static partial class DifferentialRunner
         }
 
         var entries = known.Where(k => k.Case == testCase.Name && k.AppliesToThisHost).ToList();
-        var run = new CaseRun(testCase, paths, entries, report);
+        var run = new CaseRun(testCase, paths, entries, report, recordRun);
         int subprocessCount = 0;
 
         foreach (int seed in seeds)
@@ -357,10 +370,32 @@ public static partial class DifferentialRunner
 
             var buffers = at.Initial.Clone();
             buffers.Shape = shape;
+            DiffBuffers? ptrBuffers = null;
+            long stackLaunches = 0;
+            Exception? thrown = null;
+            var writer = run.RecordRun ? DiffRecordWriter.Active : null;
             try
             {
-                path.Run(() => testCase.Launch(buffers, shape));
-                DiffBuffers? ptrBuffers = null;
+                if (writer is null)
+                {
+                    path.Run(() => testCase.Launch(buffers, shape));
+                }
+                else
+                {
+                    path.Run(() =>
+                    {
+                        long before = DiffRecordWriter.ReadLaunchCount(path.Path);
+                        try
+                        {
+                            testCase.Launch(buffers, shape);
+                        }
+                        finally
+                        {
+                            stackLaunches = DiffRecordWriter.ReadLaunchCount(path.Path) - before;
+                        }
+                    });
+                }
+
                 if (path.Path == DiffPath.Cuda && testCase.LaunchPtr is { } launchPtr)
                 {
                     ptrBuffers = at.Initial.Clone();
@@ -372,9 +407,12 @@ public static partial class DifferentialRunner
             }
             catch (Exception ex)
             {
+                thrown = ex;
                 var entry = run.FindEntry(KnownDivergence.ExceptionColumn, path.Path, shape);
                 run.Report.Add(new PathFailure(at.Seed, path.Path, ex, shape, entry));
             }
+
+            writer?.Write(testCase.Name, at.Seed, at.ShapeIndex, path.Path, shape, buffers, ptrBuffers, thrown, stackLaunches);
         }
 
         if (expected is not null)

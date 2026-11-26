@@ -162,6 +162,13 @@ inline void __gsharp_stack_bind_threads(std::vector<__gsharp_stack_warp_thread>&
 // The GPU thread that runs on the calling OpenMP thread, or nullptr while the launcher runs
 inline thread_local __gsharp_stack_thread* __gsharp_stack_current = nullptr;
 
+// The launches that have run on native stacks on the calling thread, read by the differential harness
+inline thread_local uint64_t __gsharp_stack_launch_count = 0;
+
+extern "C" __declspec(dllexport) GSHARP_EXPORT_INLINE uint64_t __gsharp_stack_get_launch_count() noexcept {
+    return __gsharp_stack_launch_count;
+}
+
 // The whole life of one GPU thread on its stack. No exception leaves it
 inline void __gsharp_stack_run_current() noexcept {
     __gsharp_stack_thread* self = __gsharp_stack_current;

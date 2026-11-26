@@ -16,14 +16,16 @@ public class GpuBigIntegerTests
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
-        using var uintVal = new GpuBigUInt(context, 4);
-        var posBigInt = new GpuBigInt(uintVal, isNegative: false);
-        var negBigInt = new GpuBigInt(uintVal, isNegative: true);
+        // Each GpuBigInt takes ownership of its magnitude, so each gets its own
+        var posMagnitude = new GpuBigUInt(context, 4);
+        var negMagnitude = new GpuBigUInt(context, 4);
+        using var posBigInt = new GpuBigInt(posMagnitude, isNegative: false);
+        using var negBigInt = new GpuBigInt(negMagnitude, isNegative: true);
 
         Assert.False(posBigInt.IsNegative);
         Assert.True(negBigInt.IsNegative);
-        Assert.Equal((GpuBigUInt)uintVal, (GpuBigUInt)posBigInt.Value);
-        Assert.Equal((GpuBigUInt)uintVal, (GpuBigUInt)negBigInt.Value);
+        Assert.Equal(posMagnitude, (GpuBigUInt)posBigInt.Value);
+        Assert.Equal(negMagnitude, (GpuBigUInt)negBigInt.Value);
     }
 
     [SkippableTheory]

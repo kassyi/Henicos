@@ -127,7 +127,7 @@ public class CompilerInfrastructureUnitTests
     public void SourceWriter_InterpolationAndIndentation_BuildsAccurateCode()
     {
         // Happy Path: SourceWriter with indentation scopes and interpolated handler
-        var writer = new SourceWriter();
+        using var writer = new SourceWriter();
         writer.AppendLine("// Header comment");
         using (writer.Scope())
         {

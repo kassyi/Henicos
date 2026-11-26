@@ -8,7 +8,7 @@ public struct SampleData
     public float Y;
 }
 
-public class ControlFlowTarget
+public partial class ControlFlowTarget
 {
     [GpuDeviceFunction]
     public static void IncrementRef(ref int target)

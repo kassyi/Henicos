@@ -1,6 +1,6 @@
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
-public class StackAllocFixedArrayTarget
+public partial class StackAllocFixedArrayTarget
 {
     public static void StackAllocHappyPath(int[] output)
     {

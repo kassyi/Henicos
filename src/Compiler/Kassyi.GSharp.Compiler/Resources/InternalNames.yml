@@ -640,6 +640,8 @@ NativeStack:
     ThreadType: { Value: __gsharp_stack_thread, Prelude: StackThreads.hpp }
     ThreadLimit: { Value: __gsharp_stack_thread_limit, Prelude: StackThreads.hpp }
     CaptureFp: { Value: __gsharp_stack_capture_fp, Prelude: StackThreads.hpp }
+    LaunchCount: { Value: __gsharp_stack_launch_count, Prelude: StackThreads.hpp }
+    GetLaunchCount: { Value: __gsharp_stack_get_launch_count, Prelude: StackThreads.hpp }
     Body: __gsharp_stack_body
     Fp: __gsharp_stack_fp
     Stacks: __gsharp_stack_stacks

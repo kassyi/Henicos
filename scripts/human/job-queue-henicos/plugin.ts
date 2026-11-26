@@ -20,7 +20,7 @@ import { isDotnetTest, selectsCategory } from "../job-queue/plugins/dotnet/plugi
 import { cpuOnlyTestProjects, justPositionals, resolveBudgets, resolveTestsDir, testMemoryMb } from "./budgets.ts";
 import { nameFilterShare } from "./name-filter.ts";
 import { checkHenicosOffload, classifyOffloadCommand } from "./offload-probe.ts";
-import { shareOf } from "./share-rules.ts";
+import { shareDecision } from "./share-rules.ts";
 
 const DefaultBudgetsFile = "tests/memory-budgets.yml";
 const DefaultTestsDir = "tests";
@@ -28,8 +28,8 @@ const DefaultTestsDir = "tests";
 // just options and variable assignments may stand between just and the recipe: just -f justfile test, just a=b test
 const HenicosTestPattern = new RegExp(
   [
-    String.raw`\bjust\b[^;&|\n]*?\s(test[\w-]*|coverage-diff|mutate)(\s|$)`,
-    String.raw`\b(test-stability|test-memory|test-sanitized|mutate|coverage-diff)\.js\b`,
+    String.raw`\bjust\b[^;&|\n]*?\s(test[\w-]*|coverage-diff|mutate|diff-barrier-models)(\s|$)`,
+    String.raw`\b(test-stability|test-memory|test-sanitized|mutate|coverage-diff|compare-barrier-models)\.js\b`,
   ].join("|"),
 );
 
@@ -252,9 +252,9 @@ const plugin = {
 
   classify(command: string, resource: ResourceRequest | null, context: ClientContext): Classification | undefined {
     // Asked only for a --gpu run (share-rules.ts); a run that does not ask for the GPU has no share
-    const share = resource?.name === "gpu" ? shareOf(command, context) : undefined;
+    const decision = resource?.name === "gpu" ? shareDecision(command, context) : undefined;
     if (!isHenicosTest(command)) {
-      return share !== undefined ? { share } : undefined;
+      return decision !== undefined ? { share: decision.share, shareReason: decision.reason } : undefined;
     }
     const budgets = resolveBudgets(
       context.worktree,
@@ -281,7 +281,7 @@ const plugin = {
     return {
       test: true,
       memoryMb,
-      ...(share !== undefined ? { share } : {}),
+      ...(decision !== undefined ? { share: decision.share, shareReason: decision.reason } : {}),
       offloadable: offload.offloadable,
       ...(offload.localReason !== undefined ? { localReason: offload.localReason } : {}),
     };

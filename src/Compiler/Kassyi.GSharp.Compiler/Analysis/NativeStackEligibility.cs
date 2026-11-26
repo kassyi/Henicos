@@ -33,8 +33,17 @@ internal static class NativeStackEligibility
     }
 
     public static bool CanRunOnStack(MethodDeclarationSyntax declaration, SemanticModel semanticModel) =>
-        declaration.HasBody() &&
-        ClassifyBody(declaration, semanticModel) == NativeStackObstacle.None;
+        ClassifyDeviceFunction(declaration, semanticModel) == NativeStackObstacle.None;
+
+    /// <summary>
+    /// Classifies a suspending device function's body for native stack execution without re-classifying it separately.
+    /// </summary>
+    public static NativeStackObstacle ClassifyDeviceFunction(
+        MethodDeclarationSyntax declaration,
+        SemanticModel semanticModel) =>
+        declaration.HasBody()
+            ? ClassifyBody(declaration, semanticModel)
+            : NativeStackObstacle.NoBlockBarrier;
 
     public static NativeStackObstacle Classify(
         IMethodSymbol kernel,

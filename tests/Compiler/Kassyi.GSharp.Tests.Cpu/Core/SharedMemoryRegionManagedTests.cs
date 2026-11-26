@@ -172,6 +172,7 @@ public class SharedMemoryRegionManagedTests : TranspilerTestBase
     [InlineData("x.cs", -1, "M", 10450852572731352005UL)]
     public void Declaration_SiteKey_IsPinnedFnv1A64(string path, int line, string member, ulong siteKey)
     {
+#pragma warning disable GSH0018 // Unit test of ManagedGpuContext 64-bit FNV-1a site-key parity via SharedMemory<T>(size, path, line, member)
         // The key is shared with the compiler's 64-bit key space; pin its exact value.
         WithBlock(() =>
         {
@@ -181,6 +182,7 @@ public class SharedMemoryRegionManagedTests : TranspilerTestBase
             Assert.Equal(9, new SharedMemory<int>(4, siteKey)[0]);
             Assert.Equal(0, new SharedMemory<int>(4, path, unchecked(line + 1), member)[0]);
         });
+#pragma warning restore GSH0018
     }
 
     [Theory]
@@ -191,6 +193,7 @@ public class SharedMemoryRegionManagedTests : TranspilerTestBase
     [InlineData("", 0)]
     public void TypeKeyedSiteKey_Computation_MatchesCompilerComputation(string path, int line)
     {
+#pragma warning disable GSH0018 // Unit test comparing TypeKeyedSharedMemoryCollector.ComputeSiteKey against SharedMemory<T> managed lookup
         var compilerKey = TypeKeyedSharedMemoryCollector.ComputeSiteKey(path, line);
         WithBlock(() =>
         {
@@ -200,12 +203,14 @@ public class SharedMemoryRegionManagedTests : TranspilerTestBase
             var smemByKey = new SharedMemory<int>(4, compilerKey);
             Assert.Equal(777, smemByKey[0]);
         });
+#pragma warning restore GSH0018
     }
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void RegisterTypeKeyedSites_Registration_EnablesTypeKeySaltOnlyForRegisteredSites()
     {
+#pragma warning disable GSH0018 // Unit test of ManagedGpuContext.RegisterTypeKeyedSites and BeginTypeKeyScope/EndTypeKeyScope
         const string filePath = "TestTypeKeyedRegistration.cs";
         const int registeredLine = 42;
         const int unregisteredLine = 43;
@@ -238,23 +243,16 @@ public class SharedMemoryRegionManagedTests : TranspilerTestBase
                 ManagedGpuContext.EndTypeKeyScope(salt, 0);
             }
         });
+#pragma warning restore GSH0018
     }
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void RefIndexer_WriteThroughRef_IsVisibleOnSubsequentReads()
     {
-        WithBlock(() =>
-        {
-            var smem = new SharedMemory<int>(4, 700UL);
-            ref int slot = ref smem[2];
-            slot = 77;
-
-            Assert.Equal(77, smem[2]);
-
-            WriteByRef(ref smem[2], 123);
-            Assert.Equal(123, smem[2]);
-        });
+        var output = new int[2];
+        RunManaged(() => SharedMemoryRegionManagedKernels.LaunchRefIndexerWriteThroughKernel(output));
+        Assert.Equal([77, 123], output);
     }
 
     [Fact]
@@ -291,8 +289,6 @@ public class SharedMemoryRegionManagedTests : TranspilerTestBase
             }
         });
     }
-
-    private static void WriteByRef(ref int target, int value) => target = value;
 
     private static void WithBlock(Action body) => RunOnFreshThread(() =>
     {
