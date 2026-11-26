@@ -84,11 +84,20 @@ internal sealed class CyclePlan
     private static bool IsSerialGate(Cycle cycle, StatementFlow flow, StatementSyntax statement) =>
         flow.TryGetListPosition(statement, out var list, out var index) &&
         index > 0 &&
-        IsGateTransition(flow, cycle.Members, list[index - 1], statement);
+        IsGateTransition(flow, cycle.Members, cycle.BackJumps, list[index - 1], statement);
 
     public bool IsGateStatement(LoopCycle cycle, StatementSyntax statement) =>
         cycle.Gates.Contains(statement);
 
+    internal static bool IsGateTransition(
+        StatementFlow flow,
+        ImmutableHashSet<FlowNode> members,
+        ImmutableArray<GotoStatementSyntax> backJumps,
+        StatementSyntax prev,
+        StatementSyntax candidateGate) =>
+        HasBackJumpInside(backJumps, prev) && IsGateTransition(flow, members, prev, candidateGate);
+
+    // The statement leaves the cycle: prev is in it, the candidate is not, and control can fall from one to the other
     internal static bool IsGateTransition(
         StatementFlow flow,
         ImmutableHashSet<FlowNode> members,
@@ -145,14 +154,16 @@ internal sealed class CyclePlan
             }
 
             var candidateGate = list[index + 1];
-            if (IsGateTransition(_flow, cycle.Members, memberStatement, candidateGate) &&
+            if (IsGateTransition(_flow, cycle.Members, cycle.BackJumps, memberStatement, candidateGate) &&
                 ReconvergenceSyntax.IsInside(candidateGate, extent))
             {
                 return true;
             }
         }
 
-        return false;
+        return cycle.BranchGates?
+            .AsStackEnumerable()
+            .Any(extent, static (gate, enclosing) => ReconvergenceSyntax.IsInside(gate, enclosing)) ?? false;
     }
 
     internal static bool HasBackJumpInside<TJump>(ImmutableArray<TJump> backJumps, StatementSyntax statement)
@@ -548,7 +559,7 @@ internal static class CyclePlanner
             var needsLatch = backJumps.Length >= 2 ||
                 NeedsLatchForSingleBackJump(
                     backJumps[0], owner, statements, region, members, flow, semanticModel, allGotoLoops) ||
-                HasUngatedSplit(statements, region, flow, members, branchGates, holdsSplitPoint);
+                HasUngatedSplit(statements, region, flow, members, backJumps, branchGates, holdsSplitPoint);
             var cycle = new Cycle(
                 header,
                 statements,
@@ -580,23 +591,25 @@ internal static class CyclePlanner
         return true;
     }
 
-    // (C3) A statement of the loop's range that is outside the cycle, has not passed a gate and holds a split point:
+    // A statement of the loop's range that is outside the cycle, has not passed a gate and holds a split point:
     // the lanes that fall out of the loop there have left it in different passes
     private static bool HasUngatedSplit(
         SyntaxList<StatementSyntax> statements,
         JumpRegion region,
         StatementFlow flow,
         ImmutableHashSet<FlowNode> members,
+        ImmutableArray<GotoStatementSyntax> backJumps,
         ImmutableHashSet<StatementSyntax> branchGates,
         Func<StatementSyntax, bool> holdsSplitPoint)
     {
-        var scan = new UngatedScan(flow, members, branchGates, holdsSplitPoint);
+        var scan = new UngatedScan(flow, members, backJumps, branchGates, holdsSplitPoint);
         return scan.InList(statements, region.First, region.Last);
     }
 
     private readonly record struct UngatedScan(
         StatementFlow Flow,
         ImmutableHashSet<FlowNode> Members,
+        ImmutableArray<GotoStatementSyntax> BackJumps,
         ImmutableHashSet<StatementSyntax> BranchGates,
         Func<StatementSyntax, bool> HoldsSplitPoint)
     {
@@ -611,7 +624,7 @@ internal static class CyclePlanner
                     return false;
                 }
 
-                if (i > 0 && CyclePlan.IsGateTransition(Flow, Members, list[i - 1], statement))
+                if (i > 0 && CyclePlan.IsGateTransition(Flow, Members, BackJumps, list[i - 1], statement))
                 {
                     return false;
                 }
@@ -730,7 +743,9 @@ internal static class CyclePlanner
             .DescendantNodesAndSelf(static n => n is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax))
             .AsStackEnumerable()
             .OfType<StatementSyntax>()
-            .All(members, static (statement, set) => set.Contains(StatementFlow.EntryOf(statement)));
+            .All(members, static (statement, set) =>
+                // The flow graph has one node for a label and its statement
+                statement.Parent is LabeledStatementSyntax || set.Contains(StatementFlow.EntryOf(statement)));
     }
 
     // Whether control can reach the end of the statement; a form that is not sure answers true (no gate is placed)
@@ -1043,7 +1058,7 @@ internal static class CyclePlanner
             }
 
             var candidateGate = list[index + 1];
-            if (CyclePlan.IsGateTransition(flow, members, memberStatement, candidateGate) &&
+            if (CyclePlan.IsGateTransition(flow, members, backJumps, memberStatement, candidateGate) &&
                 (!HasAllowedAncestors(candidateGate, owner, switchesWithJoins) ||
                  IsInsideNonNaturalLoopWithJump(candidateGate, owner, flow, members)))
             {
