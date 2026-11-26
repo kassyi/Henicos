@@ -1,7 +1,9 @@
 #nullable enable
 using System;
 using System.Collections.Immutable;
+using System.Runtime.InteropServices;
 using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Runtime.Interop;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
@@ -16,8 +18,8 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [Collection(TestCollections.GlobalStateSequential)]
 public sealed class MarshalingFieldOverlapDifferentialTests
 {
-    private static string FieldKernelName(string kernelMemberName) =>
-        DiffKernelNames.Of(typeof(MarshalingFieldOverlapDifferentialKernels), kernelMemberName);
+    private static string FieldKernelName(string kernelMemberName, string? suffix = null) =>
+        DiffKernelNames.Of(typeof(MarshalingFieldOverlapDifferentialKernels), kernelMemberName, suffix);
 
     private static int[] Backing(int length)
     {
@@ -285,4 +287,470 @@ public sealed class MarshalingFieldOverlapDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void FieldOverlap_ReadOnlyMemoryOfStructsAndASliceOfTheirArray_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_readOnlyMemoryElementsAndSlice);
+
+    internal static readonly DifferentialCase s_memoryFieldAndSlice = BackedCase(
+        nameof(MarshalingFieldOverlapDifferentialKernels.MemoryFieldAndSliceKernel), 2,
+        static (backing, observed, s) =>
+        {
+            var bag = new DiffMemoryBag { Data = backing, Tag = 1 };
+            MarshalingFieldOverlapDifferentialKernels.LaunchMemoryFieldAndSliceKernel(
+                bag, backing.AsSpan(1, 2), observed, gridDimX: s.GridX, blockDimX: s.BlockX);
+        });
+
+    internal static readonly DifferentialCase s_segmentFieldAndSlice = BackedCase(
+        nameof(MarshalingFieldOverlapDifferentialKernels.SegmentFieldAndSliceKernel), 2,
+        static (backing, observed, s) =>
+        {
+            var bag = new DiffSegmentBag { Data = new ArraySegment<int>(backing), Tag = 1 };
+            MarshalingFieldOverlapDifferentialKernels.LaunchSegmentFieldAndSliceKernel(
+                bag, backing.AsSpan(1, 2), observed, gridDimX: s.GridX, blockDimX: s.BlockX);
+        });
+
+    internal static readonly DifferentialCase s_readOnlyMemoryFieldAndSlice = BackedCase(
+        nameof(MarshalingFieldOverlapDifferentialKernels.ReadOnlyMemoryFieldAndSliceKernel), 1,
+        static (backing, observed, s) =>
+        {
+            var bag = new DiffReadOnlyMemoryBag { Data = backing, Tag = 1 };
+            MarshalingFieldOverlapDifferentialKernels.LaunchReadOnlyMemoryFieldAndSliceKernel(
+                bag, backing.AsSpan(1, 2), observed, gridDimX: s.GridX, blockDimX: s.BlockX);
+        });
+
+    internal static readonly DifferentialCase s_immutableArrayFieldAndReadOnlySlice = BackedCase(
+        nameof(MarshalingFieldOverlapDifferentialKernels.ImmutableArrayFieldAndReadOnlySliceKernel), 2,
+        static (backing, observed, s) =>
+        {
+            var bag = new DiffImmutableArrayBag
+            {
+                Data = ImmutableCollectionsMarshal.AsImmutableArray(backing),
+                Tag = 1,
+            };
+            MarshalingFieldOverlapDifferentialKernels.LaunchImmutableArrayFieldAndReadOnlySliceKernel(
+                bag, backing.AsSpan(1, 2), backing.AsSpan(1, 2), observed, gridDimX: s.GridX, blockDimX: s.BlockX);
+        });
+
+    internal static readonly DifferentialCase s_twoMemoryFields = BackedCase(
+        nameof(MarshalingFieldOverlapDifferentialKernels.TwoMemoryFieldsKernel), 2,
+        static (backing, observed, s) =>
+        {
+            var views = new DiffTwoMemoryViews { A = backing.AsMemory(0, 3), B = backing.AsMemory(1, 3) };
+            MarshalingFieldOverlapDifferentialKernels.LaunchTwoMemoryFieldsKernel(
+                views, observed, gridDimX: s.GridX, blockDimX: s.BlockX);
+        });
+
+    internal static readonly DifferentialCase s_structWithTwoViewsAlone = new(
+        FieldKernelName(nameof(MarshalingFieldOverlapDifferentialKernels.StructWithTwoViewsAloneKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Backing(4), OutputPolicy.Exact),
+        OracleIsLaunch = true,
+        Launch = static (b, s) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            var views = new DiffTwoMemoryViews { A = backing.AsMemory(0, 3), B = backing.AsMemory(1, 3) };
+            MarshalingFieldOverlapDifferentialKernels.LaunchStructWithTwoViewsAloneKernel(
+                views, gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    internal static readonly DifferentialCase s_arrayFieldAndMemoryField = BackedCase(
+        nameof(MarshalingFieldOverlapDifferentialKernels.ArrayFieldAndMemoryFieldKernel), 2,
+        static (backing, observed, s) =>
+        {
+            var bag = new DiffDeepBag { Data = backing, Tag = 1 };
+            var view = new DiffMemoryBag { Data = backing.AsMemory(1, 2), Tag = 2 };
+            MarshalingFieldOverlapDifferentialKernels.LaunchArrayFieldAndMemoryFieldKernel(
+                bag, view, observed, gridDimX: s.GridX, blockDimX: s.BlockX);
+        });
+
+    internal static readonly DifferentialCase s_memoryFieldAndMemoryArgument = BackedCase(
+        nameof(MarshalingFieldOverlapDifferentialKernels.MemoryFieldAndMemoryArgumentKernel), 2,
+        static (backing, observed, s) =>
+        {
+            var bag = new DiffMemoryBag { Data = backing.AsMemory(1, 2), Tag = 1 };
+            MarshalingFieldOverlapDifferentialKernels.LaunchMemoryFieldAndMemoryArgumentKernel(
+                bag, backing.AsMemory(), observed, gridDimX: s.GridX, blockDimX: s.BlockX);
+        });
+
+    internal static readonly DifferentialCase s_memoryFieldAndWholeArray = BackedCase(
+        nameof(MarshalingFieldOverlapDifferentialKernels.MemoryFieldAndWholeArrayKernel), 2,
+        static (backing, observed, s) =>
+        {
+            var bag = new DiffMemoryBag { Data = backing.AsMemory(1, 2), Tag = 1 };
+            MarshalingFieldOverlapDifferentialKernels.LaunchMemoryFieldAndWholeArrayKernel(
+                bag, backing, observed, gridDimX: s.GridX, blockDimX: s.BlockX);
+        });
+
+    internal static readonly DifferentialCase s_elementMemoryFieldAndSlice = BackedCase(
+        nameof(MarshalingFieldOverlapDifferentialKernels.ElementMemoryFieldAndSliceKernel), 2,
+        static (backing, observed, s) =>
+        {
+            DiffMemoryBag[] bags = [new DiffMemoryBag { Data = backing, Tag = 1 }];
+            MarshalingFieldOverlapDifferentialKernels.LaunchElementMemoryFieldAndSliceKernel(
+                bags, backing.AsSpan(1, 2), observed, gridDimX: s.GridX, blockDimX: s.BlockX);
+        });
+
+    internal static readonly DifferentialCase s_inElementMemoryFieldAndInSlice = new(
+        FieldKernelName(nameof(MarshalingFieldOverlapDifferentialKernels.InElementMemoryFieldAndInSliceKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Backing(4), OutputPolicy.Exact, readOnly: true)
+            .Out<int>("observed", 2, OutputPolicy.Exact),
+        Reference = static (b, _) =>
+        {
+            b.Get<int>("observed")[0] = 12;
+            b.Get<int>("observed")[1] = 103;
+        },
+        Launch = static (b, s) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            DiffMemoryBag[] bags = [new DiffMemoryBag { Data = backing, Tag = 1 }];
+            MarshalingFieldOverlapDifferentialKernels.LaunchInElementMemoryFieldAndInSliceKernel(
+                bags, backing.AsSpan(1, 2), b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    internal static readonly DifferentialCase s_nullableMemoryFieldAndSlice = BackedCase(
+        nameof(MarshalingFieldOverlapDifferentialKernels.NullableMemoryFieldAndSliceKernel), 2,
+        static (backing, observed, s) =>
+        {
+            var bag = new DiffNullableMemoryBag { Data = backing.AsMemory(), Tag = 1 };
+            MarshalingFieldOverlapDifferentialKernels.LaunchNullableMemoryFieldAndSliceKernel(
+                bag, backing.AsSpan(1, 2), observed, gridDimX: s.GridX, blockDimX: s.BlockX);
+        });
+
+    internal static readonly DifferentialCase s_nestedMemoryFieldAndSlice = BackedCase(
+        nameof(MarshalingFieldOverlapDifferentialKernels.NestedMemoryFieldAndSliceKernel), 2,
+        static (backing, observed, s) =>
+        {
+            var outer = new DiffNestedMemoryBag
+            {
+                Inner = new DiffMemoryBag { Data = backing, Tag = 1 },
+                Scale = 2,
+            };
+            MarshalingFieldOverlapDifferentialKernels.LaunchNestedMemoryFieldAndSliceKernel(
+                outer, backing.AsSpan(1, 2), observed, gridDimX: s.GridX, blockDimX: s.BlockX);
+        });
+
+    internal static readonly DifferentialCase s_twoMemoryFieldsSeparateHalves = BackedCase(
+        nameof(MarshalingFieldOverlapDifferentialKernels.TwoMemoryFieldsSeparateHalvesKernel), 2,
+        static (backing, observed, s) =>
+        {
+            var views = new DiffTwoMemoryViews { A = backing.AsMemory(0, 2), B = backing.AsMemory(2, 2) };
+            MarshalingFieldOverlapDifferentialKernels.LaunchTwoMemoryFieldsSeparateHalvesKernel(
+                views, observed, gridDimX: s.GridX, blockDimX: s.BlockX);
+        });
+
+    internal static readonly DifferentialCase s_threeViewsChained = new(
+        FieldKernelName(nameof(MarshalingFieldOverlapDifferentialKernels.ThreeViewsChainedKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Backing(6), OutputPolicy.Exact)
+            .Out<int>("observed", 2, OutputPolicy.Exact),
+        OracleIsLaunch = true,
+        Launch = static (b, s) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            var views = new DiffTwoMemoryViews { A = backing.AsMemory(0, 2), B = backing.AsMemory(4, 2) };
+            MarshalingFieldOverlapDifferentialKernels.LaunchThreeViewsChainedKernel(
+                views, backing.AsSpan(1, 4), b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    internal static readonly DifferentialCase s_identicalMemoryFields = new(
+        FieldKernelName(nameof(MarshalingFieldOverlapDifferentialKernels.TwoMemoryFieldsKernel), "Identical"))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Backing(4), OutputPolicy.Exact)
+            .Out<int>("observed", 2, OutputPolicy.Exact),
+        OracleIsLaunch = true,
+        Launch = static (b, s) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            var views = new DiffTwoMemoryViews { A = backing.AsMemory(0, 3), B = backing.AsMemory(0, 3) };
+            MarshalingFieldOverlapDifferentialKernels.LaunchTwoMemoryFieldsKernel(
+                views, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    internal static readonly DifferentialCase s_inElementsWithIdenticalMemory = new(
+        FieldKernelName(nameof(MarshalingFieldOverlapDifferentialKernels.InElementsWithIdenticalMemoryKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Backing(4), OutputPolicy.Exact, readOnly: true)
+            .Out<int>("observed", 2, OutputPolicy.Exact),
+        Reference = static (b, _) =>
+        {
+            b.Get<int>("observed")[0] = 12;
+            b.Get<int>("observed")[1] = 103;
+        },
+        Launch = static (b, s) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            DiffMemoryBag[] bags =
+            [
+                new DiffMemoryBag { Data = backing.AsMemory(0, 3), Tag = 1 },
+                new DiffMemoryBag { Data = backing.AsMemory(0, 3), Tag = 2 },
+            ];
+            MarshalingFieldOverlapDifferentialKernels.LaunchInElementsWithIdenticalMemoryKernel(
+                bags, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_MemoryFieldAndASliceOfItsArray_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_memoryFieldAndSlice);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_ArraySegmentFieldAndASliceOfItsArray_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_segmentFieldAndSlice);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_ReadOnlyMemoryFieldAndAWritableSlice_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_readOnlyMemoryFieldAndSlice);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_ImmutableArrayFieldAndAReadOnlySlice_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_immutableArrayFieldAndReadOnlySlice);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_TwoMemoryFieldsOfOneStruct_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_twoMemoryFields);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_StructWithTwoViewsAlone_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_structWithTwoViewsAlone);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_ArrayFieldAndAMemoryFieldOfAnotherStruct_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_arrayFieldAndMemoryField);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_MemoryFieldAndAMemoryArgument_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_memoryFieldAndMemoryArgument);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_MemoryFieldAndTheWholeArray_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_memoryFieldAndWholeArray);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_ElementMemoryFieldAndASlice_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_elementMemoryFieldAndSlice);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_InElementMemoryFieldAndAnInSlice_SeeEachOthersWritesOnEveryPath() =>
+        DifferentialRunner.Run(s_inElementMemoryFieldAndInSlice);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_NullableMemoryFieldAndASlice_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_nullableMemoryFieldAndSlice);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_NestedStructMemoryFieldAndASlice_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_nestedMemoryFieldAndSlice);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_TwoMemoryFieldsOverSeparateHalves_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_twoMemoryFieldsSeparateHalves);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_ThreeViewsChained_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_threeViewsChained);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_IdenticalMemoryFieldsOfOneStruct_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_identicalMemoryFields);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_InElementsWithIdenticalMemory_SeeEachOthersWritesOnEveryPath() =>
+        DifferentialRunner.Run(s_inElementsWithIdenticalMemory);
+
+    internal static readonly DifferentialCase s_inShortMemoryFieldAndInIntSegment = new(
+        FieldKernelName(nameof(MarshalingFieldOverlapDifferentialKernels.InShortMemoryFieldAndInIntSegmentKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Backing(4), OutputPolicy.Exact, readOnly: true)
+            .Out<int>("observed", 2, OutputPolicy.Exact),
+        Reference = static (b, _) =>
+        {
+            b.Get<int>("observed")[0] = 12;
+            b.Get<int>("observed")[1] = 103;
+        },
+        Launch = static (b, s) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            var manager = new HostAliasMemoryManager<short>(backing, 0, backing.Length * 2);
+            DiffShortMemoryBag[] mems = [new DiffShortMemoryBag { Data = manager.Memory, Tag = 1 }];
+            DiffSegmentBag[] segs = [new DiffSegmentBag { Data = new ArraySegment<int>(backing), Tag = 2 }];
+            MarshalingFieldOverlapDifferentialKernels.LaunchInShortMemoryFieldAndInIntSegmentKernel(
+                mems, segs, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    internal static readonly DifferentialCase s_inShortMemoryFieldAndInIntArrayCandidate = new(
+        FieldKernelName(
+            nameof(MarshalingFieldOverlapDifferentialKernels.InShortMemoryFieldAndInIntArrayCandidateKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Backing(4), OutputPolicy.Exact, readOnly: true)
+            .Out<int>("observed", 2, OutputPolicy.Exact),
+        Reference = static (b, _) =>
+        {
+            b.Get<int>("observed")[0] = 12;
+            b.Get<int>("observed")[1] = 103;
+        },
+        Launch = static (b, s) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            var manager = new HostAliasMemoryManager<short>(backing, 0, backing.Length * 2);
+            DiffShortMemoryBag[] mems = [new DiffShortMemoryBag { Data = manager.Memory, Tag = 1 }];
+            MarshalingFieldOverlapDifferentialKernels.LaunchInShortMemoryFieldAndInIntArrayCandidateKernel(
+                mems, backing, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    internal static readonly DifferentialCase s_inImmutableFieldAndInShortMemoryField = new(
+        FieldKernelName(
+            nameof(MarshalingFieldOverlapDifferentialKernels.InImmutableFieldAndInShortMemoryFieldKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Backing(4), OutputPolicy.Exact, readOnly: true)
+            .Out<int>("observed", 2, OutputPolicy.Exact),
+        Reference = static (b, _) =>
+        {
+            b.Get<int>("observed")[0] = 12;
+            b.Get<int>("observed")[1] = 103;
+        },
+        Launch = static (b, s) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            var manager = new HostAliasMemoryManager<short>(backing, 0, backing.Length * 2);
+            DiffShortMemoryBag[] mems = [new DiffShortMemoryBag { Data = manager.Memory, Tag = 1 }];
+            DiffImmutableArrayBag[] imms =
+            [
+                new DiffImmutableArrayBag
+                {
+                    Data = ImmutableCollectionsMarshal.AsImmutableArray(backing),
+                    Tag = 2,
+                },
+            ];
+            MarshalingFieldOverlapDifferentialKernels.LaunchInImmutableFieldAndInShortMemoryFieldKernel(
+                mems, imms, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    internal static readonly DifferentialCase s_inReadOnlyMemoryOfBagsAndInSlice = new(
+        FieldKernelName(nameof(MarshalingFieldOverlapDifferentialKernels.InReadOnlyMemoryOfBagsAndInSliceKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Backing(4), OutputPolicy.Exact, readOnly: true)
+            .Out<int>("observed", 2, OutputPolicy.Exact),
+        Reference = static (b, _) =>
+        {
+            b.Get<int>("observed")[0] = 12;
+            b.Get<int>("observed")[1] = 103;
+        },
+        Launch = static (b, s) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            DiffReadOnlyMemoryOfBagsHolder[] holders =
+            [
+                new DiffReadOnlyMemoryOfBagsHolder
+                {
+                    Bags = new[] { new DiffMemoryBag { Data = backing, Tag = 1 } }.AsMemory(),
+                    Tag = 2,
+                },
+            ];
+            MarshalingFieldOverlapDifferentialKernels.LaunchInReadOnlyMemoryOfBagsAndInSliceKernel(
+                holders, backing.AsSpan(1, 2), b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    internal static readonly DifferentialCase s_inImmutableArrayOfBagsAndInSlice = new(
+        FieldKernelName(nameof(MarshalingFieldOverlapDifferentialKernels.InImmutableArrayOfBagsAndInSliceKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Backing(4), OutputPolicy.Exact, readOnly: true)
+            .Out<int>("observed", 2, OutputPolicy.Exact),
+        Reference = static (b, _) =>
+        {
+            b.Get<int>("observed")[0] = 12;
+            b.Get<int>("observed")[1] = 103;
+        },
+        Launch = static (b, s) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            DiffImmutableArrayOfBagsHolder[] holders =
+            [
+                new DiffImmutableArrayOfBagsHolder
+                {
+                    Bags = ImmutableArray.Create(new DiffMemoryBag { Data = backing, Tag = 1 }),
+                    Tag = 2,
+                },
+            ];
+            MarshalingFieldOverlapDifferentialKernels.LaunchInImmutableArrayOfBagsAndInSliceKernel(
+                holders, backing.AsSpan(1, 2), b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_InShortMemoryFieldBeforeInIntSegment_SeeEachOthersWritesOnEveryPath() =>
+        DifferentialRunner.Run(s_inShortMemoryFieldAndInIntSegment);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_InShortMemoryFieldBeforeInIntArrayCandidate_SeeEachOthersWritesOnEveryPath() =>
+        DifferentialRunner.Run(s_inShortMemoryFieldAndInIntArrayCandidate);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_InShortMemoryFieldBeforeInImmutableField_SeeEachOthersWritesOnEveryPath() =>
+        DifferentialRunner.Run(s_inImmutableFieldAndInShortMemoryField);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_InReadOnlyMemoryOfBagsAndInSlice_SeeEachOthersWritesOnEveryPath() =>
+        DifferentialRunner.Run(s_inReadOnlyMemoryOfBagsAndInSlice);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_InImmutableArrayOfBagsAndInSlice_SeeEachOthersWritesOnEveryPath() =>
+        DifferentialRunner.Run(s_inImmutableArrayOfBagsAndInSlice);
 }

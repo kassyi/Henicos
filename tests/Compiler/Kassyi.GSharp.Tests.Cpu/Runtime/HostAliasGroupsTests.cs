@@ -204,6 +204,20 @@ public class HostAliasGroupsTests
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void Find_MixedArgumentAndHeldConvertedKeysInAGroup_ThrowsDifferInDifferentWays()
+    {
+        var ranges = FullRanges((1000, 24, 12, 16, 8, 1), (1012, 24, 12, 12, 8, 1000));
+
+        var exception = Assert.Throws<NotSupportedException>(
+            () => HostAliasGroups.Find(ranges, [InOut, InOut], "slice,a view held by a struct argument"));
+
+        Assert.Contains("differ in different ways", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
     public void Find_ConvertedSlices_ScaleTheirOffsetsToDeviceElements()
     {

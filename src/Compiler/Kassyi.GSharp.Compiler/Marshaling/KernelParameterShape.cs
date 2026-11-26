@@ -95,6 +95,19 @@ internal readonly record struct KernelParameterShape
     public bool HasArrayFields { get; init; }
 
     /// <summary>
+    /// Whether the parameter is a struct (or an array-like of structs) that holds a non-array view field
+    /// (<c>Memory&lt;T&gt;</c>, <c>ReadOnlyMemory&lt;T&gt;</c>, <c>ArraySegment&lt;T&gt;</c>,
+    /// <c>ImmutableArray&lt;T&gt;</c>, or a nullable one) at any depth.
+    /// </summary>
+    public bool HoldsViewFields { get; init; }
+
+    /// <summary>
+    /// Whether the parameter can hold two or more array-like values (arrays or views) across its fields, inline
+    /// array elements, or elements of an array-like parameter.
+    /// </summary>
+    public bool HoldsSeveralArrayLikes { get; init; }
+
+    /// <summary>
     /// <c>AotContexts.HoldsArray_{key}</c> of a user struct with <see cref="HasArrayFields"/>, or of the element of an
     /// array-like parameter whose element the CPU launcher converts and has array fields, otherwise
     /// <see langword="null"/>: the CPU method that tells whether the argument (or any of its elements) holds a given
@@ -321,6 +334,8 @@ internal readonly record struct KernelParameterShape
             IsShadowStructBuffer = shape.RefKind is RefKind.Ref or RefKind.Out &&
                 IsShadowStructElement(parameter.Type),
             HasArrayFields = hasArrayFields,
+            HoldsViewFields = HostShadowStructs.HoldsViewFields(marshaledType),
+            HoldsSeveralArrayLikes = HostShadowStructs.HoldsSeveralArrayLikes(marshaledType),
             CpuHoldsArrayMethodName = hasArrayFields
                 ? AotHostNames.GetQualifiedHoldsArrayMethodName(marshaledType, kernelClass)
                 : null,
@@ -346,6 +361,8 @@ internal readonly record struct KernelParameterShape
             ElementTypeName = elementType.GetFullyQualifiedCsharpName(),
             BufferElementTypeName = GetBufferElementTypeName(elementType, kernelClass),
             IsShadowStructBuffer = IsShadowStructElement(elementType),
+            HoldsViewFields = cpu.ConvertedElementHasArrayFields && HostShadowStructs.HoldsViewFields(elementType),
+            HoldsSeveralArrayLikes = cpu.ConvertedElementHasArrayFields,
             CpuHoldsArrayMethodName = cpu.ConvertedElementHasArrayFields
                 ? AotHostNames.GetQualifiedHoldsArrayMethodName(elementType, kernelClass)
                 : null,

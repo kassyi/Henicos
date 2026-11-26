@@ -233,11 +233,75 @@ internal static class NullableShadowEmitter
             using (writer.Scope())
             {
                 writer.AppendLine($"var {Value} = {Host}.GetValueOrDefault();");
-                writer.AppendLine($"{held.ValueMethodName}(ref {Value}, {StructArrayHelperEmitter.HeldParameter});");
+                WriteHeldValue(writer, Value, held.Value, depth: 0, isReadOnly: false);
             }
         }
 
         writer.AppendLine();
+    }
+
+    private static void WriteHeldValue(SourceWriter writer, string value, NullableHeldValue heldValue, int depth,
+        bool isReadOnly)
+    {
+        const string Held = StructArrayHelperEmitter.HeldParameter;
+        switch (heldValue)
+        {
+            case NullableHeldArray array:
+            {
+                var converted = array.ElementIsConverted ? "true" : "false";
+                writer.AppendLine($"if ({value} != null)");
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"{Held}.Add({value}, {array.ElementAlignment}, 0, {converted});");
+                    if (array.Element is { } element)
+                    {
+                        var indexVar = depth == 0 ? "i" : $"i{depth}";
+                        writer.AppendLine($"for (int {indexVar} = 0; {indexVar} < {value}.Length; {indexVar}++)");
+                        using (writer.Scope())
+                        {
+                            WriteHeldValue(writer, $"{value}[{indexVar}]", element, depth + 1, isReadOnly: false);
+                        }
+                    }
+                }
+
+                break;
+            }
+            case NullableHeldView viewPlan:
+            {
+                var view = viewPlan.View;
+                var writable = view.IsReadOnly ? "false" : "true";
+                var converted = viewPlan.ElementIsConverted ? "true" : "false";
+                var typedArray = view.RequiresTypedArray ? ", true" : "";
+                writer.AppendLine(
+                    $"{Held}.AddView<{view.ElementTypeName}>(" +
+                    $"{view.MemoryExpression(value)}, {writable}, {viewPlan.ElementAlignment}, 0, " +
+                    $"{converted}{typedArray});");
+                if (viewPlan.Element is { } element)
+                {
+                    using (writer.Scope())
+                    {
+                        var spanVar = depth == 0 ? "span" : $"span{depth}";
+                        var indexVar = depth == 0 ? "i" : $"i{depth}";
+                        writer.AppendLine($"{view.SpanTypeName} {spanVar} = {view.SpanExpression(value)};");
+                        writer.AppendLine($"for (int {indexVar} = 0; {indexVar} < {spanVar}.Length; {indexVar}++)");
+                        using (writer.Scope())
+                        {
+                            WriteHeldValue(writer, $"{spanVar}[{indexVar}]", element, depth + 1, view.IsReadOnly);
+                        }
+                    }
+                }
+
+                break;
+            }
+            case NullableHeldMethod method:
+            {
+                var elementRef = isReadOnly
+                    ? $"{HostTypeNames.Unsafe}.AsRef(in {value})"
+                    : value;
+                writer.AppendLine($"{method.MethodName}(ref {elementRef}, {Held});");
+                break;
+            }
+        }
     }
 
     // public static bool HoldsArray_<key>(<T?> host, object array)

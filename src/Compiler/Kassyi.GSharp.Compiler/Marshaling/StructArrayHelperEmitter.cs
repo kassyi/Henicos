@@ -36,35 +36,38 @@ internal static class StructArrayHelperEmitter
     // that its own elements hold
     internal static void WriteCopyArraysValue(SourceWriter writer, string value, ITypeSymbol type)
     {
-        // A view that is not an array is copied as its slice (#1267)
-        if (type.IsArrayLikeType() && type is not IArrayTypeSymbol)
+        if (ArrayFieldView.PlanCopyArraysStep(type) is { } step)
         {
-            ArrayViewFieldEmitter.WriteCopyArrays(writer, ArrayFieldView.Create(type, HostDialects.Cpu), value);
-            return;
+            WriteCopyArraysStep(writer, value, step, depth: 0);
         }
+    }
 
-        if (!type.TryGetArrayLikeElementType(out var element))
+    internal static void WriteCopyArraysStep(SourceWriter writer, string value, CopyArraysStep step, int depth)
+    {
+        switch (step)
         {
-            writer.AppendCopyArraysMethodName(type);
-            writer.AppendLine($"(ref {value}, {CopiesParameter});");
-            return;
-        }
+            case CopyArraysViewStep viewStep:
+                ArrayViewFieldEmitter.WriteCopyArrays(writer, viewStep.View, value, depth);
+                break;
+            case CopyArraysArrayStep { Element: null }:
+                writer.AppendLine($"_ = {CopiesParameter}.Copy(ref {value});");
+                break;
+            case CopyArraysArrayStep { Element: { } elementStep }:
+                var indexVar = LoopIndex(depth);
+                writer.AppendLine($"if ({CopiesParameter}.Copy(ref {value}))");
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"for (int {indexVar} = 0; {indexVar} < {value}.Length; {indexVar}++)");
+                    using (writer.Scope())
+                    {
+                        WriteCopyArraysStep(writer, $"{value}[{indexVar}]", elementStep, depth + 1);
+                    }
+                }
 
-        if (!HoldsArrays(element))
-        {
-            writer.AppendLine($"_ = {CopiesParameter}.Copy(ref {value});");
-            return;
-        }
-
-        writer.AppendLine($"if ({CopiesParameter}.Copy(ref {value}))");
-        using (writer.Scope())
-        {
-            writer.AppendLine($"for (int i = 0; i < {value}.Length; i++)");
-            using (writer.Scope())
-            {
-                writer.AppendCopyArraysMethodName(element);
-                writer.AppendLine($"(ref {value}[i], {CopiesParameter});");
-            }
+                break;
+            case CopyArraysMethodStep methodStep:
+                writer.AppendLine($"{methodStep.MethodName}(ref {value}, {CopiesParameter});");
+                break;
         }
     }
 
@@ -86,39 +89,92 @@ internal static class StructArrayHelperEmitter
         StructLayoutInfo structLayout, ITranspilerDialect dialect, IAssemblySymbol launcherAssembly) =>
         WriteStructMethod(writer, s, structLayout, launcherAssembly, new AliasHeldArraysAction(dialect));
 
-    // AliasHeldArrays_<S>(ref <value>, held);   for a struct that holds arrays
-    // if (<value> != null) { held.Add(<value>, <alignment>, 0, <converted>);
-    //   [for (int i = 0; i < <value>.Length; i++) { AliasHeldArrays_<E>(ref <value>[i], held); }] }   for a T[]
+    // AliasHeldArrays_<S>(ref <value>, held);   for a struct or Nullable that holds arrays
+    // held.AddView<E>(<memory of value>, <writable>, <alignment>, 0, <converted>); [element walk]  for a view
+    // if (<value> != null) { held.Add(<value>, <alignment>, 0, <converted>); [element walk] }       for a T[]
     private static void WriteAliasHeldArraysValue(SourceWriter writer, string value, ITypeSymbol type,
-        ITranspilerDialect dialect)
+        ITranspilerDialect dialect, int depth = 0)
     {
-        if (type is not IArrayTypeSymbol arrayType)
+        if (type is IArrayTypeSymbol arrayType)
         {
-            writer.AppendAliasHeldArraysMethodName(type);
-            writer.AppendLine($"(ref {value}, {HeldParameter});");
+            var element = arrayType.ElementType;
+            var alignment = element.IsReferenceType ? 0 : TypeLayoutCalculator.GetDeviceLayout(element, dialect).Alignment;
+            var converted = KernelParameterShape.IsConverted(element, dialect) ? "true" : "false";
+            writer.AppendLine($"if ({value} != null)");
+            using (writer.Scope())
+            {
+                writer.AppendLine($"{HeldParameter}.Add({value}, {alignment}, 0, {converted});");
+                if (!HoldsArrays(element))
+                {
+                    return;
+                }
+
+                var indexVar = LoopIndex(depth);
+                writer.AppendLine($"for (int {indexVar} = 0; {indexVar} < {value}.Length; {indexVar}++)");
+                using (writer.Scope())
+                {
+                    WriteAliasHeldArraysValue(writer, $"{value}[{indexVar}]", element, dialect, depth + 1);
+                }
+            }
+
             return;
         }
 
-        var element = arrayType.ElementType;
+        if (type.IsArrayLikeType())
+        {
+            WriteAliasHeldArraysView(writer, value, type, ArrayFieldView.Create(type, dialect), dialect, depth);
+            return;
+        }
+
+        writer.AppendAliasHeldArraysMethodName(type);
+        writer.AppendLine($"(ref {value}, {HeldParameter});");
+    }
+
+    private static void WriteAliasHeldArraysView(SourceWriter writer, string value, ITypeSymbol viewType,
+        ArrayFieldView view, ITranspilerDialect dialect, int depth)
+    {
+        if (!viewType.TryGetArrayLikeElementType(out var element))
+        {
+            return;
+        }
+
         var alignment = element.IsReferenceType ? 0 : TypeLayoutCalculator.GetDeviceLayout(element, dialect).Alignment;
         var converted = KernelParameterShape.IsConverted(element, dialect) ? "true" : "false";
-        writer.AppendLine($"if ({value} != null)");
+        var writable = view.IsReadOnly ? "false" : "true";
+        var typedArray = view.RequiresTypedArray ? ", true" : "";
+        writer.AppendLine(
+            $"{HeldParameter}.AddView<{view.ElementTypeName}>({view.MemoryExpression(value)}, {writable}, " +
+            $"{alignment}, 0, {converted}{typedArray});");
+        if (!HoldsArrays(element))
+        {
+            return;
+        }
+
         using (writer.Scope())
         {
-            writer.AppendLine($"{HeldParameter}.Add({value}, {alignment}, 0, {converted});");
-            if (!HoldsComparableArrays(element))
-            {
-                return;
-            }
-
-            writer.AppendLine($"for (int i = 0; i < {value}.Length; i++)");
+            var spanVar = depth == 0 ? "span" : $"span{depth}";
+            var indexVar = LoopIndex(depth);
+            writer.AppendLine($"{view.SpanTypeName} {spanVar} = {view.SpanExpression(value)};");
+            writer.AppendLine($"for (int {indexVar} = 0; {indexVar} < {spanVar}.Length; {indexVar}++)");
             using (writer.Scope())
             {
-                writer.AppendAliasHeldArraysMethodName(element);
-                writer.AppendLine($"(ref {value}[i], {HeldParameter});");
+                if (element.IsArrayLikeType())
+                {
+                    WriteAliasHeldArraysValue(writer, $"{spanVar}[{indexVar}]", element, dialect, depth + 1);
+                }
+                else
+                {
+                    var elementRef = view.IsReadOnly
+                        ? $"{HostTypeNames.Unsafe}.AsRef(in {spanVar}[{indexVar}])"
+                        : $"{spanVar}[{indexVar}]";
+                    writer.AppendAliasHeldArraysMethodName(element);
+                    writer.AppendLine($"(ref {elementRef}, {HeldParameter});");
+                }
             }
         }
     }
+
+    internal static string LoopIndex(int depth) => depth == 0 ? "i" : $"i{depth}";
 
     // An array, or a user struct with an array field at any depth (TransferClassifier.TryFindArrayField), or a Nullable
     // of either
@@ -188,9 +244,32 @@ internal static class StructArrayHelperEmitter
     }
 
     // if (ReferenceEquals(<value>, array) [|| HoldsArray_<E>(<value>, array)]) { return true; }    (a T[] value)
+    // if (ReferenceEquals(<value>, array)) { return true; } if (<value> != null) { for (...) ... } (jagged T[][])
     // if (HoldsArray_<S>(<value>, array)) { return true; }                          (a struct that holds T[] fields)
-    private static void WriteHoldsArrayValue(SourceWriter writer, string value, ITypeSymbol type)
+    private static void WriteHoldsArrayValue(SourceWriter writer, string value, ITypeSymbol type, int depth = 0)
     {
+        if (type is IArrayTypeSymbol jaggedType && jaggedType.ElementType is IArrayTypeSymbol)
+        {
+            writer.AppendLine($"if (global::System.Object.ReferenceEquals({value}, array))");
+            using (writer.Scope())
+            {
+                writer.AppendLine("return true;");
+            }
+
+            writer.AppendLine($"if ({value} != null)");
+            using (writer.Scope())
+            {
+                var indexVar = LoopIndex(depth);
+                writer.AppendLine($"for (int {indexVar} = 0; {indexVar} < {value}.Length; {indexVar}++)");
+                using (writer.Scope())
+                {
+                    WriteHoldsArrayValue(writer, $"{value}[{indexVar}]", jaggedType.ElementType, depth + 1);
+                }
+            }
+
+            return;
+        }
+
         writer.Append("if ");
         using (writer.Parentheses())
         {
@@ -336,7 +415,7 @@ internal static class StructArrayHelperEmitter
 
         public void WriteName(SourceWriter writer, ITypeSymbol type) => writer.AppendAliasHeldArraysMethodName(type);
 
-        public bool Holds(ITypeSymbol type) => HoldsComparableArrays(type);
+        public bool Holds(ITypeSymbol type) => HoldsArrays(type);
 
         public void WriteValue(SourceWriter writer, string value, ITypeSymbol type) =>
             WriteAliasHeldArraysValue(writer, value, type, dialect);

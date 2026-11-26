@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -5,18 +6,18 @@ using System.Runtime.InteropServices;
 namespace Kassyi.GSharp.Runtime.Interop;
 
 /// <summary>
-/// The arrays that the struct arguments of a launch hold in their fields, which the launcher compares by address
-/// with its other arguments beside <see cref="HostAliasGroups"/>: a slice of an array that a struct argument holds is
-/// one memory with that array, as in C#, but a <c>Span&lt;T&gt;</c> does not name its array, so the array must be
-/// found by its address.
+/// The arrays and views that the struct arguments of a launch hold in their fields, which the launcher compares by
+/// address with its other arguments beside <see cref="HostAliasGroups"/>: a slice of an array or view that a struct
+/// argument holds is one memory with it, as in C#, but a <c>Span&lt;T&gt;</c> or view does not name an array
+/// object, so it must be found by its address.
 /// </summary>
 /// <remarks>
-/// The generated <c>AliasHeldArrays_</c> methods add the arrays of each struct argument (<see cref="Add{T}"/>),
-/// <see cref="Pin"/> pins them for the launch, and every method that takes the range list takes the one of
-/// <see cref="Combine(ReadOnlySpan{nint})"/>, which appends one entry per held array to the entries of the
-/// arguments. A held array that lands in a group takes the group's region (<see cref="AddRegions"/>), so the <c>Marshal_</c> of its struct finds it
-/// by identity as it finds the region of a <c>T[]</c> argument. The launcher calls <see cref="Free"/> in its
-/// <c>finally</c> block.
+/// The generated <c>AliasHeldArrays_</c> methods add the arrays (<see cref="Add{T}"/>) and views
+/// (<see cref="AddView{T}"/>) of each struct argument, <see cref="Pin"/> pins them for the launch, and every method
+/// that takes the range list takes the one of <see cref="Combine(ReadOnlySpan{nint})"/>, which appends one entry per
+/// held array or view to the entries of the arguments. A held array or view that lands in a group takes the group's
+/// region (<see cref="AddRegions"/>), so the <c>Marshal_</c> of its struct finds it instead of allocating another one.
+/// The launcher calls <see cref="Free"/> in its <c>finally</c> block.
 /// </remarks>
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class HostAliasHeldArrays
@@ -24,29 +25,48 @@ public sealed class HostAliasHeldArrays
     // The first conversion number of a held array: the launcher numbers the converted element types of its own
     // arguments from 1, so a held array never shares a number with an argument, and a group that holds both is
     // reported as one of converted members of different element types
-    private const int HeldConversionKey = 1000;
+    internal const int HeldConversionKey = 1000;
 
-    private readonly List<Array> _arrays = [];
-    private readonly List<(nint Length, nint HostSize, nint DeviceSize, nint Alignment, int Conversion)> _layouts = [];
-    private readonly List<bool> _copiesBack = [];
-    private readonly List<CopySharer> _sharers = [];
+    private readonly List<HeldEntry> _entries = [];
     private readonly List<GCHandle> _pins = [];
+    private readonly List<MemoryHandle> _viewPins = [];
     private readonly List<string> _convertedTypes = [];
     private nint[] _heldRanges = [];
     private byte[] _heldTraits = [];
     private string _heldNames = "";
     private nint[]? _combined;
 
-    // Gives the held array the copy of its group, typed by the array's element type
+    // Gives the held array or view the copy of its group, typed by its element type
     private delegate void CopySharer(HostAliasGroups groups, int member, ReadOnlySpan<nint> ranges,
-        HostArrayCopies copies, Array array);
+        HostArrayCopies copies, in HeldEntry entry);
 
-    /// <summary>The number of arrays held.</summary>
-    public int Count => _arrays.Count;
+    private enum ShareEntryKind
+    {
+        WholeArray,
+        TypedArrayView,
+        MemoryView,
+    }
+
+    private struct HeldEntry
+    {
+        public Array? Array;
+        public nint Address;
+        public nint Length;
+        public nint HostSize;
+        public nint DeviceSize;
+        public nint Alignment;
+        public int Conversion;
+        public bool CopiesBack;
+        public bool RequiresTypedArray;
+        public CopySharer Sharer;
+    }
+
+    /// <summary>The number of arrays and views held.</summary>
+    public int Count => _entries.Count;
 
     /// <summary>
-    /// Whether the argument whose arrays are being added copies them back to the caller. An array that two arguments
-    /// hold is copied back when either does.
+    /// Whether the argument whose arrays and views are being added copies them back to the caller. An array or view
+    /// that two arguments hold is copied back when either does (provided the view itself is writable).
     /// </summary>
     public bool CopiesBack { get; set; }
 
@@ -66,21 +86,71 @@ public sealed class HostAliasHeldArrays
             return;
         }
 
-        for (var i = 0; i < _arrays.Count; i++)
+        for (var i = 0; i < _entries.Count; i++)
         {
-            if (ReferenceEquals(_arrays[i], array))
+            if (_entries[i].Array is { } existing && ReferenceEquals(existing, array))
             {
-                _copiesBack[i] |= CopiesBack;
+                CollectionsMarshal.AsSpan(_entries)[i].CopiesBack |= CopiesBack;
                 return;
             }
         }
 
         var hostSize = Unsafe.SizeOf<T>();
-        _arrays.Add(array);
-        _copiesBack.Add(CopiesBack);
-        _sharers.Add(ShareCopy<T>);
-        _layouts.Add(((nint)array.Length * hostSize, hostSize, deviceSize == 0 ? hostSize : deviceSize,
-            deviceAlignment, converted ? GetConversionKey(typeof(T)) : 0));
+        _entries.Add(new HeldEntry
+        {
+            Array = array,
+            Length = (nint)array.Length * hostSize,
+            HostSize = hostSize,
+            DeviceSize = deviceSize == 0 ? hostSize : deviceSize,
+            Alignment = deviceAlignment,
+            Conversion = converted ? GetConversionKey(typeof(T)) : 0,
+            CopiesBack = CopiesBack,
+            Sharer = ShareCopy<T>
+        });
+    }
+
+    /// <summary>
+    /// Adds a non-array view (<c>Memory&lt;T&gt;</c>, <c>ReadOnlyMemory&lt;T&gt;</c>, <c>ArraySegment&lt;T&gt;</c>,
+    /// <c>ImmutableArray&lt;T&gt;</c>) that a struct argument holds. An empty view and a view whose elements hold
+    /// references are left out; every other view is pinned and kept as its own entry so that identical views form a
+    /// group in <see cref="HostAliasGroups"/> and register their element type in <see cref="HostArrayCopies"/>.
+    /// </summary>
+    /// <param name="view">The view held in a field.</param>
+    /// <param name="writable">Whether the view itself is writable (<see langword="false"/> for read-only views).</param>
+    /// <param name="deviceAlignment">The device alignment of the element.</param>
+    /// <param name="deviceSize">The size of the element on the device; 0 when it is the host size.</param>
+    /// <param name="converted">Whether the host and device layouts of the element differ.</param>
+    /// <param name="requiresTypedArray">
+    /// Whether the view's container (<c>ArraySegment&lt;T&gt;</c>, <c>ImmutableArray&lt;T&gt;</c>) requires a typed
+    /// array copy on the CPU.
+    /// </param>
+    /// <typeparam name="T">The element type.</typeparam>
+    public unsafe void AddView<T>(ReadOnlyMemory<T> view, bool writable, int deviceAlignment, int deviceSize = 0,
+        bool converted = false, bool requiresTypedArray = false)
+    {
+        if (view.IsEmpty || RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        {
+            return;
+        }
+
+        var hostSize = Unsafe.SizeOf<T>();
+        var resolvedDeviceSize = deviceSize == 0 ? hostSize : deviceSize;
+        var conversionKey = converted ? GetConversionKey(typeof(T)) : 0;
+        var byteLength = (nint)view.Length * hostSize;
+        var handle = view.Pin();
+        _viewPins.Add(handle);
+        _entries.Add(new HeldEntry
+        {
+            Address = (nint)handle.Pointer,
+            Length = byteLength,
+            HostSize = hostSize,
+            DeviceSize = resolvedDeviceSize,
+            Alignment = deviceAlignment,
+            Conversion = conversionKey,
+            CopiesBack = CopiesBack && writable,
+            RequiresTypedArray = requiresTypedArray,
+            Sharer = ShareCopyView<T>
+        });
     }
 
     // The conversion number of an element type, numbered on its first use
@@ -100,8 +170,13 @@ public sealed class HostAliasHeldArrays
     // A copy that starts at the array and covers it is the array's copy; a group of writers has none, and its holders
     // then use the array itself, as they use the memory that the writer writes
     private static void ShareCopy<T>(HostAliasGroups groups, int member, ReadOnlySpan<nint> ranges,
-        HostArrayCopies copies, Array held)
+        HostArrayCopies copies, in HeldEntry entry)
     {
+        if (entry.Array is not { } held)
+        {
+            return;
+        }
+
         if (!HostAliasCopies.TryGetHostCopy<T>(groups, member, ranges, out var copy, out var start))
         {
             copies.Keep(held);
@@ -112,36 +187,70 @@ public sealed class HostAliasHeldArrays
         }
     }
 
+    // A view in a group of [In] arguments takes a view over the group's copy; a group with a writer keeps the original
+    private static void ShareCopyView<T>(HostAliasGroups groups, int member, ReadOnlySpan<nint> ranges,
+        HostArrayCopies copies, in HeldEntry entry)
+    {
+        if (!HostAliasCopies.TryGetHostMemory<T>(groups, member, ranges, out var memory))
+        {
+            copies.KeepView<T>(entry.Address, entry.Length);
+        }
+        else
+        {
+            copies.ShareView(entry.Address, entry.Length, memory);
+        }
+    }
+
     /// <summary>
-    /// Pins the arrays added, until <see cref="Free"/>, and reads their addresses and the traits and names that
-    /// <see cref="Combine(byte[])"/> and <see cref="Combine(string)"/> append.
+    /// Pins the arrays added (views were pinned in <see cref="AddView{T}"/>), until <see cref="Free"/>, and reads
+    /// their addresses and the traits and names that <see cref="Combine(byte[])"/> and <see cref="Combine(string)"/>
+    /// append.
     /// </summary>
     public void Pin()
     {
-        _heldRanges = new nint[_arrays.Count * HostAliasGroups.RangeFields];
-        _heldTraits = new byte[_arrays.Count];
+        _heldRanges = new nint[_entries.Count * HostAliasGroups.RangeFields];
+        _heldTraits = new byte[_entries.Count];
         var names = new System.Text.StringBuilder();
-        for (var i = 0; i < _arrays.Count; i++)
+        for (var i = 0; i < _entries.Count; i++)
         {
-            names.Append(",an array held by a struct argument");
-            var handle = GCHandle.Alloc(_arrays[i], GCHandleType.Pinned);
-            _pins.Add(handle);
+            if (i > 0)
+            {
+                names.Append(',');
+            }
+
+            ref readonly var entry = ref CollectionsMarshal.AsSpan(_entries)[i];
+            nint address;
+            int whole;
+            if (entry.Array is { } array)
+            {
+                names.Append("an array held by a struct argument");
+                var handle = GCHandle.Alloc(array, GCHandleType.Pinned);
+                _pins.Add(handle);
+                address = handle.AddrOfPinnedObject();
+                whole = HostAliasGroups.WholeArray;
+            }
+            else
+            {
+                names.Append("a view held by a struct argument");
+                address = entry.Address;
+                whole = 0;
+            }
+
             var at = i * HostAliasGroups.RangeFields;
-            var layout = _layouts[i];
-            _heldRanges[at] = handle.AddrOfPinnedObject();
-            _heldRanges[at + 1] = layout.Length;
-            _heldRanges[at + 2] = layout.HostSize;
-            _heldRanges[at + 3] = layout.DeviceSize;
-            _heldRanges[at + 4] = layout.Alignment;
-            _heldRanges[at + 5] = layout.Conversion;
-            var back = _copiesBack[i] ? HostAliasGroups.CopiesBack : 0;
-            _heldTraits[i] = (byte)(HostAliasGroups.CopiesIn | back | HostAliasGroups.WholeArray);
+            _heldRanges[at] = address;
+            _heldRanges[at + 1] = entry.Length;
+            _heldRanges[at + 2] = entry.HostSize;
+            _heldRanges[at + 3] = entry.DeviceSize;
+            _heldRanges[at + 4] = entry.Alignment;
+            _heldRanges[at + 5] = entry.Conversion;
+            var back = entry.CopiesBack ? HostAliasGroups.CopiesBack : 0;
+            _heldTraits[i] = (byte)(HostAliasGroups.CopiesIn | back | whole);
         }
 
         _heldNames = names.ToString();
     }
 
-    /// <summary>The range list of the arguments followed by one entry per held array.</summary>
+    /// <summary>The range list of the arguments followed by one entry per held array or view.</summary>
     /// <param name="ranges">The range list of the arguments, with the arguments still pinned.</param>
     public ReadOnlySpan<nint> Combine(ReadOnlySpan<nint> ranges)
     {
@@ -161,8 +270,8 @@ public sealed class HostAliasHeldArrays
     }
 
     /// <summary>
-    /// The traits of the arguments followed by those of the held arrays (copied in, copied back when an argument that
-    /// holds it does, whole).
+    /// The traits of the arguments followed by those of the held arrays and views (copied in, copied back when an
+    /// argument that holds it does and the view is writable, whole for <c>T[]</c> arrays).
     /// </summary>
     /// <param name="traits">The traits of the arguments.</param>
     public byte[] Combine(byte[] traits)
@@ -179,17 +288,25 @@ public sealed class HostAliasHeldArrays
     }
 
     /// <summary>
-    /// The names of the arguments followed by a name for each held array, for the exception messages.
+    /// The names of the arguments followed by a name for each held array or view, for the exception messages.
     /// </summary>
-    /// <param name="names">The names of the arguments, separated by commas.</param>
-    public string Combine(string names) => names + _heldNames;
+    /// <param name="names">The names of the arguments, separated by commas (empty when there are none).</param>
+    public string Combine(string names)
+    {
+        if (_heldNames.Length == 0)
+        {
+            return names;
+        }
+
+        return names.Length == 0 ? _heldNames : $"{names},{_heldNames}";
+    }
 
     /// <summary>
-    /// CUDA: records the region of each held array that is a member of a group in <paramref name="regions"/>, so that
-    /// the <c>Marshal_</c> of its struct takes the group's region instead of allocating another one.
+    /// CUDA: records the region of each held array or view that is a member of a group in <paramref name="regions"/>,
+    /// so that the <c>Marshal_</c> of its struct takes the group's region instead of allocating another one.
     /// </summary>
     /// <param name="groups">The groups of the launch, after <see cref="HostAliasGroups.CopyToDevice"/>.</param>
-    /// <param name="first">The number of arguments, which is the member number of the first held array.</param>
+    /// <param name="first">The number of arguments, which is the member number of the first held entry.</param>
     /// <param name="regions">The launch's table of device regions.</param>
     public void AddRegions(HostAliasGroups groups, int first, DeviceArrayRegions? regions)
     {
@@ -198,30 +315,60 @@ public sealed class HostAliasHeldArrays
             return;
         }
 
-        for (var i = 0; i < _arrays.Count; i++)
+        for (var i = 0; i < _entries.Count; i++)
         {
             if (groups.IsMember(first + i))
             {
-                regions.AddShared(_arrays[i], groups.GetDevicePointer(first + i));
+                var region = groups.GetDevicePointer(first + i);
+                ref readonly var entry = ref CollectionsMarshal.AsSpan(_entries)[i];
+                if (entry.Array is { } array)
+                {
+                    regions.AddShared(array, region);
+                }
+                else
+                {
+                    regions.AddSharedView(entry.Address, entry.Length, region);
+                }
             }
         }
     }
 
     /// <summary>
-    /// CPU: gives each held array that is a member of a group of [In] arguments the copy of its group in
-    /// <paramref name="copies"/>, so that the copies of the struct arguments that hold the array take it.
+    /// CPU: gives each held array or view that is a member of a group of [In] arguments the copy of its group in
+    /// <paramref name="copies"/>, so that the copies of the struct arguments that hold it take it.
     /// </summary>
     /// <param name="groups">The groups of the launch.</param>
-    /// <param name="first">The number of arguments, which is the member number of the first held array.</param>
+    /// <param name="first">The number of arguments, which is the member number of the first held entry.</param>
     /// <param name="ranges">The combined range list, pinned.</param>
     /// <param name="copies">The launch's table of copies.</param>
     public void ShareCopies(HostAliasGroups groups, int first, ReadOnlySpan<nint> ranges, HostArrayCopies copies)
     {
-        for (var i = 0; i < _arrays.Count; i++)
+        // T[] arrays and typed-array views (ArraySegment, ImmutableArray) establish the group's CLR array copy before
+        // Memory/ReadOnlyMemory views attach to it, matching AliasGroupEmitter.WriteCpuTypedCopiesFirst
+        ShareCopiesPass(groups, first, ranges, copies, ShareEntryKind.WholeArray);
+        ShareCopiesPass(groups, first, ranges, copies, ShareEntryKind.TypedArrayView);
+        ShareCopiesPass(groups, first, ranges, copies, ShareEntryKind.MemoryView);
+    }
+
+    private void ShareCopiesPass(HostAliasGroups groups, int first, ReadOnlySpan<nint> ranges,
+        HostArrayCopies copies, ShareEntryKind kind)
+    {
+        for (var i = 0; i < _entries.Count; i++)
         {
-            if (groups.IsMember(first + i))
+            if (!groups.IsMember(first + i))
             {
-                _sharers[i](groups, first + i, ranges, copies, _arrays[i]);
+                continue;
+            }
+
+            ref readonly var entry = ref CollectionsMarshal.AsSpan(_entries)[i];
+            var entryKind = entry.Array is not null
+                ? ShareEntryKind.WholeArray
+                : entry.RequiresTypedArray
+                    ? ShareEntryKind.TypedArrayView
+                    : ShareEntryKind.MemoryView;
+            if (entryKind == kind)
+            {
+                entry.Sharer(groups, first + i, ranges, copies, in entry);
             }
         }
     }
@@ -229,7 +376,7 @@ public sealed class HostAliasHeldArrays
     // A launch that failed before Free leaves its pins to the finalizer
     ~HostAliasHeldArrays() => Free();
 
-    /// <summary>Unpins the arrays and forgets them.</summary>
+    /// <summary>Unpins the arrays and views and forgets them.</summary>
     public void Free()
     {
         GC.SuppressFinalize(this);
@@ -238,11 +385,14 @@ public sealed class HostAliasHeldArrays
             pin.Free();
         }
 
+        foreach (var pin in _viewPins)
+        {
+            pin.Dispose();
+        }
+
         _pins.Clear();
-        _arrays.Clear();
-        _layouts.Clear();
-        _copiesBack.Clear();
-        _sharers.Clear();
+        _viewPins.Clear();
+        _entries.Clear();
         _heldRanges = [];
         _heldTraits = [];
         _heldNames = "";

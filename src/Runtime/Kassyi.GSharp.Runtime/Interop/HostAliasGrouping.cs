@@ -44,6 +44,14 @@ internal static class HostAliasGrouping
             group.Alignment = Math.Max(group.Alignment, GetAlignment(ranges, i));
         }
 
+        if (group.ConversionKey >= HostAliasHeldArrays.HeldConversionKey ||
+            (group.ConversionKey != 0 && group.DeviceElementSize <= 0))
+        {
+            throw new NotSupportedException(
+                $"The arguments '{group.Names}' overlap one memory through struct fields whose elements are " +
+                "converted between the host and device layouts, so no device region converts them together.");
+        }
+
         group.Length = end - start;
         SetOffsets(ref group, ranges, groupOf, g, start, offsets, deviceOffsets);
         group.Shift = GetShift(ranges, groupOf, g, deviceOffsets, group.Alignment, group.Names);

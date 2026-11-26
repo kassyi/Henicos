@@ -53,8 +53,8 @@ internal readonly struct LaunchAliasPlan
     /// <summary>The converted element types among the candidates, one per type.</summary>
     public ImmutableArray<AliasConversion> Conversions { get; }
 
-    /// <summary>Whether the launcher compares any arguments.</summary>
-    public bool IsActive => !Candidates.IsDefaultOrEmpty;
+    /// <summary>Whether the launcher compares any arguments or held arrays/views.</summary>
+    public bool IsActive => !Candidates.IsDefaultOrEmpty || HasHeldArrays;
 
     /// <summary>Whether a candidate's elements are converted, so that its group may be converted as a whole.</summary>
     public bool HasConversions => !Conversions.IsDefaultOrEmpty;
@@ -136,17 +136,35 @@ internal readonly struct LaunchAliasPlan
         return index >= 0 && (Traits[index] & (CopiesIn | CopiesBack)) == CopiesIn;
     }
 
-    // [WHY] Without a slice or a by-reference argument, only T[] arguments can share memory, and two of them overlap
-    // only when they are one array, which ArraySharingPlan already compares by identity
-    // [WHY] A slice or a by-reference argument beside a struct that holds arrays is compared with those arrays (#1849)
-    private static bool HasPartialCandidate(EquatableArray<KernelParameterShape> parameters) =>
-        parameters
+    // [WHY] Without a slice, a by-reference argument, or a struct holding view fields, only T[] arguments can share
+    // memory, and two of them overlap only when they are one array, which ArraySharingPlan already compares by
+    // identity
+    // [WHY] A slice or a by-reference argument beside a struct that holds arrays is compared with those arrays (#1849),
+    // and a view held by a struct field has no array identity, so it is compared whenever another candidate, another
+    // held-array source, or a second array-like inside the same struct is present
+    private static bool HasPartialCandidate(EquatableArray<KernelParameterShape> parameters)
+    {
+        var candidateCount = parameters
             .AsStackEnumerable()
-            .Any(static shape => IsCandidate(shape) && !shape.IsSharableArray) &&
-        (parameters
-            .AsStackEnumerable()
-            .Count(static shape => IsCandidate(shape)) > 1 ||
-         !GetHeldSources(parameters).IsEmpty);
+            .Count(static shape => IsCandidate(shape));
+        var heldSources = GetHeldSources(parameters);
+        if (parameters
+                .AsStackEnumerable()
+                .Any(static shape => IsCandidate(shape) && !shape.IsSharableArray) &&
+            (candidateCount > 1 || !heldSources.IsEmpty))
+        {
+            return true;
+        }
+
+        return heldSources
+                   .AsStackEnumerable()
+                   .Any(parameters, static (index, ps) => ps[index].HoldsViewFields) &&
+               (candidateCount >= 1 ||
+                heldSources.Length >= 2 ||
+                heldSources
+                    .AsStackEnumerable()
+                    .Any(parameters, static (index, ps) => ps[index].HoldsSeveralArrayLikes));
+    }
 
     // The parameters that hold arrays in the fields of their structs
     // [WHY] An out struct is cleared before the kernel reads it (#1841), so its arrays are not held. A read-only

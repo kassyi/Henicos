@@ -35,9 +35,12 @@ public static void VectorAdd([In] float[] a, [In] float[] b, [Out] float[] c, in
   struct argument with the array in a field at any depth, or an element of an array argument that copies back. `[In]`
   arguments that hold one array share that copy, also when one of them is a field of an element of an `[In]` container.
 - **Arguments that overlap one memory**: Slices (`Span<T>`, `ReadOnlySpan<T>`, `Memory<T>`, `ArraySegment<T>`) of one
-  array, a `ref` to an element and the array, or one variable passed to two `ref` parameters are one memory in C# as
-  well. When a launch has such an argument beside another one, the launcher compares their addresses: arguments whose
-  bytes overlap form a group, which gets one device region that each member addresses at its offset. The group is one
+  array, a `ref` to an element and the array, one variable passed to two `ref` parameters, or arrays and views
+  (`Memory<T>`, `ReadOnlyMemory<T>`, `ArraySegment<T>`, `ImmutableArray<T>`) held in fields of a struct argument (or
+  elements of an array-like argument) are one memory in C# as well. When a launch has such an argument beside another
+  one (or a struct argument holding view fields beside another view or candidate), the launcher compares their
+  addresses: arguments and held fields whose bytes overlap form a group, which gets one device region that each member
+  addresses at its offset. The group is one
   holder: it is copied in when any member copies in and copied back when any member copies back, so an `[In]` member
   keeps the kernel's writes from the caller only when every member of its group is `[In]`. Views with different element
   types share the bytes as on the host. A group of elements whose host and device layouts differ (a struct that the

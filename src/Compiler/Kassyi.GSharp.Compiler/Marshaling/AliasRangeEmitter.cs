@@ -28,6 +28,11 @@ internal static class AliasRangeEmitter
     /// <summary>Pins the candidates and fills the range list; returns the <c>fixed</c> statement's scope.</summary>
     public static SourceWriterScope WritePinnedRanges(SourceWriter writer, ImmutableArray<AliasRange> ranges)
     {
+        if (ranges.Length == 0)
+        {
+            return writer.Scope();
+        }
+
         writer.Append("fixed (byte* ");
         for (var k = 0; k < ranges.Length; k++)
         {
@@ -87,7 +92,9 @@ internal static class AliasRangeEmitter
 
     /// <summary>The range list as the span that the <c>HostAliasGroups</c> methods take.</summary>
     public static string RangesSpan(ImmutableArray<AliasRange> ranges) =>
-        $"new global::System.ReadOnlySpan<{IntPtrType}>({Ranges}, {ranges.Length * RangeFields})";
+        ranges.Length == 0
+            ? $"global::System.ReadOnlySpan<{IntPtrType}>.Empty"
+            : $"new global::System.ReadOnlySpan<{IntPtrType}>({Ranges}, {ranges.Length * RangeFields})";
 
     /// <summary>
     /// The range list, followed by the entries of the held arrays when the launch compares them

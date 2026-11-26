@@ -380,18 +380,30 @@ internal static class AliasGroupEmitter
         }
     }
 
+    /// <summary>
+    /// CPU: whether any held source in <paramref name="sharing"/> holds non-array view fields, whose <c>Memory</c>
+    /// views must let top-level typed array candidates create the group's host copy first.
+    /// </summary>
+    public static bool HasHeldViewSources(in ArraySharingPlan sharing) =>
+        sharing.Aliases.HasHeldArrays &&
+        sharing.Aliases.HeldSources
+            .AsStackEnumerable()
+            .Any(sharing.Parameters, static (index, ps) => ps[index].HoldsViewFields);
+
     // if (__gsharp_aliases != null)
     // { HostAliasCopies.TryGetHostCopy<T>(__gsharp_aliases, <k>, <ranges>, out _, out _); ... }
     // with one call per member that needs a typed array (T[], ArraySegment, ImmutableArray)
     // [WHY] The copy of a group takes the element type of its first request; the members that need a typed array ask
     // first, so that a span or Memory member of another element type views their copy instead of typing it
     /// <summary>CPU: makes the typed copies of the groups before the members take them.</summary>
-    public static void WriteCpuTypedCopiesFirst(SourceWriter writer, in ArraySharingPlan sharing)
+    public static void WriteCpuTypedCopiesFirst(SourceWriter writer, in ArraySharingPlan sharing,
+        bool? withCopyArrays = null)
     {
         var plan = sharing.Aliases;
         if (!plan.IsActive || !plan.Candidates
                 .AsStackEnumerable()
-                .Any(sharing, static (parameterIndex, state) => NeedsTypedCopy(state, parameterIndex)))
+                .Any((sharing, withCopyArrays), static (parameterIndex, state) =>
+                    NeedsTypedCopy(state.sharing, parameterIndex, state.withCopyArrays)))
         {
             return;
         }
@@ -401,7 +413,7 @@ internal static class AliasGroupEmitter
         {
             foreach (var parameterIndex in plan.Candidates)
             {
-                if (NeedsTypedCopy(sharing, parameterIndex))
+                if (NeedsTypedCopy(sharing, parameterIndex, withCopyArrays))
                 {
                     var shape = sharing.Parameters[parameterIndex];
                     var call = CopyCall(sharing, parameterIndex, "TryGetHostCopy",
@@ -414,11 +426,14 @@ internal static class AliasGroupEmitter
     }
 
     // A member that may take its group's copy and needs a typed array for it
-    private static bool NeedsTypedCopy(in ArraySharingPlan sharing, int parameterIndex) =>
+    private static bool NeedsTypedCopy(in ArraySharingPlan sharing, int parameterIndex,
+        bool? withCopyArrays = null) =>
         sharing.Parameters[parameterIndex] is { IsArray: true } shape &&
         sharing.Aliases.MayTakeGroupCopy(parameterIndex) &&
         shape.Container is ArrayContainerKind.Array or ArrayContainerKind.ArraySegment
-            or ArrayContainerKind.ImmutableArray;
+            or ArrayContainerKind.ImmutableArray &&
+        (withCopyArrays is null ||
+            (shape.Cpu.ConvertedElementCopyArraysMethodName is not null) == withCopyArrays.Value);
 
     // if (HostAliasCopies.TryGetHostCopy<T>(..., out T[]? copy, out int start[, ...]))
     // { <name> = <container over copy>; }
