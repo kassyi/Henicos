@@ -10,6 +10,7 @@ import {
   nameFilterShare,
   type AssemblyFiles,
   type ListResult,
+  type ListRun,
 } from "./name-filter.ts";
 import { nameFilterCheck, type DirectoryEntries } from "./share-rules.ts";
 
@@ -128,15 +129,17 @@ const NotRead: readonly string[] = [
 ];
 
 /** Output samples of the test runner for the list command, as `dotnet test --list-tests` prints them. */
-const NoMatch: ListResult = {
+const NoMatch: ListRun = {
   exitCode: 0,
+  ended: "exit",
   output:
     "Test run for tests/X/bin/Debug/net10.0/X.dll (.NETCoreApp,Version=v10.0)\r\n" +
     "VSTest version 18.0.0 (x64)\r\n\r\n" +
     "No test matches the given testcase filter `(Name~A)&(Category=Stress)` in X.dll\r\n",
 };
-const Listed: ListResult = {
+const Listed: ListRun = {
   exitCode: 0,
+  ended: "exit",
   output:
     "Test run for tests/X/bin/Debug/net10.0/X.dll (.NETCoreApp,Version=v10.0)\n" +
     "The following Tests are available:\n    N.PoolStressTests.A\n    N.PoolStressTests.B\n",
@@ -202,8 +205,8 @@ export async function checkNameFilter(assert: AssertModule): Promise<void> {
   const calls: string[] = [];
   const lines: string[] = [];
   const answer =
-    (result: ListResult | Error) =>
-    (listCommand: string): Promise<ListResult> => {
+    (result: ListRun | Error) =>
+    (listCommand: string): Promise<ListRun> => {
       calls.push(listCommand);
       return result instanceof Error ? Promise.reject(result) : Promise.resolve(result);
     };
@@ -240,8 +243,8 @@ export async function checkNameFilter(assert: AssertModule): Promise<void> {
   files.hashes.set(resolved(Dll), null);
   assert.strictEqual(await shared?.stillValid?.(), false, "gone while the turn waited");
 
-  const named = { exitCode: 0, output: NoMatch.output };
-  const verdictOf = async (output: ListResult, fake: ReturnType<typeof fakeFiles>) =>
+  const named: ListRun = { exitCode: 0, ended: "exit", output: NoMatch.output };
+  const verdictOf = async (output: ListRun, fake: ReturnType<typeof fakeFiles>) =>
     nameFilterShare(
       command,
       contextWith({}, (text) => lines.push(text)),
@@ -250,7 +253,7 @@ export async function checkNameFilter(assert: AssertModule): Promise<void> {
       fake,
     );
   const noLine = await verdictOf(
-    { exitCode: 0, output: "No test matches the given testcase filter `x`\n" },
+    { exitCode: 0, ended: "exit", output: "No test matches the given testcase filter `x`\n" },
     fakeFiles({ [Dll]: ["aaa", 0] }),
   );
   assert.deepStrictEqual(
@@ -293,19 +296,33 @@ export async function checkNameFilter(assert: AssertModule): Promise<void> {
   );
   // An assembly the project does not build under that name (a custom AssemblyName) is not in the snapshot
   const other = fakeFiles({ [Dll]: ["aaa", 0], "tests/X/bin/Debug/net10.0/Other.dll": ["aaa", 0] });
-  const named2 = { exitCode: 0, output: named.output.replace("/X.dll (", "/Other.dll (") };
+  const named2: ListRun = { exitCode: 0, ended: "exit", output: named.output.replace("/X.dll (", "/Other.dll (") };
   const renamed = await verdictOf(named2, other);
   assert.deepStrictEqual(
     [renamed?.share, renamed?.reason],
     ["exclusive", "hash-mismatch"],
     "the listed assembly is not <project>.dll",
   );
-  const nonZero = await verdictOf({ exitCode: 1, output: NoMatch.output }, fakeFiles({ [Dll]: ["aaa", 0] }));
-  assert.deepStrictEqual([nonZero?.share, nonZero?.reason], ["exclusive", "list-failed"]);
-  const timedOut = await verdictOf({ exitCode: null, output: NoMatch.output }, fakeFiles({ [Dll]: ["aaa", 0] }));
-  assert.deepStrictEqual([timedOut?.share, timedOut?.reason], ["exclusive", "list-timeout"]);
+  // How the list job ended names the reason: a stop on the time limit leaves exit code 1 on Windows (taskkill /T /F)
+  // and none elsewhere, a job that never started has none either, and a job that ended by itself has its own code
+  const ends: readonly [string, ListRun, string][] = [
+    ["exit code 1", { exitCode: 1, ended: "exit", output: NoMatch.output }, "list-failed"],
+    ["ended by a signal", { exitCode: null, ended: "exit", output: NoMatch.output }, "list-failed"],
+    ["timeout, Windows", { exitCode: 1, ended: "timeout", output: NoMatch.output }, "list-timeout"],
+    ["timeout, elsewhere", { exitCode: null, ended: "timeout", output: NoMatch.output }, "list-timeout"],
+    ["not started", { exitCode: null, ended: "spawn-error", output: "" }, "list-spawn-error"],
+  ];
+  const ended: Awaited<ReturnType<typeof verdictOf>>[] = [];
+  for (const [name, result, reason] of ends) {
+    ended.push(await verdictOf(result, fakeFiles({ [Dll]: ["aaa", 0] })));
+    assert.deepStrictEqual([ended.at(-1)?.share, ended.at(-1)?.reason], ["exclusive", reason], `list job end: ${name}`);
+  }
   const noMarker = await verdictOf(
-    { exitCode: 0, output: "Test run for tests/X/bin/Debug/net10.0/X.dll (.NETCoreApp,Version=v10.0)\n" },
+    {
+      exitCode: 0,
+      ended: "exit",
+      output: "Test run for tests/X/bin/Debug/net10.0/X.dll (.NETCoreApp,Version=v10.0)\n",
+    },
     fakeFiles({ [Dll]: ["aaa", 0] }),
   );
   assert.deepStrictEqual([noMarker?.share, noMarker?.reason], ["exclusive", "list-no-marker"]);
@@ -325,15 +342,15 @@ export async function checkNameFilter(assert: AssertModule): Promise<void> {
     missing,
     copiedDuring,
     renamed,
-    nonZero,
-    timedOut,
+    ...ended,
     noMarker,
     unsupported,
   ]) {
     assert.ok(excl?.reason !== undefined && /^[a-z0-9:_-]{1,64}$/.test(excl.reason) && !excl.reason.includes("shared"));
   }
-  const two = {
+  const two: ListRun = {
     exitCode: 0,
+    ended: "exit",
     output:
       "Test run for tests/X/bin/Debug/net8.0/X.dll (.NETCoreApp,Version=v8.0)\nTest run for tests/X/bin/Debug/net10.0/X.dll (.NETCoreApp,Version=v10.0)\n" +
       "No test matches the given testcase filter `x`\n",

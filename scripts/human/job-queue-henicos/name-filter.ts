@@ -18,14 +18,25 @@ import {
   type NameFilterTest,
 } from "./share-rules.ts";
 
-/** What the list job printed (its standard output) and how it ended; exitCode is null when it did not end by itself. */
+/** What the list job printed (its standard output) and its exit code: null when not started or ended by a signal. */
 export interface ListResult {
   exitCode: number | null;
   output: string;
 }
 
+/**
+ * How the list job ended: "exit" when it ended by itself, "timeout" when it was stopped after ListTimeoutMs (whatever
+ * exit code the stop left: `taskkill /T /F` on Windows leaves 1), "spawn-error" when it could not be started.
+ */
+export type ListEnd = "exit" | "timeout" | "spawn-error";
+
+/** The result of a list job of the queue, with how it ended. */
+export interface ListRun extends ListResult {
+  ended: ListEnd;
+}
+
 /** Runs a test list command as a CPU job of the queue; a self-test replaces it so that no real test run starts. */
-export type ListRunner = (listCommand: string, context: ClientContext) => Promise<ListResult>;
+export type ListRunner = (listCommand: string, context: ClientContext) => Promise<ListRun>;
 
 /** The list job may take this long (a wait for a slot included) before the run takes the GPU exclusively. */
 export const ListTimeoutMs = 170_000;
@@ -73,13 +84,17 @@ export const runListJob: ListRunner = (listCommand, context) =>
     });
     const chunks: Buffer[] = [];
     child.stdout.on("data", (chunk: Buffer) => chunks.push(chunk));
-    const timer = setTimeout(() => ProcessTable.killTree(child.pid), ListTimeoutMs);
-    const end = (exitCode: number | null): void => {
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      ProcessTable.killTree(child.pid);
+    }, ListTimeoutMs);
+    const end = (exitCode: number | null, ended: ListEnd): void => {
       clearTimeout(timer);
-      resolve({ exitCode, output: Buffer.concat(chunks).toString("utf8") });
+      resolve({ exitCode, ended, output: Buffer.concat(chunks).toString("utf8") });
     };
-    child.on("error", () => end(null));
-    child.on("close", (code) => end(code));
+    child.on("error", () => end(null, "spawn-error"));
+    child.on("close", (code) => end(code, timedOut ? "timeout" : "exit"));
   });
 
 /** The files of the test assemblies, as far as the fingerprint reads them; a self-test replaces it to stay offline. */
@@ -243,7 +258,7 @@ export async function nameFilterShare(
   }
   const startedAt = Date.now();
   const started = performance.now();
-  let result: ListResult;
+  let result: ListRun;
   try {
     result = await run(listCommand, context);
   } catch (error) {
@@ -260,11 +275,13 @@ export async function nameFilterShare(
     const reason =
       verdict.listed > 0
         ? `list:${verdict.listed}`
-        : result.exitCode === null
+        : result.ended === "timeout"
           ? "list-timeout"
-          : result.exitCode !== 0
-            ? "list-failed"
-            : "list-no-marker";
+          : result.ended === "spawn-error"
+            ? "list-spawn-error"
+            : result.exitCode !== 0
+              ? "list-failed"
+              : "list-no-marker";
     return say("exclusive", "", reason);
   }
   const assemblies = assembliesOf(result.output, context.cwd);
