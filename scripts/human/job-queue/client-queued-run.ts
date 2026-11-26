@@ -57,8 +57,11 @@ interface ShareDecision {
   shareReason: string | null;
 }
 
-/** The share of a GPU turn of which no plugin has an opinion: classify gave none and checkShare answered nothing. */
-const NoOpinionShare: ShareDecision = { share: "exclusive", shareReason: "no-plugin" };
+/**
+ * The share of a GPU turn of which no plugin has an opinion: classify gave none and checkShare answered nothing (a
+ * plugin that throws, or whose share options are malformed, has none either).
+ */
+const NoOpinionShare: ShareDecision = { share: "exclusive", shareReason: "no-opinion" };
 
 /**
  * The share of a GPU turn that is known without checkShare: classify's (an explicit "exclusive" and --gpu-exclusive

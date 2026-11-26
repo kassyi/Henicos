@@ -260,8 +260,8 @@ async function checkShareRegistrations(assert: AssertModule): Promise<void> {
     const silent = await startRun(scheduler, 6, runOptions(), false, true, silentHost);
     assert.deepStrictEqual(
       [silent.registration.share, silent.registration.shareReason],
-      ["exclusive", "no-plugin"],
-      "plugins that answer no share: exclusive with no-plugin reason",
+      ["exclusive", "no-opinion"],
+      "plugins that answer no share: exclusive with no-opinion reason",
     );
     silent.drop();
   } finally {
@@ -327,9 +327,9 @@ async function checkCheckShare(assert: AssertModule): Promise<void> {
     assert.deepStrictEqual(asked, ["dotnet test X --filter Name~Foo"], "asked with the command, once");
     assert.strictEqual(await shareOf(hostOf(() => Promise.resolve("exclusive"))), "exclusive");
     const noAnswerReg = await registrationOf(hostOf(() => Promise.resolve(undefined)));
-    assert.deepStrictEqual([noAnswerReg.share, noAnswerReg.shareReason], ["exclusive", "no-plugin"], "no answer");
+    assert.deepStrictEqual([noAnswerReg.share, noAnswerReg.shareReason], ["exclusive", "no-opinion"], "no answer");
     const noHookReg = await registrationOf(hostOf(undefined));
-    assert.deepStrictEqual([noHookReg.share, noHookReg.shareReason], ["exclusive", "no-plugin"], "no checkShare hook");
+    assert.deepStrictEqual([noHookReg.share, noHookReg.shareReason], ["exclusive", "no-opinion"], "no checkShare hook");
 
     warnings.length = 0;
     const rejectedReg = await registrationOf(hostOf(() => Promise.reject(new Error("boom"))));
