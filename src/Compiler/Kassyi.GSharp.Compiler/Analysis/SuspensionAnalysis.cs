@@ -176,7 +176,7 @@ internal static class SuspensionAnalysis
     {
         foreach (var node in RemovedCalls.DescendantNodesThatRun(body, semanticModel))
         {
-            if (node is not SimpleNameSyntax || IsInsideNameof(node, semanticModel))
+            if (node is not SimpleNameSyntax || NameofOperator.Encloses(node, semanticModel))
             {
                 continue;
             }
@@ -191,26 +191,9 @@ internal static class SuspensionAnalysis
             if (definition.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
                 IsSuspendingFunction(definition, compilation))
             {
-                yield return (definition, CallTargetClassifier.IsMethodGroup(node, semanticModel));
+                yield return (definition, MethodGroupReference.Is(node, semanticModel));
             }
         }
-    }
-
-    private static bool IsInsideNameof(SyntaxNode node, SemanticModel semanticModel)
-    {
-        for (var current = node.Parent; current != null; current = current.Parent)
-        {
-            if (current is InvocationExpressionSyntax
-                {
-                    Expression: IdentifierNameSyntax { Identifier.ValueText: "nameof" }
-                } invocation &&
-                semanticModel.GetSymbol(invocation) == null)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static bool Reaches(IMethodSymbol method, BarrierQuery query, Compilation compilation)

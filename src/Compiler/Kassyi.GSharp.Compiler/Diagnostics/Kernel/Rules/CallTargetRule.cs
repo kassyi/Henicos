@@ -46,7 +46,7 @@ internal sealed class CallTargetRule :
     public void Analyze(MemberAccessExpressionSyntax node, ref ValidationContext context)
     {
         if (context.SemanticModel.GetSymbol(node) is IMethodSymbol called &&
-            CallTargetClassifier.IsMethodGroup(node, context.SemanticModel))
+            MethodGroupReference.Is(node, context.SemanticModel))
         {
             Report(node, called, ref context, reportsUnsupportedIntrinsic: false);
         }
@@ -61,7 +61,7 @@ internal sealed class CallTargetRule :
         }
 
         if (context.SemanticModel.GetSymbol(node) is IMethodSymbol called &&
-            CallTargetClassifier.IsMethodGroup(node, context.SemanticModel))
+            MethodGroupReference.Is(node, context.SemanticModel))
         {
             Report(node, called, ref context, reportsUnsupportedIntrinsic: false);
         }

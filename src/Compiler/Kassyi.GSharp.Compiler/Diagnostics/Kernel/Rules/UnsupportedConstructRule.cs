@@ -114,7 +114,7 @@ internal sealed class UnsupportedConstructRule :
     {
         if (context.SemanticModel.GetSymbol(node) is IMethodSymbol method &&
             method.OriginalDefinition.HasAttribute(KnownAttributes.GpuKernel) &&
-            CallTargetClassifier.IsMethodGroup(node, context.SemanticModel) &&
+            MethodGroupReference.Is(node, context.SemanticModel) &&
             !RemovedCalls.IsInRemovedCall(node, context.SemanticModel))
         {
             context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, node,

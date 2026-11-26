@@ -92,8 +92,8 @@ internal static class CallTargetClassifier
 
     /// <summary>
     /// What <paramref name="call"/> of <paramref name="called"/> calls in <paramref name="dialect"/>: an invocation, or
-    /// a method group that device code names (<see cref="IsMethodGroup"/>), in the tree of <paramref name="model"/> or
-    /// a lowered copy of it.
+    /// a method group that device code names (<see cref="MethodGroupReference"/>), in the tree of
+    /// <paramref name="model"/> or a lowered copy of it.
     /// </summary>
     public static CallTargetPlan Classify(IMethodSymbol called, SyntaxNode call, SemanticModel model,
         ITranspilerDialect dialect)
@@ -212,34 +212,6 @@ internal static class CallTargetClassifier
         (reference.Parent is InvocationExpressionSyntax invocation && invocation.Expression == reference) ||
         (reference.Parent is MemberAccessExpressionSyntax access && access.Name == reference &&
          access.Parent is InvocationExpressionSyntax outer && outer.Expression == access);
-
-    /// <summary>
-    /// Whether <paramref name="node"/> names a method without calling it (<c>U.F</c>, <c>F</c>), outside
-    /// <c>nameof</c>: a method group that device code would name. The name of a conditional call (<c>u?.F()</c>) is
-    /// called.
-    /// </summary>
-    public static bool IsMethodGroup(SyntaxNode node, SemanticModel? semanticModel = null)
-    {
-        var name = node.Parent switch
-        {
-            MemberAccessExpressionSyntax access when access.Name == node => access,
-            MemberBindingExpressionSyntax binding => binding,
-            _ => node
-        };
-        if (name.Parent is InvocationExpressionSyntax invocation && invocation.Expression == name)
-        {
-            return false;
-        }
-
-        return !name.Ancestors()
-            .AsStackEnumerable()
-            .Any(semanticModel, static (ancestor, model) =>
-                ancestor is InvocationExpressionSyntax
-                {
-                    Expression: IdentifierNameSyntax { Identifier.ValueText: NameofKeyword }
-                } nameofInvocation &&
-                model?.GetSymbol(nameofInvocation) == null);
-    }
 
     /// <summary>The name of <paramref name="called"/> in the GSH0107 message: <c>Type.Method</c>.</summary>
     public static string GetDisplayName(IMethodSymbol called)
