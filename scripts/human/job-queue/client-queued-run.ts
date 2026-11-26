@@ -51,6 +51,31 @@ function joinNotes(...notes: string[]): string {
   return notes.filter((note) => note !== "").join("; ");
 }
 
+/** The share a GPU turn asks for and the reason it sends with it (null: none). */
+interface ShareDecision {
+  share: ShareMode;
+  shareReason: string | null;
+}
+
+/** The share of a GPU turn of which no plugin has an opinion: classify gave none and checkShare answered nothing. */
+const NoOpinionShare: ShareDecision = { share: "exclusive", shareReason: "no-plugin" };
+
+/**
+ * The share of a GPU turn that is known without checkShare: classify's (an explicit "exclusive" and --gpu-exclusive
+ * included), else "exclusive" for --after: the predecessor may still build what the test reads (a run split by run
+ * --gpu zeroes it: its build job already waited), so a list now could read the old assembly. Undefined when the
+ * plugins' checkShare is to be asked.
+ */
+function shareBeforeCheck(
+  classified: { share?: ShareMode; shareReason?: string },
+  after: number,
+): ShareDecision | undefined {
+  if (classified.share !== undefined) {
+    return { share: classified.share, shareReason: classified.shareReason ?? null };
+  }
+  return after > 0 ? { share: "exclusive", shareReason: "after" } : undefined;
+}
+
 /**
  * The queued path of run: register, wait for the grant, run the command, report its end. With `gpuTurn`, the job waits
  * for its turn at the GPU instead of slots, and runs gpu-lock.js with an inner client that registers the command's
@@ -733,27 +758,18 @@ export class QueuedRun {
     if (!this.gpuTurn || plugins === undefined || plugins.plugins.length === 0 || this.share !== null) {
       return;
     }
-    const classified = this.classifyShare(plugins);
-    let share = classified.share;
-    let shareReason = classified.shareReason ?? null;
-    if (share === undefined && this.options.after > 0) {
-      // --after: the predecessor may still build what the test reads (a run split by run --gpu zeroes it: its build
-      // job already waited), so a list now could read the old assembly
-      share = "exclusive";
-      shareReason = "after";
-    } else if (share === undefined) {
+    let decided = shareBeforeCheck(this.classifyShare(plugins), this.options.after);
+    if (decided === undefined) {
       const answer = await plugins.checkShare(this.options.command, this.contextOf(plugins));
       if (answer === undefined) {
-        share = "exclusive";
-        shareReason = "no-plugin";
+        decided = NoOpinionShare;
       } else {
-        share = answer.share;
-        shareReason = answer.reason ?? null;
+        decided = { share: answer.share, shareReason: answer.reason ?? null };
         this.stillValid = answer.share === "shared" && answer.stillValid !== undefined ? answer : null;
       }
     }
-    this.share = share === "shared" ? "shared" : "exclusive";
-    this.shareReason = shareReason;
+    this.share = decided.share === "shared" ? "shared" : "exclusive";
+    this.shareReason = decided.shareReason;
   }
 
   /**
@@ -901,11 +917,12 @@ export class QueuedRun {
     let shareReason: string | undefined;
     if (hasPlugins && this.gpuTurn) {
       if (this.share === null) {
-        // Normally set by resolveShare before the connection; kept for a run that registers without it
+        // Normally set by resolveShare before the connection; kept for a run that registers without it, which does
+        // not wait for checkShare here
         const classified = this.classifyShare(this.plugins as PluginHost);
-        this.share = classified.share === "shared" ? "shared" : "exclusive";
-        this.shareReason =
-          classified.shareReason ?? (classified.share === undefined && this.options.after > 0 ? "after" : null);
+        const decided = shareBeforeCheck(classified, this.options.after) ?? NoOpinionShare;
+        this.share = decided.share === "shared" ? "shared" : "exclusive";
+        this.shareReason = decided.shareReason;
       }
       share = this.share;
       shareReason = this.shareReason ?? undefined;
