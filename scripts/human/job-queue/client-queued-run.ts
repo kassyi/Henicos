@@ -86,6 +86,8 @@ export class QueuedRun {
    * when the plugins answer exactly that and --gpu-exclusive is not set. Null until then, and without plugins.
    */
   private share: ShareMode | null = null;
+  /** Short reason token explaining `share` (logged on scheduler `grant` and shown in `status --json`). */
+  private shareReason: string | null = null;
   /** The plugin's check that a shared answer still holds (see ShareAnswer), called once the shared turn is granted. */
   private stillValid: ShareAnswer | null = null;
   /** start() has begun for a grant: another grant, as one that arrives twice, does not start it again. */
@@ -298,6 +300,7 @@ export class QueuedRun {
         "no longer holds; waiting again as exclusive",
     );
     this.share = "exclusive";
+    this.shareReason = "stale";
     this.stillValid = null;
     if (granted.downgrade !== true) {
       // A scheduler that does not know "downgrade" would close the connection at the message: the older way
@@ -306,7 +309,7 @@ export class QueuedRun {
     }
     // Grants that arrive until the scheduler answers are the old shared one: ignored
     this.downgrading = true;
-    const message: ClientMessage = { type: "downgrade" };
+    const message: ClientMessage = { type: "downgrade", shareReason: "stale" };
     send(this.socket, { version: wireVersion(message), ...message });
     return true;
   }
@@ -713,9 +716,10 @@ export class QueuedRun {
   }
 
   /** What the plugins' classify says of the share of this GPU turn; undefined when no plugin has an opinion. */
-  private classifyShare(plugins: PluginHost): ShareMode | undefined {
+  private classifyShare(plugins: PluginHost): { share?: ShareMode; shareReason?: string } {
     const resource = { name: "gpu", forcedExclusive: this.options.gpuExclusive === true };
-    return plugins.classify(this.options.command, resource, this.contextOf(plugins)).share;
+    const classified = plugins.classify(this.options.command, resource, this.contextOf(plugins));
+    return { share: classified.share, shareReason: classified.shareReason };
   }
 
   /**
@@ -729,15 +733,30 @@ export class QueuedRun {
     if (!this.gpuTurn || plugins === undefined || plugins.plugins.length === 0 || this.share !== null) {
       return;
     }
-    let share = this.classifyShare(plugins);
-    // --after: the predecessor may still build what the test reads (a run split by run --gpu zeroes it: its build
-    // job already waited), so a list now could read the old assembly
-    if (share === undefined && this.options.gpuExclusive !== true && this.options.after === 0) {
+    const classified = this.classifyShare(plugins);
+    let share = classified.share;
+    let shareReason = classified.shareReason ?? null;
+    if (share === undefined && this.options.gpuExclusive === true) {
+      share = "exclusive";
+      shareReason = "forced-exclusive";
+    } else if (share === undefined && this.options.after > 0) {
+      // --after: the predecessor may still build what the test reads (a run split by run --gpu zeroes it: its build
+      // job already waited), so a list now could read the old assembly
+      share = "exclusive";
+      shareReason = "after";
+    } else if (share === undefined) {
       const answer = await plugins.checkShare(this.options.command, this.contextOf(plugins));
-      share = answer?.share;
-      this.stillValid = answer?.share === "shared" && answer.stillValid !== undefined ? answer : null;
+      if (answer === undefined) {
+        share = "exclusive";
+        shareReason = "no-plugin";
+      } else {
+        share = answer.share;
+        shareReason = answer.reason ?? null;
+        this.stillValid = answer.share === "shared" && answer.stillValid !== undefined ? answer : null;
+      }
     }
     this.share = share === "shared" ? "shared" : "exclusive";
+    this.shareReason = shareReason;
   }
 
   /**
@@ -882,12 +901,17 @@ export class QueuedRun {
     const offload = !this.gpuTurn ? (this.offload ?? undefined) : undefined;
     // A GPU turn names its resource and asks for its share; a GPU holder does not (the scheduler ties it to its turn)
     let share: ShareMode | undefined;
+    let shareReason: string | undefined;
     if (hasPlugins && this.gpuTurn) {
       if (this.share === null) {
         // Normally set by resolveShare before the connection; kept for a run that registers without it
-        this.share = this.classifyShare(this.plugins as PluginHost) === "shared" ? "shared" : "exclusive";
+        const classified = this.classifyShare(this.plugins as PluginHost);
+        this.share = classified.share === "shared" ? "shared" : "exclusive";
+        this.shareReason =
+          classified.shareReason ?? (classified.share === undefined && this.options.after > 0 ? "after" : null);
       }
       share = this.share;
+      shareReason = this.shareReason ?? undefined;
     }
     // The worktree's content as queued, once, while the job waits; a GPU holder starts at once, under a turn that took
     // its own
@@ -921,6 +945,7 @@ export class QueuedRun {
       ...(memoryMb !== undefined ? { memoryMb } : {}),
       ...(this.gpuTurn ? { resource: "gpu" } : {}),
       ...(share !== undefined ? { share } : {}),
+      ...(shareReason !== undefined ? { shareReason } : {}),
       ...(offload !== undefined && offload !== "never" ? { offload } : {}),
       ...(this.state === "running" && this.grantedRemote !== null ? { remote: this.grantedRemote } : {}),
       envHash: environment.hash,

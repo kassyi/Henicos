@@ -28,13 +28,16 @@ export const PluginApiVersion = 1;
 export type ShareMode = "shared" | "exclusive";
 
 /**
- * The answer of checkShare. `stillValid` is for a "shared" answer that rests on something that can change while the
- * turn waits (an assembly that is rebuilt): the client calls it once the scheduler has granted the shared turn and
- * before the GPU lock is taken, and when it resolves to anything but true, throws or takes too long, the client gives
- * the grant back and queues the turn again as exclusive (it loses its place).
+ * The answer of checkShare. `reason` is an optional short token (`/^[a-z0-9:_-]{1,64}$/`, never containing `"shared"`
+ * when `share !== "shared"`) logged on the scheduler's `grant` line and exposed in `status --json`. `stillValid` is
+ * for a "shared" answer that rests on something that can change while the turn waits (an assembly that is rebuilt):
+ * the client calls it once the scheduler has granted the shared turn and before the GPU lock is taken, and when it
+ * resolves to anything but true, throws or takes too long, the client gives the grant back and queues the turn again
+ * as exclusive (it loses its place).
  */
 export interface ShareAnswer {
   readonly share: ShareMode;
+  readonly reason?: string;
   readonly stillValid?: () => Promise<boolean>;
 }
 
@@ -89,6 +92,8 @@ export interface Classification {
   memoryMb?: number;
   /** Share mode for the requested resource; defaults to "exclusive". */
   share?: ShareMode;
+  /** Optional short reason token (`/^[a-z0-9:_-]{1,64}$/`, never containing `"shared"` when `share !== "shared"`). */
+  shareReason?: string;
   /** True when the command is self-contained and eligible for transparent offload to a remote Linux CPU worker. */
   offloadable?: boolean;
   /** One-line reason why `offloadable` is false (surfaced on local fallback or `--remote` refusal). */

@@ -233,13 +233,13 @@ export async function nameFilterShare(
   }
   const listCommand = listCommandOf(test, options.exclusiveCategories);
   if (listCommand === null) {
-    return { share: "exclusive" };
+    return { share: "exclusive", reason: "list-unsupported" };
   }
   const where = projectDll(test.project, context.cwd, entries ?? readEntries);
   const snapshot = where === null ? null : snapshotOf(files, where);
   if (snapshot === null || snapshot.size === 0) {
     context.log("GPU share: exclusive (no built assembly of the project to fingerprint)");
-    return { share: "exclusive" };
+    return { share: "exclusive", reason: "no-snapshot" };
   }
   const startedAt = Date.now();
   const started = performance.now();
@@ -248,30 +248,43 @@ export async function nameFilterShare(
     result = await run(listCommand, context);
   } catch (error) {
     context.log(`GPU share: exclusive (the test list failed: ${errorMessage(error)})`);
-    return { share: "exclusive" };
+    return { share: "exclusive", reason: "list-failed" };
   }
   const verdict = listVerdict(result);
   const seconds = ((performance.now() - started) / 1000).toFixed(1);
-  const say = (share: ShareMode, why: string): ShareAnswer => {
+  const say = (share: ShareMode, why: string, reason: string): ShareAnswer => {
     context.log(`GPU share: ${share} (list of exclusive tests: ${verdict.listed}, ${seconds} s${why})`);
-    return { share };
+    return { share, reason };
   };
   if (verdict.share === "exclusive") {
-    return say("exclusive", "");
+    const reason =
+      verdict.listed > 0
+        ? `list:${verdict.listed}`
+        : result.exitCode === null
+          ? "list-timeout"
+          : result.exitCode !== 0
+            ? "list-failed"
+            : "list-no-marker";
+    return say("exclusive", "", reason);
   }
   const assemblies = assembliesOf(result.output, context.cwd);
   if (assemblies.length === 0) {
-    return say("exclusive", "; the runner named no assembly");
+    return say("exclusive", "; the runner named no assembly", "no-assemblies");
   }
   const hashes = fingerprintOf(files, assemblies, snapshot, startedAt);
   if (hashes === null) {
-    return say("exclusive", "; an assembly is not the one built before the list, or was written during it");
+    return say(
+      "exclusive",
+      "; an assembly is not the one built before the list, or was written during it",
+      "hash-mismatch",
+    );
   }
   context.log(
     `GPU share: shared (list of exclusive tests: 0, ${seconds} s, ${assemblies.length} assembl${assemblies.length === 1 ? "y" : "ies"} fingerprinted)`,
   );
   return {
     share: "shared",
+    reason: "list:0",
     stillValid: () =>
       Promise.resolve(
         assemblies.every((file, n) => {

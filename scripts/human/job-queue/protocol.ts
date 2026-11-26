@@ -69,6 +69,8 @@ export interface JobRequest {
   resource?: string;
   /** "shared": the turn may run beside other shared turns; anything else, and absent, is exclusive. */
   share?: ShareMode;
+  /** Optional short reason token for the share decision (absent from older clients and plugins). */
+  shareReason?: string;
   /** Remote CPU offload preference: auto (eligible), force (--remote), never (--local / ineligible). */
   offload?: OffloadPreference;
   /** The remote worker name a running job is adopting on after a scheduler restart. */
@@ -100,7 +102,7 @@ export type ClientMessage =
    * job, under the same id, waits again as an exclusive turn. Answered with "queued", or an error when the job is not
    * a granted shared turn (an older scheduler answers "unknown message type").
    */
-  | { type: "downgrade" }
+  | { type: "downgrade"; shareReason?: string }
   /**
    * A remotely granted job whose transport failed before execution gives up its remote slot and waits again under
    * the same id for a local CPU slot (`offload` becomes "never"). Answered with "queued", or an error when not a
@@ -157,6 +159,7 @@ export interface JobView {
   /** The turn resource it uses and how it shares it (absent from older schedulers, and when none was asked). */
   resource?: string;
   share?: "shared";
+  shareReason?: string;
   /** For a GPU holder: the id of the --gpu run whose turn started it (absent when it has none). */
   turn?: number;
   /** The remote worker name when running on a remote worker (absent for local runs). */
@@ -452,6 +455,27 @@ export function environmentField(message: Incoming): { hash: string; keys: Recor
 /** The `share` of a JobRequest: "shared" for exactly that string, undefined (exclusive) for anything else. */
 export function shareField(message: Incoming): "shared" | undefined {
   return message.share === "shared" ? "shared" : undefined;
+}
+
+const ShareReasonPattern = /^[a-z0-9:_-]{1,64}$/;
+
+/**
+ * Validates a share reason token: 1..64 lowercase ASCII/digit/`:`/`_`/`-` characters (no spaces, parens, or
+ * newlines), and never containing `"shared"` unless `share === "shared"` so `grant` log lines remain unambiguous.
+ */
+export function sanitizeShareReason(value: unknown, share?: ShareMode): string | undefined {
+  if (typeof value !== "string" || !ShareReasonPattern.test(value)) {
+    return undefined;
+  }
+  if (share !== "shared" && value.includes("shared")) {
+    return undefined;
+  }
+  return value;
+}
+
+/** The `shareReason` of a JobRequest, downgrade message, or saved job; undefined when missing or invalid. */
+export function shareReasonField(message: Incoming, share?: ShareMode): string | undefined {
+  return sanitizeShareReason(message.shareReason, arguments.length >= 2 ? share : shareField(message));
 }
 
 /** The `offload` preference of a JobRequest; undefined when missing or invalid. */

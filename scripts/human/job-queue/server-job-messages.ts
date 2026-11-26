@@ -10,6 +10,7 @@ import {
   remoteField,
   send,
   shareField,
+  shareReasonField,
   type Incoming,
 } from "./protocol.ts";
 import type { Connection, MessageHandler } from "./server-connection.ts";
@@ -94,6 +95,8 @@ function rebind(
     // connection dropped): what it asks for now counts. The use of the resource is counted from the running turns on
     // every grant, so a running turn stops counting as shared at once.
     job.share = "exclusive";
+    const incoming = shareReasonField(message, "exclusive");
+    job.shareReason = incoming !== undefined && incoming !== job.shareReason ? incoming : "rebind";
     server.log(`re-bind ${formatJobId(job.id)}: counted as an exclusive turn, as it asks`);
   }
   const incomingRemote = message.type === "adopt" ? remoteField(message) : job.remote;
@@ -236,7 +239,7 @@ function started(connection: Connection, message: Incoming): void {
  * once, and queues like the turn it was (same id and queue time), asking for the resource alone. Answered with the
  * queued message; any other job (not a turn, not granted, not shared) gets an error and stays as it is.
  */
-function downgrade(connection: Connection): void {
+function downgrade(connection: Connection, message: Incoming): void {
   const { server, socket } = connection;
   const job = connection.job;
   if (job === null || job.phase !== "running" || job.gpuTurn !== true || job.share !== "shared") {
@@ -246,6 +249,7 @@ function downgrade(connection: Connection): void {
   }
   server.scheduler.detach(job);
   job.share = "exclusive";
+  job.shareReason = shareReasonField(message, "exclusive") ?? "downgrade";
   job.phase = "waiting";
   job.epoch++;
   job.grantedAt = 0;

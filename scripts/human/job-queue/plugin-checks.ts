@@ -228,7 +228,12 @@ function checkHostClassify(assert: AssertModule): void {
   assert.deepStrictEqual(shared, { test: true, memoryMb: 2048, share: "shared" });
 
   const forced = host.classify("cmd", { name: "gpu", forcedExclusive: true }, ctx);
-  assert.deepStrictEqual(forced, { test: true, memoryMb: 2048, share: "exclusive" });
+  assert.deepStrictEqual(forced, {
+    test: true,
+    memoryMb: 2048,
+    share: "exclusive",
+    shareReason: "forced-exclusive",
+  });
 
   // localReason is accepted only from the plugin deciding offloadable: false, and collapsed to 1 line
   const localHost = new PluginHost(
@@ -446,6 +451,7 @@ function checkHostValidation(assert: AssertModule): void {
       test: true,
       memoryMb: -1,
       share: "both" as ShareMode,
+      shareReason: "orphan-reason",
     }),
     stepKeys: () => ({ normalized: "x".repeat(2001), shape: "s", kind: "k" }),
     splitBeforeTurn: () => ({ before: "", after: "test", beforeRole: "b", afterRole: "a" }),
@@ -455,6 +461,7 @@ function checkHostValidation(assert: AssertModule): void {
     apiVersion: PluginApiVersion,
     classify: () => ({
       memoryMb: "x" as unknown as number,
+      shareReason: "orphan-without-share",
     }),
   };
   const badHuge: QueuePlugin = {
@@ -506,6 +513,46 @@ function checkHostValidation(assert: AssertModule): void {
     beforeRole: "build",
     afterRole: "test",
   });
+
+  // Invalid or uncoupled shareReason values are discarded while keeping valid share / valid fallback reason
+  const orphanWithReason: QueuePlugin = {
+    name: "orphan-reason",
+    apiVersion: PluginApiVersion,
+    classify: () => ({ shareReason: "orphan" }),
+  };
+  const validWithReason: QueuePlugin = {
+    name: "valid-reason",
+    apiVersion: PluginApiVersion,
+    classify: () => ({ share: "shared", shareReason: "valid" }),
+  };
+  const coupledHost = new PluginHost(
+    [orphanWithReason, validWithReason],
+    [undefined, undefined],
+    process.cwd(),
+    () => {},
+  );
+  assert.deepStrictEqual(coupledHost.classify("cmd", { name: "gpu", forcedExclusive: false }, ctx), {
+    share: "shared",
+    shareReason: "valid",
+  });
+  const badExclReason: QueuePlugin = {
+    name: "bad-excl-reason",
+    apiVersion: PluginApiVersion,
+    classify: () => ({ share: "exclusive", shareReason: "not-shared" }),
+  };
+  const badCharsReason: QueuePlugin = {
+    name: "bad-chars-reason",
+    apiVersion: PluginApiVersion,
+    classify: () => ({ share: "shared", shareReason: "bad reason" }),
+  };
+  assert.deepStrictEqual(
+    new PluginHost([badExclReason], [undefined], process.cwd(), () => {}).classify("cmd", null, ctx),
+    { share: "exclusive" },
+  );
+  assert.deepStrictEqual(
+    new PluginHost([badCharsReason], [undefined], process.cwd(), () => {}).classify("cmd", null, ctx),
+    { share: "shared" },
+  );
 }
 
 /**

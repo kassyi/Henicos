@@ -211,7 +211,7 @@ export async function checkNameFilter(assert: AssertModule): Promise<void> {
   const command = `${Plain} "FullyQualifiedName~PoolStressTests"`;
   const files = fakeFiles({ [Dll]: ["aaa", 0] });
   const shared = await nameFilterShare(command, logging, answer(NoMatch), Entries, files);
-  assert.strictEqual(shared?.share, "shared");
+  assert.deepStrictEqual([shared?.share, shared?.reason], ["shared", "list:0"]);
   assert.strictEqual(calls.length, 1, "one list job");
   assert.match(calls[0] as string, /--list-tests --filter "\(FullyQualifiedName~PoolStressTests\)&\(Category=Stress\|/);
   assert.match(
@@ -219,10 +219,11 @@ export async function checkNameFilter(assert: AssertModule): Promise<void> {
     /^GPU share: shared \(list of exclusive tests: 0, /,
     "one line says what was decided",
   );
-  assert.strictEqual((await nameFilterShare(command, logging, answer(Listed), Entries, files))?.share, "exclusive");
+  const listedAnswer = await nameFilterShare(command, logging, answer(Listed), Entries, files);
+  assert.deepStrictEqual([listedAnswer?.share, listedAnswer?.reason], ["exclusive", "list:2"]);
   assert.match(lines[1] as string, /^GPU share: exclusive \(list of exclusive tests: 2, /);
   const failed = await nameFilterShare(command, logging, answer(new Error("spawn failed")), Entries, files);
-  assert.strictEqual(failed?.share, "exclusive");
+  assert.deepStrictEqual([failed?.share, failed?.reason], ["exclusive", "list-failed"]);
   assert.match(lines[2] as string, /list failed: spawn failed/);
   const before = calls.length;
   assert.strictEqual(
@@ -252,14 +253,26 @@ export async function checkNameFilter(assert: AssertModule): Promise<void> {
     { exitCode: 0, output: "No test matches the given testcase filter `x`\n" },
     fakeFiles({ [Dll]: ["aaa", 0] }),
   );
-  assert.strictEqual(noLine?.share, "exclusive", "no Test run line: the assembly is unknown");
+  assert.deepStrictEqual(
+    [noLine?.share, noLine?.reason],
+    ["exclusive", "no-assemblies"],
+    "no Test run line: the assembly is unknown",
+  );
   assert.match(lines.at(-1) as string, /named no assembly/);
   const during = await verdictOf(named, fakeFiles({ [Dll]: ["aaa", Date.now() + 60_000] }));
-  assert.strictEqual(during?.share, "exclusive", "written after the list started");
+  assert.deepStrictEqual(
+    [during?.share, during?.reason],
+    ["exclusive", "hash-mismatch"],
+    "written after the list started",
+  );
   assert.match(lines.at(-1) as string, /or was written during it/);
   const beforeMissing = calls.length;
   const missing = await verdictOf(named, fakeFiles({}));
-  assert.strictEqual(missing?.share, "exclusive", "no built assembly: nothing to fingerprint");
+  assert.deepStrictEqual(
+    [missing?.share, missing?.reason],
+    ["exclusive", "no-snapshot"],
+    "no built assembly: nothing to fingerprint",
+  );
   assert.strictEqual(calls.length, beforeMissing, "and no list job is started for it");
   // MSBuild copies obj to bin and keeps the compile time: a copy that lands while the list runs has an old time
   const copied = fakeFiles({ [Dll]: ["old", 0] });
@@ -273,12 +286,52 @@ export async function checkNameFilter(assert: AssertModule): Promise<void> {
     Entries,
     copied,
   );
-  assert.strictEqual(copiedDuring?.share, "exclusive", "the file changed during the list, with an old time");
+  assert.deepStrictEqual(
+    [copiedDuring?.share, copiedDuring?.reason],
+    ["exclusive", "hash-mismatch"],
+    "the file changed during the list, with an old time",
+  );
   // An assembly the project does not build under that name (a custom AssemblyName) is not in the snapshot
   const other = fakeFiles({ [Dll]: ["aaa", 0], "tests/X/bin/Debug/net10.0/Other.dll": ["aaa", 0] });
   const named2 = { exitCode: 0, output: named.output.replace("/X.dll (", "/Other.dll (") };
   const renamed = await verdictOf(named2, other);
-  assert.strictEqual(renamed?.share, "exclusive", "the listed assembly is not <project>.dll");
+  assert.deepStrictEqual(
+    [renamed?.share, renamed?.reason],
+    ["exclusive", "hash-mismatch"],
+    "the listed assembly is not <project>.dll",
+  );
+  const nonZero = await verdictOf({ exitCode: 1, output: NoMatch.output }, fakeFiles({ [Dll]: ["aaa", 0] }));
+  assert.deepStrictEqual([nonZero?.share, nonZero?.reason], ["exclusive", "list-failed"]);
+  const timedOut = await verdictOf({ exitCode: null, output: NoMatch.output }, fakeFiles({ [Dll]: ["aaa", 0] }));
+  assert.deepStrictEqual([timedOut?.share, timedOut?.reason], ["exclusive", "list-timeout"]);
+  const noMarker = await verdictOf(
+    { exitCode: 0, output: "Test run for tests/X/bin/Debug/net10.0/X.dll (.NETCoreApp,Version=v10.0)\n" },
+    fakeFiles({ [Dll]: ["aaa", 0] }),
+  );
+  assert.deepStrictEqual([noMarker?.share, noMarker?.reason], ["exclusive", "list-no-marker"]);
+  const unsupported = await nameFilterShare(
+    command,
+    { ...logging, options: { ...Options, exclusiveCategories: [] } },
+    answer(NoMatch),
+    Entries,
+    fakeFiles({ [Dll]: ["aaa", 0] }),
+  );
+  assert.deepStrictEqual([unsupported?.share, unsupported?.reason], ["exclusive", "list-unsupported"]);
+  for (const excl of [
+    listedAnswer,
+    failed,
+    noLine,
+    during,
+    missing,
+    copiedDuring,
+    renamed,
+    nonZero,
+    timedOut,
+    noMarker,
+    unsupported,
+  ]) {
+    assert.ok(excl?.reason !== undefined && /^[a-z0-9:_-]{1,64}$/.test(excl.reason) && !excl.reason.includes("shared"));
+  }
   const two = {
     exitCode: 0,
     output:

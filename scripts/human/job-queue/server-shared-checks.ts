@@ -358,17 +358,331 @@ export async function checkRebindLowersShare(assert: AssertModule): Promise<void
   });
 }
 
-/** Resolves to the `count`th grant the client has received (waiting for it), or null after 3 s. */
-async function waitForGrant(client: RawClient, count: number): Promise<Incoming | null> {
+/** Resolves to the `count`th message of `type` the client has received (waiting for it), or null after 3 s. */
+async function waitForMessage(client: RawClient, type: string, count: number): Promise<Incoming | null> {
   const until = Date.now() + 3000;
   while (Date.now() < until) {
-    const grants = client.messages.filter((message) => message.type === "granted");
-    if (grants.length >= count) {
-      return grants[count - 1] ?? null;
+    const matched = client.messages.filter((message) => message.type === type);
+    if (matched.length >= count) {
+      return matched[count - 1] ?? null;
     }
     await new Promise((resolve) => setTimeout(resolve, 25));
   }
   return null;
+}
+
+/** Resolves to the `count`th grant the client has received (waiting for it), or null after 3 s. */
+async function waitForGrant(client: RawClient, count: number): Promise<Incoming | null> {
+  return waitForMessage(client, "granted", count);
+}
+
+/** Status reply snapshot from the scheduler. */
+async function statusSnapshot(
+  port: number,
+): Promise<{ running: Record<string, unknown>[]; waiting: Record<string, unknown>[] }> {
+  const asker = await connectRaw(port);
+  asker.send({ type: "status" });
+  const reply = await asker.until("status");
+  asker.close();
+  return {
+    running: (reply?.running as Record<string, unknown>[] | undefined) ?? [],
+    waiting: (reply?.waiting as Record<string, unknown>[] | undefined) ?? [],
+  };
+}
+
+/**
+ * `grant` log lines, `status --json`, `JobStore` persistence/restore, `downgrade`, and `rebind` carry `shareReason`
+ * while preserving `sim2.mts` (`/shared/.test(head)`) and older client/state compatibility.
+ */
+export async function checkGrantLogAndStatusShareReason(assert: AssertModule): Promise<void> {
+  const headOfGrant = (line: string): string => line.split(" pid ")[0] ?? "";
+  // Case 1 & 2: grant log formatting, non-turn gating, sanitization, and sim2.mts /shared/.test(head) invariant
+  await withGpu({ slots: 2 }, async ({ server, port, lines }) => {
+    const cases: {
+      command: string;
+      extra: Record<string, unknown>;
+      turn?: boolean;
+      expectedFlag: string | null;
+      expectedSimShared: boolean;
+      expectedReason: string | undefined;
+    }[] = [
+      {
+        command: "shared-reasoned",
+        extra: { share: "shared", shareReason: "categories" },
+        expectedFlag: " gpu gpu-turn share=shared(categories)",
+        expectedSimShared: true,
+        expectedReason: "categories",
+      },
+      {
+        command: "shared-legacy",
+        extra: { share: "shared" },
+        expectedFlag: " gpu gpu-turn share=shared",
+        expectedSimShared: true,
+        expectedReason: undefined,
+      },
+      {
+        command: "excl-reasoned",
+        extra: { share: "exclusive", shareReason: "list:3" },
+        expectedFlag: " gpu gpu-turn share=exclusive(list:3)",
+        expectedSimShared: false,
+        expectedReason: "list:3",
+      },
+      {
+        command: "excl-omitted-share",
+        extra: { shareReason: "env-prefix" },
+        expectedFlag: " gpu gpu-turn share=exclusive(env-prefix)",
+        expectedSimShared: false,
+        expectedReason: "env-prefix",
+      },
+      {
+        command: "excl-legacy",
+        extra: {},
+        expectedFlag: " gpu gpu-turn share=exclusive",
+        expectedSimShared: false,
+        expectedReason: undefined,
+      },
+      {
+        command: "bad-excl-shared",
+        extra: { share: "exclusive", shareReason: "not-shared" },
+        expectedFlag: " gpu gpu-turn share=exclusive",
+        expectedSimShared: false,
+        expectedReason: undefined,
+      },
+      {
+        command: "bad-chars",
+        extra: { share: "exclusive", shareReason: "bad reason\n" },
+        expectedFlag: " gpu gpu-turn share=exclusive",
+        expectedSimShared: false,
+        expectedReason: undefined,
+      },
+      {
+        command: "bad-parens",
+        extra: { share: "shared", shareReason: "a(b)" },
+        expectedFlag: " gpu gpu-turn share=shared",
+        expectedSimShared: true,
+        expectedReason: undefined,
+      },
+      {
+        command: "bad-long",
+        extra: { share: "exclusive", shareReason: "x".repeat(65) },
+        expectedFlag: " gpu gpu-turn share=exclusive",
+        expectedSimShared: false,
+        expectedReason: undefined,
+      },
+      {
+        command: "non-turn",
+        extra: { share: "shared", shareReason: "categories" },
+        turn: false,
+        expectedFlag: null,
+        expectedSimShared: false,
+        expectedReason: undefined,
+      },
+    ];
+    for (const c of cases) {
+      const client = await connectRaw(port);
+      client.send(
+        c.turn === false ? { ...registration(c.command, 1, process.pid), ...c.extra } : turnRequest(c.command, c.extra),
+      );
+      const granted = await client.until("granted");
+      assert.ok(granted !== null, `${c.command} granted`);
+      const id = Number(granted.id);
+      const record = server.find(id) as NonNullable<ReturnType<JobServer["find"]>>;
+      const view = describeJob(record);
+      assert.strictEqual(view.shareReason, c.expectedReason, `${c.command} describeJob.shareReason`);
+      if (c.expectedReason === undefined) {
+        assert.strictEqual("shareReason" in view, false, `${c.command} omits undefined shareReason`);
+      }
+      if (c.turn === false) {
+        assert.strictEqual(view.share, undefined, "non-turn drops share");
+      }
+      const grantLine = lines.find((line) => line.startsWith(`grant ${formatJobId(id)} `)) ?? "";
+      assert.ok(grantLine !== "", `grant line logged for ${c.command}`);
+      const head = headOfGrant(grantLine);
+      if (c.expectedFlag !== null) {
+        assert.ok(head.endsWith(c.expectedFlag), `expected '${c.expectedFlag}' in '${grantLine}'`);
+        assert.strictEqual(/gpu-turn/.test(head), true);
+        assert.strictEqual(/shared/.test(head), c.expectedSimShared, `sim2.mts /shared/.test(head) for ${c.command}`);
+      } else {
+        assert.strictEqual(head.includes("share="), false, `non-turn omits share= in '${grantLine}'`);
+      }
+      await end(client, 0, assert);
+    }
+  });
+
+  // Case 3 & 4: status --json projection (running + waiting) and JobStore persistence/restore
+  await withGpu({ slots: 2 }, async ({ server, port }, directory) => {
+    const reqA = turnRequest("A", { share: "shared", shareReason: "categories" });
+    const clientA = await connectRaw(port);
+    clientA.send(reqA);
+    const qA = await clientA.until("queued");
+    const aId = Number(qA?.id);
+    assert.ok((await clientA.until("granted")) !== null);
+
+    const reqB = turnRequest("B", { share: "exclusive", shareReason: "env-prefix" });
+    const clientB = await connectRaw(port);
+    clientB.send(reqB);
+    const qB = await clientB.until("queued");
+    const bId = Number(qB?.id);
+    assert.strictEqual(await clientB.until("granted", 50), null, "exclusive B waits behind shared A");
+
+    const c = await queueTurn(port, "C", {}, 50);
+    assert.strictEqual(c.granted, null, "legacy C waits behind B");
+
+    const beforeStatus = await statusSnapshot(port);
+    const runningA = beforeStatus.running.find((j) => Number(j.id) === aId);
+    const waitingB = beforeStatus.waiting.find((j) => Number(j.id) === bId);
+    const waitingC = beforeStatus.waiting.find((j) => Number(j.id) === c.id);
+    assert.strictEqual(runningA?.shareReason, "categories", "status running carries shareReason");
+    assert.strictEqual(waitingB?.shareReason, "env-prefix", "status waiting carries shareReason");
+    assert.strictEqual(waitingC !== undefined && "shareReason" in waitingC, false, "status omits absent shareReason");
+
+    server.store.persist();
+    const next = await startServer(directory, path.join(directory, "job-queue.config.json"));
+    try {
+      assert.strictEqual(next.server.store.restore(), "current");
+      const restoredStatus = await statusSnapshot(next.port);
+      assert.strictEqual(
+        restoredStatus.running.find((j) => Number(j.id) === aId)?.shareReason,
+        "categories",
+        "restored running job keeps shareReason",
+      );
+      assert.strictEqual(
+        restoredStatus.waiting.find((j) => Number(j.id) === bId)?.shareReason,
+        "env-prefix",
+        "restored waiting job keeps shareReason",
+      );
+      // Reconnect A and end it, reconnect B and grant it -> grant log emits share=exclusive(env-prefix)
+      const a2 = await connectRaw(next.port);
+      a2.send({ ...reqA, type: "adopt", id: aId });
+      assert.ok((await a2.until("adopted")) !== null);
+      const b2 = await connectRaw(next.port);
+      b2.send({ ...reqB, id: bId });
+      assert.ok((await b2.until("queued")) !== null);
+      await end(a2, 0, assert);
+      assert.ok((await b2.until("granted", 2000)) !== null);
+      const grantB = next.lines.find((line) => line.startsWith(`grant ${formatJobId(bId)} `)) ?? "";
+      assert.ok(grantB.includes(" share=exclusive(env-prefix) pid "), `restored grant line: ${grantB}`);
+      b2.close();
+    } finally {
+      next.server.stopping = true;
+      next.server.server.close();
+    }
+    clientA.close();
+    clientB.close();
+    c.client.close();
+  });
+
+  // Case 5a: downgrade with explicit shareReason ("stale") and legacy payload-less downgrade ("downgrade")
+  await withGpu({ slots: 2 }, async ({ server, port, lines }) => {
+    const a = await queueTurn(port, "A", { share: "shared", shareReason: "list:0" });
+    const b = await queueTurn(port, "B", { share: "shared", shareReason: "categories" });
+    assert.ok(a.granted !== null && b.granted !== null);
+    a.client.send({ type: "downgrade", shareReason: "stale" });
+    assert.ok((await waitForMessage(a.client, "queued", 2)) !== null);
+    assert.strictEqual(
+      describeJob(server.find(a.id) as NonNullable<ReturnType<JobServer["find"]>>).shareReason,
+      "stale",
+      "downgrade updates shareReason to incoming stale",
+    );
+    await end(b.client, 0, assert);
+    assert.ok((await waitForGrant(a.client, 2)) !== null);
+    const secondGrantA = lines.filter((line) => line.startsWith(`grant ${formatJobId(a.id)} `))[1] ?? "";
+    assert.ok(secondGrantA.includes(" share=exclusive(stale) pid "), `second grant after downgrade: ${secondGrantA}`);
+    await end(a.client, 0, assert);
+
+    // Legacy payload-less downgrade falls back to "downgrade"
+    const c = await queueTurn(port, "C", { share: "shared", shareReason: "list:0" });
+    assert.ok(c.granted !== null);
+    c.client.send({ type: "downgrade" });
+    assert.ok((await waitForMessage(c.client, "queued", 2)) !== null);
+    assert.strictEqual(
+      describeJob(server.find(c.id) as NonNullable<ReturnType<JobServer["find"]>>).shareReason,
+      "downgrade",
+      "payload-less downgrade sets shareReason to downgrade",
+    );
+    c.client.close();
+  });
+
+  // Case 5a-extra: downgrade with share: "shared" and shareReason: "not-shared" must enforce exclusive sanitization
+  await withGpu({ slots: 2 }, async ({ server, port, lines }) => {
+    const d = await queueTurn(port, "D", { share: "shared", shareReason: "list:0" });
+    const blocker = await queueTurn(port, "Blocker", { share: "shared", shareReason: "categories" });
+    assert.ok(d.granted !== null && blocker.granted !== null);
+    d.client.send({ type: "downgrade", share: "shared", shareReason: "not-shared" });
+    assert.ok((await waitForMessage(d.client, "queued", 2)) !== null);
+    const jobD = server.find(d.id) as NonNullable<ReturnType<JobServer["find"]>>;
+    assert.strictEqual(jobD.shareReason, "downgrade", "downgrade rejects 'shared' reason despite message.share");
+    assert.strictEqual(describeJob(jobD).shareReason, "downgrade", "describeJob.shareReason is downgrade");
+    await end(blocker.client, 0, assert);
+    assert.ok((await waitForGrant(d.client, 2)) !== null);
+    const secondGrantD = lines.filter((line) => line.startsWith(`grant ${formatJobId(d.id)} `))[1] ?? "";
+    assert.ok(
+      secondGrantD.includes(" share=exclusive(downgrade) pid "),
+      `re-grant after downgrade with bad reason: ${secondGrantD}`,
+    );
+    const head = headOfGrant(secondGrantD);
+    assert.strictEqual(/shared/.test(head), false, `sim2 head must not match /shared/: ${head}`);
+    await end(d.client, 0, assert);
+  });
+
+  // Case 5b: rebind lowers shareReason to incoming new reason ("stale") or "rebind" when omitted/unchanged
+  await withGpu({ slots: 2 }, async ({ server, port, lines }) => {
+    const req1 = turnRequest("A", { share: "shared", shareReason: "list:0" });
+    const first = await connectRaw(port);
+    first.send(req1);
+    const q1 = await first.until("queued");
+    assert.ok((await first.until("granted")) !== null);
+    first.close();
+    await first.closed;
+    const again1 = await connectRaw(port);
+    again1.send({ ...req1, id: Number(q1?.id), share: "exclusive", shareReason: "stale" });
+    const regranted1 = await again1.until("granted", 3000);
+    assert.ok(regranted1 !== null && !("share" in regranted1));
+    assert.strictEqual(
+      describeJob(server.find(Number(q1?.id)) as NonNullable<ReturnType<JobServer["find"]>>).shareReason,
+      "stale",
+      "rebind preserves new exclusive shareReason",
+    );
+    await end(again1, 0, assert);
+
+    const req2 = turnRequest("B", { share: "shared", shareReason: "list:0" });
+    const second = await connectRaw(port);
+    second.send(req2);
+    const q2 = await second.until("queued");
+    assert.ok((await second.until("granted")) !== null);
+    second.close();
+    await second.closed;
+    const again2 = await connectRaw(port);
+    // Spread req2 with share: "exclusive" keeping old shareReason ("list:0"): must replace with "rebind"
+    again2.send({ ...req2, id: Number(q2?.id), share: "exclusive" });
+    const regranted2 = await again2.until("granted", 3000);
+    assert.ok(regranted2 !== null && !("share" in regranted2));
+    assert.strictEqual(
+      describeJob(server.find(Number(q2?.id)) as NonNullable<ReturnType<JobServer["find"]>>).shareReason,
+      "rebind",
+      "rebind replaces stale shared reason with rebind when unchanged",
+    );
+    await end(again2, 0, assert);
+
+    // Waiting rebind: disconnected while waiting behind an exclusive blocker -> reconnects as exclusive -> grant logs new reason
+    const blocker = await queueTurn(port, "Blocker", { share: "exclusive", shareReason: "env-prefix" });
+    assert.ok(blocker.granted !== null);
+    const req3 = turnRequest("W", { share: "shared", shareReason: "list:0" });
+    const waiting = await connectRaw(port);
+    waiting.send(req3);
+    const q3 = await waiting.until("queued");
+    assert.strictEqual(await waiting.until("granted", 50), null);
+    waiting.close();
+    await waiting.closed;
+    const again3 = await connectRaw(port);
+    again3.send({ ...req3, id: Number(q3?.id), share: "exclusive", shareReason: "stale" });
+    assert.ok((await again3.until("queued")) !== null);
+    await end(blocker.client, 0, assert);
+    assert.ok((await again3.until("granted", 3000)) !== null);
+    const waitingRebindGrant = lines.find((line) => line.startsWith(`grant ${formatJobId(Number(q3?.id))} `)) ?? "";
+    assert.ok(waitingRebindGrant.includes(" share=exclusive(stale) pid "), waitingRebindGrant);
+    await end(again3, 0, assert);
+  });
 }
 
 export const SharedServerChecks: Record<string, (assert: AssertModule) => Promise<void>> = {
@@ -381,4 +695,5 @@ export const SharedServerChecks: Record<string, (assert: AssertModule) => Promis
   checkFailedSharedTurnIsLogged,
   checkDowngradeSharedTurn,
   checkRebindLowersShare,
+  checkGrantLogAndStatusShareReason,
 };

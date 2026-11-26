@@ -33,6 +33,7 @@ import {
   resourceField,
   send,
   shareField,
+  shareReasonField,
   type Incoming,
   type Outcome,
   type Outlook,
@@ -315,8 +316,11 @@ export class JobServer {
     for (const job of granted) {
       job.phase = "running";
       job.epoch++;
-      const shared = job.gpuTurn === true && job.share === "shared" ? " shared" : "";
-      const gpu = `${job.gpu ? " gpu" : ""}${job.gpuTurn ? " gpu-turn" : ""}${shared}`;
+      const share =
+        job.gpuTurn === true
+          ? ` share=${job.share === "shared" ? "shared" : "exclusive"}${job.shareReason !== undefined ? `(${job.shareReason})` : ""}`
+          : "";
+      const gpu = `${job.gpu ? " gpu" : ""}${job.gpuTurn ? " gpu-turn" : ""}${share}`;
       const remote = job.remote !== undefined ? ` remote=${job.remote}` : "";
       const flags = `${gpu}${remote}${job.backfilled ? " backfilled" : ""}`;
       this.log(`grant ${formatJobId(job.id)} weight ${job.weight}${flags} pid ${job.pid}: ${job.command}`);
@@ -354,11 +358,12 @@ export class JobServer {
     const keys = keysField(message);
     const memoryMb = memoryMbField(message);
     const resource = resourceField(message);
-    const share = shareField(message);
+    const gpuTurn = message.gpuTurn === true;
+    const share = gpuTurn ? shareField(message) : undefined;
+    const shareReason = gpuTurn ? shareReasonField(message, share) : undefined;
     const offload = offloadField(message);
     const remote = remoteField(message);
     const quarantine = quarantineField(message);
-    const gpuTurn = message.gpuTurn === true;
     const remoteEstimates = new Map<string, Estimate | null>();
     for (const state of this.scheduler.remoteStates()) {
       remoteEstimates.set(
@@ -390,6 +395,7 @@ export class JobServer {
       ...(keys !== undefined ? { keys } : {}),
       ...(resource !== undefined ? { resource } : {}),
       ...(share !== undefined ? { share } : {}),
+      ...(shareReason !== undefined ? { shareReason } : {}),
       ...(offload !== undefined ? { offload } : {}),
       ...(remote !== undefined ? { remote } : {}),
       ...(remoteEstimates.size > 0 ? { remoteEstimates } : {}),
