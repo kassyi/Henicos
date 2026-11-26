@@ -426,7 +426,7 @@ async function checkCheckShare(assert: AssertModule): Promise<void> {
     );
     const afterReg = await registrationOf(
       hostOf(() => Promise.resolve("shared")),
-      runOptions({ after: 5 }),
+      runOptions({ after: 1 }),
     );
     assert.deepStrictEqual(
       [afterReg.share, afterReg.shareReason],
