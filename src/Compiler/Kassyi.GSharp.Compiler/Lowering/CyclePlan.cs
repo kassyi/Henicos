@@ -94,7 +94,7 @@ internal static class CyclePlanner
         var plan = JumpRegionPlanner.Plan(statements, holdsSplitPoint);
         if (plan.Rejected.IsEmpty)
         {
-            PlanListCycles(statements, plan, flow, constantCondition, cycles);
+            PlanListCycles(statements, plan, flow, holdsSplitPoint, constantCondition, cycles);
         }
 
         foreach (var statement in statements)
@@ -160,7 +160,7 @@ internal static class CyclePlanner
                     var sectionStatements = switchStatement.Sections[s].Statements;
                     if (crossSectionRejected.IsEmpty && sectionPlans[s].Rejected.IsEmpty)
                     {
-                        PlanListCycles(sectionStatements, sectionPlans[s], flow, constantCondition, cycles);
+                        PlanListCycles(sectionStatements, sectionPlans[s], flow, holdsSplitPoint, constantCondition, cycles);
                     }
 
                     foreach (var sectionStatement in sectionStatements)
@@ -177,6 +177,7 @@ internal static class CyclePlanner
         SyntaxList<StatementSyntax> statements,
         JumpRegionPlan plan,
         StatementFlow flow,
+        Func<StatementSyntax, bool> holdsSplitPoint,
         Func<ExpressionSyntax, bool?> constantCondition,
         Dictionary<CyclePlan.CycleKey, Cycle> cycles)
     {
@@ -202,8 +203,9 @@ internal static class CyclePlanner
             }
 
             var headerNode = StatementFlow.EntryOf(statements[region.First]);
+            var headerNodes = CollectHeaderNodes(statements, region.First);
             var members = ComputeMembers(flow, headerNode, statements, region, backJumps);
-            if (HasExternalPredecessor(flow, headerNode, members))
+            if (HasExternalPredecessor(flow, headerNodes, members))
             {
                 continue;
             }
@@ -239,8 +241,112 @@ internal static class CyclePlanner
                 region,
                 members,
                 backJumps,
-                NeedsLatch: false,
+                NeedsLatch: backJumps.Length >= 2 ||
+                            HasUngatedSplit(statements, region, members, backJumps, branchGates, holdsSplitPoint),
                 BranchGates: branchGates);
+        }
+    }
+
+    // A statement of the loop's range that is outside the cycle, has not passed a gate and holds a split point:
+    // the lanes that fall out of the loop there have left it in different passes
+    private static bool HasUngatedSplit(
+        SyntaxList<StatementSyntax> statements,
+        JumpRegion region,
+        ImmutableHashSet<FlowNode> members,
+        ImmutableArray<GotoStatementSyntax> backJumps,
+        ImmutableHashSet<StatementSyntax> branchGates,
+        Func<StatementSyntax, bool> holdsSplitPoint)
+    {
+        var scan = new UngatedScan(members, backJumps, branchGates, holdsSplitPoint);
+        return scan.InList(statements, region.First, region.Last);
+    }
+
+    private readonly record struct UngatedScan(
+        ImmutableHashSet<FlowNode> Members,
+        ImmutableArray<GotoStatementSyntax> BackJumps,
+        ImmutableHashSet<StatementSyntax> BranchGates,
+        Func<StatementSyntax, bool> HoldsSplitPoint)
+    {
+        // The statements after a gate statement of the list, and the gate statement itself, are past the gate
+        public bool InList(SyntaxList<StatementSyntax> list, int first, int last)
+        {
+            for (var i = first; i <= last; i++)
+            {
+                var statement = list[i];
+                if (BranchGates.Contains(statement))
+                {
+                    return false;
+                }
+
+                if (i > 0 &&
+                    !Members.Contains(StatementFlow.EntryOf(statement)) &&
+                    Members.Contains(StatementFlow.EntryOf(list[i - 1])) &&
+                    CyclePlan.HasBackJumpInside(BackJumps, list[i - 1]))
+                {
+                    return false;
+                }
+
+                if (InStatement(statement))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // asMember: the flow graph has one node for a chain of labels and its statement, so the statement of a label of
+        // the cycle is a member too
+        private bool InStatement(StatementSyntax statement, bool asMember = false)
+        {
+            if (BranchGates.Contains(statement))
+            {
+                return false;
+            }
+
+            switch (statement)
+            {
+                case BlockSyntax block:
+                    return InList(block.Statements, 0, block.Statements.Count - 1);
+                case CheckedStatementSyntax checkedStatement:
+                    return InStatement(checkedStatement.Block);
+                case UnsafeStatementSyntax unsafeStatement:
+                    return InStatement(unsafeStatement.Block);
+                case LabeledStatementSyntax labeled:
+                    return InStatement(labeled.Statement, asMember || Members.Contains(StatementFlow.EntryOf(labeled)));
+            }
+
+            if (!asMember && !Members.Contains(StatementFlow.EntryOf(statement)) && HoldsSplitPoint(statement))
+            {
+                return true;
+            }
+
+            switch (statement)
+            {
+                case IfStatementSyntax ifStatement:
+                    return InStatement(ifStatement.Statement) ||
+                           (ifStatement.Else is { } elseClause && InStatement(elseClause.Statement));
+                case WhileStatementSyntax whileStatement:
+                    return InStatement(whileStatement.Statement);
+                case DoStatementSyntax doStatement:
+                    return InStatement(doStatement.Statement);
+                case ForStatementSyntax forStatement:
+                    return InStatement(forStatement.Statement);
+                case CommonForEachStatementSyntax forEach:
+                    return InStatement(forEach.Statement);
+                case SwitchStatementSyntax switchStatement:
+                    foreach (var section in switchStatement.Sections)
+                    {
+                        if (InList(section.Statements, 0, section.Statements.Count - 1))
+                        {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                default:
+                    return false;
+            }
         }
     }
 
@@ -352,6 +458,26 @@ internal static class CyclePlanner
         }
 
         return true;
+    }
+
+    private static HashSet<FlowNode> CollectHeaderNodes(
+        SyntaxList<StatementSyntax> statements,
+        int first)
+    {
+        var headerNodes = new HashSet<FlowNode>
+        {
+            StatementFlow.EntryOf(statements[first])
+        };
+        var i = first;
+        while (i + 1 < statements.Count &&
+               JumpRegionPlanner.IsEmptyLabeledStatement(statements[i]) &&
+               statements[i + 1] is LabeledStatementSyntax)
+        {
+            i++;
+            headerNodes.Add(StatementFlow.EntryOf(statements[i]));
+        }
+
+        return headerNodes;
     }
 
     private static HashSet<LabeledStatementSyntax> CollectLabelGroup(
@@ -466,12 +592,12 @@ internal static class CyclePlanner
     // No non-header member has an incoming edge from outside the natural loop
     private static bool HasExternalPredecessor(
         StatementFlow flow,
-        FlowNode headerNode,
+        HashSet<FlowNode> headerNodes,
         ImmutableHashSet<FlowNode> members)
     {
         foreach (var member in members)
         {
-            if (member == headerNode)
+            if (headerNodes.Contains(member))
             {
                 continue;
             }
