@@ -75,6 +75,17 @@ public class GlobalCppNamesTests
     }
 
     [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void GetFunctionName_StaticAndInstanceOverloadsOnStruct_CarriesDistinctOrdinals()
+    {
+        var overloads = GetMethods("Functions.StaticAndInstanceOverload", "M");
+
+        Assert.Equal(2, overloads.Length);
+        Assert.Equal("__gsharp_fn_Functions__StaticAndInstanceOverload__M_o0", GlobalCppNames.GetFunctionName(overloads[0]));
+        Assert.Equal("__gsharp_fn_Functions__StaticAndInstanceOverload__M_o1", GlobalCppNames.GetFunctionName(overloads[1]));
+    }
+
+    [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void GetFunctionName_EncodedPath_DecodesBackToCsharpPath()
     {
