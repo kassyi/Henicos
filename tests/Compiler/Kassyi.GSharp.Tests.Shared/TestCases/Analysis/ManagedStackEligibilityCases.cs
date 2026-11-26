@@ -3,6 +3,11 @@ using Kassyi.GSharp.Core;
 
 namespace ManagedStackEligibilityCases;
 
+file struct IneligibleGroupValue
+{
+    public int V;
+}
+
 public ref struct CustomRefBuffer
 {
     public int Value;
@@ -183,6 +188,183 @@ public static partial class EligibilityKernels
         Gpu.SyncThreads();
         data[i] += 1;
     }
+
+    [GpuDeviceFunction]
+    private static void IneligibleGroupStep(int i)
+    {
+        var value = new IneligibleGroupValue { V = i };
+        Gpu.SyncThreads();
+        _ = value.V;
+    }
+
+    [GpuKernel]
+    public static void PassesIneligibleGroupKernel(int[] data)
+    {
+        Gpu.SyncThreads();
+        Gpu.ForUnroll(0, 2, IneligibleGroupStep);
+        data[ThreadIndex.X] += 1;
+    }
+
+    [GpuDeviceFunction]
+    public static void CallsIneligibleGroupHelper(int i)
+    {
+        Gpu.SyncThreads();
+        Gpu.ForUnroll(0, 2, IneligibleGroupStep);
+    }
+
+    [GpuDeviceFunction]
+    public static void IneligibleExtensionStep(this int[] data, int i)
+    {
+        var value = new IneligibleGroupValue { V = i };
+        Gpu.SyncThreads();
+        data[0] = value.V;
+    }
+
+    [GpuKernel]
+    public static void PassesIneligibleExtensionGroupKernel(int[] data)
+    {
+        Gpu.SyncThreads();
+        Gpu.ForUnroll(0, 2, data.IneligibleExtensionStep);
+    }
+
+    [GpuKernel]
+    public static void NameofIneligibleGroupKernel(int[] data)
+    {
+        Gpu.SyncThreads();
+        var name = nameof(IneligibleGroupStep);
+        data[ThreadIndex.X] = name.Length;
+    }
+
+    [GpuDeviceFunction]
+    public static void PassesInstanceGroupHelper(int i)
+    {
+        Gpu.SyncThreads();
+        var target = new InstanceEligibilityTarget();
+        Gpu.ForUnroll(0, 2, target.InstanceGroupWait);
+    }
+
+    [GpuDeviceFunction]
+    private static void SelfGroup(int i)
+    {
+        Gpu.SyncThreads();
+        Gpu.ForUnroll(0, 2, SelfGroup);
+    }
+
+    [GpuKernel]
+    public static void PassesSelfGroupKernel(int[] data)
+    {
+        Gpu.SyncThreads();
+        Gpu.ForUnroll(0, 2, SelfGroup);
+        data[ThreadIndex.X] += 1;
+    }
+
+    [GpuDeviceFunction]
+    private static void CycleA(int i)
+    {
+        Gpu.SyncThreads();
+        Gpu.ForUnroll(0, 2, CycleB);
+    }
+
+    [GpuDeviceFunction]
+    private static void CycleB(int i)
+    {
+        Gpu.SyncThreads();
+        CycleA(i);
+    }
+
+    [GpuKernel]
+    public static void PassesCycleKernel(int[] data)
+    {
+        Gpu.SyncThreads();
+        Gpu.ForUnroll(0, 2, CycleA);
+        data[ThreadIndex.X] += 1;
+    }
+
+    [GpuDeviceFunction]
+    private static void EligibleGenericStep<T>(int i)
+    {
+        Gpu.SyncThreads();
+        _ = i;
+    }
+
+    [GpuKernel]
+    public static void PassesEligibleGenericGroupKernel(int[] data)
+    {
+        Gpu.SyncThreads();
+        Gpu.ForUnroll(0, 2, EligibleGenericStep<int>);
+        data[ThreadIndex.X] += 1;
+    }
+
+    [GpuDeviceFunction]
+    private static void IneligibleGenericStep<T>(int i)
+    {
+        Gpu.SyncThreads();
+        Gpu.ForUnroll(0, 2, IneligibleGroupStep);
+    }
+
+    [GpuKernel]
+    public static void PassesIneligibleGenericGroupKernel(int[] data)
+    {
+        Gpu.SyncThreads();
+        Gpu.ForUnroll(0, 2, IneligibleGenericStep<int>);
+        data[ThreadIndex.X] += 1;
+    }
+
+    [GpuDeviceFunction]
+    private static partial void EligiblePartialStep(int i);
+
+    private static partial void EligiblePartialStep(int i)
+    {
+        Gpu.SyncThreads();
+        _ = i;
+    }
+
+    [GpuKernel]
+    public static void PassesEligiblePartialGroupKernel(int[] data)
+    {
+        Gpu.SyncThreads();
+        Gpu.ForUnroll(0, 2, EligiblePartialStep);
+        data[ThreadIndex.X] += 1;
+    }
+
+    [GpuDeviceFunction]
+    private static partial void IneligiblePartialStep(int i);
+
+    private static partial void IneligiblePartialStep(int i)
+    {
+        Gpu.SyncThreads();
+        Gpu.ForUnroll(0, 2, IneligibleGroupStep);
+    }
+
+    [GpuKernel]
+    public static void PassesIneligiblePartialGroupKernel(int[] data)
+    {
+        Gpu.SyncThreads();
+        Gpu.ForUnroll(0, 2, IneligiblePartialStep);
+        data[ThreadIndex.X] += 1;
+    }
+}
+
+[SkipSnapshotConsistency("Input for ManagedStackEligibilityTests")]
+public static partial class UserDefinedNameofKernels
+{
+    private static void nameof(Action<int> step) => step(0);
+
+    [GpuDeviceFunction]
+    private static void IneligibleStep(int i)
+    {
+        var value = new IneligibleGroupValue { V = i };
+        Gpu.SyncThreads();
+        _ = value.V;
+    }
+
+    [GpuKernel]
+    public static void CallsUserNameofWithIneligibleGroupKernel(int[] data)
+    {
+        Gpu.SyncThreads();
+        nameof(IneligibleStep);
+        data[ThreadIndex.X] += 1;
+    }
 }
 
 [SkipSnapshotConsistency("Input for ManagedStackEligibilityTests")]
@@ -208,6 +390,13 @@ public partial class InstanceEligibilityTarget
     {
         Gpu.SyncThreads();
         return value + 1;
+    }
+
+    [GpuDeviceFunction]
+    public void InstanceGroupWait(int i)
+    {
+        Gpu.SyncThreads();
+        _ = i;
     }
 }
 

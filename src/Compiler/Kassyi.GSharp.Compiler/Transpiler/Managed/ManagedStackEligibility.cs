@@ -11,12 +11,36 @@ internal static class ManagedStackEligibility
     private static readonly PerCompilationSymbolCache<IMethodSymbol, bool> s_functions = new();
 
     /// <summary>Whether the managed path can run <paramref name="function"/> on the stack of its GPU thread.</summary>
-    public static bool IsStackFunction(IMethodSymbol function, Compilation compilation)
+    public static bool IsStackFunction(IMethodSymbol function, Compilation compilation) =>
+        IsStackFunction(function, compilation, new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default));
+
+    private static bool IsStackFunction(IMethodSymbol function, Compilation compilation, HashSet<IMethodSymbol> visiting)
     {
         var definition = (function.ReducedFrom ?? function).OriginalDefinition;
         definition = definition.PartialDefinitionPart ?? definition;
         var cache = s_functions.For(compilation);
-        return cache.GetOrAdd(definition, m => ComputeIsStackFunction(m, compilation));
+        if (cache.TryGetValue(definition, out var cached))
+        {
+            return cached;
+        }
+
+        if (!visiting.Add(definition))
+        {
+            return false;
+        }
+
+        bool result;
+        try
+        {
+            result = ComputeIsStackFunction(definition, compilation, visiting);
+        }
+        finally
+        {
+            visiting.Remove(definition);
+        }
+
+        cache.TryAdd(definition, result);
+        return result;
     }
 
     /// <summary>Whether the managed path can run <paramref name="kernel"/> with one stack per GPU thread.</summary>
@@ -75,9 +99,16 @@ internal static class ManagedStackEligibility
             return false;
         }
 
-        return SuspensionAnalysis.GetSuspendingCallees(body, compilation)
-            .AsStackEnumerable()
-            .All(compilation, static (callee, comp) => IsStackFunction(callee, comp));
+        foreach (var (callee, _) in
+                 SuspensionAnalysis.GetReferencedSuspendingFunctions(body, compilation, semanticModel))
+        {
+            if (!IsStackFunction(callee, compilation))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -118,7 +149,8 @@ internal static class ManagedStackEligibility
         return null;
     }
 
-    private static bool ComputeIsStackFunction(IMethodSymbol function, Compilation compilation)
+    private static bool ComputeIsStackFunction(IMethodSymbol function, Compilation compilation,
+        HashSet<IMethodSymbol> visiting)
     {
         if (!SuspensionAnalysis.TryGetDeviceFunctionBody(function, compilation, out var declaration) ||
             declaration.GetBodyNode() is not { } body)
@@ -142,8 +174,16 @@ internal static class ManagedStackEligibility
             return false;
         }
 
-        return SuspensionAnalysis.GetSuspendingCallees(body, compilation)
-            .AsStackEnumerable()
-            .All(compilation, static (callee, comp) => IsStackFunction(callee, comp));
+        var semanticModel = compilation.GetCachedSemanticModel(declaration.SyntaxTree);
+        foreach (var (callee, _) in
+                 SuspensionAnalysis.GetReferencedSuspendingFunctions(body, compilation, semanticModel))
+        {
+            if (!IsStackFunction(callee, compilation, visiting))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

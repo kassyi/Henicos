@@ -45,7 +45,8 @@ internal sealed class CallTargetRule :
     // A method group named with its type or receiver (U.F)
     public void Analyze(MemberAccessExpressionSyntax node, ref ValidationContext context)
     {
-        if (context.SemanticModel.GetSymbol(node) is IMethodSymbol called && CallTargetClassifier.IsMethodGroup(node))
+        if (context.SemanticModel.GetSymbol(node) is IMethodSymbol called &&
+            MethodGroupReference.Is(node, context.SemanticModel))
         {
             Report(node, called, ref context, reportsUnsupportedIntrinsic: false);
         }
@@ -59,7 +60,8 @@ internal sealed class CallTargetRule :
             return;
         }
 
-        if (context.SemanticModel.GetSymbol(node) is IMethodSymbol called && CallTargetClassifier.IsMethodGroup(node))
+        if (context.SemanticModel.GetSymbol(node) is IMethodSymbol called &&
+            MethodGroupReference.Is(node, context.SemanticModel))
         {
             Report(node, called, ref context, reportsUnsupportedIntrinsic: false);
         }

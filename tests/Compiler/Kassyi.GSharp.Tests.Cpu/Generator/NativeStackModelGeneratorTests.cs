@@ -205,6 +205,26 @@ public class NativeStackModelGeneratorTests
         Assert.Contains("so it cannot be called in a method of a struct", combined, StringComparison.Ordinal);
     }
 
+    // A device function that passes a warp-collective-reaching device function as a method group cannot pass
+    // __gsharp_warp_frame, so it stays on the state machine without emitting a native stack overload signature
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void MethodGroupToWarpCollective_StackModelBuild_OmitsNativeStackOverload()
+    {
+        var source = RoslynTestUtility.ReadTestCase("Generators/ManagedStackMethodGroupFallbackCases.cs");
+        var compilation = RoslynTestUtility.CreateCompilation(source).WithAssemblyName("NativeWarpGroupStackTest");
+        var (driver, _, _) = GeneratorTestRunner.RunGenerator(compilation, "Cpu",
+            new Dictionary<string, string> { ["build_property.GSharpNativeBarrierModel"] = "Stack" });
+
+        var deviceCode = driver.GetRunResult().GeneratedTrees
+            .Single(static t => Path.GetFileName(t.FilePath) == "GSharpSharedCpuDeviceCode.g.cs")
+            .GetText().ToString();
+        const string InnerStepName =
+            "__gsharp_fn_ManagedStackMethodGroupFallbackCases__MethodGroupFallbackKernels__InnerStep";
+        Assert.Contains($"inline bool {InnerStepName}(", deviceCode, StringComparison.Ordinal);
+        Assert.DoesNotContain($"inline void {InnerStepName}(", deviceCode, StringComparison.Ordinal);
+    }
+
     private static string GetPreludeText(GeneratorDriverRunResult result) =>
         result.GeneratedTrees
             .Single(static t => Path.GetFileName(t.FilePath) == "GSharpSharedCpuPrelude.g.cs")
