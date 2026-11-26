@@ -13,6 +13,7 @@ import {
   type ShareMode,
 } from "../job-queue/plugin-api.ts";
 import { selectsCategory } from "../job-queue/plugins/dotnet/plugin.ts";
+import { MutatePhaseDirectories } from "./budgets.ts";
 
 /** The options of the henicos plugin entry that the share rules read (job-queue.config.json). */
 export interface ShareOptions {
@@ -75,9 +76,229 @@ function excludesCategories(filter: string, categories: readonly string[]): bool
   return categories.every((name) => terms.has(`category!=${name.toLowerCase()}`));
 }
 
+const WindowsPath = /^[A-Za-z]:[\\/]/;
+const DirectoryChanges = new Set(["cd", "chdir", "set-location", "sl", "push-location", "pushd"]);
+const DirectoryReturns = new Set(["pop-location", "popd"]);
+const Pushes = new Set(["push-location", "pushd"]);
+const DisallowedStrykerFlag =
+  /^(?:-f|--config-file|-p|--project|-tp|--test-project|--test-projects|-s|--solution|--filter|-t|--test-runner)(?:[:=].*)?$/i;
+
+function pathStyle(base: string): typeof path.win32 {
+  return WindowsPath.test(base) ? path.win32 : path.posix;
+}
+
+function absoluteOf(argument: string, base: string): string {
+  const style = pathStyle(base);
+  const gitBash = style === path.win32 ? /^\/(?:mnt\/)?([A-Za-z])\/(.*)$/.exec(argument) : null;
+  const text = gitBash !== null ? `${gitBash[1]}:/${gitBash[2]}` : argument;
+  return style.resolve(base, text);
+}
+
+function resolveRealPath(target: string, style: typeof path.win32): string | null {
+  const resolved = style.resolve(target);
+  if (style === path.posix && process.platform === "win32") {
+    return resolved;
+  }
+  const tail: string[] = [];
+  let cur = resolved;
+  for (;;) {
+    try {
+      const real = fs.realpathSync.native(cur);
+      return tail.length === 0 ? real : style.join(real, ...tail);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+        return null;
+      }
+      try {
+        // Entry exists at `cur` (e.g. a dangling symlink or NTFS junction) whose target cannot be resolved.
+        fs.lstatSync(cur);
+        return null;
+      } catch (lstatError) {
+        if ((lstatError as NodeJS.ErrnoException).code !== "ENOENT") {
+          return null;
+        }
+      }
+      const parent = style.dirname(cur);
+      if (parent === cur) {
+        return resolved;
+      }
+      tail.unshift(style.basename(cur));
+      cur = parent;
+    }
+  }
+}
+
+function samePath(a: string, b: string): boolean {
+  if (a === "" || b === "") {
+    return false;
+  }
+  const style = pathStyle(a);
+  const resolvedA = resolveRealPath(a, style);
+  const resolvedB = resolveRealPath(b, pathStyle(b));
+  if (resolvedA === null || resolvedB === null || pathStyle(resolvedA) !== pathStyle(resolvedB)) {
+    return false;
+  }
+  return style === path.win32 ? resolvedA.toLowerCase() === resolvedB.toLowerCase() : resolvedA === resolvedB;
+}
+
+function isInsideDir(root: string, dir: string): boolean {
+  if (root === "" || dir === "") {
+    return false;
+  }
+  const style = pathStyle(root);
+  const resolvedRoot = resolveRealPath(root, style);
+  const resolvedDir = resolveRealPath(dir, pathStyle(dir));
+  if (resolvedRoot === null || resolvedDir === null || pathStyle(resolvedRoot) !== pathStyle(resolvedDir)) {
+    return false;
+  }
+  const lhs = style === path.win32 ? resolvedRoot.toLowerCase() : resolvedRoot;
+  const rhs = style === path.win32 ? resolvedDir.toLowerCase() : resolvedDir;
+  const rel = style.relative(lhs, rhs);
+  return rel === "" || (rel !== ".." && !rel.startsWith(`..${style.sep}`) && !style.isAbsolute(rel));
+}
+
+function isPlainObject(value: unknown): value is Readonly<Record<string, unknown>> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function hasDisallowedStrykerArgs(args: readonly string[]): boolean {
+  for (const arg of args) {
+    if (arg === "") {
+      continue;
+    }
+    const lower = arg.toLowerCase();
+    if (
+      arg.startsWith("@") ||
+      lower.includes("testcasefilter") ||
+      lower.includes("test-case-filter") ||
+      DisallowedStrykerFlag.test(arg)
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function isMutateScript(word: string | undefined, stepCwd: string, root: string): boolean {
+  if (word === undefined || word === "" || stepCwd === "" || root === "") {
+    return false;
+  }
+  const realCwd = resolveRealPath(stepCwd, pathStyle(stepCwd));
+  if (realCwd === null) {
+    return false;
+  }
+  const target = absoluteOf(word, realCwd);
+  const expected = pathStyle(root).resolve(root, "scripts/human/mutate.js");
+  return isInsideDir(root, target) && samePath(target, expected);
+}
+
+const UnsafeSinceArg = /[\s"'\\$`;&|<>()]/;
+
+function parseJustMutate(words: readonly string[]): string | null {
+  const phase = words.length === 2 ? "gpumath" : (words[2] ?? "");
+  const since = words[3];
+  if (since !== undefined && (since.startsWith("-") || since.startsWith("@") || UnsafeSinceArg.test(since))) {
+    return null;
+  }
+  if (hasDisallowedStrykerArgs(words.slice(4))) {
+    return null;
+  }
+  return phase;
+}
+
+function parseNodeMutate(args: readonly string[]): string | null {
+  let phase = "gpumath";
+  let strykerStart = -1;
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i] ?? "";
+    if (arg === "--") {
+      strykerStart = i + 1;
+      break;
+    }
+    if (arg === "--help" || arg === "-h" || arg === "--dry-run") {
+      continue;
+    }
+    if (arg === "--phase" || arg === "--since") {
+      const val = args[++i];
+      if (val === undefined) {
+        return null;
+      }
+      if (arg === "--phase") {
+        phase = val;
+      }
+    } else if (arg.startsWith("--phase=")) {
+      phase = arg.slice("--phase=".length);
+    } else if (arg.startsWith("--since=")) {
+      continue;
+    } else {
+      return null;
+    }
+  }
+  if (strykerStart >= 0 && hasDisallowedStrykerArgs(args.slice(strykerStart))) {
+    return null;
+  }
+  return phase;
+}
+
+function strykerConfigVeto(
+  phase: string,
+  options: ShareOptions,
+  stepCwd: string,
+  root: string,
+  isJustMutate: boolean,
+): string | null {
+  if (isJustMutate && !isInsideDir(root, stepCwd)) {
+    return "filter-unreadable";
+  }
+  if (root === "" || !Object.hasOwn(MutatePhaseDirectories, phase)) {
+    return "filter-unreadable";
+  }
+  const phaseDir = MutatePhaseDirectories[phase] as string;
+  const configPath = pathStyle(root).resolve(root, phaseDir, "stryker-config.json");
+  if (!isInsideDir(root, configPath)) {
+    return "filter-unreadable";
+  }
+  let parsed: unknown;
+  try {
+    const raw = fs.readFileSync(configPath, "utf8").replace(/^\uFEFF/, "");
+    parsed = JSON.parse(raw);
+  } catch {
+    return "filter-unreadable";
+  }
+  if (!isPlainObject(parsed)) {
+    return "filter-unreadable";
+  }
+  const config = parsed["stryker-config"];
+  if (!isPlainObject(config)) {
+    return "filter-unreadable";
+  }
+  const rawFilter = config["test-case-filter"];
+  if (rawFilter === undefined) {
+    return "no-filter";
+  }
+  if (typeof rawFilter !== "string") {
+    return "filter-unreadable";
+  }
+  if (rawFilter.trim() === "") {
+    return "no-filter";
+  }
+  if (!excludesCategories(rawFilter, options.exclusiveCategories)) {
+    return "filter-categories";
+  }
+  if (
+    selectsCategory(
+      rawFilter.toLowerCase(),
+      options.exclusiveCategories.map((name) => name.toLowerCase()),
+    )
+  ) {
+    return "exclusive-category";
+  }
+  return null;
+}
+
 /**
  * Reason a single step of work cannot share the GPU, or null when it may share. Single source of truth for
- * step-level shareability (`isSharedStep` delegates here).
+ * step-level shareability.
  *
  * `dotnet test` of a project or solution (not a .dll or .exe passed directly) needs a readable --filter that keeps
  * every exclusive category out; without one a test run also runs Stress and Benchmark, which need the GPU alone.
@@ -86,8 +307,12 @@ function excludesCategories(filter: string, categories: readonly string[]): bool
  * `{{queue}} --gpu -- dotnet test ... --filter "...&Category!=Stress&Category!=Benchmark&Category!=GpuTrap"`, a shared
  * test run by the rule above (the henicos checks read the justfile to keep it so). `just <recipe>` alone, with no just
  * option or assignment before the recipe; a --filter among its arguments must keep the categories out as well.
+ *
+ * `just mutate [<phase>]` and `node scripts/human/mutate.js` read `<phaseDir>/stryker-config.json` in the worktree
+ * and share when `stryker-config.test-case-filter` excludes all exclusive categories without `|`, without selecting
+ * an exclusive category, and without CLI config/filter/project overrides.
  */
-function stepShareVeto(step: ReadStep, options: ShareOptions): string | null {
+function stepShareVeto(step: ReadStep, options: ShareOptions, stepCwd: string, root: string): string | null {
   const words = step.words;
   const program = programOf(words[0] ?? "");
   if (program === "dotnet" && words[1] === "test") {
@@ -107,6 +332,10 @@ function stepShareVeto(step: ReadStep, options: ShareOptions): string | null {
       : "filter-categories";
   }
   if (program === "just") {
+    if (words[1] === "mutate") {
+      const phase = parseJustMutate(words);
+      return phase === null ? "filter-unreadable" : strykerConfigVeto(phase, options, stepCwd, root, true);
+    }
     if (!options.sharedRecipes.includes(words[1] ?? "")) {
       return "exclusive-recipe";
     }
@@ -118,11 +347,11 @@ function stepShareVeto(step: ReadStep, options: ShareOptions): string | null {
       ? null
       : "filter-categories";
   }
+  if (program === "node" && isMutateScript(words[1], stepCwd, root)) {
+    const phase = parseNodeMutate(words.slice(2));
+    return phase === null ? "filter-unreadable" : strykerConfigVeto(phase, options, stepCwd, root, false);
+  }
   return "not-test-command";
-}
-
-function isSharedStep(step: ReadStep, options: ShareOptions): boolean {
-  return stepShareVeto(step, options) === null;
 }
 
 /**
@@ -193,6 +422,40 @@ function stripLeadingEnvPrefixes(command: string): string {
   }
 }
 
+function parseDirectoryTarget(words: readonly string[], shell: ClientContext["shell"]): string | null {
+  const program = programOf(words[0] ?? "");
+  const args = words.slice(1);
+  let target: string | undefined;
+  if (args.length === 1) {
+    target = args[0];
+  } else if (args.length === 2) {
+    const flag = (args[0] ?? "").toLowerCase();
+    if (
+      flag === "-path" ||
+      flag === "-literalpath" ||
+      (shell === "cmd" && (program === "cd" || program === "chdir") && flag === "/d")
+    ) {
+      target = args[1];
+    } else {
+      return null;
+    }
+  } else {
+    return null;
+  }
+  if (
+    target === undefined ||
+    target === "" ||
+    target.startsWith("-") ||
+    target.startsWith("+") ||
+    target.startsWith("~") ||
+    (target.includes(":") && !WindowsPath.test(target)) ||
+    (shell === "cmd" && target.toLowerCase() === "/d")
+  ) {
+    return null;
+  }
+  return target;
+}
+
 /**
  * The share decision and short reason token of a --gpu command: "shared" when every rule holds, "exclusive" when one
  * fails (a veto: checkShare is not asked), undefined (no opinion) when the plugin options are missing or malformed and
@@ -215,15 +478,49 @@ export function shareDecision(command: string, context: ClientContext): ShareDec
   if (line.piped) {
     return { share: "exclusive", reason: "piped" };
   }
-  // 2. Every step that does work is a dotnet test whose filter keeps the exclusive categories out or a shared recipe,
-  // there is one, and none expands a variable ($ outside single quotes; %...% of cmd): its words are not what runs
-  const work = line.steps.filter((step) => !isTrivialStep(step));
-  if (work.length === 0) {
+  // 2. Every step that does work is a dotnet test whose filter keeps the exclusive categories out, a shared recipe,
+  // or a mutate run whose config excludes them; there is one, and none expands a variable ($ or %...% of cmd)
+  const root = context.worktree !== "" ? context.worktree : context.cwd;
+  let stepCwd = context.cwd !== "" ? context.cwd : context.worktree;
+  const pushed: string[] = [];
+  const workSteps: { step: ReadStep; cwd: string }[] = [];
+  for (const step of line.steps) {
+    const program = programOf(step.words[0] ?? "");
+    if (DirectoryChanges.has(program)) {
+      const target = parseDirectoryTarget(step.words, context.shell);
+      if (target === null) {
+        stepCwd = "";
+        pushed.length = 0;
+      } else {
+        if (Pushes.has(program)) {
+          pushed.push(stepCwd);
+        }
+        if (stepCwd !== "") {
+          stepCwd = absoluteOf(target, stepCwd);
+        } else {
+          const style = pathStyle(root !== "" ? root : target);
+          const gitBash = style === path.win32 ? /^\/(?:mnt\/)?([A-Za-z])\/(.*)$/.exec(target) : null;
+          const text = gitBash !== null ? `${gitBash[1]}:/${gitBash[2]}` : target;
+          stepCwd = style.isAbsolute(text) ? style.resolve(text) : "";
+        }
+      }
+    } else if (DirectoryReturns.has(program)) {
+      if (step.words.length > 1) {
+        stepCwd = "";
+        pushed.length = 0;
+      } else if (pushed.length > 0) {
+        stepCwd = pushed.pop() ?? "";
+      }
+    } else if (!isTrivialStep(step)) {
+      workSteps.push({ step, cwd: stepCwd });
+    }
+  }
+  if (workSteps.length === 0) {
     return { share: "exclusive", reason: "no-work" };
   }
   if (
     line.steps.some((step, i) => isHidden(step, line.expands[i] === true)) ||
-    (context.shell === "cmd" && (command.includes("%") || hasCmdSingleQuotedMeta(command)))
+    (context.shell === "cmd" && (command.includes("%") || hasCmdUnsafeMeta(command)))
   ) {
     return { share: "exclusive", reason: "hidden" };
   }
@@ -231,16 +528,15 @@ export function shareDecision(command: string, context: ClientContext): ShareDec
   if (usesExclusiveEnv(command, line.steps, options, context)) {
     return { share: "exclusive", reason: "exclusive-env" };
   }
-  const nonShared = work.find((step) => !isSharedStep(step, options));
-  if (nonShared !== undefined) {
-    const veto = stepShareVeto(nonShared, options);
-    if (veto === "filter-categories") {
-      const stripped = stripLeadingEnvPrefixes(command);
-      if (stripped !== command && nameFilterCheck(stripped, context) !== null) {
-        return { share: "exclusive", reason: "env-prefix" };
-      }
-    }
+  for (const { step, cwd } of workSteps) {
+    const veto = stepShareVeto(step, options, cwd, root);
     if (veto !== null) {
+      if (veto === "filter-categories") {
+        const stripped = stripLeadingEnvPrefixes(command);
+        if (stripped !== command && nameFilterCheck(stripped, context) !== null) {
+          return { share: "exclusive", reason: "env-prefix" };
+        }
+      }
       return { share: "exclusive", reason: veto };
     }
   }
@@ -255,7 +551,11 @@ export function shareDecision(command: string, context: ClientContext): ShareDec
     return { share: "exclusive", reason: "exclusive-category" };
   }
   // 5. Shared: via a shared recipe or explicit category exclusions
-  const reason = work.some((step) => programOf(step.words[0] ?? "") === "just") ? "shared-recipe" : "categories";
+  const reason = workSteps.some(
+    ({ step }) => programOf(step.words[0] ?? "") === "just" && options.sharedRecipes.includes(step.words[1] ?? ""),
+  )
+    ? "shared-recipe"
+    : "categories";
   return { share: "shared", reason };
 }
 
@@ -315,10 +615,11 @@ const StartsWithTest = new RegExp(String.raw`^\s*(?:${AllowedEnvPrefixPattern})?
 const AllowedEnvPrefixNames = new Set(["diffengine_disabled", "dotnet_cli_ui_language"]);
 
 /**
- * In cmd.exe, single quotes do not quote shell metacharacters (including `"`, `(` and `)`) and CR/LF truncates the
+ * In cmd.exe, single quotes do not quote shell metacharacters (including `"`, `(` and `)`), `^` outside double
+ * quotes escapes the following character (including `-`, `@`, `"` and line breaks), and CR/LF truncates the
  * command even inside quotes, unlike readCommandLine's shell-neutral quote pass.
  */
-function hasCmdSingleQuotedMeta(command: string): boolean {
+function hasCmdUnsafeMeta(command: string): boolean {
   let quote = "";
   for (let i = 0; i < command.length; i++) {
     const ch = command.charAt(i);
@@ -333,6 +634,8 @@ function hasCmdSingleQuotedMeta(command: string): boolean {
       }
     } else if (ch === '"' || ch === "'") {
       quote = ch;
+    } else if (ch === "^") {
+      return true;
     }
   }
   return false;
@@ -431,7 +734,7 @@ export function nameFilterCheck(
       i < stepIndex ? !isAllowedEnvStep(each) : i > stepIndex && programOf(each.words[0] ?? "") !== "echo",
     ) ||
     line.steps.some((each, i) => isHidden(each, line.expands[i] === true)) ||
-    (context.shell === "cmd" && (command.includes("%") || hasCmdSingleQuotedMeta(command))) ||
+    (context.shell === "cmd" && (command.includes("%") || hasCmdUnsafeMeta(command))) ||
     step.words[1] !== "test" ||
     step.words.some((word) => GlobOrBrace.test(word)) ||
     usesExclusiveEnv(command, line.steps, options, context)

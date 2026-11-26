@@ -151,6 +151,12 @@ const MutatePhaseProjects: Readonly<Record<string, string>> = {
   "compiler-cuda": "Kassyi.GSharp.Tests.Cuda",
 };
 
+export const MutatePhaseDirectories: Readonly<Record<string, string>> = {
+  gpumath: "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests",
+  compiler: "tests/Compiler/Kassyi.GSharp.Tests.Cpu",
+  "compiler-cuda": "tests/Compiler/Kassyi.GSharp.Tests.Cuda",
+};
+
 export function implicitProjectOfStep(words: readonly string[]): string | null {
   const prog = programOf(words[0] ?? "");
   if (prog === "just") {

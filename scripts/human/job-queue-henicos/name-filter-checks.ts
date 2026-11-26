@@ -276,6 +276,11 @@ export async function checkNameFilter(assert: AssertModule): Promise<void> {
     { project: "tests/X", filter: "Name~Foo" },
     "cmd reads plain dotnet test without env prefix",
   );
+  assert.deepStrictEqual(
+    nameFilterCheck(`${Plain} "Name~Foo^"`, cmdContext, Entries),
+    { project: "tests/X", filter: "Name~Foo^" },
+    "cmd allows caret inside double quotes",
+  );
   for (const cmdRejected of [
     `$env:DiffEngine_Disabled='a&hostname'; ${Plain} "Name~Foo"`,
     `DiffEngine_Disabled='a&hostname' ${Plain} "Name~Foo"`,
@@ -288,6 +293,9 @@ export async function checkNameFilter(assert: AssertModule): Promise<void> {
     `dotnet test tests/X --no-build --logger 'a\rb' --filter "Name~Foo"`,
     `dotnet test tests/X --no-build --logger "a\nb" --filter "Name~Foo"`,
     `dotnet test tests/X --no-build --logger "a\rb" --filter "Name~Foo"`,
+    `${Plain} "Name~Foo" ^-v q`,
+    `${Plain} "Name~Foo" ^-p:VSTestTestCaseFilter=Bar`,
+    `dotnet test tests/X --no-build ^--filter "Name~Foo"`,
   ]) {
     assert.strictEqual(
       nameFilterCheck(cmdRejected, cmdContext, Entries),

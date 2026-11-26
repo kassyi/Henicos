@@ -16,7 +16,7 @@ import { quietly } from "../job-queue/self-test-client.ts";
 import { removeDirectory } from "../job-queue/self-test-support.ts";
 import { shortCommand } from "../job-queue/view.ts";
 import { selectsCategory } from "../job-queue/plugins/dotnet/plugin.ts";
-import { cpuOnlyTestProjects, parseBudgets, testMemoryMb } from "./budgets.ts";
+import { MutatePhaseDirectories, cpuOnlyTestProjects, parseBudgets, testMemoryMb } from "./budgets.ts";
 import { checkNameFilter } from "./name-filter-checks.ts";
 import { checkHenicosOffloadSources } from "./offload-source-checks.ts";
 import {
@@ -634,7 +634,7 @@ function checkShareRules(assert: AssertModule, host: PluginHost): void {
       "env-prefix",
       "cmd rejects bash env prefix as env-prefix",
     );
-    // Challenger fixes (a) & (b): cmd quote desync ('x"' ", '(a)') and quoted CR/LF truncation ('a\nb', "a\nb")
+    // Challenger fixes (a) & (b): cmd quote desync ('x"' ", '(a)'), unquoted ^ escapes, and quoted CR/LF truncation
     for (const cmdHidden of [
       `dotnet test tests/X/X.csproj --no-build --filter "${Kept}" && echo 'x"' " & calc & "`,
       `dotnet test tests/X/X.csproj --no-build --filter "Name~Foo" && echo 'x"' " & calc & "`,
@@ -644,6 +644,10 @@ function checkShareRules(assert: AssertModule, host: PluginHost): void {
       `dotnet test tests/X/X.csproj --no-build --logger "a\nb" --filter "${Kept}"`,
       `dotnet test tests/X/X.csproj --no-build --logger "a\rb" --filter "${Kept}"`,
       'dotnet test tests/X/X.csproj --no-build --logger "a\nb" --filter "Name~Foo"',
+      `dotnet test tests/X/X.csproj --no-build --filter "${Kept}" ^-p:VSTestTestCaseFilter=Category=Stress`,
+      `dotnet test tests/X/X.csproj --no-build --filter "Name~Foo" ^-v q`,
+      `dotnet test tests/X/X.csproj --no-build ^--filter "Name~Foo"`,
+      `dotnet test tests/X/X.csproj --no-build --filter "Name~Foo" && echo ^" & calc ^"`,
     ]) {
       const classified = host.classify(cmdHidden, Gpu, cmd);
       assert.deepStrictEqual(
@@ -802,6 +806,394 @@ function checkSharedRecipeFilters(assert: AssertModule, host: PluginHost, config
   }
 }
 
+/** Fixture checks for `just mutate` / `node scripts/human/mutate.js` GPU share classification. */
+function checkMutateShareRules(assert: AssertModule, host: PluginHost): void {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-henicos-mutate-"));
+  try {
+    const base = fs.realpathSync.native(dir);
+    const wt = path.join(base, "wt");
+    const wtEmpty = path.join(base, "wt-empty");
+    const cfg = path.join(base, "cfg");
+    fs.mkdirSync(path.join(wt, "tests"), { recursive: true });
+    fs.mkdirSync(wtEmpty, { recursive: true });
+    fs.mkdirSync(cfg, { recursive: true });
+
+    const writeConfig = (rootDir: string, phase: string, content: string): void => {
+      const rel = MutatePhaseDirectories[phase];
+      assert.ok(rel !== undefined, `unknown fixture phase: ${phase}`);
+      const target = path.join(rootDir, rel);
+      fs.mkdirSync(target, { recursive: true });
+      fs.writeFileSync(path.join(target, "stryker-config.json"), content, "utf8");
+    };
+
+    const sharedCfg = JSON.stringify({
+      "stryker-config": {
+        "test-case-filter": `FullyQualifiedName~Stdlib&${Kept}`,
+      },
+    });
+    writeConfig(wt, "gpumath", sharedCfg);
+    writeConfig(cfg, "gpumath", sharedCfg);
+
+    const repoOptions = {
+      exclusiveCategories: ["Stress", "Benchmark", "GpuTrap"],
+      exclusiveEnv: ["GSHARP_CUDA_TRAP_TESTS"],
+      sharedRecipes: ["test", "test-coverage", "test-differential-cuda"],
+    };
+    const ctx = contextFor(wt, cfg);
+    const assertDecision = (
+      command: string,
+      expectedShare: ShareMode,
+      expectedReason: string,
+      overrideCtx: BaseClientContext = ctx,
+    ): void => {
+      const classified = host.classify(command, Gpu, overrideCtx);
+      assert.deepStrictEqual(
+        [classified.share, classified.shareReason],
+        [expectedShare, expectedReason],
+        `classify mutate share for: ${command}`,
+      );
+      const decision = shareDecision(command, { ...overrideCtx, options: repoOptions });
+      assert.deepStrictEqual(
+        [decision?.share, decision?.reason],
+        [expectedShare, expectedReason],
+        `shareDecision mutate share for: ${command}`,
+      );
+    };
+
+    const sharedCommands = [
+      "just mutate",
+      "just mutate gpumath",
+      "just mutate gpumath main",
+      "just mutate gpumath HEAD^",
+      'just mutate gpumath "" -m "**/Layout/**/*.cs"',
+      'just mutate gpumath "" -c 4',
+      "node scripts/human/mutate.js",
+      "node scripts/human/mutate.js --phase gpumath",
+      "node scripts/human/mutate.js --phase=gpumath --since=main",
+      "node scripts/human/mutate.js --since main --phase gpumath --dry-run",
+      'node scripts/human/mutate.js --phase gpumath -- -c 4 -m "**/Foo.cs"',
+      "node scripts/human/mutate.js --phase gpumath -- --dry-run",
+      "node ./scripts/human/mutate.js --phase gpumath",
+      "$env:DiffEngine_Disabled='true'; just mutate gpumath",
+      "just mutate gpumath && echo done",
+      "cd tests && node ../scripts/human/mutate.js --phase gpumath",
+      "Push-Location tests; Pop-Location; node scripts/human/mutate.js --phase gpumath",
+      "Set-Location tests; just mutate gpumath; Pop-Location",
+      "Set-Location -Path tests; node ../scripts/human/mutate.js --phase gpumath",
+    ];
+    if (process.platform === "win32") {
+      sharedCommands.push("node scripts\\human\\mutate.js --phase gpumath");
+    }
+    for (const command of sharedCommands) {
+      assertDecision(command, "shared", "categories");
+    }
+    const subCwdCtx = { ...ctx, cwd: path.join(wt, "tests") };
+    assertDecision("just mutate gpumath", "shared", "categories", subCwdCtx);
+    assertDecision("node ../scripts/human/mutate.js --phase gpumath", "shared", "categories", subCwdCtx);
+
+    writeConfig(
+      wt,
+      "gpumath",
+      `\uFEFF${JSON.stringify({
+        "stryker-config": {
+          "test-case-filter": "category != gputrap & Category!=STRESS & category!=benchmark",
+        },
+      })}`,
+    );
+    assertDecision("just mutate gpumath", "shared", "categories");
+
+    // Category filter vetoes and stryker-config parsing failures
+    const filterFailureCases: readonly [string, ShareMode, string][] = [
+      [
+        JSON.stringify({
+          "stryker-config": { "test-case-filter": "FullyQualifiedName~Stdlib&Category!=Stress&Category!=Benchmark" },
+        }),
+        "exclusive",
+        "filter-categories",
+      ],
+      [
+        JSON.stringify({
+          "stryker-config": { "test-case-filter": "FullyQualifiedName~Stdlib&Category!=Stress&Category!=GpuTrap" },
+        }),
+        "exclusive",
+        "filter-categories",
+      ],
+      [
+        JSON.stringify({
+          "stryker-config": { "test-case-filter": "FullyQualifiedName~Stdlib&Category!=Benchmark&Category!=GpuTrap" },
+        }),
+        "exclusive",
+        "filter-categories",
+      ],
+      [
+        JSON.stringify({ "stryker-config": { "test-case-filter": `(${Kept})|Name~Foo` } }),
+        "exclusive",
+        "filter-categories",
+      ],
+      [
+        JSON.stringify({ "stryker-config": { "test-case-filter": "FullyQualifiedName~Stdlib" } }),
+        "exclusive",
+        "filter-categories",
+      ],
+      [
+        JSON.stringify({ "stryker-config": { "test-case-filter": `${Kept}&Category=Stress` } }),
+        "exclusive",
+        "exclusive-category",
+      ],
+      ["{broken", "exclusive", "filter-unreadable"],
+      ["[]", "exclusive", "filter-unreadable"],
+      ["null", "exclusive", "filter-unreadable"],
+      ["{}", "exclusive", "filter-unreadable"],
+      ['{"stryker-config":[]}', "exclusive", "filter-unreadable"],
+      ['{"stryker-config":{"test-case-filter":123}}', "exclusive", "filter-unreadable"],
+      ['{"stryker-config":{}}', "exclusive", "no-filter"],
+      ['{"stryker-config":{"test-case-filter":"  "}}', "exclusive", "no-filter"],
+    ];
+    for (const [content, expectedShare, expectedReason] of filterFailureCases) {
+      writeConfig(wt, "gpumath", content);
+      assertDecision("just mutate gpumath", expectedShare, expectedReason);
+      assertDecision("node scripts/human/mutate.js --phase gpumath", expectedShare, expectedReason);
+    }
+
+    // Env prefix on a category-incomplete mutate config must report filter-categories, not env-prefix
+    writeConfig(
+      wt,
+      "gpumath",
+      JSON.stringify({ "stryker-config": { "test-case-filter": "Category!=Stress&Category!=Benchmark" } }),
+    );
+    assertDecision("export X=1; just mutate gpumath", "exclusive", "filter-categories");
+
+    // Worktree config missing while configRoot has a valid config: no configRoot fallback
+    assertDecision("just mutate gpumath", "exclusive", "filter-unreadable", contextFor(wtEmpty, cfg));
+    assertDecision("just mutate gpumath", "exclusive", "filter-unreadable", { ...ctx, cwd: "", worktree: "" });
+
+    // Restore valid config in wt for CLI override, non-mutate, env, and cd-escape checks
+    writeConfig(wt, "gpumath", sharedCfg);
+
+    const exclusiveCases: readonly [string, string][] = [
+      ["just test-stability", "exclusive-recipe"],
+      ["just test-stability 3h true", "exclusive-recipe"],
+      ["just -f justfile mutate gpumath", "exclusive-recipe"],
+      ["just a=1 mutate gpumath", "exclusive-recipe"],
+      ["node scripts/human/test-stability.js", "not-test-command"],
+      ["node /tmp/other/mutate.js --phase gpumath", "not-test-command"],
+      ['node -e "console.log(1)" scripts/human/mutate.js', "not-test-command"],
+      ["just mutate unknown-phase", "filter-unreadable"],
+      ['just mutate ""', "filter-unreadable"],
+      ["just mutate toString", "filter-unreadable"],
+      ["just mutate gpumath --test-case-filter", "filter-unreadable"],
+      ["just mutate gpumath @override.rsp", "filter-unreadable"],
+      ['just mutate gpumath "" --test-case-filter "Category=Stress"', "filter-unreadable"],
+      ['just mutate gpumath "" -f other.json', "filter-unreadable"],
+      ['just mutate gpumath "" --config-file=other.json', "filter-unreadable"],
+      ['just mutate gpumath "" -p Other.csproj', "filter-unreadable"],
+      ['just mutate gpumath "" --project=Other.csproj', "filter-unreadable"],
+      ['just mutate gpumath "" -tp OtherTests.csproj', "filter-unreadable"],
+      ['just mutate gpumath "" --test-project=OtherTests.csproj', "filter-unreadable"],
+      ['just mutate gpumath "" --test-projects=OtherTests.csproj', "filter-unreadable"],
+      ['just mutate gpumath "" -s Other.slnx', "filter-unreadable"],
+      ['just mutate gpumath "" --solution=Other.slnx', "filter-unreadable"],
+      ['just mutate gpumath "" --filter "Name~Foo"', "filter-unreadable"],
+      ['just mutate gpumath "" -t 2', "filter-unreadable"],
+      ['just mutate gpumath "" @args.rsp', "filter-unreadable"],
+      ['just mutate gpumath "" -p:VSTestTestCaseFilter=Name~Foo', "filter-unreadable"],
+      ['just mutate gpumath "" RunConfiguration.TestCaseFilter=Name~Foo', "filter-unreadable"],
+      ["node scripts/human/mutate.js --phase gpumath -- --test-case-filter=Name~Foo", "filter-unreadable"],
+      ["node scripts/human/mutate.js --phase gpumath -- RunConfiguration.TestCaseFilter=Name~Foo", "filter-unreadable"],
+      ["node scripts/human/mutate.js --phase gpumath -- -f other.json", "filter-unreadable"],
+      ["node scripts/human/mutate.js --phase gpumath -- --test-project Other.csproj", "filter-unreadable"],
+      ["node scripts/human/mutate.js --phase gpumath -- --project Other.csproj", "filter-unreadable"],
+      ["node scripts/human/mutate.js --phase gpumath -- --solution Other.slnx", "filter-unreadable"],
+      ["node scripts/human/mutate.js --phase", "filter-unreadable"],
+      ["node scripts/human/mutate.js --since", "filter-unreadable"],
+      ["node scripts/human/mutate.js --unknown", "filter-unreadable"],
+      ["node scripts/human/mutate.js --phase bogus", "filter-unreadable"],
+      ['node scripts/human/mutate.js --phase gpumath -- -m "**/Stress/*.cs"', "exclusive-category"],
+      ["GSHARP_CUDA_TRAP_TESTS=1 just mutate gpumath", "exclusive-env"],
+      ["just mutate gpumath | tee log", "piped"],
+      ["just mutate gpumath $EXTRA", "hidden"],
+      ["cd ../outside && just mutate gpumath", "filter-unreadable"],
+      ["cd ../wt2 && just mutate gpumath", "filter-unreadable"],
+      ["cd && just mutate gpumath", "filter-unreadable"],
+      ["cd && cd tests && just mutate gpumath", "filter-unreadable"],
+      ["cd tests && node scripts/human/mutate.js", "not-test-command"],
+      ['just mutate gpumath "main --phase compiler-cuda"', "filter-unreadable"],
+      ['just mutate gpumath "main --phase compiler"', "filter-unreadable"],
+      ['just mutate gpumath "main -- --test-case-filter=FullyQualifiedName~Foo"', "filter-unreadable"],
+      ['just mutate gpumath "main -- -f other.json"', "filter-unreadable"],
+      ["just mutate gpumath 'main\" -- -f other.json'", "filter-unreadable"],
+      ["just mutate gpumath 'main$(calc)'", "filter-unreadable"],
+      ['just mutate gpumath "" --test-runner mtp', "filter-unreadable"],
+      ['just mutate gpumath "" --test-runner=mtp', "filter-unreadable"],
+      ["node scripts/human/mutate.js --phase gpumath -- --test-runner mtp", "filter-unreadable"],
+      ["node scripts/human/mutate.js --phase gpumath -- --test-runner=mtp", "filter-unreadable"],
+      ["node scripts/human/mutate.js --phase gpumath -- --test-runner:mtp", "filter-unreadable"],
+      ["cd ~ && just mutate gpumath", "filter-unreadable"],
+      ["cd ~/other && just mutate gpumath", "filter-unreadable"],
+      ["pushd +1 && just mutate gpumath", "filter-unreadable"],
+      ["cd /d tests && just mutate gpumath", "filter-unreadable"],
+    ];
+    for (const [command, expectedReason] of exclusiveCases) {
+      assertDecision(command, "exclusive", expectedReason);
+    }
+
+    assertDecision("just mutate gpumath", "exclusive", "exclusive-env", {
+      ...ctx,
+      env: { GSHARP_CUDA_TRAP_TESTS: "1" },
+    });
+    assertDecision("just mutate gpumath %EXTRA%", "exclusive", "hidden", { ...ctx, shell: "cmd" });
+    assertDecision('just mutate gpumath "" ^-f other.json', "exclusive", "hidden", { ...ctx, shell: "cmd" });
+    assertDecision("node scripts/human/mutate.js --phase gpumath -- ^-f other.json", "exclusive", "hidden", {
+      ...ctx,
+      shell: "cmd",
+    });
+    assertDecision('just mutate gpumath "HEAD^"', "shared", "categories", { ...ctx, shell: "cmd" });
+
+    const pwshCtx = { ...ctx, shell: "pwsh" as const };
+    assertDecision("Set-Location -LiteralPath tests; just mutate gpumath", "shared", "categories", pwshCtx);
+    assertDecision("Set-Location -Path tests; just mutate gpumath", "shared", "categories", pwshCtx);
+    for (const pwshReject of [
+      "Set-Location ~; just mutate gpumath",
+      "Set-Location ~/foo; just mutate gpumath",
+      "Set-Location ~\\foo; just mutate gpumath",
+      "Push-Location ~; just mutate gpumath",
+      "Set-Location +; just mutate gpumath",
+      "Set-Location env:; just mutate gpumath",
+      "Set-Location -Path ~; just mutate gpumath",
+      "Set-Location -PassThru tests; just mutate gpumath",
+      "Push-Location -StackName s -Path ../outside; just mutate gpumath",
+      "Push-Location -StackName s ../outside; just mutate gpumath",
+      "Push-Location .. -StackName s; Pop-Location; just mutate gpumath",
+      "Push-Location tests; Push-Location .. -StackName s; Pop-Location; just mutate gpumath",
+      "Push-Location tests; Pop-Location -StackName other; just mutate gpumath",
+      "Push-Location ../outside; Pop-Location -StackName other; just mutate gpumath",
+    ]) {
+      assertDecision(pwshReject, "exclusive", "filter-unreadable", pwshCtx);
+    }
+
+    const cmdCtx = { ...ctx, shell: "cmd" as const };
+    assertDecision("cd /d tests && just mutate gpumath", "shared", "categories", cmdCtx);
+    assertDecision("chdir /d tests && just mutate gpumath", "shared", "categories", cmdCtx);
+    assertDecision("cd /d C:\\outside && just mutate gpumath", "exclusive", "filter-unreadable", cmdCtx);
+    assertDecision("cd /d && just mutate gpumath", "exclusive", "filter-unreadable", cmdCtx);
+
+    const linkType = process.platform === "win32" ? "junction" : "dir";
+    const outside = path.join(base, "outside", "nested");
+    fs.mkdirSync(path.join(outside, "human"), { recursive: true });
+    fs.writeFileSync(path.join(outside, "stryker-config.json"), sharedCfg, "utf8");
+    fs.writeFileSync(path.join(outside, "human", "mutate.js"), "", "utf8");
+
+    fs.symlinkSync(outside, path.join(wt, "escape"), linkType);
+    assertDecision("cd escape && just mutate gpumath", "exclusive", "filter-unreadable");
+    assertDecision("Set-Location escape; just mutate gpumath", "exclusive", "filter-unreadable", pwshCtx);
+    assertDecision("cd escape && node ../wt/scripts/human/mutate.js --phase gpumath", "exclusive", "not-test-command");
+
+    const gpumathRelDir = MutatePhaseDirectories.gpumath;
+    assert.ok(gpumathRelDir !== undefined, "gpumath phase directory exists");
+    const wtJunctionCfg = path.join(base, "wt-junction-cfg");
+    fs.mkdirSync(path.dirname(path.join(wtJunctionCfg, gpumathRelDir)), { recursive: true });
+    fs.symlinkSync(outside, path.join(wtJunctionCfg, gpumathRelDir), linkType);
+    assertDecision("just mutate gpumath", "exclusive", "filter-unreadable", contextFor(wtJunctionCfg, cfg));
+    assertDecision(
+      "node scripts/human/mutate.js --phase gpumath",
+      "exclusive",
+      "filter-unreadable",
+      contextFor(wtJunctionCfg, cfg),
+    );
+
+    const wtJunctionScripts = path.join(base, "wt-junction-scripts");
+    writeConfig(wtJunctionScripts, "gpumath", sharedCfg);
+    fs.symlinkSync(outside, path.join(wtJunctionScripts, "scripts"), linkType);
+    assertDecision(
+      "node scripts/human/mutate.js --phase gpumath",
+      "exclusive",
+      "not-test-command",
+      contextFor(wtJunctionScripts, cfg),
+    );
+
+    fs.symlinkSync(path.join(base, "missing-dir"), path.join(wt, "dangling"), linkType);
+    assertDecision("cd dangling && just mutate gpumath", "exclusive", "filter-unreadable");
+
+    assert.deepStrictEqual(
+      [
+        host.classify("just mutate gpumath", { ...Gpu, forcedExclusive: true }, ctx).share,
+        host.classify("just mutate gpumath", { ...Gpu, forcedExclusive: true }, ctx).shareReason,
+      ],
+      ["exclusive", "forced-exclusive"],
+    );
+    assert.deepStrictEqual(
+      [
+        host.classify("just mutate gpumath", null, ctx).share,
+        host.classify("just mutate gpumath", null, ctx).shareReason,
+      ],
+      [undefined, undefined],
+    );
+  } finally {
+    removeDirectory(dir);
+  }
+}
+
+/** Repository invariants for `mutate` phases, `justfile`, `sharedRecipes`, and `test-stability`. */
+function checkRepoMutateConfigAndJustfile(
+  assert: AssertModule,
+  host: PluginHost,
+  configRoot: string,
+  sharedRecipes: unknown,
+): void {
+  const recipes = Array.isArray(sharedRecipes) ? (sharedRecipes as string[]) : [];
+  assert.strictEqual(recipes.includes("mutate"), false, "mutate must not be in sharedRecipes");
+  assert.strictEqual(recipes.includes("test-stability"), false, "test-stability must stay exclusive");
+
+  for (const [phase, relDir] of Object.entries(MutatePhaseDirectories)) {
+    const configPath = path.join(configRoot, relDir, "stryker-config.json");
+    assert.ok(fs.existsSync(configPath), `missing stryker-config.json for mutate phase ${phase}: ${configPath}`);
+  }
+
+  const justfile = fs.readFileSync(path.join(configRoot, "justfile"), "utf8");
+  const [mutateBody] = justfileReader.recipeBodies(justfile, "mutate");
+  assert.ok(mutateBody !== undefined, "the justfile has the mutate recipe");
+  assert.ok(
+    mutateBody.includes('node scripts/human/mutate.js --phase "{{phase}}"'),
+    "justfile mutate recipe invokes mutate.js with --phase",
+  );
+  assert.ok(
+    mutateBody.includes('if phase == "gpumath" { "--gpu" } else { "" }'),
+    "justfile mutate recipe acquires --gpu only for gpumath",
+  );
+  assert.ok(mutateBody.includes("'--since \"' + since + '\"'"), "justfile mutate recipe quotes --since");
+
+  const ctx = contextFor(configRoot, configRoot);
+  assert.deepStrictEqual(
+    [host.classify("just mutate gpumath", Gpu, ctx).share, host.classify("just mutate gpumath", Gpu, ctx).shareReason],
+    ["shared", "categories"],
+  );
+  assert.deepStrictEqual(
+    [
+      host.classify("node scripts/human/mutate.js --phase gpumath", Gpu, ctx).share,
+      host.classify("node scripts/human/mutate.js --phase gpumath", Gpu, ctx).shareReason,
+    ],
+    ["shared", "categories"],
+  );
+  assert.deepStrictEqual(
+    [
+      host.classify("just mutate compiler", Gpu, ctx).share,
+      host.classify("just mutate compiler", Gpu, ctx).shareReason,
+    ],
+    ["exclusive", "filter-categories"],
+  );
+  assert.deepStrictEqual(
+    [
+      host.classify("just mutate compiler-cuda", Gpu, ctx).share,
+      host.classify("just mutate compiler-cuda", Gpu, ctx).shareReason,
+    ],
+    ["exclusive", "filter-categories"],
+  );
+  assert.deepStrictEqual(
+    [host.classify("just test-stability", Gpu, ctx).share, host.classify("just test-stability", Gpu, ctx).shareReason],
+    ["exclusive", "exclusive-recipe"],
+  );
+}
+
 export async function checks(assert: AssertModule): Promise<void> {
   await checkRepoBaselineConfig(assert);
   checkDialectOf(assert);
@@ -825,8 +1217,10 @@ export async function checks(assert: AssertModule): Promise<void> {
   checkCharacterizationAndBudgets(assert, host);
   checkGpuCheckHook(assert, host);
   checkShareRules(assert, host);
+  checkMutateShareRules(assert, host);
   const henicosOptions = loaded.config.plugins?.find((p) => p.name === "./scripts/human/job-queue-henicos")?.options;
   checkSharedRecipeFilters(assert, host, loaded.configRoot, henicosOptions?.sharedRecipes);
+  checkRepoMutateConfigAndJustfile(assert, host, loaded.configRoot, henicosOptions?.sharedRecipes);
   await quietly(() => checkQueuedRunMemoryMb(assert, host, FixedBudgetsYaml));
   checkShortCommandWithPlugins(assert, host);
   checkOffloadClassification(assert, host, loaded.configRoot);
