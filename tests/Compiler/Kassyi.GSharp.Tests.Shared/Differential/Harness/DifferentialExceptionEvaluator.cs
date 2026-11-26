@@ -107,12 +107,14 @@ internal static class DifferentialExceptionEvaluator
         }
         else
         {
-            thrown = LaunchExpectingException(run.Case, path, at, run.RecordRun, out ranBuffers, out ptrBuffers, out stackLaunches);
+            thrown = LaunchExpectingException(run.Case, path, at, run.RecordRun, out ranBuffers, out ptrBuffers,
+                out stackLaunches);
         }
 
         if (run.RecordRun && DiffRecordWriter.Active is { } writer)
         {
-            writer.Write(run.Case.Name, at.Seed, at.ShapeIndex, path.Path, at.Shape, ranBuffers, ptrBuffers, thrown, stackLaunches);
+            writer.Write(run.Case.Name, at.Seed, at.ShapeIndex, path.Path, at.Shape, ranBuffers, ptrBuffers, thrown,
+                stackLaunches);
         }
 
         if (thrown is null)

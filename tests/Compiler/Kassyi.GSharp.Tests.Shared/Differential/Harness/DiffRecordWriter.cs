@@ -121,51 +121,12 @@ internal sealed class DiffRecordWriter
                 writer.WriteNumber("seed", seed);
                 writer.WriteNumber("shape", shapeIndex);
                 writer.WriteString("path", FormatPath(path));
-
-                writer.WriteStartArray("grid");
-                writer.WriteNumberValue(shape.GridX);
-                writer.WriteNumberValue(shape.GridY);
-                writer.WriteNumberValue(shape.GridZ);
-                writer.WriteEndArray();
-
-                writer.WriteStartArray("block");
-                writer.WriteNumberValue(shape.BlockX);
-                writer.WriteNumberValue(shape.BlockY);
-                writer.WriteNumberValue(shape.BlockZ);
-                writer.WriteEndArray();
-
+                WriteTriple(writer, "grid", shape.GridX, shape.GridY, shape.GridZ);
+                WriteTriple(writer, "block", shape.BlockX, shape.BlockY, shape.BlockZ);
                 writer.WriteNumber("ordinal", ordinal);
-
-                if (outputsHash is null)
-                {
-                    writer.WriteNull("outputs");
-                }
-                else
-                {
-                    writer.WriteString("outputs", outputsHash);
-                }
-
-                if (ptrOutputsHash is null)
-                {
-                    writer.WriteNull("ptrOutputs");
-                }
-                else
-                {
-                    writer.WriteString("ptrOutputs", ptrOutputsHash);
-                }
-
-                if (exceptionType is null || exceptionMessage is null)
-                {
-                    writer.WriteNull("exception");
-                }
-                else
-                {
-                    writer.WriteStartObject("exception");
-                    writer.WriteString("type", exceptionType);
-                    writer.WriteString("message", exceptionMessage);
-                    writer.WriteEndObject();
-                }
-
+                WriteStringOrNull(writer, "outputs", outputsHash);
+                WriteStringOrNull(writer, "ptrOutputs", ptrOutputsHash);
+                WriteException(writer, exceptionType, exceptionMessage);
                 writer.WriteNumber("stackLaunches", stackLaunches);
                 writer.WriteEndObject();
             }
@@ -175,6 +136,41 @@ internal sealed class DiffRecordWriter
             stream.Write(_jsonBuffer.WrittenSpan);
             stream.Write(newline);
         }
+    }
+
+    private static void WriteTriple(Utf8JsonWriter writer, string name, uint x, uint y, uint z)
+    {
+        writer.WriteStartArray(name);
+        writer.WriteNumberValue(x);
+        writer.WriteNumberValue(y);
+        writer.WriteNumberValue(z);
+        writer.WriteEndArray();
+    }
+
+    private static void WriteStringOrNull(Utf8JsonWriter writer, string name, string? value)
+    {
+        if (value is null)
+        {
+            writer.WriteNull(name);
+        }
+        else
+        {
+            writer.WriteString(name, value);
+        }
+    }
+
+    private static void WriteException(Utf8JsonWriter writer, string? type, string? message)
+    {
+        if (type is null || message is null)
+        {
+            writer.WriteNull("exception");
+            return;
+        }
+
+        writer.WriteStartObject("exception");
+        writer.WriteString("type", type);
+        writer.WriteString("message", message);
+        writer.WriteEndObject();
     }
 
     internal static string? ComputeOutputsHash(DiffBuffers? buffers)
@@ -202,57 +198,63 @@ internal sealed class DiffRecordWriter
             Span<byte> tagBuf = stackalloc byte[1];
             foreach (var buffer in outputs)
             {
-                byte[] nameBytes = Encoding.UTF8.GetBytes(buffer.Name);
-                BinaryPrimitives.WriteInt32LittleEndian(intBuf, nameBytes.Length);
-                hash.AppendData(intBuf);
-                hash.AppendData(nameBytes);
-
-                if (buffer.IsNullArray)
-                {
-                    tagBuf[0] = 0;
-                    hash.AppendData(tagBuf);
-                    continue;
-                }
-
-                var effectiveBuffer = buffer.HasMultisetPolicy ? buffer.CreateSortedCopy() : buffer;
-                if (effectiveBuffer.ColumnPolicies is not null &&
-                    HasMixedColumnHandling(effectiveBuffer.ColumnPolicies))
-                {
-                    AppendMixedColumnBuffer(hash, effectiveBuffer, intBuf, tagBuf);
-                    continue;
-                }
-
-                if (!effectiveBuffer.HasCustomComparer &&
-                    !HasAllCustomColumnComparers(effectiveBuffer.ColumnPolicies) &&
-                    effectiveBuffer.CanPinAsBytes)
-                {
-                    tagBuf[0] = 1;
-                    hash.AppendData(tagBuf);
-                    var bytes = effectiveBuffer.AsReadOnlyBytes();
-                    BinaryPrimitives.WriteInt32LittleEndian(intBuf, bytes.Length);
-                    hash.AppendData(intBuf);
-                    hash.AppendData(bytes);
-                }
-                else
-                {
-                    // Struct policy (OutputPolicy.ForStruct / Nullable<T>), reference-containing element type
-                    // (e.g. RefDeepScalar<T>), or empty array: hash cell count and formatted cells rather than
-                    // raw struct padding or managed pointer bytes.
-                    tagBuf[0] = 2;
-                    hash.AppendData(tagBuf);
-                    BinaryPrimitives.WriteInt32LittleEndian(intBuf, effectiveBuffer.Length);
-                    hash.AppendData(intBuf);
-                    for (int i = 0; i < effectiveBuffer.Length; i++)
-                    {
-                        AppendFormattedCell(hash, effectiveBuffer, i, intBuf);
-                    }
-                }
+                AppendOutputBuffer(hash, buffer, intBuf, tagBuf);
             }
         }
 
         Span<byte> digest = stackalloc byte[32];
         hash.TryGetHashAndReset(digest, out _);
         return $"sha256:{Convert.ToHexStringLower(digest)}";
+    }
+
+    // The name of <buffer>, then what its policy says is deterministic: a tag (0 null, 1 raw bytes, 2 formatted cells)
+    // and the bytes or cells, a Multiset buffer from its sorted copy
+    private static void AppendOutputBuffer(IncrementalHash hash, DiffBuffer buffer, Span<byte> intBuf,
+        Span<byte> tagBuf)
+    {
+        byte[] nameBytes = Encoding.UTF8.GetBytes(buffer.Name);
+        BinaryPrimitives.WriteInt32LittleEndian(intBuf, nameBytes.Length);
+        hash.AppendData(intBuf);
+        hash.AppendData(nameBytes);
+
+        if (buffer.IsNullArray)
+        {
+            tagBuf[0] = 0;
+            hash.AppendData(tagBuf);
+            return;
+        }
+
+        var effectiveBuffer = buffer.HasMultisetPolicy ? buffer.CreateSortedCopy() : buffer;
+        if (effectiveBuffer.ColumnPolicies is not null && HasMixedColumnHandling(effectiveBuffer.ColumnPolicies))
+        {
+            AppendMixedColumnBuffer(hash, effectiveBuffer, intBuf, tagBuf);
+            return;
+        }
+
+        if (!effectiveBuffer.HasCustomComparer &&
+            !HasAllCustomColumnComparers(effectiveBuffer.ColumnPolicies) &&
+            effectiveBuffer.CanPinAsBytes)
+        {
+            tagBuf[0] = 1;
+            hash.AppendData(tagBuf);
+            var bytes = effectiveBuffer.AsReadOnlyBytes();
+            BinaryPrimitives.WriteInt32LittleEndian(intBuf, bytes.Length);
+            hash.AppendData(intBuf);
+            hash.AppendData(bytes);
+            return;
+        }
+
+        // Struct policy (OutputPolicy.ForStruct / Nullable<T>), reference-containing element type
+        // (e.g. RefDeepScalar<T>), or empty array: hash cell count and formatted cells rather than
+        // raw struct padding or managed pointer bytes.
+        tagBuf[0] = 2;
+        hash.AppendData(tagBuf);
+        BinaryPrimitives.WriteInt32LittleEndian(intBuf, effectiveBuffer.Length);
+        hash.AppendData(intBuf);
+        for (int i = 0; i < effectiveBuffer.Length; i++)
+        {
+            AppendFormattedCell(hash, effectiveBuffer, i, intBuf);
+        }
     }
 
     private static bool IsAllIgnore(DiffBuffer buffer)
@@ -399,8 +401,12 @@ internal sealed class DiffRecordWriter
             int paramStart = span.LastIndexOf(ParamMarker, StringComparison.Ordinal);
             if (paramStart >= 0)
             {
-                ReadOnlySpan<char> candidateName = span.Slice(paramStart + ParamMarker.Length, span.Length - paramStart - ParamMarker.Length - 2);
-                if (candidateName.IndexOf('\'') < 0 && candidateName.IndexOf('\n') < 0 && candidateName.IndexOf('\r') < 0)
+                ReadOnlySpan<char> candidateName = span.Slice(
+                    paramStart + ParamMarker.Length,
+                    span.Length - paramStart - ParamMarker.Length - 2);
+                if (candidateName.IndexOf('\'') < 0 &&
+                    candidateName.IndexOf('\n') < 0 &&
+                    candidateName.IndexOf('\r') < 0)
                 {
                     head = span[..paramStart];
                     paramSuffix = span[paramStart..];
