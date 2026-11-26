@@ -140,9 +140,6 @@ export function commandEnvLocalReason(
   platform: NodeJS.Platform = process.platform,
 ): string | null {
   const cls = classifyEnvName(name, rules, platform);
-  if (cls.kind === "ignored") {
-    return null;
-  }
   if (cls.kind === "local-only") {
     return `env var ${cls.canonical} is local-only`;
   }

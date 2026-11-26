@@ -6,7 +6,7 @@ import * as path from "node:path";
 import { PluginApiVersion, type QueuePlugin } from "../plugin-api.ts";
 import { PluginHost } from "../plugin-host.ts";
 import { translateForRemote } from "./command-translator.ts";
-import { getEnvValue, hasEnvKey } from "./env-policy.ts";
+import { commandEnvLocalReason, getEnvValue, hasEnvKey } from "./env-policy.ts";
 import { resolveRemoteRules } from "./rules.ts";
 import type { AssertModule } from "./checks-support.ts";
 
@@ -650,6 +650,10 @@ export const RemoteTranslatorChecks: Record<string, (assert: AssertModule) => vo
     assert.deepStrictEqual(resolved.localOnlyEnvPrefixesLower, ["dotnet_"]);
     assert.deepStrictEqual([...resolved.ignoredEnv], ["DOTNET_ROOT"]);
     assert.deepStrictEqual(resolved.ignoredEnvPrefixesLower, ["queue_"]);
+    // An ignored name written in the command still has its value checked: a path keeps the job local.
+    assert.notStrictEqual(commandEnvLocalReason("DOTNET_ROOT", "C:/dn", resolved, "win32"), null);
+    assert.notStrictEqual(commandEnvLocalReason("Queue_X", "/opt/x", resolved, "linux"), null);
+    assert.strictEqual(commandEnvLocalReason("DOTNET_ROOT", "1", resolved, "win32"), null);
     assert.deepStrictEqual(resolved.syncExcludePrefixes, ["valid/dir/"]);
     assert.deepStrictEqual(resolved.resetCleanDirs, ["tmp/clean"]);
     assert.strictEqual(resolved.failureArtifacts.length, 1);
