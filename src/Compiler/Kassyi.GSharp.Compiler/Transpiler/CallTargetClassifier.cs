@@ -218,7 +218,7 @@ internal static class CallTargetClassifier
     /// <c>nameof</c>: a method group that device code would name. The name of a conditional call (<c>u?.F()</c>) is
     /// called.
     /// </summary>
-    public static bool IsMethodGroup(SyntaxNode node)
+    public static bool IsMethodGroup(SyntaxNode node, SemanticModel? semanticModel = null)
     {
         var name = node.Parent switch
         {
@@ -233,10 +233,12 @@ internal static class CallTargetClassifier
 
         return !name.Ancestors()
             .AsStackEnumerable()
-            .Any(static ancestor => ancestor is InvocationExpressionSyntax
-            {
-                Expression: IdentifierNameSyntax { Identifier.ValueText: NameofKeyword }
-            });
+            .Any(semanticModel, static (ancestor, model) =>
+                ancestor is InvocationExpressionSyntax
+                {
+                    Expression: IdentifierNameSyntax { Identifier.ValueText: NameofKeyword }
+                } nameofInvocation &&
+                model?.GetSymbol(nameofInvocation) == null);
     }
 
     /// <summary>The name of <paramref name="called"/> in the GSH0107 message: <c>Type.Method</c>.</summary>

@@ -171,7 +171,7 @@ internal sealed partial class ManagedExecutionRewriter
     private void ThrowIfStackWarpGroup(ExpressionSyntax node, IMethodSymbol method)
     {
         if (bodyKind == ManagedBodyKind.StackBody &&
-            CallTargetClassifier.IsMethodGroup(node) &&
+            CallTargetClassifier.IsMethodGroup(node, semanticModel) &&
             SuspensionAnalysis.ReachesWarpShuffle(method.ReducedFrom ?? method, semanticModel.Compilation))
         {
             throw new InvalidOperationException(

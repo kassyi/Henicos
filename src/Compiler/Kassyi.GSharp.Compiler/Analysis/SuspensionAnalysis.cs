@@ -164,6 +164,55 @@ internal static class SuspensionAnalysis
         return callees.ToImmutable();
     }
 
+    /// <summary>
+    /// The <c>[GpuDeviceFunction]</c> methods that reach a phase barrier and are called or named as a method group in
+    /// <paramref name="body"/>, outside calls that C# removes (<see cref="RemovedCalls"/>) and <c>nameof</c>
+    /// arguments, with repeats.
+    /// </summary>
+    internal static IEnumerable<(IMethodSymbol Definition, bool IsMethodGroup)> GetReferencedSuspendingFunctions(
+        SyntaxNode body,
+        Compilation compilation,
+        SemanticModel semanticModel)
+    {
+        foreach (var node in RemovedCalls.DescendantNodesThatRun(body, semanticModel))
+        {
+            if (node is not SimpleNameSyntax || IsInsideNameof(node, semanticModel))
+            {
+                continue;
+            }
+
+            if (semanticModel.GetSymbolInfo(node).Symbol is not IMethodSymbol method)
+            {
+                continue;
+            }
+
+            var definition = (method.ReducedFrom ?? method).OriginalDefinition;
+            definition = definition.PartialDefinitionPart ?? definition;
+            if (definition.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
+                IsSuspendingFunction(definition, compilation))
+            {
+                yield return (definition, CallTargetClassifier.IsMethodGroup(node, semanticModel));
+            }
+        }
+    }
+
+    private static bool IsInsideNameof(SyntaxNode node, SemanticModel semanticModel)
+    {
+        for (var current = node.Parent; current != null; current = current.Parent)
+        {
+            if (current is InvocationExpressionSyntax
+                {
+                    Expression: IdentifierNameSyntax { Identifier.ValueText: "nameof" }
+                } invocation &&
+                semanticModel.GetSymbol(invocation) == null)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static bool Reaches(IMethodSymbol method, BarrierQuery query, Compilation compilation)
     {
         var definition = method.OriginalDefinition;
