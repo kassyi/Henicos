@@ -23,6 +23,7 @@ internal static class StackLauncherTranspiler
         }
         context.Emitter.Writer.AppendLine(";");
 
+        context.Emitter.Writer.AppendLine($"++{LaunchCount};");
         context.Emitter.Writer.AppendLine($"const auto {Fp} = {CaptureFp}();");
         context.Emitter.Writer.Append(
             $"#pragma omp parallel num_threads({ThreadLimit}((uint64_t){BlockDimX} * {BlockDimY} * {BlockDimZ}, ");

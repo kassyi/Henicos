@@ -89,6 +89,8 @@ internal static class DifferentialExceptionEvaluator
 
         Exception? thrown;
         DiffBuffers? ranBuffers = null;
+        DiffBuffers? ptrBuffers = null;
+        long stackLaunches = 0;
 
         // [WHY] A failing CUDA thread records its error and exits, so a fault seed runs in this process like on the
         // other paths. A CUDA exception cell that is a known divergence is the exception: CUDA does not check what C#
@@ -105,7 +107,12 @@ internal static class DifferentialExceptionEvaluator
         }
         else
         {
-            thrown = LaunchExpectingException(run.Case, path, at, out ranBuffers);
+            thrown = LaunchExpectingException(run.Case, path, at, run.RecordRun, out ranBuffers, out ptrBuffers, out stackLaunches);
+        }
+
+        if (run.RecordRun && DiffRecordWriter.Active is { } writer)
+        {
+            writer.Write(run.Case.Name, at.Seed, at.ShapeIndex, path.Path, at.Shape, ranBuffers, ptrBuffers, thrown, stackLaunches);
         }
 
         if (thrown is null)
@@ -171,7 +178,10 @@ internal static class DifferentialExceptionEvaluator
         DifferentialCase testCase,
         DiffPathRunner path,
         in DifferentialRunner.ShapeRun at,
-        out DiffBuffers buffers
+        bool recordRun,
+        out DiffBuffers buffers,
+        out DiffBuffers? ptrBuffers,
+        out long stackLaunches
     )
     {
         var shape = at.Shape;
@@ -179,20 +189,47 @@ internal static class DifferentialExceptionEvaluator
         var launched = initial.Clone();
         launched.Shape = shape;
         buffers = launched;
+        ptrBuffers = null;
+        DiffBuffers? ptrRan = null;
+        long launches = 0;
+        var writer = recordRun ? DiffRecordWriter.Active : null;
         try
         {
-            path.Run(() => testCase.Launch(launched, shape));
-            if (path.Path == DiffPath.Cuda && testCase.LaunchPtr is { } launchPtr)
+            if (writer is null)
             {
-                var ptrBuffers = initial.Clone();
-                ptrBuffers.Shape = shape;
-                path.Run(() => launchPtr(ptrBuffers, shape));
+                path.Run(() => testCase.Launch(launched, shape));
+            }
+            else
+            {
+                path.Run(() =>
+                {
+                    long before = DiffRecordWriter.ReadLaunchCount(path.Path);
+                    try
+                    {
+                        testCase.Launch(launched, shape);
+                    }
+                    finally
+                    {
+                        launches = DiffRecordWriter.ReadLaunchCount(path.Path) - before;
+                    }
+                });
             }
 
+            if (path.Path == DiffPath.Cuda && testCase.LaunchPtr is { } launchPtr)
+            {
+                ptrRan = initial.Clone();
+                ptrRan.Shape = shape;
+                path.Run(() => launchPtr(ptrRan, shape));
+            }
+
+            ptrBuffers = ptrRan;
+            stackLaunches = launches;
             return null;
         }
         catch (Exception ex)
         {
+            ptrBuffers = ptrRan;
+            stackLaunches = launches;
             return ex;
         }
     }

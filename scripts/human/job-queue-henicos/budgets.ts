@@ -139,6 +139,7 @@ const SingleProjectJustRecipes: Readonly<Record<string, string>> = {
   "test-native-stack": "Kassyi.GSharp.Tests.Cpu",
   "test-managed-stack": "Kassyi.GSharp.Tests.Cpu",
   "test-sanitized": "Kassyi.GSharp.Tests.Cpu",
+  "diff-barrier-models": "Kassyi.GSharp.Tests.Cpu",
   "test-differential-cuda": "Kassyi.GSharp.Tests.Cuda",
   "test-checked": "Kassyi.GSharp.Tests.Cuda",
   "test-gpu-trap": "Kassyi.GSharp.Tests.Cuda",
@@ -174,7 +175,7 @@ export function implicitProjectOfStep(words: readonly string[]): string | null {
       return null;
     }
     const base = path.basename((words[scriptIdx] as string).replace(/\\/g, "/")).toLowerCase();
-    if (base === "test-sanitized.js") {
+    if (base === "test-sanitized.js" || base === "compare-barrier-models.js") {
       return "Kassyi.GSharp.Tests.Cpu";
     }
     if (base === "mutate.js") {
@@ -207,7 +208,7 @@ function isStepTestCommand(step: ReadStep): boolean {
   }
   if (prog === "just") {
     const recipe = justPositionals(step.words)[0] ?? "";
-    return /^(?:test[\w-]*|coverage-diff|mutate)$/.test(recipe);
+    return /^(?:test[\w-]*|coverage-diff|mutate|diff-barrier-models)$/.test(recipe);
   }
   if (prog === "node") {
     const script = step.words.slice(1).find((w) => !w.startsWith("-"));
@@ -215,7 +216,7 @@ function isStepTestCommand(step: ReadStep): boolean {
       return false;
     }
     const base = path.basename(script.replace(/\\/g, "/")).toLowerCase();
-    return /^(?:test-stability|test-memory|test-sanitized|mutate|coverage-diff)\.js$/.test(base);
+    return /^(?:test-stability|test-memory|test-sanitized|mutate|coverage-diff|compare-barrier-models)\.js$/.test(base);
   }
   return false;
 }
