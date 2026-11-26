@@ -190,6 +190,9 @@ function applyInlineDotnetOpt(state: MutableDotnetStep, word: string, stepCwd: s
     return "matched";
   }
   if (/^(?:--|[-/])(?:p|property):/i.test(word)) {
+    if (movesBuildOutput(word.replace(/^(?:--|[-/])(?:p|property):/i, ""))) {
+      return "invalid";
+    }
     state.forwardedBuildOpts.push(word);
     return "matched";
   }
@@ -279,6 +282,9 @@ function applySpaceDotnetOpt(state: MutableDotnetStep, lower: string, val: strin
     }
     state.projectOpt = val;
   } else if (lower === "-p" || lower === "--property") {
+    if (movesBuildOutput(val)) {
+      return false;
+    }
     const m = /^configuration=(.+)$/i.exec(val);
     if (m !== null && !setStepConfig(state, m[1] ?? "")) {
       return false;
@@ -286,6 +292,16 @@ function applySpaceDotnetOpt(state: MutableDotnetStep, lower: string, val: strin
     state.forwardedBuildOpts.push("-p", val);
   }
   return true;
+}
+
+/**
+ * True when a `-p` value sets a property that moves the build output. The freshness check and the test list read the
+ * default output folders, so such a step is not eligible for offload.
+ */
+export function movesBuildOutput(propertyValue: string): boolean {
+  return /(?:^|[;,])\s*(?:OutDir|OutputPath|BaseOutputPath|IntermediateOutputPath|BaseIntermediateOutputPath|ArtifactsPath|ArtifactsPivots|UseArtifactsOutput|GSharpOutputVariant)\s*=/i.test(
+    propertyValue,
+  );
 }
 
 export function parseDotnetBuildOrTestStep(words: readonly string[], stepCwd: string): DotnetBuildOrTestStep | null {

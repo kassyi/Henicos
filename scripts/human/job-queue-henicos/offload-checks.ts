@@ -292,6 +292,11 @@ export function checkOffloadClassification(assert: AssertModule, host: PluginHos
     [`dotnet build ${genTests} && dotnet test --no-build ${genTests} -c Release`, false],
     [`dotnet build ${cpuTests} && dotnet test --no-build ${genTests}`, false],
     [`dotnet build ${genTests} -o tmp/out && dotnet test --no-build ${genTests}`, false],
+    // -p that moves the output: the freshness check and the test list would read the default folders
+    [`dotnet test ${collectEnvTests} -p:UseArtifactsOutput=true`, false],
+    [`dotnet test ${collectEnvTests} '-p:A=1;OutDir=out/'`, false],
+    [`dotnet test ${collectEnvTests} --property GSharpOutputVariant=x`, false],
+    [`dotnet test ${collectEnvTests} -p:Foo=1`, true],
     [`dotnet build ${cpuTests} && dotnet test ${collectEnvTests}`, false],
     [`dotnet build ${gpuMathTests} && dotnet test ${collectEnvTests}`, false],
     [`dotnet build tests/Compiler/Kassyi.GSharp.Tests.Cuda && dotnet test ${collectEnvTests}`, false],
