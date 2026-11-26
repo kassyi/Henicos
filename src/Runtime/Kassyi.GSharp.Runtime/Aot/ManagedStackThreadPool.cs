@@ -53,28 +53,12 @@ internal sealed class ManagedStackThreadPool
     // ManagedStackRunner.Run), so the workers go into a new array
     internal ManagedStackThread[] Rent(int count, bool nested)
     {
-        var workers = AllocateWorkers(count, nested);
-        var fromPool = PopIdle(workers, count);
-        if (fromPool == count)
+        if (!TryRent(count, nested, out var workers, out _, out var failure))
         {
-            return workers;
+            ExceptionDispatchInfo.Throw(failure);
         }
 
-        var created = 0;
-        try
-        {
-            StartThreads(workers, fromPool, count, ref created);
-            t_threadsStartedForTest?.Invoke();
-            CountCreated(created);
-            return workers;
-        }
-        catch
-        {
-            // [WHY] The failure of the rent is what the caller sees; an interruption of the wait for the gate here
-            // comes while that failure is already on its way, and is dropped (see ReturnTakingTheGate)
-            ReturnTakingTheGate(workers, fromPool + created, created);
-            throw;
-        }
+        return workers;
     }
 
     // Like Rent, but returns false with the number of workers already obtained/started when starting an OS thread fails
