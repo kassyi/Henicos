@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Semantics;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 
 namespace Kassyi.GSharp.Tests.Shared.Generator;
