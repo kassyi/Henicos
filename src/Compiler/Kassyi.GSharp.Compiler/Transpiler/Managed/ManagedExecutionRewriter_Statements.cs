@@ -25,6 +25,12 @@ internal sealed partial class ManagedExecutionRewriter
             return expanded.WithTriviaFrom(node);
         }
 
+        if (bodyKind == ManagedBodyKind.StackBody &&
+            SyncGridBody.TryGetBody(node, semanticModel, out _))
+        {
+            return ExpandSyncGridBody(node).WithTriviaFrom(node);
+        }
+
         if (node.Expression is not InvocationExpressionSyntax invocation ||
             !TryClassifyRewrittenMacro(invocation, out var call))
         {
@@ -85,10 +91,28 @@ internal sealed partial class ManagedExecutionRewriter
     // user's tree (the body of a managed version is not lowered) is outside that tree and binds to nothing, so no name in
     // it would be qualified or routed (#1151). With the original-span annotation on every node, as a lowered body has,
     // each copy binds through the node it was copied from. A call of a lowered body already carries its annotations
-    private InvocationExpressionSyntax BindCopiesToSource(InvocationExpressionSyntax invocation) =>
-        invocation.SyntaxTree == semanticModel.SyntaxTree
-            ? LoweringAnnotations.AnnotateOriginalSpans(invocation, semanticModel.Compilation)
-            : invocation;
+    private TNode BindCopiesToSource<TNode>(TNode node) where TNode : SyntaxNode =>
+        node.SyntaxTree == semanticModel.SyntaxTree
+            ? LoweringAnnotations.AnnotateOriginalSpans(node, semanticModel.Compilation)
+            : node;
+
+    // Gpu.SyncGrid(body) in a stack body becomes:
+    // { <statement 1> ManagedGpuContext.__gsharp_stack_grid_barrier(); <statement 2> ... }
+    private StatementSyntax ExpandSyncGridBody(ExpressionStatementSyntax node)
+    {
+        var annotated = BindCopiesToSource(node);
+        if (!SyncGridBody.TryGetBody(annotated, semanticModel, out var body))
+        {
+            throw new InvalidOperationException(
+                "A Gpu.SyncGrid(body) statement lost its body when binding copies to source.");
+        }
+
+        var expanded = SyncGridExpansion.Expand(annotated, body, semanticModel, ref _nextSyncGridId);
+        // [WHY] SyncGridExpansion declares guarded locals and moved out variables at the top of the block without
+        // initializers; StackBodyLocals gives them default(<type>) so the stack body satisfies C# definite assignment.
+        var normalized = StackBodyLocals.Normalize(expanded, semanticModel);
+        return Visit(normalized) as StatementSyntax ?? normalized;
+    }
 
     // Gpu.SingleThread(body) becomes:
     // if (<six indices are 0>) <body>

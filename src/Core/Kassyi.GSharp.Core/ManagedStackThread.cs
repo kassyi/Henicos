@@ -21,6 +21,8 @@ internal sealed class ManagedStackThread
 
     internal bool AtBlockBarrier { get; set; }
 
+    internal bool AtGridSync { get; set; }
+
     // Waits at a warp collective until the scheduler finds the lanes of its mask met there (WarpCanRun)
     internal bool AtWarp { get; set; }
 
@@ -49,6 +51,11 @@ internal sealed class ManagedStackLaunch
 
     // Whether the kernel reaches a warp collective: the scheduler then runs the rounds of the warp rendezvous
     internal bool ReachesWarpCollective { get; set; }
+
+    // Whether the kernel is [GpuKernel(Cooperative = true)]: the scheduler runs all blocks in grid phases
+    internal bool Cooperative { get; set; }
+
+    internal string KernelName { get; set; } = string.Empty;
 }
 
 internal static class ManagedBaton

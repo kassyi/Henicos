@@ -100,6 +100,8 @@ StackModel:
     AccessorPrefix: __gsharp_stackaccessor_
     # The block barrier of a stack form: the GPU thread waits in it until the scheduler runs it again.
     BlockBarrier: { Value: __gsharp_stack_block_barrier, Managed: ManagedGpuContext.Stack.cs }
+    # The grid barrier of a stack form: the GPU thread waits in it until every block reaches the end of the phase.
+    GridBarrier: { Value: __gsharp_stack_grid_barrier, Managed: ManagedGpuContext.Stack.cs }
 
 DynamicSharedMemory:
   Summary: >-

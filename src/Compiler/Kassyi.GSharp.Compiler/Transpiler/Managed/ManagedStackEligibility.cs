@@ -78,11 +78,6 @@ internal static class ManagedStackEligibility
             return Managed("InstanceKernel", "it is an instance kernel");
         }
 
-        if (kernel.IsCooperativeKernel())
-        {
-            return Managed(nameof(NativeStackObstacle.Cooperative), "it is a cooperative kernel (Gpu.SyncGrid)");
-        }
-
         if (FindWarpReason(kernel, compilation) is { } warpReason)
         {
             return warpReason;
@@ -108,7 +103,7 @@ internal static class ManagedStackEligibility
                FindCalleeReason(body, compilation, semanticModel, null);
     }
 
-    // Sync.Grid in the body, or a body in which no thread ever waits
+    // A body in which no thread ever waits
     private static StateMachineReason? FindBodyReason(SyntaxNode body, Compilation compilation,
         SemanticModel semanticModel)
     {
@@ -122,13 +117,9 @@ internal static class ManagedStackEligibility
             }
 
             var intrinsic = SyncIntrinsicClassifier.Classify(callee);
-            if (intrinsic.Kind == SyncIntrinsicKind.GridBarrier)
-            {
-                return Managed(nameof(NativeStackObstacle.GridSync), "it uses Gpu.SyncGrid()");
-            }
-
-            // A thread waits in its body at a block barrier, a warp collective or a call that reaches one
-            if (intrinsic.Kind is SyncIntrinsicKind.BlockBarrier or SyncIntrinsicKind.WarpShuffle ||
+            // A thread waits in its body at a block barrier, a grid barrier, a warp collective or a call that reaches one
+            if (intrinsic.Kind is SyncIntrinsicKind.BlockBarrier or SyncIntrinsicKind.GridBarrier
+                    or SyncIntrinsicKind.WarpShuffle ||
                 SuspensionAnalysis.IsSuspendingFunction(callee, compilation))
             {
                 waits = true;
@@ -221,11 +212,6 @@ internal static class ManagedStackEligibility
     // What the function itself has that the managed stack form cannot copy or run
     private static StateMachineReason? FindFunctionShapeReason(IMethodSymbol function, Compilation compilation)
     {
-        if (SuspensionAnalysis.ReachesGridBarrier(function, compilation))
-        {
-            return Managed(nameof(NativeStackObstacle.GridSync), "it uses Gpu.SyncGrid()");
-        }
-
         if (!function.IsStatic)
         {
             return Managed("InstanceDeviceFunction", "it reaches an instance suspending device function");

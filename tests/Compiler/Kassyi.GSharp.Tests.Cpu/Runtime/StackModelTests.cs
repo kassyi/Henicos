@@ -218,7 +218,7 @@ public class StackModelTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void CooperativeKernel_BuiltWithEitherModel_StaysOnStateMachine()
+    public void CooperativeKernel_BuiltWithEitherModel_RunsOnTheSchedulerOfItsModel()
     {
         const int n = 8;
         var input = CreateSequence(n);
@@ -227,11 +227,39 @@ public class StackModelTests
 
         RunManaged(() => StackModelKernels.LaunchCooperativeBarrierKernel(input, output, n, blockDimX: n));
 
-        Assert.Equal(0L, ManagedStackRunner.LaunchCountOnThisThread - before);
+        Assert.Equal(BuiltWithStackModel ? 1L : 0L, ManagedStackRunner.LaunchCountOnThisThread - before);
         for (int i = 0; i < n; i++)
         {
             Assert.Equal(input[n - 1 - i], output[i]);
         }
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void LargeLocalAcrossBarrier_OnManagedStack_Runs()
+    {
+        Skip.IfNot(BuiltWithStackModel,
+            "Holding a stackalloc Span across a barrier requires the managed stack model.");
+        const uint blocks = 4;
+        const uint threadsPerBlock = 32;
+        const int total = (int)(blocks * threadsPerBlock);
+        var input = new int[total];
+        var expected = new int[total];
+        for (int i = 0; i < total; i++)
+        {
+            int v = ((i * 37 + 11) & 0xFFFF);
+            input[i] = v;
+            int mirrored = (int)threadsPerBlock - 1 - (i % (int)threadsPerBlock);
+            expected[i] = (v & 0xFF) + ((v >> 8) & 0xFF) * 256 + mirrored;
+        }
+
+        var output = new int[total];
+        long launches = CountStackLaunches(() =>
+            StackModelKernels.LaunchLargeLocalAcrossBarrierKernel(
+                input, output, gridDimX: blocks, blockDimX: threadsPerBlock));
+
+        Assert.Equal(1L, launches);
+        Assert.Equal(expected, output);
     }
 
     [Fact]

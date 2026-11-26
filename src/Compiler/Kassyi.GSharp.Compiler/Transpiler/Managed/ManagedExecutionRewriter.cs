@@ -57,6 +57,9 @@ internal sealed partial class ManagedExecutionRewriter(
     // The number of the next variable that holds the target of a division read before its value (ManagedDivision)
     private int _nextDivisionCurrentId;
 
+    // The number of the next Gpu.SyncGrid(body) expansion in a stack body
+    private int _nextSyncGridId;
+
     public override SyntaxNode? Visit(SyntaxNode? node)
     {
         if (_nextUnrollId < 0 && node is not null)

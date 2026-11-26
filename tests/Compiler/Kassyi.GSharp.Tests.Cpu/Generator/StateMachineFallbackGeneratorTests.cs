@@ -175,11 +175,9 @@ public class StateMachineFallbackGeneratorTests
 
     [Theory]
     [Scenario(TestScenario.SadPath)]
-    [InlineData("FallbackCases", "CooperativeKernel", "Cooperative", "cooperative")]
-    [InlineData("FallbackCases", "CooperativeAndUsingKernel", "Cooperative", "cooperative")]
+    [InlineData("FallbackCases", "CooperativeAndUsingKernel", "UsingDeclarationWithActiveMask", "declares a local with using")]
     [InlineData("FallbackCases", "UsingActiveMaskKernel", "UsingDeclarationWithActiveMask", "declares a local with using")]
     [InlineData("FallbackCases", "NonSpanRefStructKernel", "UnsupportedStackArgument", "ref struct")]
-    [InlineData("FallbackCases", "GridSyncKernel", "GridSync", "uses Gpu.SyncGrid()")]
     [InlineData("FallbackCases", "RecursiveCallKernel", "RecursiveSuspendingCall", "recursive")]
     [InlineData("FallbackCases", "CallsFileLocalDeviceKernel", "FileLocalType", "file-local")]
     [InlineData("FallbackCases", "CallsInstanceDeviceKernel", "InstanceDeviceFunction", "instance")]
@@ -204,11 +202,30 @@ public class StateMachineFallbackGeneratorTests
             StringComparison.Ordinal);
     }
 
+    // A cooperative kernel and a grid sync run on the managed stack model: no managed reason and no managed line
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("CooperativeKernel", false)]
+    [InlineData("GridSyncKernel", false)]
+    [InlineData("GridSyncHelper", true)]
+    public void StateMachineFallbacks_ManagedCooperativeOrGridSync_HasNoReason(string methodName, bool isDeviceFunction)
+    {
+        var compilation = s_casesCompilation.Value;
+        var method = GetMethod(compilation, "StateMachineFallbackGeneratorCases.FallbackCases", methodName);
+        var reason = isDeviceFunction
+            ? ManagedStackEligibility.FindFunctionReason(method, compilation)
+            : ManagedStackEligibility.FindKernelReason(method, compilation);
+        Assert.Null(reason);
+
+        var sources = RunGenerator(compilation, "Cpu", nativeModel: null, managedModel: "Stack");
+        var file = Assert.Single(sources, static s => s.HintName == StateMachineFallbackPipeline.HintName);
+        Assert.DoesNotContain($"// managed\tFallbackCases.{methodName}\t", file.SourceText, StringComparison.Ordinal);
+    }
+
     [Theory]
     [Scenario(TestScenario.SadPath)]
     [InlineData("FallbackCases", "DirectlyRecursiveHelper", "RecursiveSuspendingCall", "recursive")]
     [InlineData("FallbackCases", "RecursiveWrapperHelper", "RecursiveSuspendingCall", "recursive")]
-    [InlineData("FallbackCases", "GridSyncHelper", "GridSync", "SyncGrid")]
     [InlineData("FallbackCases", "UsingActiveMaskHelper", "UsingDeclarationWithActiveMask", "declares a local with using")]
     [InlineData("FallbackCases", "FileLocalDeviceHelper", "FileLocalType", "file-local")]
     [InlineData("InstanceDeviceHolder", "InstanceSuspendingHelper", "InstanceDeviceFunction", "instance")]
