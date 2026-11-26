@@ -76,7 +76,7 @@ internal readonly record struct CompoundOperator(string Operator, string? Helper
             if (ShiftMask == 0)
             {
                 EvaluationOrder.AppendTempName(writer, value);
-                DivisorCheck.AppendSiteArgument(writer, Site);
+                NullCheckSiteWriter.AppendSiteArgument(writer, Site);
                 return;
             }
 

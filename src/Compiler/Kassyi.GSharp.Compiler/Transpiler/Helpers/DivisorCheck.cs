@@ -24,8 +24,4 @@ internal static class DivisorCheck
         helper != null && IntegerSemantics.TakesErrorSite(helper)
             ? ArrayNullCheck.PlanSite(node, null, Message, TrapKind, ref context)
             : null;
-
-    /// <summary>Writes <c>,&lt;site&gt;</c>, the last argument of the helper, when there is a site.</summary>
-    public static void AppendSiteArgument(SourceWriter writer, NullCheckSite? site) =>
-        NullCheckSiteWriter.AppendSiteArgument(writer, site);
 }

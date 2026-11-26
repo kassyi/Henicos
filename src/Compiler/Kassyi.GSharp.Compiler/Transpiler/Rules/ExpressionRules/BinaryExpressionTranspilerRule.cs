@@ -293,7 +293,7 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
             EvaluationOrder.AppendTempName(writer, left);
             writer.Append(',');
             EvaluationOrder.AppendTempName(writer, right);
-            DivisorCheck.AppendSiteArgument(writer, site);
+            NullCheckSiteWriter.AppendSiteArgument(writer, site);
         }
     }
 

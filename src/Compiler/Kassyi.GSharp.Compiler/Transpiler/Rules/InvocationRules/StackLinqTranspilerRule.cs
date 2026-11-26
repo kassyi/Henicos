@@ -249,7 +249,7 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
         {
             AppendSpan(source, argument, parameter, in sequence, ref context);
             writer.Append(", ");
-            ArrayNullCheck.AppendSite(writer, site);
+            NullCheckSiteWriter.AppendSite(writer, site);
         }
     }
 

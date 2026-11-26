@@ -64,22 +64,8 @@ internal static class LiteralTranspiler
         }
     }
 
-    /// <summary>
-    /// Writes the C# numeric literal <paramref name="text"/>, whose value has the type <paramref name="literalType"/>
-    /// (<see cref="GetLiteralType"/>), as the C++ literal of that type.
-    /// </summary>
-    internal static void AppendNumeric(string text, SpecialType literalType, SourceWriter writer) =>
-        CppLiteralWriter.AppendNumeric(text, literalType, writer);
-
-    /// <summary>
-    /// The type of the value of a numeric literal token: Int64, UInt64, UInt32, Single, Double or Int32; None for any
-    /// other.
-    /// </summary>
-    internal static SpecialType GetLiteralType(object? value) =>
-        CppLiteralWriter.GetLiteralType(value);
-
     private static void AppendNumeric(SyntaxToken token, SourceWriter writer) =>
-        AppendNumeric(token.Text, GetLiteralType(token.Value), writer);
+        CppLiteralWriter.AppendNumeric(token.Text, CppLiteralWriter.GetLiteralType(token.Value), writer);
 
     private static bool HasNonAscii(string value)
     {

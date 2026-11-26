@@ -16,11 +16,6 @@ internal static class SharedMemoryStorageType
     public static void Append(ref TranspileContext context, ITypeSymbol? typeSymbol)
     {
         var typeContext = DialectTranspilerExtensions.CreateTypeContext(ref context);
-        Append(in typeContext, typeSymbol);
+        CppTypeWriter.AppendStorageType(in typeContext, typeSymbol);
     }
-
-    /// <inheritdoc cref="Append(ref TranspileContext, ITypeSymbol?)"/>
-    public static void Append<TServices>(in CppTypeContext<TServices> context, ITypeSymbol? typeSymbol)
-        where TServices : struct, ICppTypeServices =>
-        CppTypeWriter.AppendStorageType(in context, typeSymbol);
 }

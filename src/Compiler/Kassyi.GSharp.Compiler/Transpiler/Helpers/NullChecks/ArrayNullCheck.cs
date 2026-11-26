@@ -28,16 +28,13 @@ internal static class ArrayNullCheck
     public const string SiteMessage = "G#: a null array is read";
 
     /// <summary>The text of the error, followed by the place of the receiver (<see cref="SourcePlace"/>).</summary>
-    public const string MessagePrefix = SiteMessage + PlaceSeparator;
+    public const string MessagePrefix = SiteMessage + NullCheckSiteWriter.PlaceSeparator;
 
     /// <summary>The trap kind of the site ID, which tells the site apart from another trap at the same place.</summary>
     internal const string TrapKind = "ArrayNull";
 
     // The trap kind of the check of the array a StackLinq query starts from
     private const string LinqSourceTrapKind = "LinqSourceNull";
-
-    // Between the text of an error and the place it names, in a method without an error site table
-    private const string PlaceSeparator = NullCheckSiteWriter.PlaceSeparator;
 
     /// <summary>Whether a read through <paramref name="receiver"/> needs the null check.</summary>
     public static bool NeedsCheck(ExpressionSyntax receiver, SemanticModel semanticModel) =>
@@ -215,7 +212,7 @@ internal static class ArrayNullCheck
             writer.Append(", ");
             EvaluationOrder.AppendTempName(writer, index);
             writer.Append(", ");
-            AppendSite(writer, site);
+            NullCheckSiteWriter.AppendSite(writer, site);
         }
     }
 
@@ -231,7 +228,7 @@ internal static class ArrayNullCheck
             writer.Append(", ");
             ArrayElementIndex.Append(index, ref context);
             writer.Append(", ");
-            AppendSite(writer, site);
+            NullCheckSiteWriter.AppendSite(writer, site);
         }
     }
 
@@ -337,7 +334,7 @@ internal static class ArrayNullCheck
         {
             context.Visitor.Visit(array);
             writer.Append(", ");
-            AppendSite(writer, site);
+            NullCheckSiteWriter.AppendSite(writer, site);
         }
     }
 
@@ -366,15 +363,6 @@ internal static class ArrayNullCheck
             context.Emitter.CurrentMemberName);
 
     /// <summary>
-    /// Plans the error site of a check at <paramref name="location"/> (a report location, or
-    /// <c>IrSource.ToLocation</c>): an entry of <paramref name="table"/> in a kernel, or the message and place in a
-    /// device function, which has no table.
-    /// </summary>
-    internal static NullCheckSite PlanSite(Location location, string? place, string message, string trapKind,
-        Compilation compilation, ErrorSiteTable? table, string? currentMemberName) =>
-        NullCheckSiteWriter.PlanSite(location, place, message, trapKind, compilation, table, currentMemberName);
-
-    /// <summary>
     /// <see cref="PlanSite(ExpressionSyntax, string, string, string, ref TranspileContext)"/> with the parts of the
     /// context it reads: the model, the error site table of the method (<see langword="null"/> in a device function) and
     /// the name of the method being emitted.
@@ -384,7 +372,7 @@ internal static class ArrayNullCheck
     {
         if (table is null)
         {
-            return new NullCheckSite(0u, message + PlaceSeparator + (place ?? SourcePlace.Format(model, node)));
+            return new NullCheckSite(0u, message + NullCheckSiteWriter.PlaceSeparator + (place ?? SourcePlace.Format(model, node)));
         }
 
         var location = model.GetReportLocation(node);
@@ -395,11 +383,7 @@ internal static class ArrayNullCheck
     /// <summary>Plans the error site of an array read (element or Length) from a report location.</summary>
     internal static NullCheckSite PlanReadSite(Location location, Compilation compilation, ErrorSiteTable? table,
         string? currentMemberName) =>
-        PlanSite(location, null, SiteMessage, TrapKind, compilation, table, currentMemberName);
-
-    /// <summary>Writes <c>&lt;site&gt;u</c> for a registered site, otherwise the message as a string literal.</summary>
-    internal static void AppendSite(SourceWriter writer, NullCheckSite site) =>
-        NullCheckSiteWriter.AppendSite(writer, site);
+        NullCheckSiteWriter.PlanSite(location, null, SiteMessage, TrapKind, compilation, table, currentMemberName);
 
     // Whether type is System.Index or System.Range
     internal static bool IsIndexOrRangeType(ITypeSymbol? type) =>
