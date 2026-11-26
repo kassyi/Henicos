@@ -1737,4 +1737,276 @@ public static partial class WarpActiveMaskDifferentialKernels
         result[t + 160] = Warp.ActiveMask();
         result[t + 192] = (uint)n;
     }
+
+    // A goto loop whose last backward goto is inside an if without else: lanes reconverge right after the goto inside
+    // the if, then again after the if
+    [GpuKernel]
+    public static void GotoLoopEndingInIfKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * n] = Warp.ActiveMask();
+        if ((t & 4) == 0)
+        {
+            if ((t & 3) != 0 && n++ < 2)
+            {
+                goto L1;
+            }
+
+            result[t + 96] = Warp.ActiveMask();
+        }
+
+        result[t + 128] = Warp.ActiveMask();
+        result[t + 160] = (uint)n;
+    }
+
+    // A goto loop whose last backward goto is inside the then-branch of an if-else: lanes reconverge right after the
+    // goto in the then-branch while the else-branch runs on its own, then all lanes meet after the if-else
+    [GpuKernel]
+    public static void GotoLoopEndingInIfElseKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * n] = Warp.ActiveMask();
+        if ((t & 4) == 0)
+        {
+            if ((t & 3) != 0 && n++ < 2)
+            {
+                goto L1;
+            }
+
+            result[t + 96] = Warp.ActiveMask();
+        }
+        else
+        {
+            result[t + 128] = Warp.ActiveMask();
+        }
+
+        result[t + 160] = Warp.ActiveMask();
+        result[t + 192] = (uint)n;
+    }
+
+    // A goto loop whose last backward goto is inside two nested ifs: lanes reconverge at each enclosing level as they
+    // leave the loop
+    [GpuKernel]
+    public static void GotoLoopEndingInNestedIfKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * n] = Warp.ActiveMask();
+        if ((t & 4) == 0)
+        {
+            if ((t & 8) == 0)
+            {
+                if ((t & 3) != 0 && n++ < 2)
+                {
+                    goto L1;
+                }
+
+                result[t + 96] = Warp.ActiveMask();
+            }
+
+            result[t + 128] = Warp.ActiveMask();
+        }
+
+        result[t + 160] = Warp.ActiveMask();
+        result[t + 192] = (uint)n;
+    }
+
+    // A goto loop whose last backward goto is inside the middle branch of an if / else if / else: lanes reconverge
+    // right after the goto in that branch while the other branches run their own lanes
+    [GpuKernel]
+    public static void GotoLoopEndingInElseIfKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * n] = Warp.ActiveMask();
+        if ((t & 12) == 0)
+        {
+            result[t + 96] = Warp.ActiveMask();
+        }
+        else if ((t & 4) == 0)
+        {
+            if ((t & 3) != 0 && n++ < 2)
+            {
+                goto L1;
+            }
+
+            result[t + 128] = Warp.ActiveMask();
+        }
+        else
+        {
+            result[t + 160] = Warp.ActiveMask();
+        }
+
+        result[t + 192] = Warp.ActiveMask();
+        result[t + 224] = (uint)n;
+    }
+
+    // Nested goto loops where the inner loop ends inside an if while the outer loop continues: the inner loop
+    // reconverges inside the if on every outer pass without closing the outer loop
+    [GpuKernel]
+    public static void NestedGotoLoopsEndingInIfKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int a = 0;
+        int b = 0;
+    L0:
+        result[t + 32 * a] = Warp.ActiveMask();
+        b = 0;
+    L1:
+        result[t + 32 * (2 + 2 * a + b)] = Warp.ActiveMask();
+        if ((t & 4) == 0)
+        {
+            if ((t & 1) != 0 && b < 1)
+            {
+                b++;
+                goto L1;
+            }
+
+            result[t + 32 * (6 + a)] = Warp.ActiveMask();
+        }
+
+        if ((t & 2) != 0 && a < 1)
+        {
+            a++;
+            goto L0;
+        }
+
+        result[t + 256] = Warp.ActiveMask();
+        result[t + 288] = (uint)a;
+    }
+
+    // A goto loop ending inside an if in a device function, called with thread-dependent parameter t
+    [GpuKernel]
+    public static void GotoLoopEndingInIfInDeviceFunctionKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        GotoInIf(result, t);
+        result[t + 160] = Warp.ActiveMask();
+    }
+
+    [GpuDeviceFunction]
+    public static void GotoInIf(uint[] result, int t)
+    {
+        int n = 0;
+    L1:
+        result[t + 32 * n] = Warp.ActiveMask();
+        if ((t & 4) == 0)
+        {
+            if ((t & 3) != 0 && n++ < 2)
+            {
+                goto L1;
+            }
+
+            result[t + 96] = Warp.ActiveMask();
+        }
+
+        result[t + 128] = Warp.ActiveMask();
+    }
+
+    // A goto loop whose lanes leave the loop inside an if via a collective and a forward goto out of the loop:
+    // lanes reconverge before the forward goto, then all lanes meet at the target label
+    [GpuKernel]
+    public static void GotoLoopEndingInIfThenForwardGotoKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * n] = Warp.ActiveMask();
+        if ((t & 4) == 0)
+        {
+            if ((t & 3) != 0 && n++ < 2)
+            {
+                goto L1;
+            }
+
+            result[t + 96] = Warp.ActiveMask();
+            goto done;
+        }
+
+        n += 8;
+    done:
+        result[t + 128] = Warp.ActiveMask();
+        result[t + 160] = (uint)n;
+    }
+
+    // A goto loop that some lanes leave in different passes through an early-exit block before a forward goto:
+    // each class runs its exit block in its own pass, while the remaining lanes reconverge after the backward goto
+    [GpuKernel]
+    public static void GotoLoopLeftByForwardGotoBlockKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int p = 0;
+    L1:
+        result[t + 32 * p] = Warp.ActiveMask();
+        if ((t & 4) == 0 && p == (t & 3))
+        {
+            result[t + 128] = Warp.ActiveMask();
+            goto done;
+        }
+
+        if (p < 3)
+        {
+            p++;
+            goto L1;
+        }
+
+        result[t + 160] = Warp.ActiveMask();
+    done:
+        result[t + 192] = Warp.ActiveMask();
+    }
+
+    // A goto loop whose else branch is left by the lanes of every pass: the branch that goes back only goes back, so
+    // the lanes meet in the else after each of their own number of back gotos
+    [GpuKernel]
+    public static void GotoLoopLeftByElseOfBackGotoKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * (4 + n)] = Warp.ActiveMask();
+        if (((t >> n) & 1) != 0 && n < u + 2)
+        {
+            n++;
+            goto L1;
+        }
+        else
+        {
+            result[t + 32 * n] = Warp.ActiveMask();
+        }
+
+        result[t + 96] = (uint)n;
+    }
+
+    // The same loop with a label inside the branch that only goes back, which is one flow node with its statement
+    [GpuKernel]
+    public static void GotoLoopLeftByElseOfLabeledBackOnlyBranchKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * (4 + n)] = Warp.ActiveMask();
+        if (((t >> n) & 1) != 0 && n < u + 2)
+        {
+        M:
+            n++;
+            if (n > u + 100)
+            {
+                goto M;
+            }
+
+            goto L1;
+        }
+        else
+        {
+            result[t + 32 * n] = Warp.ActiveMask();
+        }
+
+        result[t + 96] = (uint)n;
+    }
 }

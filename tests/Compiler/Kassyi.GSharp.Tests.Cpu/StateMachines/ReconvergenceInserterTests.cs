@@ -67,12 +67,13 @@ public class ReconvergenceInserterTests : StateMachineTestBase
     }
 
     // A goto loop whose last statement is a block closes inside it, right after the statement with the last goto back
-    // to its label; one whose block holds another goto loop open across that place, or whose last statement is an if,
-    // closes after its last statement (the region of the if ends right before it, with no user call between)
+    // to its label (also when nested inside an inner loop's block, where top closes before the publish after its goto
+    // and has no user call after its pass); one whose last statement is an if closes inside the if right after the
+    // goto, and the region of the if ends right before Mark(32)
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("GotoLoopInBlockKernel", "Mark(28)")]
-    [InlineData("GotoLoopInBlockAroundInnerLoopKernel", "Mark(30)", "Mark(31)")]
+    [InlineData("GotoLoopInBlockAroundInnerLoopKernel", "Mark(30)")]
     [InlineData("GotoLoopInIfKernel", "Mark(32)")]
     public void Insert_GotoLoopEndingInBlock_ClosesAfterTheLastGotoInTheBlock(string kernel, params string[] expected)
     {
@@ -84,6 +85,61 @@ public class ReconvergenceInserterTests : StateMachineTestBase
     [Scenario(TestScenario.HappyPath)]
     public Task Lower_GotoLoopEndingInBlock_EmitsArriveInsideTheBlock() =>
         VerifyPipelineLowerFromTestCase("ReconvergenceGotoLoopInBlock.cs");
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public Task Lower_GotoLoopEndingInIf_EmitsGateInBothBranches() =>
+        VerifyPipelineLowerFromTestCase("ReconvergenceGotoLoopInIf.cs");
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_GotoLoopWithSwitchVarPatternExit_ClosesBeforeGate()
+    {
+        var (_, tree, model) = RoslynTestUtility.GetTestCaseContext(Path.Combine("StateMachines", TestCase));
+        var method = FindMethod(tree, "GotoLoopSwitchVarPatternBeforeLastKernel");
+        var symbol = model.GetDeclaredSymbol<IMethodSymbol>(method)
+                     ?? throw new InvalidOperationException("GotoLoopSwitchVarPatternBeforeLastKernel has no symbol.");
+
+        var lowered = AstLoweringPipeline.Lower(method, model, symbol, isDeviceFunction: false);
+        var arriveCount = lowered.LoweredBody
+            .DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Count(static call => Calls(call, GSharpInternalNames.Prelude.WarpReconvergeArrive));
+        var enterCount = lowered.LoweredBody
+            .DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Count(static call => Calls(call, GSharpInternalNames.Prelude.WarpRegionEnter));
+
+        Assert.Equal(4, arriveCount);
+        Assert.Equal(4, enterCount);
+        var (afterReconvergence, _) = LowerAndAnalyze("GotoLoopSwitchVarPatternBeforeLastKernel");
+        Assert.Equal(new[] { "Mark(34)", "Mark(35)" }, afterReconvergence);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_GotoLoopWithCheckedDeadLabelExit_ClosesBeforeGate()
+    {
+        var (_, tree, model) = RoslynTestUtility.GetTestCaseContext(Path.Combine("StateMachines", TestCase));
+        var method = FindMethod(tree, "GotoLoopCheckedDeadLabelBeforeLastKernel");
+        var symbol = model.GetDeclaredSymbol<IMethodSymbol>(method)
+                     ?? throw new InvalidOperationException("GotoLoopCheckedDeadLabelBeforeLastKernel has no symbol.");
+
+        var lowered = AstLoweringPipeline.Lower(method, model, symbol, isDeviceFunction: false);
+        var arriveCount = lowered.LoweredBody
+            .DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Count(static call => Calls(call, GSharpInternalNames.Prelude.WarpReconvergeArrive));
+        var enterCount = lowered.LoweredBody
+            .DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Count(static call => Calls(call, GSharpInternalNames.Prelude.WarpRegionEnter));
+
+        Assert.Equal(4, arriveCount);
+        Assert.Equal(4, enterCount);
+        var (afterReconvergence, _) = LowerAndAnalyze("GotoLoopCheckedDeadLabelBeforeLastKernel");
+        Assert.Equal(new[] { "Mark(37)", "Mark(38)" }, afterReconvergence);
+    }
 
     [Theory]
     [Scenario(TestScenario.HappyPath)]
