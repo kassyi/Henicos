@@ -35,7 +35,7 @@ import {
   type PluginChecksOptions,
 } from "./plugin-checks-runner.ts";
 import { errorMessage } from "./history.ts";
-import { isCommandKeys, isMemoryMb } from "./protocol.ts";
+import { isCommandKeys, isMemoryMb, sanitizeShareReason } from "./protocol.ts";
 import { resolveRemoteRules, type RemoteContributionEntry, type ResolvedRemoteRules } from "./remote/rules.ts";
 
 export { DefaultPluginsRoot, runPluginChecks, type PluginChecksOptions };
@@ -288,6 +288,10 @@ export class PluginHost {
       }
       if (result.share === undefined && (res.share === "shared" || res.share === "exclusive")) {
         result.share = res.share;
+        const reason = sanitizeShareReason(res.shareReason, res.share);
+        if (reason !== undefined) {
+          result.shareReason = reason;
+        }
       }
       if (result.offloadable === undefined && typeof res.offloadable === "boolean") {
         result.offloadable = res.offloadable;
@@ -301,6 +305,7 @@ export class PluginHost {
     }
     if (resource?.forcedExclusive) {
       result.share = "exclusive";
+      result.shareReason = "forced-exclusive";
     }
     return result;
   }
@@ -317,12 +322,13 @@ export class PluginHost {
         continue;
       }
       let timer: ReturnType<typeof setTimeout> | undefined;
+      let timedOut = false;
       try {
         const limit = new Promise<never>((_, reject) => {
-          timer = setTimeout(
-            () => reject(new Error(`timed out after ${this.checkShareTimeoutMs} ms`)),
-            this.checkShareTimeoutMs,
-          );
+          timer = setTimeout(() => {
+            timedOut = true;
+            reject(new Error(`timed out after ${this.checkShareTimeoutMs} ms`));
+          }, this.checkShareTimeoutMs);
         });
         const res = await Promise.race([plugin.checkShare(command, this.contextFor(i, context)), limit]);
         if (res === undefined) {
@@ -337,15 +343,20 @@ export class PluginHost {
             res.share === "shared" && typeof res.stillValid === "function"
               ? (res.stillValid as () => Promise<boolean>)
               : undefined;
-          return stillValid !== undefined ? { share: "shared", stillValid } : { share: res.share };
+          const reason = sanitizeShareReason(res.reason, res.share);
+          return {
+            share: res.share,
+            ...(reason !== undefined ? { reason } : {}),
+            ...(stillValid !== undefined ? { stillValid } : {}),
+          };
         }
         this.warn(`[job-queue] plugin ${plugin.name}.checkShare returned an invalid value; taking the GPU exclusively`);
-        return { share: "exclusive" };
+        return { share: "exclusive", reason: "invalid" };
       } catch (error) {
         this.warn(
           `[job-queue] plugin ${plugin.name}.checkShare failed: ${errorMessage(error)}; taking the GPU exclusively`,
         );
-        return { share: "exclusive" };
+        return { share: "exclusive", reason: timedOut ? "timeout" : "error" };
       } finally {
         clearTimeout(timer);
       }

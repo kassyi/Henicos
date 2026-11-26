@@ -39,6 +39,8 @@ export interface ServerJob extends SchedulerJob, JobFacts {
   /** The agent chat that queued it (JobRequest.session), kept for the chat panel; absent when none was sent. */
   session?: string;
   command: string;
+  /** Short reason token for the share decision of a GPU turn (absent when none was sent). */
+  shareReason?: string;
   keepIfFailed: boolean;
   lastPosition: number;
   lastStartAt: number | null;
@@ -79,6 +81,7 @@ export function describeJob(job: ServerJob): JobView {
     memoryMb: job.memoryMb ?? 0,
     ...(job.resource !== undefined ? { resource: job.resource } : {}),
     ...(job.share === "shared" ? { share: "shared" as const } : {}),
+    ...(job.gpuTurn === true && job.shareReason !== undefined ? { shareReason: job.shareReason } : {}),
     ...(job.turn !== null ? { turn: job.turn } : {}),
     ...(job.remote !== undefined ? { remote: job.remote } : {}),
     ...(job.offload !== undefined ? { offload: job.offload } : {}),

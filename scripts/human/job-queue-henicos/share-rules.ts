@@ -145,12 +145,50 @@ function isSet(env: Readonly<NodeJS.ProcessEnv>, name: string): boolean {
   );
 }
 
+/** Result of shareDecision: the share mode and a short reason token (exclusive reasons never contain `"shared"`). */
+export interface ShareDecision {
+  share: ShareMode;
+  reason: string;
+}
+
+function hasDisallowedEnvPrefix(command: string): boolean {
+  return /^\s*(?:\$env:|export\s|[A-Za-z_]\w*=)/i.test(command) && !StartsWithTest.test(command);
+}
+
+function nonSharedStepReason(command: string, step: ReadStep, options: ShareOptions): string {
+  const words = step.words;
+  const program = programOf(words[0] ?? "");
+  if (program === "dotnet" && words[1] === "test") {
+    const rest = words.slice(2);
+    if (rest.some((word) => /\.(dll|exe)$/i.test(word))) {
+      return "binary-test";
+    }
+    if (filtersOf(rest) === null) {
+      return "filter-unreadable";
+    }
+    if (!rest.some((word) => /^--filter(=|$)/i.test(word))) {
+      return "no-filter";
+    }
+    if (hasDisallowedEnvPrefix(command)) {
+      return "env-prefix";
+    }
+    return "filter-categories";
+  }
+  if (program === "just") {
+    if (options.sharedRecipes.includes(words[1] ?? "")) {
+      return filtersOf(words.slice(2)) === null ? "filter-unreadable" : "filter-categories";
+    }
+    return "exclusive-recipe";
+  }
+  return "not-test-command";
+}
+
 /**
- * The share of a --gpu command: "shared" when every rule holds, "exclusive" when one fails (a veto: checkShare is not
- * asked), undefined (no opinion) when the plugin options are missing or malformed and for a command that
- * nameFilterCheck reads, which the test list judges.
+ * The share decision and short reason token of a --gpu command: "shared" when every rule holds, "exclusive" when one
+ * fails (a veto: checkShare is not asked), undefined (no opinion) when the plugin options are missing or malformed and
+ * for a command that nameFilterCheck reads, which the test list judges.
  */
-export function shareOf(command: string, context: ClientContext): ShareMode | undefined {
+export function shareDecision(command: string, context: ClientContext): ShareDecision | undefined {
   const options = shareOptions(context.options);
   if (options === null) {
     return undefined;
@@ -161,21 +199,33 @@ export function shareOf(command: string, context: ClientContext): ShareMode | un
   }
   // 1. Readable, with no pipe outside quotes (readCommand leaves the stage after a pipe out)
   const line = readCommandLine(command);
-  if (line === null || line.piped) {
-    return "exclusive";
+  if (line === null) {
+    return { share: "exclusive", reason: "unreadable" };
+  }
+  if (line.piped) {
+    return { share: "exclusive", reason: "piped" };
   }
   // 2. Every step that does work is a dotnet test whose filter keeps the exclusive categories out or a shared recipe,
   // there is one, and none expands a variable ($ outside single quotes; %...% of cmd): its words are not what runs
   const work = line.steps.filter((step) => !isTrivialStep(step));
-  if (
-    work.length === 0 ||
-    line.steps.some((step, i) => isHidden(step, line.expands[i] === true)) ||
-    (context.shell === "cmd" && command.includes("%")) ||
-    !work.every((step) => isSharedStep(step, options))
-  ) {
-    return "exclusive";
+  if (work.length === 0) {
+    return { share: "exclusive", reason: "no-work" };
   }
-  // 3. No exclusive category selected (the same reading as the Stress budget of a test run), in any case
+  if (
+    line.steps.some((step, i) => isHidden(step, line.expands[i] === true)) ||
+    (context.shell === "cmd" && command.includes("%"))
+  ) {
+    return { share: "exclusive", reason: "hidden" };
+  }
+  // 3. No exclusive variable named or set
+  if (usesExclusiveEnv(command, line.steps, options, context)) {
+    return { share: "exclusive", reason: "exclusive-env" };
+  }
+  const nonShared = work.find((step) => !isSharedStep(step, options));
+  if (nonShared !== undefined) {
+    return { share: "exclusive", reason: nonSharedStepReason(command, nonShared, options) };
+  }
+  // 4. No exclusive category selected (the same reading as the Stress budget of a test run), in any case
   const lower = command.toLowerCase();
   if (
     selectsCategory(
@@ -183,10 +233,20 @@ export function shareOf(command: string, context: ClientContext): ShareMode | un
       options.exclusiveCategories.map((name) => name.toLowerCase()),
     )
   ) {
-    return "exclusive";
+    return { share: "exclusive", reason: "exclusive-category" };
   }
-  // 4 and 5. No exclusive variable named or set
-  return usesExclusiveEnv(command, line.steps, options, context) ? "exclusive" : "shared";
+  // 5. Shared: via a shared recipe or explicit category exclusions
+  const reason = work.some((step) => isSharedRecipe(step.words, options)) ? "shared-recipe" : "categories";
+  return { share: "shared", reason };
+}
+
+/**
+ * The share of a --gpu command: "shared" when every rule holds, "exclusive" when one fails (a veto: checkShare is not
+ * asked), undefined (no opinion) when the plugin options are missing or malformed and for a command that
+ * nameFilterCheck reads, which the test list judges.
+ */
+export function shareOf(command: string, context: ClientContext): ShareMode | undefined {
+  return shareDecision(command, context)?.share;
 }
 
 /**
