@@ -229,7 +229,103 @@ function checkHostClassify(assert: AssertModule): void {
 
   const forced = host.classify("cmd", { name: "gpu", forcedExclusive: true }, ctx);
   assert.deepStrictEqual(forced, { test: true, memoryMb: 2048, share: "exclusive" });
+
+  // localReason is accepted only from the plugin deciding offloadable: false, and collapsed to 1 line
+  const localHost = new PluginHost(
+    [
+      { name: "l1", apiVersion: PluginApiVersion, classify: () => ({ offloadable: false, localReason: "a\r\nb" }) },
+      { name: "l2", apiVersion: PluginApiVersion, classify: () => ({ offloadable: true, localReason: "ignored" }) },
+    ],
+    [undefined, undefined],
+    process.cwd(),
+    (m) => warnings.push(m),
+  );
+  assert.deepStrictEqual(localHost.classify("cmd", null, ctx), { offloadable: false, localReason: "a b" });
+
+  const allowHost = new PluginHost(
+    [
+      { name: "a1", apiVersion: PluginApiVersion, classify: () => ({ offloadable: true, localReason: "ignored" }) },
+      { name: "a2", apiVersion: PluginApiVersion, classify: () => ({ offloadable: false, localReason: "ignored" }) },
+    ],
+    [undefined, undefined],
+    process.cwd(),
+    (m) => warnings.push(m),
+  );
+  assert.deepStrictEqual(allowHost.classify("cmd", null, ctx), { offloadable: true });
   assert.deepStrictEqual(warnings, []);
+}
+
+async function checkHostCheckOffload(assert: AssertModule): Promise<void> {
+  const warnings: string[] = [];
+  const ctx = baseContext(process.cwd(), warnings);
+  const req = { remoteForced: false, places: {} };
+  const neverCalled: QueuePlugin = {
+    name: "later",
+    apiVersion: PluginApiVersion,
+    checkOffload: () => Promise.reject(new Error("should not be called")),
+  };
+  const hostOf = (hook: QueuePlugin["checkOffload"], extra: QueuePlugin[] = []): PluginHost => {
+    const p: QueuePlugin = { name: "probe", apiVersion: PluginApiVersion, checkOffload: hook };
+    const host = new PluginHost([p, ...extra], [undefined, ...extra.map(() => undefined)], process.cwd(), (m) =>
+      warnings.push(m),
+    );
+    host.checkOffloadTimeoutMs = 50;
+    return host;
+  };
+
+  assert.deepStrictEqual(await hostOf(undefined).checkOffload("c", req, ctx), undefined);
+  assert.deepStrictEqual(await hostOf(() => Promise.resolve(undefined)).checkOffload("c", req, ctx), undefined);
+  assert.deepStrictEqual(await hostOf(() => Promise.resolve("allow"), [neverCalled]).checkOffload("c", req, ctx), {
+    offload: "allow",
+  });
+  assert.deepStrictEqual(
+    await hostOf(() => Promise.resolve({ offload: "allow" }), [neverCalled]).checkOffload("c", req, ctx),
+    { offload: "allow" },
+  );
+  assert.deepStrictEqual(await hostOf(() => Promise.resolve("local"), [neverCalled]).checkOffload("c", req, ctx), {
+    offload: "local",
+  });
+  assert.deepStrictEqual(
+    await hostOf(() => Promise.resolve({ offload: "local", reason: "line1\nline2" }), [neverCalled]).checkOffload(
+      "c",
+      req,
+      ctx,
+    ),
+    { offload: "local", reason: "line1 line2" },
+  );
+  // undefined passes to next plugin
+  assert.deepStrictEqual(
+    await hostOf(
+      () => Promise.resolve(undefined),
+      [{ name: "second", apiVersion: PluginApiVersion, checkOffload: () => Promise.resolve("allow") }],
+    ).checkOffload("c", req, ctx),
+    { offload: "allow" },
+  );
+
+  // Failures, timeouts, and invalid return values fail closed to "local" without calling later plugins
+  warnings.length = 0;
+  const rejectRes = await hostOf(() => Promise.reject(new Error("boom")), [neverCalled]).checkOffload("c", req, ctx);
+  assert.strictEqual(rejectRes?.offload, "local");
+  assert.ok(rejectRes?.reason?.includes("boom"));
+
+  const throwRes = await hostOf(() => {
+    throw new Error("sync-boom");
+  }, [neverCalled]).checkOffload("c", req, ctx);
+  assert.strictEqual(throwRes?.offload, "local");
+  assert.ok(throwRes?.reason?.includes("sync-boom"));
+
+  const timeoutRes = await hostOf(() => new Promise<never>(() => {}), [neverCalled]).checkOffload("c", req, ctx);
+  assert.strictEqual(timeoutRes?.offload, "local");
+  assert.ok(timeoutRes?.reason?.includes("timed out after 50 ms"));
+
+  const invalidRes = await hostOf(() => Promise.resolve("Allow" as unknown as "allow"), [neverCalled]).checkOffload(
+    "c",
+    req,
+    ctx,
+  );
+  assert.strictEqual(invalidRes?.offload, "local");
+  assert.ok(invalidRes?.reason?.includes("invalid value"));
+  assert.strictEqual(warnings.length, 4);
 }
 
 /**
@@ -840,6 +936,7 @@ async function checkHardeningAndConfigForwarding(assert: AssertModule): Promise<
 export async function checkPlugins(assert: AssertModule): Promise<void> {
   await checkConfig(assert);
   checkHostClassify(assert);
+  await checkHostCheckOffload(assert);
   checkHostExceptions(assert);
   checkHostSequential(assert);
   checkHostValidation(assert);

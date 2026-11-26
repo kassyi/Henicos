@@ -6,6 +6,7 @@ import * as path from "node:path";
 import { PluginApiVersion, type QueuePlugin } from "../plugin-api.ts";
 import { PluginHost } from "../plugin-host.ts";
 import { translateForRemote } from "./command-translator.ts";
+import { getEnvValue, hasEnvKey } from "./env-policy.ts";
 import { resolveRemoteRules } from "./rules.ts";
 import type { AssertModule } from "./checks-support.ts";
 
@@ -390,8 +391,39 @@ export const RemoteTranslatorChecks: Record<string, (assert: AssertModule) => vo
       });
       assert.ok(narrow !== null);
       assert.deepStrictEqual(narrow.collectPaths, [{ path: "tmp/trx", kind: "dir" }]);
+      assert.deepStrictEqual(narrow.redirectedResultsDirs, ["tmp/trx"]);
       assert.ok(narrow.bashCommand.includes("/nr:false"));
       assert.ok(narrow.bashCommand.includes("/p:Configuration=Release"));
+
+      const spaceResultsDir = translateForRemote("dotnet test --results-directory tmp/trx2", {
+        ...baseOpts,
+        remoteRules: runnerRules,
+      });
+      assert.ok(spaceResultsDir !== null);
+      assert.deepStrictEqual(spaceResultsDir.redirectedResultsDirs, ["tmp/trx2"]);
+
+      const subDir = path.join(wt, "sub");
+      fs.mkdirSync(subDir, { recursive: true });
+      fs.writeFileSync(path.join(wt, "tests", "App.csproj"), "<Project />\n");
+      for (const emptyResultsCmd of [
+        'dotnet test ../tests/App.csproj --results-directory ""',
+        'dotnet test ../tests/App.csproj --results-directory "  "',
+        'dotnet test ../tests/App.csproj --results-directory=""',
+      ]) {
+        assert.strictEqual(
+          translateForRemote(emptyResultsCmd, { ...baseOpts, cwd: subDir, remoteRules: runnerRules }),
+          null,
+          `rejects empty results-directory from subdir: ${emptyResultsCmd}`,
+        );
+      }
+
+      const plainRedir = translateForRemote("node scripts/a.js > tmp/out.log", {
+        ...baseOpts,
+        remoteRules: runnerRules,
+      });
+      assert.ok(plainRedir !== null);
+      assert.deepStrictEqual(plainRedir.collectPaths, [{ path: "tmp/out.log", kind: "file" }]);
+      assert.strictEqual(plainRedir.redirectedResultsDirs, undefined);
 
       // B5: reject leading "-" paths/segments in --results-directory, -d, redirections, and plugin collectPaths
       for (const dashCmd of [
@@ -583,10 +615,16 @@ export const RemoteTranslatorChecks: Record<string, (assert: AssertModule) => vo
   },
 
   remoteRulesValidationRejectsUnsafeInputs(assert: AssertModule): void {
+    const rawDefaultEnv = JSON.parse(
+      '{"__proto__":"evil","constructor":"evil","bad-dash":"1","DiffEngine_Disabled":"true"}',
+    ) as Record<string, string>;
     const resolved = resolveRemoteRules([
       {
         contribution: {
           allowedPrograms: ["Cargo", "evil;rm", "bad space", ".", "..", "node"],
+          defaultEnv: rawDefaultEnv,
+          allowedEnv: ["TEST_SEED", "MixedCase", "bad-dash", "bad space", "123NUM", "a;rm", "__proto__"],
+          localOnlyEnv: ["GSHARP_SIGNING_KEY", "MIXEDCASE", "bad-local", "__proto__"],
           syncExcludePrefixes: ["-rf", "tests/-rf", "./-rf", "../escape", "/abs", "valid/dir/"],
           resetCleanDirs: ["-rf", "a/-rf", "./-rf", "tmp/clean"],
           failureArtifacts: [
@@ -600,9 +638,309 @@ export const RemoteTranslatorChecks: Record<string, (assert: AssertModule) => vo
       },
     ]);
     assert.deepStrictEqual([...resolved.allowedPrograms].sort(), ["cargo", "node"]);
+    assert.deepStrictEqual(Object.keys(resolved.defaultEnv), ["DiffEngine_Disabled"]);
+    assert.strictEqual(resolved.defaultEnv.DiffEngine_Disabled, "true");
+    assert.deepStrictEqual([...resolved.allowedEnv], ["TEST_SEED"]);
+    assert.deepStrictEqual([...resolved.localOnlyEnv].sort(), ["GSHARP_SIGNING_KEY", "MIXEDCASE"]);
+    assert.strictEqual(resolved.allowedEnvLower.has("mixedcase"), false);
+    assert.strictEqual(resolved.localOnlyEnvLower.get("mixedcase"), "MIXEDCASE");
     assert.deepStrictEqual(resolved.syncExcludePrefixes, ["valid/dir/"]);
     assert.deepStrictEqual(resolved.resetCleanDirs, ["tmp/clean"]);
     assert.strictEqual(resolved.failureArtifacts.length, 1);
     assert.strictEqual(resolved.crashSummaries.length, 0);
+  },
+
+  remoteCallerEnvAllowlistAndPrecedence(assert: AssertModule): void {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-rcmd-env-"));
+    try {
+      const wt = path.join(tmp, "wt");
+      fs.mkdirSync(path.join(wt, ".git"), { recursive: true });
+      fs.mkdirSync(path.join(wt, "scripts"), { recursive: true });
+      const script = path.join(wt, "scripts", "a.js");
+      fs.writeFileSync(script, "console.log('ok');\n");
+
+      const envPlugin: QueuePlugin = {
+        name: "env-policy-test",
+        apiVersion: PluginApiVersion,
+        remoteOffload: () => ({
+          allowedPrograms: ["node"],
+          defaultEnv: { DiffEngine_Disabled: "true" },
+          allowedEnv: ["TEST_SEED", "GSharpNativeSanitizers", "DiffEngine_Disabled", "GSHARP_TEST_MEMORY_DUMP"],
+          localOnlyEnv: ["GSHARP_SIGNING_KEY", "GSHARP_TEST_MEMORY_REPORT", "GSHARP_JOB_QUEUE_STATE_DIR"],
+        }),
+      };
+      const rules = new PluginHost([envPlugin], [{}], wt, () => {}).remoteOffload({
+        cwd: wt,
+        worktree: wt,
+        configRoot: wt,
+        shell: "pwsh",
+        env: {},
+        log: () => {},
+      });
+      const baseOpts = {
+        cwd: wt,
+        worktree: wt,
+        shell: "pwsh" as const,
+        places: { [script]: { root: wt, ignored: false } },
+        cpus: 4,
+        keepBuildServersWarm: true,
+        remoteRules: rules,
+      };
+
+      // Allowlisted non-path scalars forward while standard OS env is excluded
+      const fwdPlan = translateForRemote("node scripts/a.js", {
+        ...baseOpts,
+        platform: "linux",
+        env: {
+          TEST_SEED: "42",
+          GSharpNativeSanitizers: "address,undefined",
+          GSHARP_TEST_MEMORY_DUMP: "gcdump",
+          PATH: "/usr/bin",
+          HOME: "/home/dev",
+          TEMP: "/tmp",
+        },
+      });
+      assert.ok(fwdPlan !== null);
+      assert.strictEqual(fwdPlan.env.TEST_SEED, "42");
+      assert.strictEqual(fwdPlan.env.GSharpNativeSanitizers, "address,undefined");
+      assert.strictEqual(fwdPlan.env.GSHARP_TEST_MEMORY_DUMP, "gcdump");
+      assert.strictEqual(fwdPlan.env.DiffEngine_Disabled, "true");
+      assert.strictEqual(fwdPlan.env.PATH, undefined);
+      assert.strictEqual(fwdPlan.env.HOME, undefined);
+      assert.strictEqual(fwdPlan.env.TEMP, undefined);
+
+      for (const scalar of ["1", "true", "gcdump", "42", "en-US", "C.UTF-8", "address,undefined"]) {
+        const scalarPlan = translateForRemote("node scripts/a.js", {
+          ...baseOpts,
+          env: { TEST_SEED: scalar },
+        });
+        assert.ok(scalarPlan !== null, `scalar ${scalar} must forward without path rejection`);
+        assert.strictEqual(scalarPlan.env.TEST_SEED, scalar);
+      }
+
+      // Windows case canonicalization vs POSIX exact case
+      const winFwd = translateForRemote("node scripts/a.js", {
+        ...baseOpts,
+        platform: "win32",
+        env: { test_seed: "77", gsharpnativesanitizers: "address" },
+      });
+      assert.ok(winFwd !== null);
+      assert.strictEqual(winFwd.env.TEST_SEED, "77");
+      assert.strictEqual(winFwd.env.test_seed, undefined);
+      assert.strictEqual(winFwd.env.GSharpNativeSanitizers, "address");
+      assert.strictEqual(
+        translateForRemote("node scripts/a.js", {
+          ...baseOpts,
+          platform: "win32",
+          env: { gsharp_signing_key: "secret" },
+        }),
+        null,
+        "win32 matches localOnlyEnv case-insensitively",
+      );
+      const linuxCasePlan = translateForRemote("node scripts/a.js", {
+        ...baseOpts,
+        platform: "linux",
+        env: { test_seed: "77" },
+      });
+      assert.ok(linuxCasePlan !== null && linuxCasePlan.env.TEST_SEED === undefined);
+
+      // Dual-cased caller env on Windows always prefers canonical casing regardless of key order
+      for (const dualEnv of [
+        { test_seed: "11", TEST_SEED: "42" },
+        { TEST_SEED: "42", test_seed: "11" },
+      ]) {
+        const dualPlan = translateForRemote("node scripts/a.js", {
+          ...baseOpts,
+          platform: "win32",
+          env: dualEnv,
+        });
+        assert.ok(dualPlan !== null);
+        assert.strictEqual(dualPlan.env.TEST_SEED, "42");
+        assert.strictEqual(dualPlan.env.test_seed, undefined);
+      }
+
+      // Precedence: leading.env > defaultEnv > caller.env; prepareRemoteCommand > caller.env; segEnv preserved
+      const leadWins = translateForRemote("$env:TEST_SEED='99'; node scripts/a.js", {
+        ...baseOpts,
+        env: { TEST_SEED: "42" },
+      });
+      assert.ok(leadWins !== null && leadWins.env.TEST_SEED === "99");
+
+      const winLeadCaseWins = translateForRemote("$env:test_seed='99'; node scripts/a.js", {
+        ...baseOpts,
+        platform: "win32",
+        env: { TEST_SEED: "42" },
+      });
+      assert.ok(winLeadCaseWins !== null);
+      assert.strictEqual(winLeadCaseWins.env.test_seed, "99");
+      assert.strictEqual(winLeadCaseWins.env.TEST_SEED, undefined);
+
+      const winMixedDefault = translateForRemote("$env:diffengine_disabled='false'; node scripts/a.js", {
+        ...baseOpts,
+        platform: "win32",
+        env: {},
+      });
+      assert.ok(winMixedDefault !== null);
+      assert.strictEqual(winMixedDefault.env.diffengine_disabled, "false");
+      assert.strictEqual(winMixedDefault.env.DiffEngine_Disabled, undefined);
+
+      const defaultWins = translateForRemote("node scripts/a.js", {
+        ...baseOpts,
+        platform: "win32",
+        env: { diffengine_disabled: "false" },
+      });
+      assert.ok(defaultWins !== null && defaultWins.env.DiffEngine_Disabled === "true");
+
+      const leadBeatsDefault = translateForRemote("$env:DiffEngine_Disabled='false'; node scripts/a.js", {
+        ...baseOpts,
+        env: { DiffEngine_Disabled: "true" },
+      });
+      assert.ok(leadBeatsDefault !== null && leadBeatsDefault.env.DiffEngine_Disabled === "false");
+
+      const segEnvPlan = translateForRemote("TEST_SEED=99 node scripts/a.js", {
+        ...baseOpts,
+        shell: "bash",
+        env: { TEST_SEED: "42" },
+      });
+      assert.ok(segEnvPlan !== null);
+      assert.ok(segEnvPlan.bashCommand.startsWith("TEST_SEED=99 node "));
+      assert.strictEqual(segEnvPlan.env.TEST_SEED, "42");
+
+      const prepRules = new PluginHost(
+        [
+          {
+            name: "prep-override",
+            apiVersion: PluginApiVersion,
+            remoteOffload: () => ({
+              allowedPrograms: ["node"],
+              allowedEnv: ["TEST_SEED"],
+              prepareRemoteCommand: (command) => ({ command, env: { TEST_SEED: "prepared" } }),
+            }),
+          },
+        ],
+        [{}],
+        wt,
+        () => {},
+      ).remoteOffload({ cwd: wt, worktree: wt, configRoot: wt, shell: "pwsh", env: {}, log: () => {} });
+      const prepPlan = translateForRemote("node scripts/a.js", {
+        ...baseOpts,
+        remoteRules: prepRules,
+        env: { TEST_SEED: "42" },
+      });
+      assert.ok(prepPlan !== null && prepPlan.env.TEST_SEED === "prepared");
+
+      // Empty/whitespace-only string & undefined treated as unset; "0" treated as set
+      const emptyPlan = translateForRemote("node scripts/a.js", {
+        ...baseOpts,
+        env: { TEST_SEED: "", GSHARP_SIGNING_KEY: "", GSHARP_TEST_MEMORY_REPORT: undefined },
+      });
+      assert.ok(emptyPlan !== null && emptyPlan.env.TEST_SEED === undefined);
+      const wsUnsetPlan = translateForRemote("node scripts/a.js", {
+        ...baseOpts,
+        env: { TEST_SEED: "   ", GSHARP_SIGNING_KEY: "   " },
+      });
+      assert.ok(wsUnsetPlan !== null && wsUnsetPlan.env.TEST_SEED === undefined);
+      assert.strictEqual(
+        translateForRemote("node scripts/a.js", { ...baseOpts, env: { GSHARP_SIGNING_KEY: "0" } }),
+        null,
+      );
+      const zeroSeedPlan = translateForRemote("node scripts/a.js", { ...baseOpts, env: { TEST_SEED: "0" } });
+      assert.ok(zeroSeedPlan !== null && zeroSeedPlan.env.TEST_SEED === "0");
+
+      // Path-valued allowlisted variables (including whitespace-padded paths) fail closed without rewriting
+      for (const pathVal of [
+        "C:\\foo",
+        "D:/bar",
+        "C:rel",
+        "  C:rel",
+        "\\\\server\\share",
+        "/tmp/out",
+        "tmp/out",
+        ".\\out",
+        "../out",
+        "~/out",
+        ".",
+        " . ",
+        "..",
+        " .. ",
+        "~",
+        " ~ ",
+        "bad\nline",
+      ]) {
+        assert.strictEqual(
+          translateForRemote("node scripts/a.js", { ...baseOpts, env: { TEST_SEED: pathVal } }),
+          null,
+          `rejects path-valued TEST_SEED=${JSON.stringify(pathVal)}`,
+        );
+      }
+
+      // Prototype trap keys in leading/inline/segEnv assignments and Object.prototype lookups are rejected safely
+      for (const [protoCmd, protoShell] of [
+        ["$env:__proto__='evil'; node scripts/a.js", "pwsh"],
+        ["$env:constructor='evil'; node scripts/a.js", "pwsh"],
+        ["export __proto__=evil; node scripts/a.js", "bash"],
+        ["__proto__=evil node scripts/a.js", "bash"],
+        ["constructor=evil node scripts/a.js", "bash"],
+      ] as const) {
+        assert.strictEqual(
+          translateForRemote(protoCmd, { ...baseOpts, shell: protoShell, env: {} }),
+          null,
+          `rejects prototype trap env command: ${protoCmd}`,
+        );
+      }
+      assert.strictEqual(getEnvValue({}, "toString", "win32"), undefined);
+      assert.strictEqual(getEnvValue({}, "toString", "linux"), undefined);
+      assert.strictEqual(hasEnvKey({}, "toString", "win32"), false);
+      assert.strictEqual(hasEnvKey({}, "toString", "linux"), false);
+
+      // Queue infra variables ignored (even if erroneously listed in localOnlyEnv) & case-folded on win32
+      const infraPlan = translateForRemote("node scripts/a.js", {
+        ...baseOpts,
+        platform: "win32",
+        env: {
+          gsharp_job_queue_state_dir: "C:\\tmp\\state",
+          GSHARP_JOB_QUEUE_REMOTE_WARM_SERVERS: "0",
+          JOB_QUEUE_CONFIG: "C:\\cfg.json",
+          GSHARP_GPU_LOCK_PATH: "C:\\lock",
+          GSHARP_GPU_POOL_WATCH: "0",
+          GSHARP_GPU_HOLD_WATCH: "0",
+        },
+      });
+      assert.ok(infraPlan !== null);
+
+      const warmRules = new PluginHost(
+        [
+          {
+            name: "warm-flag-check",
+            apiVersion: PluginApiVersion,
+            remoteOffload: () => ({
+              allowedPrograms: ["node"],
+              rewriteStatement: (stmt) => ({
+                args: [...stmt.args, stmt.keepBuildServersWarm ? "--warm" : "--cold"],
+              }),
+            }),
+          },
+        ],
+        [{}],
+        wt,
+        () => {},
+      ).remoteOffload({ cwd: wt, worktree: wt, configRoot: wt, shell: "pwsh", env: {}, log: () => {} });
+      const winWarmOff = translateForRemote("node scripts/a.js", {
+        ...baseOpts,
+        remoteRules: warmRules,
+        platform: "win32",
+        env: { gsharp_job_queue_remote_warm_servers: "0" },
+      });
+      assert.ok(winWarmOff !== null && winWarmOff.bashCommand.includes("--cold"));
+      const linuxWarmKept = translateForRemote("node scripts/a.js", {
+        ...baseOpts,
+        remoteRules: warmRules,
+        platform: "linux",
+        env: { gsharp_job_queue_remote_warm_servers: "0" },
+      });
+      assert.ok(linuxWarmKept !== null && linuxWarmKept.bashCommand.includes("--warm"));
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
   },
 };
