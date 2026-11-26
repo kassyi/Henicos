@@ -20,6 +20,24 @@ public class StateMachineFallbackGeneratorTests
     private static readonly Lazy<Compilation> s_casesCompilation =
         new(static () => RoslynTestUtility.CreateCompilation(s_casesSource).WithAssemblyName("FallbackCasesTest"));
 
+    // A new obstacle without a reason would throw in the translator and drop the method's code from the build
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void ForNative_EveryObstacle_HasAReasonNamedAfterIt()
+    {
+        foreach (var obstacle in Enum.GetValues<NativeStackObstacle>())
+        {
+            var reason = StateMachineReason.ForNative(obstacle);
+            if (obstacle is NativeStackObstacle.None or NativeStackObstacle.NoBlockBarrier)
+            {
+                Assert.Null(reason);
+                continue;
+            }
+
+            Assert.Equal(obstacle.ToString(), Assert.NotNull(reason).Name);
+        }
+    }
+
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void StateMachineFallbacks_DefaultOptionsAndCudaWithNativeStack_EmitNoFile()

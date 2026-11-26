@@ -34,6 +34,13 @@ internal enum NativeStackObstacle
     WarpOperatorMacro,
 
     /// <summary>
+    /// A suspending device function that reaches a warp collective is passed as a method group: the native stack form
+    /// of the target takes a warp frame offset (<c>__gsharp_warp_frame</c>), which a delegate cannot pass, and
+    /// <see cref="WarpFrameLayout"/> only places calls written as calls.
+    /// </summary>
+    WarpMethodGroup,
+
+    /// <summary>
     /// A method that reaches <c>Warp.ActiveMask()</c> declares a local with <c>using</c>: the CPU writes the statements
     /// after the declaration inside a <c>try</c>, and a goto of the reconvergence regions (a <c>continue</c> that leaves
     /// the region of a loop body) to a label among them would enter that <c>try</c>, which C++ forbids.

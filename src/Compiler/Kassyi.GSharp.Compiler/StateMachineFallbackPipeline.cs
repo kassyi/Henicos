@@ -9,7 +9,10 @@ namespace Kassyi.GSharp.Compiler;
 /// </summary>
 internal static class StateMachineFallbackPipeline
 {
-    // Keeps the tracking name from #383 so incremental caching snapshots stay stable.
+    /// <summary>
+    /// The tracking name of the output step, kept from the managed failure list it replaces: the caching snapshots of
+    /// the generator (<c>GpuKernelGeneratorCachingTests</c>) list it.
+    /// </summary>
     public const string TrackingName = "GpuManagedStackFailuresInput";
 
     /// <summary>The generated file that lists the functions staying on the state machine under a stack switch.</summary>

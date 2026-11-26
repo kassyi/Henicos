@@ -1,13 +1,5 @@
 namespace Kassyi.GSharp.Compiler.Analysis;
 
-#pragma warning disable SA1402 // CpuPath enum and StateMachineReason live together
-/// <summary>The CPU execution path that keeps a method on the state machine under a stack switch.</summary>
-internal enum CpuPath
-{
-    Native,
-    Managed
-}
-
 /// <summary>
 /// Why a kernel or suspending device function stays on the CPU state machine under a stack switch: one value shared
 /// by the fallback list (<see cref="StateMachineFallbackPipeline"/>), eligibility queries, and diagnostics.
@@ -30,7 +22,7 @@ internal readonly record struct StateMachineReason(
         _ => throw new ArgumentOutOfRangeException(nameof(Path), Path, null)
     };
 
-    /// <summary>Appends <c>Name[: Detail]</c> with line breaks normalized to spaces.</summary>
+    /// <summary>Appends <c>Name[: Detail]</c> with line breaks and tabs normalized to spaces.</summary>
     public void AppendFormattedReason(in SourceWriter writer)
     {
         writer.Append(Name);
@@ -42,11 +34,11 @@ internal readonly record struct StateMachineReason(
         writer.Append(": ");
         foreach (var c in detail)
         {
-            writer.Append(c is '\r' or '\n' ? ' ' : c);
+            writer.Append(c is '\r' or '\n' or '\t' ? ' ' : c);
         }
     }
 
-    /// <summary>Formats <c>Name[: Detail]</c> with line breaks normalized to spaces.</summary>
+    /// <summary>Formats <c>Name[: Detail]</c> with line breaks and tabs normalized to spaces.</summary>
     public string FormatReason()
     {
         if (string.IsNullOrEmpty(Detail))
@@ -107,6 +99,11 @@ internal readonly record struct StateMachineReason(
             nameof(NativeStackObstacle.WarpOperatorMacro),
             "it expands an operator macro whose target reaches a warp collective",
             detail),
+        NativeStackObstacle.WarpMethodGroup => new(
+            CpuPath.Native,
+            nameof(NativeStackObstacle.WarpMethodGroup),
+            "it passes a suspending device function that reaches a warp collective as a method group",
+            detail),
         NativeStackObstacle.UsingDeclarationWithActiveMask => new(
             CpuPath.Native,
             nameof(NativeStackObstacle.UsingDeclarationWithActiveMask),
@@ -121,4 +118,3 @@ internal readonly record struct StateMachineReason(
         _ => throw new ArgumentOutOfRangeException(nameof(obstacle), obstacle, null)
     };
 }
-#pragma warning restore SA1402

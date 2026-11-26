@@ -23,10 +23,9 @@ public struct WarpValue
     public static WarpValue operator +(WarpValue left, WarpValue right) => throw new GpuOnlyException();
 }
 
-// A kernel that the stack model takes (a block barrier, no call of a function without a stack form) but whose stack
-// form cannot be made: it names BarrierStep, which has no stack form, as a method group. BarrierStep waits at a block
-// barrier and reaches no warp collective; its body names a file-local type, which the managed copies cannot name
-// (GSH0119), so the form fails because the function it names has none
+// A kernel that the stack eligibility keeps on the state machine: it passes BarrierStep, which has no stack form, as a
+// method group. BarrierStep waits at a block barrier and reaches no warp collective; its body names a file-local type,
+// which the managed copies cannot name (GSH0119), so IsStackKernel rejects the kernel cleanly without running TryGenerate
 [SkipSnapshotConsistency("Input for ManagedStackModelGeneratorTests")]
 public static partial class FallbackKernels
 {

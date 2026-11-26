@@ -1,5 +1,4 @@
 using Kassyi.GSharp.Compiler.Ir.Expressions;
-using Kassyi.GSharp.Compiler.Ir.Linear;
 using Kassyi.GSharp.Compiler.Transpiler;
 
 namespace Kassyi.GSharp.Compiler.Ir.Splitting;
@@ -77,7 +76,7 @@ internal sealed class IrSplitMarks
                 _operatorMacro = true;
                 break;
             case IrRuntimeCall:
-                throw new InvalidOperationException("Linear IR nodes appear only after the split pass.");
+                throw new InvalidOperationException("Reconvergence runtime calls appear only after the split pass.");
         }
 
         var outside = any;

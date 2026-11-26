@@ -31,6 +31,10 @@ namespace Kassyi.GSharp.Compiler.Models;
 /// The error sites of the <c>throw</c> statements of the function; the module that places the function registers them
 /// with its kernels, so a throw reports its place, its message and its exception type on CUDA and on the native CPU path.
 /// </param>
+/// <param name="NativeFallback">
+/// Why the native CPU path keeps the method on its state machine under <c>GSharpNativeBarrierModel=Stack</c>, for the
+/// fallback list (<see cref="StateMachineFallbackPipeline"/>); default when it runs on the stack.
+/// </param>
 internal readonly record struct TranspiledDeviceMethodResult(
     HostClassHeader Class,
     string MethodName,
