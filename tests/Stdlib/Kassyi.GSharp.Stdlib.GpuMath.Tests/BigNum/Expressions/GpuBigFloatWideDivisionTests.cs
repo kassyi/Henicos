@@ -9,21 +9,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public sealed class GpuBigFloatWideDivisionTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public GpuBigFloatWideDivisionTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(1024 * 1024, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1024 * 1024, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     // 600-word significands, past the 512 words of the division kernel's shared buffers: the quotient keeps the top
     // word instead of dividing the low 512 words.
@@ -38,16 +34,16 @@ public sealed class GpuBigFloatWideDivisionTests : IDisposable
         dividendWords[words - 1] = 1;
         var oneWords = new uint[words];
         oneWords[0] = 1;
-        using var dividend = new GpuBigFloat(new GpuBigUInt(_workspace, dividendWords), 0, false);
-        using var one = new GpuBigFloat(new GpuBigUInt(_workspace, oneWords), 0, false);
-        using var array = new GpuBigFloatArray(_workspace, 2, words);
+        using var dividend = new GpuBigFloat(new GpuBigUInt(Workspace, dividendWords), 0, false);
+        using var one = new GpuBigFloat(new GpuBigUInt(Workspace, oneWords), 0, false);
+        using var array = new GpuBigFloatArray(Workspace, 2, words);
         array.SetElement(0, dividend);
         array.SetElement(1, dividend);
 
         using var byScalar = array.AsVectorizedEnumerable().SelectDivide(one);
         using var byItself = array.AsVectorizedEnumerable().ZipDivide(array.AsVectorizedEnumerable());
-        var quotients = byScalar.Evaluate(_workspace);
-        var ones = byItself.Evaluate(_workspace);
+        var quotients = byScalar.Evaluate(Workspace);
+        var ones = byItself.Evaluate(Workspace);
 
         var expected = (BigInteger.One << (32 * (words - 1))) + 3;
         AssertElement(quotients.GetElement(0), expected, "SelectDivide element 0");

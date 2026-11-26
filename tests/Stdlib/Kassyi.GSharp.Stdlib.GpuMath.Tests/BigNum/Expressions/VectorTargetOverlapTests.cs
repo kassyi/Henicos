@@ -1,4 +1,6 @@
 #nullable enable
+using Kassyi.GSharp.Core;
+
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 
 /// <summary>
@@ -43,21 +45,17 @@ public sealed class VectorTargetOverlapTests : IDisposable
     private const int HostCount = 8;
     private const int HostWords = 4;
 
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public VectorTargetOverlapTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1024, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     public enum Layout
     {
@@ -193,15 +191,15 @@ public sealed class VectorTargetOverlapTests : IDisposable
         var random = new Random(Seed);
         var left = RandomValues(random, count, words * 32 - 2);
         var divisor = RandomValue(random, words * 16) | 1;
-        using var storage = new GpuBigUIntArray(_workspace, count * words, 1);
+        using var storage = new GpuBigUIntArray(Workspace, count * words, 1);
         using var input = CreateIntArray(left, words);
         var scalarHandle = storage.Handle.Slice((count - 1) * words, words);
         WriteWords(scalarHandle.DevicePointer, [divisor], words);
-        using var scalar = new GpuBigInt(scalarHandle.AsBorrowedBigUInt(_workspace), false);
+        using var scalar = new GpuBigInt(scalarHandle.AsBorrowedBigUInt(Workspace), false);
         using var expression = input.AsVectorizedEnumerable().SelectDivide(scalar);
-        var target = new GpuBigUIntArrayView(_workspace, storage.Handle, count, words);
+        var target = new GpuBigUIntArrayView(Workspace, storage.Handle, count, words);
 
-        var result = expression.Evaluate(_workspace, 0, count, target);
+        var result = expression.Evaluate(Workspace, 0, count, target);
 
         Assert.Equal(left.Select(v => v / divisor), ReadSigned(result));
     }
@@ -220,7 +218,7 @@ public sealed class VectorTargetOverlapTests : IDisposable
         using var expression = array.AsVectorizedEnumerable();
         GpuBigUIntArrayView signs = array.Signs;
 
-        var result = expression.Evaluate(_workspace, 0, count, signs);
+        var result = expression.Evaluate(Workspace, 0, count, signs);
 
         Assert.Equal(values, ReadSigned(result));
     }
@@ -238,11 +236,11 @@ public sealed class VectorTargetOverlapTests : IDisposable
         var random = new Random(Seed);
         var values = Enumerable.Range(0, count).Select(_ => new BigInteger(random.Next(0, 1 << 30))).ToArray();
         using var array = CreateSignedArray(values);
-        using var scalar = new GpuBigInt(GpuBigUInt.FromBigInteger(_workspace, 5, 1), false);
+        using var scalar = new GpuBigInt(GpuBigUInt.FromBigInteger(Workspace, 5, 1), false);
         using var expression = array.AsVectorizedEnumerable().SelectDivide(scalar);
         GpuBigUIntArrayView signs = array.Signs;
 
-        var result = expression.Evaluate(_workspace, 0, count - 1, signs.Slice(1, count - 1));
+        var result = expression.Evaluate(Workspace, 0, count - 1, signs.Slice(1, count - 1));
 
         Assert.Equal(values.Take(count - 1).Select(static v => v / 5), ReadSigned(result));
     }
@@ -266,25 +264,25 @@ public sealed class VectorTargetOverlapTests : IDisposable
             using var divisor = CreateFloat(3, words);
             using var reference = pristine.AsVectorizedEnumerable().SelectDivide(divisor);
             width = reference.WordsPerElement;
-            using var referenceTarget = new GpuBigFloatArray(_workspace, count, width);
-            reference.Evaluate(_workspace, 0, count, referenceTarget);
+            using var referenceTarget = new GpuBigFloatArray(Workspace, count, width);
+            reference.Evaluate(Workspace, 0, count, referenceTarget);
             expected = ReadFloatWords(referenceTarget);
         }
 
         using var input = CreateFloatArray(values, words);
-        using var significands = new GpuBigUIntArray(_workspace, count * width, 1);
-        using var exponents = new GpuBigUIntArray(_workspace, count, 1);
-        using var signs = new GpuBigUIntArray(_workspace, count, 1);
+        using var significands = new GpuBigUIntArray(Workspace, count * width, 1);
+        using var exponents = new GpuBigUIntArray(Workspace, count, 1);
+        using var signs = new GpuBigUIntArray(Workspace, count, 1);
         var scalarHandle = significands.Handle.Slice((count - 1) * width, words);
         WriteWords(scalarHandle.DevicePointer, [3], words);
-        using var scalar = new GpuBigFloat(scalarHandle.AsBorrowedBigUInt(_workspace), 0, false);
+        using var scalar = new GpuBigFloat(scalarHandle.AsBorrowedBigUInt(Workspace), 0, false);
         using var expression = input.AsVectorizedEnumerable().SelectDivide(scalar);
         var target = new GpuBigFloatArrayView(
-            new GpuBigUIntArrayView(_workspace, significands.Handle, count, width),
-            new GpuBigUIntArrayView(_workspace, exponents.Handle, count, 1),
-            new GpuBigUIntArrayView(_workspace, signs.Handle, count, 1));
+            new GpuBigUIntArrayView(Workspace, significands.Handle, count, width),
+            new GpuBigUIntArrayView(Workspace, exponents.Handle, count, 1),
+            new GpuBigUIntArrayView(Workspace, signs.Handle, count, 1));
 
-        expression.Evaluate(_workspace, 0, count, target);
+        expression.Evaluate(Workspace, 0, count, target);
 
         var actual = ReadFloatWords(target);
         Assert.Equal(expected[0], actual[0]);
@@ -307,13 +305,13 @@ public sealed class VectorTargetOverlapTests : IDisposable
         var values = RandomValues(random, count, words * 32 - 40);
         var scalarValue = new BigInteger(12345);
         using var array = CreateIntArray(values, words);
-        using var scalar = new GpuBigInt(GpuBigUInt.FromBigInteger(_workspace, scalarValue, words), false);
+        using var scalar = new GpuBigInt(GpuBigUInt.FromBigInteger(Workspace, scalarValue, words), false);
         using var expression = modulo
             ? array.AsVectorizedEnumerable().SelectModulo(scalar)
             : array.AsVectorizedEnumerable().SelectDivide(scalar);
         GpuBigUIntArrayView arrayValues = array.Values;
 
-        var result = expression.Evaluate(_workspace, 0, count - 1, arrayValues.Slice(1, count - 1));
+        var result = expression.Evaluate(Workspace, 0, count - 1, arrayValues.Slice(1, count - 1));
 
         var expected = values.Take(count - 1).Select(v => modulo ? v % scalarValue : v / scalarValue);
         Assert.Equal(expected, ReadSigned(result));
@@ -338,14 +336,14 @@ public sealed class VectorTargetOverlapTests : IDisposable
             {
                 // Large enough for the input and the target, either one shifted by one input element
                 var storageWords = inputWords[k] + count * Math.Max(inputWords[k], targetWords[k]);
-                var storage = new GpuBigUIntArray(_workspace, storageWords, 1);
-                buffers.Add(storage);
+                var storage = new GpuBigUIntArray(Workspace, storageWords, 1);
+                TrackBuffer(buffers, storage);
                 var (inputOffset, targetOffset) = Offsets(layout, inputWords[k]);
                 inputs[k] = storage.Handle.Slice(inputOffset, count * inputWords[k]);
                 if (layout == Layout.Disjoint)
                 {
-                    var separate = new GpuBigUIntArray(_workspace, count * targetWords[k], 1);
-                    buffers.Add(separate);
+                    var separate = new GpuBigUIntArray(Workspace, count * targetWords[k], 1);
+                    TrackBuffer(buffers, separate);
                     targets[k] = separate.Handle;
                 }
                 else
@@ -428,7 +426,7 @@ public sealed class VectorTargetOverlapTests : IDisposable
 
         public override (int Width, uint[][] Words) EvaluateReference()
         {
-            var workspace = owner._workspace;
+            var workspace = owner.Workspace;
             using var leftArray = owner.CreateIntArray(left, words);
             using var rightArray = owner.CreateIntArray(right, words);
             using var scalar = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, scalarValue, words), false);
@@ -444,7 +442,7 @@ public sealed class VectorTargetOverlapTests : IDisposable
             int width,
             Operand overlapped)
         {
-            var workspace = owner._workspace;
+            var workspace = owner.Workspace;
             using var leftArray = overlapped == Operand.Left
                 ? owner.Place(inputs[0], left, words)
                 : owner.CreateIntArray(left, words);
@@ -482,8 +480,8 @@ public sealed class VectorTargetOverlapTests : IDisposable
             using var rightArray = owner.CreateFloatArray(right, words);
             using var scalar = owner.CreateFloat(2, words);
             using var expression = CreateFloatNode(op, leftArray, rightArray, scalar);
-            using var target = new GpuBigFloatArray(owner._workspace, Count, expression.WordsPerElement);
-            expression.Evaluate(owner._workspace, 0, Count, target);
+            using var target = new GpuBigFloatArray(owner.Workspace, Count, expression.WordsPerElement);
+            expression.Evaluate(owner.Workspace, 0, Count, target);
             return (expression.WordsPerElement, owner.ReadFloatWords(target));
         }
 
@@ -493,7 +491,7 @@ public sealed class VectorTargetOverlapTests : IDisposable
             int width,
             Operand overlapped)
         {
-            var workspace = owner._workspace;
+            var workspace = owner.Workspace;
             using var overlappedArray = owner.PlaceFloat(inputs, overlapped == Operand.Left ? left : right, words);
             using var otherArray = owner.CreateFloatArray(overlapped == Operand.Left ? right : left, words);
             using var scalar = owner.CreateFloat(2, words);
@@ -643,27 +641,27 @@ public sealed class VectorTargetOverlapTests : IDisposable
     private GpuBigIntArray Place(GpuBigIntMemoryHandle handle, BigInteger[] values, int words)
     {
         WriteWords(handle.DevicePointer, values, words);
-        var signs = new GpuBigUIntArray(_workspace, values.Length, 1);
-        _workspace.Provider.ClearMemoryAsync(signs.DevicePointer, values.Length, _workspace.Stream);
-        return new GpuBigIntArray(new GpuBigUIntArray(_workspace, handle, values.Length, words), signs);
+        var signs = new GpuBigUIntArray(Workspace, values.Length, 1);
+        Workspace.Provider.ClearMemoryAsync(signs.DevicePointer, values.Length, Workspace.Stream);
+        return new GpuBigIntArray(new GpuBigUIntArray(Workspace, handle, values.Length, words), signs);
     }
 
     private GpuBigIntArray CreateIntArray(BigInteger[] values, int words)
     {
-        var array = new GpuBigIntArray(_workspace, values.Length, words);
+        var array = new GpuBigIntArray(Workspace, values.Length, words);
         WriteWords(array.Values.DevicePointer, values, words);
-        _workspace.Provider.ClearMemoryAsync(array.Signs.DevicePointer, values.Length, _workspace.Stream);
+        Workspace.Provider.ClearMemoryAsync(array.Signs.DevicePointer, values.Length, Workspace.Stream);
         return array;
     }
 
     // A 1-word signed array
     private GpuBigIntArray CreateSignedArray(BigInteger[] values)
     {
-        var array = new GpuBigIntArray(_workspace, values.Length, 1);
+        var array = new GpuBigIntArray(Workspace, values.Length, 1);
         var magnitudes = values.Select(BigInteger.Abs).ToArray();
         var signs = values.Select(static v => v.Sign < 0 ? 1u : 0u).ToArray();
         WriteWords(array.Values.DevicePointer, magnitudes, 1);
-        _workspace.Provider.CopyHostToDevice(array.Signs.DevicePointer, signs, signs.Length, _workspace.Stream);
+        Workspace.Provider.CopyHostToDevice(array.Signs.DevicePointer, signs, signs.Length, Workspace.Stream);
         return array;
     }
 
@@ -673,16 +671,16 @@ public sealed class VectorTargetOverlapTests : IDisposable
     {
         var count = values.Length;
         var array = new GpuBigFloatArray(
-            new GpuBigUIntArray(_workspace, components[0], count, words),
-            new GpuBigUIntArray(_workspace, components[1], count, 1),
-            new GpuBigUIntArray(_workspace, components[2], count, 1));
+            new GpuBigUIntArray(Workspace, components[0], count, words),
+            new GpuBigUIntArray(Workspace, components[1], count, 1),
+            new GpuBigUIntArray(Workspace, components[2], count, 1));
         WriteFloat(array, values, words);
         return array;
     }
 
     private GpuBigFloatArray CreateFloatArray(uint[] values, int words)
     {
-        var array = new GpuBigFloatArray(_workspace, values.Length, words);
+        var array = new GpuBigFloatArray(Workspace, values.Length, words);
         WriteFloat(array, values, words);
         return array;
     }
@@ -695,16 +693,16 @@ public sealed class VectorTargetOverlapTests : IDisposable
             host[i * words] = values[i];
         }
 
-        _workspace.Provider.CopyHostToDevice(array.Significands.DevicePointer, host, host.Length, _workspace.Stream);
-        _workspace.Provider.ClearMemoryAsync(array.Exponents.DevicePointer, values.Length, _workspace.Stream);
-        _workspace.Provider.ClearMemoryAsync(array.Signs.DevicePointer, values.Length, _workspace.Stream);
+        Workspace.Provider.CopyHostToDevice(array.Significands.DevicePointer, host, host.Length, Workspace.Stream);
+        Workspace.Provider.ClearMemoryAsync(array.Exponents.DevicePointer, values.Length, Workspace.Stream);
+        Workspace.Provider.ClearMemoryAsync(array.Signs.DevicePointer, values.Length, Workspace.Stream);
     }
 
     private GpuBigFloat CreateFloat(uint value, int words)
     {
         var host = new uint[words];
         host[0] = value;
-        return new GpuBigFloat(new GpuBigUInt(_workspace, host), 0, false);
+        return new GpuBigFloat(new GpuBigUInt(Workspace, host), 0, false);
     }
 
     private void WriteWords(IntPtr destination, BigInteger[] values, int words)
@@ -720,7 +718,7 @@ public sealed class VectorTargetOverlapTests : IDisposable
             }
         }
 
-        _workspace.Provider.CopyHostToDevice(destination, host, host.Length, _workspace.Stream);
+        Workspace.Provider.CopyHostToDevice(destination, host, host.Length, Workspace.Stream);
     }
 
     private uint[][] ReadFloatWords(GpuBigFloatArrayView array) =>
@@ -733,7 +731,7 @@ public sealed class VectorTargetOverlapTests : IDisposable
     private uint[] ReadWords(IntPtr source, int words)
     {
         var host = new uint[words];
-        _workspace.Provider.CopyDeviceToHost(host, source, host.Length, _workspace.Stream);
+        Workspace.Provider.CopyDeviceToHost(host, source, host.Length, Workspace.Stream);
         return host;
     }
 
@@ -761,4 +759,7 @@ public sealed class VectorTargetOverlapTests : IDisposable
 
         return result;
     }
+
+    private static void TrackBuffer(List<GpuBigUIntArray> buffers, [TakesOwnership] GpuBigUIntArray buffer) =>
+        buffers.Add(buffer);
 }

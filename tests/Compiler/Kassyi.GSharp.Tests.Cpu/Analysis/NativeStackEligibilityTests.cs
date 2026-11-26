@@ -33,9 +33,9 @@ public class NativeStackEligibilityTests
     [InlineData("NativeStackEligibilityCases.Kernels",
         "FloatSwitchShuffleKernel", NativeStackObstacle.CaseValueWithoutLabel)]
     [InlineData("NativeStackEligibilityCases.Kernels",
-        "UsingDeclarationActiveMaskKernel", NativeStackObstacle.UsingDeclarationWithActiveMask)]
+        "UsingDeclarationActiveMaskKernel", NativeStackObstacle.None)]
     [InlineData("NativeStackEligibilityCases.Kernels",
-        "UsingDeclarationInActiveMaskCalleeKernel", NativeStackObstacle.UsingDeclarationWithActiveMask)]
+        "UsingDeclarationInActiveMaskCalleeKernel", NativeStackObstacle.None)]
     [InlineData("NativeStackEligibilityCases.Kernels", "UsingDeclarationShuffleKernel", NativeStackObstacle.None)]
     [InlineData("NativeStackOperatorMacroCases.Kernels",
         "MacroAfterBarrierKernel", NativeStackObstacle.WarpOperatorMacro)]
@@ -64,7 +64,7 @@ public class NativeStackEligibilityTests
     [InlineData("NativeStackEligibilityCases.Kernels",
         "MethodGroupActiveMaskKernel", NativeStackObstacle.WarpMethodGroup)]
     [InlineData("NativeStackEligibilityCases.Kernels",
-        "MethodGroupUsingActiveMaskKernel", NativeStackObstacle.UsingDeclarationWithActiveMask)]
+        "MethodGroupUsingActiveMaskKernel", NativeStackObstacle.WarpMethodGroup)]
     [InlineData("NativeStackEligibilityCases.Kernels",
         "MethodGroupNameofKernel", NativeStackObstacle.None)]
     [InlineData("NativeStackEligibilityCases.Kernels",
@@ -191,6 +191,269 @@ public class NativeStackEligibilityTests
         Assert.Equal(
             NativeStackObstacle.ImportedSuspendingCall,
             NativeStackEligibility.Classify(groupSymbol, groupDeclaration, groupModel));
+    }
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("PriorConstKernel", NativeStackObstacle.None)]
+    [InlineData("OutVarInsideUsingKernel", NativeStackObstacle.None)]
+    [InlineData("OutVarInIfInsideUsingKernel", NativeStackObstacle.None)]
+    [InlineData("TernaryOutVarWithMaskInsideUsingKernel", NativeStackObstacle.None)]
+    [InlineData("ConstAfterAnchorKernel", NativeStackObstacle.StackBodyLowering)]
+    [InlineData("UsingResourceCapturedKernel", NativeStackObstacle.StackBodyLowering)]
+    [InlineData("OutVarAfterAnchorKernel", NativeStackObstacle.StackBodyLowering)]
+    [InlineData("OutVarInIfAfterAnchorKernel", NativeStackObstacle.StackBodyLowering)]
+    [InlineData("OutVarInUsingHeaderKernel", NativeStackObstacle.StackBodyLowering)]
+    [InlineData("MutableLocalAfterAnchorKernel", NativeStackObstacle.StackBodyLowering)]
+    [InlineData("AndAlsoOutVarWithMaskAfterAnchorKernel", NativeStackObstacle.StackBodyLowering)]
+    [InlineData("TernaryOutVarWithMaskAfterAnchorKernel", NativeStackObstacle.StackBodyLowering)]
+    internal void Classify_LocalFunctionAfterUsingDeclaration_DistinguishesCapturePosition(
+        string methodName,
+        NativeStackObstacle expected)
+    {
+        const string Source = """
+            using System;
+            using Kassyi.GSharp.Core;
+
+            namespace NativeLocalFuncCases;
+
+            public struct ScopeGuard : IDisposable
+            {
+                public uint[] Arr;
+                public int I;
+
+                public void Dispose() => Arr[I] += 0x100000u;
+            }
+
+            public static partial class Kernels
+            {
+                [GpuDeviceFunction]
+                private static void AssignOut(int tid, out int picked) => picked = tid;
+
+                [GpuDeviceFunction]
+                private static bool AssignOutBool(int tid, out int picked)
+                {
+                    picked = tid;
+                    return tid > 0;
+                }
+
+                [GpuDeviceFunction]
+                private static int AssignOutRet(int tid, out int picked)
+                {
+                    picked = tid;
+                    return tid;
+                }
+
+                [GpuDeviceFunction]
+                private static bool AssignOutBoolWithMask(int tid, out int picked)
+                {
+                    picked = tid + (int)(Warp.ActiveMask() & 0xFu);
+                    return tid > 0;
+                }
+
+                [GpuDeviceFunction]
+                private static int AssignOutRetWithMask(int tid, out int picked)
+                {
+                    picked = tid + (int)(Warp.ActiveMask() & 0xFu);
+                    return picked;
+                }
+
+                [GpuKernel]
+                public static void PriorConstKernel(uint[] result)
+                {
+                    int t = ThreadIndex.X;
+                    const int C = 5;
+                    int a = AddConst(1);
+                    using var guard = new ScopeGuard { Arr = result, I = t };
+                    int AddConst(int v) => v + C;
+                    result[t] += (uint)a + (Warp.ActiveMask() & 0xFu);
+                }
+
+                [GpuKernel]
+                public static void OutVarInsideUsingKernel(uint[] result)
+                {
+                    int t = ThreadIndex.X;
+                    int a = WriteOut(7);
+                    using var guard = new ScopeGuard { Arr = result, I = t };
+                    AssignOut(t, out var picked);
+                    int WriteOut(int v)
+                    {
+                        picked = v;
+                        return picked;
+                    }
+
+                    result[t] += (uint)a + (uint)picked + (Warp.ActiveMask() & 0xFu);
+                }
+
+                [GpuKernel]
+                public static void OutVarInIfInsideUsingKernel(uint[] result)
+                {
+                    int t = ThreadIndex.X;
+                    int a = WriteOut(7);
+                    using var guard = new ScopeGuard { Arr = result, I = t };
+                    if (t < 8 && AssignOutBool(5, out var picked))
+                    {
+                        result[t] += (uint)picked;
+                    }
+
+                    int WriteOut(int v)
+                    {
+                        picked = v;
+                        return picked;
+                    }
+
+                    result[t] += (uint)a + (Warp.ActiveMask() & 0xFu);
+                }
+
+                [GpuKernel]
+                public static void TernaryOutVarWithMaskInsideUsingKernel(uint[] result)
+                {
+                    int t = ThreadIndex.X;
+                    int a = WriteOut(7);
+                    using var guard = new ScopeGuard { Arr = result, I = t };
+                    int y = t < 8 ? AssignOutRetWithMask(5, out var picked) : 0;
+                    int WriteOut(int v)
+                    {
+                        picked = v;
+                        return picked;
+                    }
+
+                    result[t] += (uint)a + (uint)y + (Warp.ActiveMask() & 0xFu);
+                }
+
+                [GpuKernel]
+                public static void ConstAfterAnchorKernel(uint[] result)
+                {
+                    int t = ThreadIndex.X;
+                    int a = AddConst(1);
+                    const int C = 5;
+                    using var guard = new ScopeGuard { Arr = result, I = t };
+                    int AddConst(int v) => v + C;
+                    result[t] += (uint)a + (Warp.ActiveMask() & 0xFu);
+                }
+
+                [GpuKernel]
+                public static void UsingResourceCapturedKernel(uint[] result)
+                {
+                    int t = ThreadIndex.X;
+                    if (false)
+                    {
+                        _ = ReadGuard();
+                    }
+
+                    using var guard = new ScopeGuard { Arr = result, I = t };
+                    int ReadGuard() => guard.I;
+                    result[t] += Warp.ActiveMask() & 0xFu;
+                }
+
+                [GpuKernel]
+                public static void OutVarAfterAnchorKernel(uint[] result)
+                {
+                    int t = ThreadIndex.X;
+                    int a = WriteOut(7);
+                    AssignOut(t, out var z);
+                    using var guard = new ScopeGuard { Arr = result, I = t };
+                    int WriteOut(int v)
+                    {
+                        z = v + 10;
+                        return z;
+                    }
+
+                    result[t] += (uint)a + (uint)z + (Warp.ActiveMask() & 0xFu);
+                }
+
+                [GpuKernel]
+                public static void OutVarInIfAfterAnchorKernel(uint[] result)
+                {
+                    int t = ThreadIndex.X;
+                    int a = WriteOut(7);
+                    if (t < 8 && AssignOutBool(5, out var z))
+                    {
+                        result[t] += (uint)z;
+                    }
+
+                    using var guard = new ScopeGuard { Arr = result, I = t };
+                    int WriteOut(int v)
+                    {
+                        z = v + 10;
+                        return z;
+                    }
+
+                    result[t] += (uint)a + (Warp.ActiveMask() & 0xFu);
+                }
+
+                [GpuKernel]
+                public static void OutVarInUsingHeaderKernel(uint[] result)
+                {
+                    int t = ThreadIndex.X;
+                    int a = WriteOut(7);
+                    using var guard = new ScopeGuard { Arr = result, I = AssignOutRet(t, out var z) };
+                    int WriteOut(int v)
+                    {
+                        z = v + 10;
+                        return z;
+                    }
+
+                    result[t] += (uint)a + (uint)z + (Warp.ActiveMask() & 0xFu);
+                }
+
+                [GpuKernel]
+                public static void MutableLocalAfterAnchorKernel(uint[] result)
+                {
+                    int t = ThreadIndex.X;
+                    int a = WriteX(7);
+                    int x = 3;
+                    using var guard = new ScopeGuard { Arr = result, I = t };
+                    int WriteX(int v)
+                    {
+                        x = v + 10;
+                        return x;
+                    }
+
+                    result[t] += (uint)a + (uint)x + (Warp.ActiveMask() & 0xFu);
+                }
+
+                [GpuKernel]
+                public static void AndAlsoOutVarWithMaskAfterAnchorKernel(uint[] result)
+                {
+                    int t = ThreadIndex.X;
+                    int a = WriteOut(7);
+                    if (t < 8 && AssignOutBoolWithMask(5, out var z))
+                    {
+                        result[t] += (uint)z;
+                    }
+
+                    using var guard = new ScopeGuard { Arr = result, I = t };
+                    int WriteOut(int v)
+                    {
+                        z = v + 10;
+                        return z;
+                    }
+
+                    result[t] += (uint)a + (Warp.ActiveMask() & 0xFu);
+                }
+
+                [GpuKernel]
+                public static void TernaryOutVarWithMaskAfterAnchorKernel(uint[] result)
+                {
+                    int t = ThreadIndex.X;
+                    int a = WriteOut(7);
+                    int y = t < 8 ? AssignOutRetWithMask(5, out var z) : 0;
+                    using var guard = new ScopeGuard { Arr = result, I = t };
+                    int WriteOut(int v)
+                    {
+                        z = v + 10;
+                        return z;
+                    }
+
+                    result[t] += (uint)a + (uint)y + (Warp.ActiveMask() & 0xFu);
+                }
+            }
+            """;
+        var compilation = RoslynTestUtility.CreateCompilation(Source);
+        var (symbol, declaration, model) = GetKernel(compilation, "NativeLocalFuncCases.Kernels", methodName);
+
+        Assert.Equal(expected, NativeStackEligibility.Classify(symbol, declaration, model));
     }
 
     private static string ReadCase(string fileName) =>

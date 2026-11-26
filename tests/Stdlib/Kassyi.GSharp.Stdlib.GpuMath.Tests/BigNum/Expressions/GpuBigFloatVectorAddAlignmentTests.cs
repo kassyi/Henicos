@@ -10,21 +10,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public sealed class GpuBigFloatVectorAddAlignmentTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public GpuBigFloatVectorAddAlignmentTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(1024 * 1024, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1024 * 1024, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     public enum Operation
     {
@@ -90,13 +86,13 @@ public sealed class GpuBigFloatVectorAddAlignmentTests : IDisposable
         var rightMagnitude = (BigInteger.One << (32 * rightWords)) - 1;
         var subtract = operation is Operation.ZipSubtract or Operation.SelectSubtract;
 
-        using var left = new GpuBigFloatArray(_workspace, 1, leftWords);
+        using var left = new GpuBigFloatArray(Workspace, 1, leftWords);
         using (var element = NewFloat(leftMagnitude, leftWords, leftExponent, leftNegative))
         {
             left.SetElement(0, element);
         }
 
-        using var rightArray = new GpuBigFloatArray(_workspace, 1, rightWords);
+        using var rightArray = new GpuBigFloatArray(Workspace, 1, rightWords);
         using var rightScalar = NewFloat(rightMagnitude, rightWords, rightExponent, rightNegative);
         rightArray.SetElement(0, rightScalar);
 
@@ -107,7 +103,7 @@ public sealed class GpuBigFloatVectorAddAlignmentTests : IDisposable
             Operation.SelectAdd => left.AsVectorizedEnumerable().SelectAdd(rightScalar),
             _ => left.AsVectorizedEnumerable().SelectSubtract(rightScalar)
         };
-        var result = expression.Evaluate(_workspace);
+        var result = expression.Evaluate(Workspace);
         var resultWords = Math.Max(leftWords, rightWords) + 1;
         Assert.Equal(resultWords, result.WordsPerElement);
 
@@ -152,6 +148,6 @@ public sealed class GpuBigFloatVectorAddAlignmentTests : IDisposable
             data[w] = (uint)(magnitude >> (32 * w) & uint.MaxValue);
         }
 
-        return new GpuBigFloat(new GpuBigUInt(_workspace, data), exponent, negative);
+        return new GpuBigFloat(new GpuBigUInt(Workspace, data), exponent, negative);
     }
 }

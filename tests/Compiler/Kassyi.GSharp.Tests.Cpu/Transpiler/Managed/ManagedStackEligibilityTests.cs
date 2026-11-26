@@ -28,8 +28,8 @@ public class ManagedStackEligibilityTests
     [InlineData("EligibilityKernels", "WithWarpShuffle", true)]
     [InlineData("EligibilityKernels", "WithActiveMask", true)]
     [InlineData("EligibilityKernels", "CallsActiveMaskReachingDeviceFunction", true)]
-    [InlineData("EligibilityKernels", "ActiveMaskWithUsing", false)]
-    [InlineData("EligibilityKernels", "CallsActiveMaskWithUsing", false)]
+    [InlineData("EligibilityKernels", "ActiveMaskWithUsing", true)]
+    [InlineData("EligibilityKernels", "CallsActiveMaskWithUsing", true)]
     [InlineData("EligibilityKernels", "ShuffleWithUsing", true)]
     [InlineData("EligibilityKernels", "CooperativeKernel", true)]
     [InlineData("EligibilityKernels", "WithoutBarrier", false)]
@@ -61,7 +61,7 @@ public class ManagedStackEligibilityTests
     [InlineData("EligibilityKernels", "StackDeviceWait", true)]
     [InlineData("EligibilityKernels", "ShuffleDeviceWait", true)]
     [InlineData("EligibilityKernels", "ActiveMaskDeviceWait", true)]
-    [InlineData("EligibilityKernels", "ActiveMaskWithUsingHelper", false)]
+    [InlineData("EligibilityKernels", "ActiveMaskWithUsingHelper", true)]
     [InlineData("WarpEligibilityKernels", "Chain10", true)]
     [InlineData("WarpEligibilityKernels", "RecursiveShuffle", false)]
     [InlineData("InstanceEligibilityTarget", "InstanceDeviceWait", false)]
@@ -117,7 +117,6 @@ public class ManagedStackEligibilityTests
     [Scenario(TestScenario.SadPath)]
     [InlineData("WarpEligibilityKernels", "CallsRecursiveShuffle", "cannot be placed")]
     [InlineData("WarpEligibilityKernels", "OverTheVisitLimit", "4097 visit counts")]
-    [InlineData("EligibilityKernels", "ActiveMaskWithUsing", "declares a local with using")]
     public void GetWarpFailure_KernelWhoseCollectivesCannotRunOnItsStack_StatesTheReason(string typeName,
         string methodName, string reason)
     {
@@ -130,6 +129,7 @@ public class ManagedStackEligibilityTests
     [Scenario(TestScenario.Boundary)]
     [InlineData("EligibilityKernels", "WithActiveMask")]
     [InlineData("EligibilityKernels", "BlockBarrierOnly")]
+    [InlineData("EligibilityKernels", "ActiveMaskWithUsing")]
     [InlineData("WarpEligibilityKernels", "WarpOnly")]
     public void GetWarpFailure_NoWarpCollectiveOrPlacedCounts_HasNoReason(string typeName,
         string methodName)

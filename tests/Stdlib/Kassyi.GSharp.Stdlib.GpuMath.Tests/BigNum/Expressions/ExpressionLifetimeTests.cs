@@ -12,21 +12,17 @@ public sealed class ExpressionLifetimeTests : IDisposable
 {
     private const int Words = 2;
 
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public ExpressionLifetimeTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(64, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
@@ -37,9 +33,9 @@ public sealed class ExpressionLifetimeTests : IDisposable
         using var array = CreateArray([1, 2]);
         using var scalar = CreateScalar(10);
         using var expression = array.AsVectorizedEnumerable().SelectAdd(scalar);
-        using var target = new GpuBigUIntArray(_workspace, 2, expression.WordsPerElement);
+        using var target = new GpuBigUIntArray(Workspace, 2, expression.WordsPerElement);
 
-        var result = expression.Evaluate(_workspace, targetResult: target);
+        var result = expression.Evaluate(Workspace, targetResult: target);
 
         Assert.Equal([new BigInteger(11), 12], Read(result));
         Assert.Equal([new BigInteger(11), 12], ReadValues(target));
@@ -55,15 +51,15 @@ public sealed class ExpressionLifetimeTests : IDisposable
         using var array = CreateArray([1, 2]);
         using var scalar = CreateScalar(10);
         var expression = array.AsVectorizedEnumerable().SelectAdd(scalar);
-        using var target = new GpuBigUIntArray(_workspace, 2, expression.WordsPerElement);
-        var before = _workspace.GetMemoryStatistics();
+        using var target = new GpuBigUIntArray(Workspace, 2, expression.WordsPerElement);
+        var before = Workspace.GetMemoryStatistics();
 
-        expression.Evaluate(_workspace);
-        expression.Evaluate(_workspace, targetResult: target);
+        expression.Evaluate(Workspace);
+        expression.Evaluate(Workspace, targetResult: target);
         expression.Dispose();
 
         Assert.Equal([new BigInteger(11), 12], ReadValues(target));
-        Assert.Equal(before.LiveBuffers, _workspace.GetMemoryStatistics().LiveBuffers);
+        Assert.Equal(before.LiveBuffers, Workspace.GetMemoryStatistics().LiveBuffers);
     }
 
     [SkippableFact]
@@ -74,9 +70,9 @@ public sealed class ExpressionLifetimeTests : IDisposable
         // mutant: the node frees the target in Dispose
         using var array = CreateArray([16, 81]);
         var expression = array.AsVectorizedEnumerable().SelectSqrt();
-        using var target = new GpuBigUIntArray(_workspace, 2, expression.WordsPerElement);
+        using var target = new GpuBigUIntArray(Workspace, 2, expression.WordsPerElement);
 
-        expression.Evaluate(_workspace, targetResult: target);
+        expression.Evaluate(Workspace, targetResult: target);
         expression.Dispose();
 
         Assert.Equal([new BigInteger(4), 9], ReadValues(target));
@@ -93,10 +89,10 @@ public sealed class ExpressionLifetimeTests : IDisposable
         using var scalar = CreateScalar(10);
         using var expression = array.AsVectorizedEnumerable().SelectAdd(scalar);
 
-        expression.Evaluate(_workspace, 0, 2);
-        var shortStats = _workspace.GetMemoryStatistics();
-        var result = expression.Evaluate(_workspace);
-        var longStats = _workspace.GetMemoryStatistics();
+        expression.Evaluate(Workspace, 0, 2);
+        var shortStats = Workspace.GetMemoryStatistics();
+        var result = expression.Evaluate(Workspace);
+        var longStats = Workspace.GetMemoryStatistics();
 
         Assert.Equal([new BigInteger(11), 12, 13, 14, 15], Read(result));
         Assert.True(longStats.DriverAllocations > shortStats.DriverAllocations, "the cache was not grown");
@@ -112,12 +108,12 @@ public sealed class ExpressionLifetimeTests : IDisposable
         using var scalar = CreateScalar(10);
         using var expression = array.AsVectorizedEnumerable().SelectAdd(scalar);
 
-        expression.Evaluate(_workspace);
-        var fullStats = _workspace.GetMemoryStatistics();
-        var result = expression.Evaluate(_workspace, 1, 2);
+        expression.Evaluate(Workspace);
+        var fullStats = Workspace.GetMemoryStatistics();
+        var result = expression.Evaluate(Workspace, 1, 2);
 
         Assert.Equal([new BigInteger(12), 13], Read(result));
-        Assert.Equal(fullStats.DriverAllocations, _workspace.GetMemoryStatistics().DriverAllocations);
+        Assert.Equal(fullStats.DriverAllocations, Workspace.GetMemoryStatistics().DriverAllocations);
     }
 
     [SkippableFact]
@@ -130,11 +126,11 @@ public sealed class ExpressionLifetimeTests : IDisposable
         using var array = CreateArray([1, 2]);
         using var scalar = CreateScalar(10);
         using var expression = array.AsVectorizedEnumerable().SelectAdd(scalar);
-        using var wide = new GpuBigUIntArray(_workspace, 2, expression.WordsPerElement + 1);
-        using var shortTarget = new GpuBigUIntArray(_workspace, 1, expression.WordsPerElement);
+        using var wide = new GpuBigUIntArray(Workspace, 2, expression.WordsPerElement + 1);
+        using var shortTarget = new GpuBigUIntArray(Workspace, 1, expression.WordsPerElement);
 
-        Assert.Throws<ArgumentException>(() => expression.Evaluate(_workspace, targetResult: wide));
-        Assert.Throws<ArgumentException>(() => expression.Evaluate(_workspace, targetResult: shortTarget));
+        Assert.Throws<ArgumentException>(() => expression.Evaluate(Workspace, targetResult: wide));
+        Assert.Throws<ArgumentException>(() => expression.Evaluate(Workspace, targetResult: shortTarget));
     }
 
     [SkippableFact]
@@ -146,29 +142,29 @@ public sealed class ExpressionLifetimeTests : IDisposable
         using var left = CreateArray([5, 6, 7]);
         using var right = CreateArray([1, 9, 3]);
         using var scalar = CreateScalar(4);
-        var before = _workspace.GetMemoryStatistics();
+        var before = Workspace.GetMemoryStatistics();
 
         using (var chained = left.AsVectorizedEnumerable().SelectAdd(scalar).SelectMultiply(scalar))
         {
-            chained.Evaluate(_workspace);
-            chained.Evaluate(_workspace);
+            chained.Evaluate(Workspace);
+            chained.Evaluate(Workspace);
         }
 
         using (var compared = left.AsVectorizedEnumerable().ZipAdd(right.AsVectorizedEnumerable())
                    .IsGreaterThan(right.AsVectorizedEnumerable()))
         {
-            compared.Evaluate(_workspace);
-            compared.Evaluate(_workspace);
+            compared.Evaluate(Workspace);
+            compared.Evaluate(Workspace);
         }
 
         using (var filtered = left.AsVectorizedEnumerable()
                    .Where(left.AsVectorizedEnumerable().IsGreaterThan(scalar)))
         {
-            filtered.Evaluate(_workspace);
-            filtered.Evaluate(_workspace);
+            filtered.Evaluate(Workspace);
+            filtered.Evaluate(Workspace);
         }
 
-        Assert.Equal(before.LiveBuffers, _workspace.GetMemoryStatistics().LiveBuffers);
+        Assert.Equal(before.LiveBuffers, Workspace.GetMemoryStatistics().LiveBuffers);
     }
 
     [SkippableFact]
@@ -178,16 +174,16 @@ public sealed class ExpressionLifetimeTests : IDisposable
         // A node that never evaluated has nothing to free, and a second Dispose frees nothing again (E8).
         using var array = CreateArray([1, 2]);
         using var scalar = CreateScalar(10);
-        var before = _workspace.GetMemoryStatistics();
+        var before = Workspace.GetMemoryStatistics();
 
         var unused = array.AsVectorizedEnumerable().SelectAdd(scalar);
         unused.Dispose();
         var twice = array.AsVectorizedEnumerable().SelectAdd(scalar);
-        twice.Evaluate(_workspace);
+        twice.Evaluate(Workspace);
         twice.Dispose();
         twice.Dispose();
 
-        Assert.Equal(before.LiveBuffers, _workspace.GetMemoryStatistics().LiveBuffers);
+        Assert.Equal(before.LiveBuffers, Workspace.GetMemoryStatistics().LiveBuffers);
         Assert.Equal([new BigInteger(1), 2], Read(array));
     }
 
@@ -204,12 +200,12 @@ public sealed class ExpressionLifetimeTests : IDisposable
         using var array = CreateArray([16, 81]);
         using var scalar = CreateScalar(10);
         using var expression = CreateIntNode(kind, array.AsVectorizedEnumerable().SelectSqrt(), array, scalar);
-        using var shortTarget = new GpuBigUIntArray(_workspace, 1, expression.WordsPerElement);
-        var before = _workspace.GetMemoryStatistics();
+        using var shortTarget = new GpuBigUIntArray(Workspace, 1, expression.WordsPerElement);
+        var before = Workspace.GetMemoryStatistics();
 
-        Assert.Throws<ArgumentException>(() => expression.Evaluate(_workspace, targetResult: shortTarget));
+        Assert.Throws<ArgumentException>(() => expression.Evaluate(Workspace, targetResult: shortTarget));
 
-        Assert.Equal(before.LiveBuffers, _workspace.GetMemoryStatistics().LiveBuffers);
+        Assert.Equal(before.LiveBuffers, Workspace.GetMemoryStatistics().LiveBuffers);
     }
 
     [SkippableFact]
@@ -222,18 +218,18 @@ public sealed class ExpressionLifetimeTests : IDisposable
         using var array = CreateArray([1, 2]);
         using var a = CreateScalar(3);
         using var b = CreateScalar(4);
-        var before = _workspace.GetMemoryStatistics();
+        var before = Workspace.GetMemoryStatistics();
 
         IGpuBigIntVectorExpression expression = new VectorAddScalarExpression(
             new GpuBigIntVectorLeafExpression(array),
             new SignedAddExpression(new GpuBigIntLeafExpression(a), new GpuBigIntLeafExpression(b)));
-        var first = Read(expression.Evaluate(_workspace));
-        var second = Read(expression.Evaluate(_workspace));
+        var first = Read(expression.Evaluate(Workspace));
+        var second = Read(expression.Evaluate(Workspace));
         expression.Dispose();
 
         Assert.Equal([new BigInteger(8), 9], first);
         Assert.Equal([new BigInteger(8), 9], second);
-        Assert.Equal(before.LiveBuffers, _workspace.GetMemoryStatistics().LiveBuffers);
+        Assert.Equal(before.LiveBuffers, Workspace.GetMemoryStatistics().LiveBuffers);
     }
 
     [SkippableTheory]
@@ -248,9 +244,9 @@ public sealed class ExpressionLifetimeTests : IDisposable
         using var array = CreateFloatArray([4, 9]);
         using var scalar = CreateFloat(10);
         using var expression = CreateFloatNode(kind, array.AsVectorizedEnumerable(), array, scalar);
-        using var target = new GpuBigFloatArray(_workspace, 2, expression.WordsPerElement);
+        using var target = new GpuBigFloatArray(Workspace, 2, expression.WordsPerElement);
 
-        var result = expression.Evaluate(_workspace, targetResult: target);
+        var result = expression.Evaluate(Workspace, targetResult: target);
 
         Assert.Equal(FloatExpected(kind, [4, 9]), ReadFloat(result));
         Assert.Equal(FloatExpected(kind, [4, 9]), ReadFloat(target));
@@ -268,16 +264,16 @@ public sealed class ExpressionLifetimeTests : IDisposable
         // mutant: the result cache without its capacity check (the slice past the first buffer throws)
         using var array = CreateFloatArray([4, 9, 16, 25]);
         using var scalar = CreateFloat(10);
-        var before = _workspace.GetMemoryStatistics();
+        var before = Workspace.GetMemoryStatistics();
         var expression = CreateFloatNode(kind, array.AsVectorizedEnumerable(), array, scalar);
 
-        var shortResult = ReadFloat(expression.Evaluate(_workspace, 0, 2));
-        var longResult = ReadFloat(expression.Evaluate(_workspace));
+        var shortResult = ReadFloat(expression.Evaluate(Workspace, 0, 2));
+        var longResult = ReadFloat(expression.Evaluate(Workspace));
         expression.Dispose();
 
         Assert.Equal(FloatExpected(kind, [4, 9]), shortResult);
         Assert.Equal(FloatExpected(kind, [4, 9, 16, 25]), longResult);
-        Assert.Equal(before.LiveBuffers, _workspace.GetMemoryStatistics().LiveBuffers);
+        Assert.Equal(before.LiveBuffers, Workspace.GetMemoryStatistics().LiveBuffers);
     }
 
     [SkippableTheory]
@@ -293,14 +289,14 @@ public sealed class ExpressionLifetimeTests : IDisposable
         using var array = CreateFloatArray([4, 9]);
         using var scalar = CreateFloat(10);
         using var expression = CreateFloatNode(kind, array.AsVectorizedEnumerable().SelectSqrt(), array, scalar);
-        using var wide = new GpuBigFloatArray(_workspace, 2, expression.WordsPerElement + 1);
-        using var shortTarget = new GpuBigFloatArray(_workspace, 1, expression.WordsPerElement);
-        var before = _workspace.GetMemoryStatistics();
+        using var wide = new GpuBigFloatArray(Workspace, 2, expression.WordsPerElement + 1);
+        using var shortTarget = new GpuBigFloatArray(Workspace, 1, expression.WordsPerElement);
+        var before = Workspace.GetMemoryStatistics();
 
-        Assert.Throws<ArgumentException>(() => expression.Evaluate(_workspace, targetResult: wide));
-        Assert.Throws<ArgumentException>(() => expression.Evaluate(_workspace, targetResult: shortTarget));
+        Assert.Throws<ArgumentException>(() => expression.Evaluate(Workspace, targetResult: wide));
+        Assert.Throws<ArgumentException>(() => expression.Evaluate(Workspace, targetResult: shortTarget));
 
-        Assert.Equal(before.LiveBuffers, _workspace.GetMemoryStatistics().LiveBuffers);
+        Assert.Equal(before.LiveBuffers, Workspace.GetMemoryStatistics().LiveBuffers);
     }
 
     [SkippableTheory]
@@ -314,16 +310,16 @@ public sealed class ExpressionLifetimeTests : IDisposable
         // mutant: the node frees the target in Dispose, or keeps its cache
         using var array = CreateFloatArray([4, 9]);
         using var scalar = CreateFloat(10);
-        using var target = new GpuBigFloatArray(_workspace, 2, CreateFloatWidth(kind, array, scalar));
-        var before = _workspace.GetMemoryStatistics();
+        using var target = new GpuBigFloatArray(Workspace, 2, CreateFloatWidth(kind, array, scalar));
+        var before = Workspace.GetMemoryStatistics();
         var expression = CreateFloatNode(kind, array.AsVectorizedEnumerable(), array, scalar);
 
-        expression.Evaluate(_workspace);
-        expression.Evaluate(_workspace, targetResult: target);
+        expression.Evaluate(Workspace);
+        expression.Evaluate(Workspace, targetResult: target);
         expression.Dispose();
 
         Assert.Equal(FloatExpected(kind, [4, 9]), ReadFloat(target));
-        Assert.Equal(before.LiveBuffers, _workspace.GetMemoryStatistics().LiveBuffers);
+        Assert.Equal(before.LiveBuffers, Workspace.GetMemoryStatistics().LiveBuffers);
     }
 
     [SkippableTheory]
@@ -337,9 +333,9 @@ public sealed class ExpressionLifetimeTests : IDisposable
         // mutant: the leaf ignores the target and returns the user's array
         using var array = CreateArray([1, -2, 3]);
         using var expression = array.AsVectorizedEnumerable().Skip(skip).Take(take);
-        using var target = new GpuBigUIntArray(_workspace, take + 1, Words);
+        using var target = new GpuBigUIntArray(Workspace, take + 1, Words);
 
-        var result = expression.Evaluate(_workspace, targetResult: target);
+        var result = expression.Evaluate(Workspace, targetResult: target);
 
         var expected = new BigInteger[] { 1, -2, 3 }.Skip(skip).Take(take).ToArray();
         Assert.Equal(expected, Read(result));
@@ -357,11 +353,11 @@ public sealed class ExpressionLifetimeTests : IDisposable
         // mutant: the leaf without the target check
         using var array = CreateArray([1, 2, 3]);
         using var expression = array.AsVectorizedEnumerable().Skip(skip).Take(take);
-        using var wide = new GpuBigUIntArray(_workspace, take, Words + 1);
-        using var shortTarget = new GpuBigUIntArray(_workspace, take - 1, Words);
+        using var wide = new GpuBigUIntArray(Workspace, take, Words + 1);
+        using var shortTarget = new GpuBigUIntArray(Workspace, take - 1, Words);
 
-        Assert.Throws<ArgumentException>(() => expression.Evaluate(_workspace, targetResult: wide));
-        Assert.Throws<ArgumentException>(() => expression.Evaluate(_workspace, targetResult: shortTarget));
+        Assert.Throws<ArgumentException>(() => expression.Evaluate(Workspace, targetResult: wide));
+        Assert.Throws<ArgumentException>(() => expression.Evaluate(Workspace, targetResult: shortTarget));
     }
 
     [SkippableTheory]
@@ -385,16 +381,16 @@ public sealed class ExpressionLifetimeTests : IDisposable
             using var expression = node == TargetNode.IntLeaf
                 ? array.AsVectorizedEnumerable()
                 : array.AsVectorizedEnumerable().SelectAdd(scalar);
-            using var target = new GpuBigUIntArray(_workspace, 0, expression.WordsPerElement);
-            Assert.Throws<ArgumentException>(() => expression.Evaluate(_workspace, targetResult: target));
+            using var target = new GpuBigUIntArray(Workspace, 0, expression.WordsPerElement);
+            Assert.Throws<ArgumentException>(() => expression.Evaluate(Workspace, targetResult: target));
         }
         else
         {
             using var expression = node == TargetNode.FloatLeaf
                 ? floats.AsVectorizedEnumerable()
                 : floats.AsVectorizedEnumerable().SelectAdd(floatScalar);
-            using var target = new GpuBigFloatArray(_workspace, 0, expression.WordsPerElement);
-            Assert.Throws<ArgumentException>(() => expression.Evaluate(_workspace, targetResult: target));
+            using var target = new GpuBigFloatArray(Workspace, 0, expression.WordsPerElement);
+            Assert.Throws<ArgumentException>(() => expression.Evaluate(Workspace, targetResult: target));
         }
     }
 
@@ -417,17 +413,17 @@ public sealed class ExpressionLifetimeTests : IDisposable
         using var floats = CreateFloatArray([4, 9]);
         using var skipped = array.AsVectorizedEnumerable().Skip(2);
         using var taken = floats.AsVectorizedEnumerable().Take(0);
-        using var wide = new GpuBigUIntArray(_workspace, 1, Words + 1);
-        using var wideFloat = new GpuBigFloatArray(_workspace, 1, taken.WordsPerElement + 1);
-        var before = _workspace.GetMemoryStatistics();
+        using var wide = new GpuBigUIntArray(Workspace, 1, Words + 1);
+        using var wideFloat = new GpuBigFloatArray(Workspace, 1, taken.WordsPerElement + 1);
+        var before = Workspace.GetMemoryStatistics();
 
-        Assert.Throws<ArgumentException>(() => skipped.Evaluate(_workspace, targetResult: wide));
-        Assert.Throws<ArgumentException>(() => taken.Evaluate(_workspace, targetResult: wideFloat));
-        var empty = skipped.Evaluate(_workspace);
+        Assert.Throws<ArgumentException>(() => skipped.Evaluate(Workspace, targetResult: wide));
+        Assert.Throws<ArgumentException>(() => taken.Evaluate(Workspace, targetResult: wideFloat));
+        var empty = skipped.Evaluate(Workspace);
 
         Assert.Equal(0, empty.Length);
         Assert.Equal(Words, empty.WordsPerElement);
-        Assert.Equal(before.DriverAllocations, _workspace.GetMemoryStatistics().DriverAllocations);
+        Assert.Equal(before.DriverAllocations, Workspace.GetMemoryStatistics().DriverAllocations);
     }
 
     [SkippableFact]
@@ -439,7 +435,7 @@ public sealed class ExpressionLifetimeTests : IDisposable
         using var array = CreateArray([1, 2]);
         using var expression = array.AsVectorizedEnumerable();
 
-        var result = expression.Evaluate(_workspace);
+        var result = expression.Evaluate(Workspace);
 
         Assert.False(result.Values.Handle.OwnsBuffer);
         Assert.False(result.Signs.Handle.OwnsBuffer);
@@ -456,9 +452,9 @@ public sealed class ExpressionLifetimeTests : IDisposable
         // mutant: the float leaf ignores the target
         using var array = CreateFloatArray([4, 9]);
         using var expression = array.AsVectorizedEnumerable().Skip(skip).Take(take);
-        using var target = new GpuBigFloatArray(_workspace, take + 1, expression.WordsPerElement);
+        using var target = new GpuBigFloatArray(Workspace, take + 1, expression.WordsPerElement);
 
-        var result = expression.Evaluate(_workspace, targetResult: target);
+        var result = expression.Evaluate(Workspace, targetResult: target);
 
         var expected = new double[] { 4, 9 }.Skip(skip).Take(take).ToArray();
         Assert.Equal(expected, ReadFloat(result));
@@ -474,11 +470,11 @@ public sealed class ExpressionLifetimeTests : IDisposable
         // mutant: the float leaf without the target check
         using var array = CreateFloatArray([4, 9]);
         using var expression = array.AsVectorizedEnumerable();
-        using var wide = new GpuBigFloatArray(_workspace, 2, expression.WordsPerElement + 1);
-        using var shortTarget = new GpuBigFloatArray(_workspace, 1, expression.WordsPerElement);
+        using var wide = new GpuBigFloatArray(Workspace, 2, expression.WordsPerElement + 1);
+        using var shortTarget = new GpuBigFloatArray(Workspace, 1, expression.WordsPerElement);
 
-        Assert.Throws<ArgumentException>(() => expression.Evaluate(_workspace, targetResult: wide));
-        Assert.Throws<ArgumentException>(() => expression.Evaluate(_workspace, targetResult: shortTarget));
+        Assert.Throws<ArgumentException>(() => expression.Evaluate(Workspace, targetResult: wide));
+        Assert.Throws<ArgumentException>(() => expression.Evaluate(Workspace, targetResult: shortTarget));
     }
 
     [SkippableTheory]
@@ -498,18 +494,18 @@ public sealed class ExpressionLifetimeTests : IDisposable
         using var scalar = CreateScalar(10);
         using var floats = CreateFloatArray([4, 9]);
         using var floatScalar = CreateFloat(5);
-        var before = _workspace.GetMemoryStatistics();
+        var before = Workspace.GetMemoryStatistics();
         var expression = CreateBoolNode(kind, array, scalar, floats, floatScalar);
 
-        var result = expression.Evaluate(_workspace);
+        var result = expression.Evaluate(Workspace);
         var owns = result.Handle.OwnsBuffer;
         var mask = new uint[2];
-        _workspace.Provider.CopyDeviceToHost(mask, result.DevicePointer, 2, _workspace.Stream);
+        Workspace.Provider.CopyDeviceToHost(mask, result.DevicePointer, 2, Workspace.Stream);
         expression.Dispose();
 
         Assert.False(owns);
         Assert.Equal(ExpectedMask(kind), mask);
-        Assert.Equal(before.LiveBuffers, _workspace.GetMemoryStatistics().LiveBuffers);
+        Assert.Equal(before.LiveBuffers, Workspace.GetMemoryStatistics().LiveBuffers);
     }
 
     public enum BoolKind
@@ -596,12 +592,12 @@ public sealed class ExpressionLifetimeTests : IDisposable
     {
         var words = new uint[Words * 2];
         words[0] = value;
-        return new GpuBigFloat(new GpuBigUInt(_workspace, words), 0, false);
+        return new GpuBigFloat(new GpuBigUInt(Workspace, words), 0, false);
     }
 
     private GpuBigFloatArray CreateFloatArray(uint[] values)
     {
-        var array = new GpuBigFloatArray(_workspace, values.Length, Words * 2);
+        var array = new GpuBigFloatArray(Workspace, values.Length, Words * 2);
         for (var i = 0; i < values.Length; i++)
         {
             using var element = CreateFloat(values[i]);
@@ -627,7 +623,7 @@ public sealed class ExpressionLifetimeTests : IDisposable
 
     private GpuBigIntArray CreateArray(BigInteger[] values)
     {
-        var array = new GpuBigIntArray(_workspace, values.Length, Words);
+        var array = new GpuBigIntArray(Workspace, values.Length, Words);
         var words = new uint[values.Length * Words];
         var signs = new uint[values.Length];
         for (var i = 0; i < values.Length; i++)
@@ -638,26 +634,26 @@ public sealed class ExpressionLifetimeTests : IDisposable
             signs[i] = values[i].Sign < 0 ? 1u : 0u;
         }
 
-        _workspace.Provider.CopyHostToDevice(array.Values.DevicePointer, words, words.Length, _workspace.Stream);
-        _workspace.Provider.CopyHostToDevice(array.Signs.DevicePointer, signs, signs.Length, _workspace.Stream);
+        Workspace.Provider.CopyHostToDevice(array.Values.DevicePointer, words, words.Length, Workspace.Stream);
+        Workspace.Provider.CopyHostToDevice(array.Signs.DevicePointer, signs, signs.Length, Workspace.Stream);
         return array;
     }
 
     private GpuBigInt CreateScalar(BigInteger value) =>
-        new(GpuBigUInt.FromBigInteger(_workspace, BigInteger.Abs(value), Words), value.Sign < 0);
+        new(GpuBigUInt.FromBigInteger(Workspace, BigInteger.Abs(value), Words), value.Sign < 0);
 
     private BigInteger[] Read(GpuBigIntArrayView array)
     {
         var values = ReadValues(array.Values);
         var signs = new uint[array.Length];
-        _workspace.Provider.CopyDeviceToHost(signs, array.Signs.DevicePointer, signs.Length, _workspace.Stream);
+        Workspace.Provider.CopyDeviceToHost(signs, array.Signs.DevicePointer, signs.Length, Workspace.Stream);
         return values.Select((v, i) => signs[i] != 0 ? -v : v).ToArray();
     }
 
     private BigInteger[] ReadValues(GpuBigUIntArrayView values)
     {
         var host = new uint[values.TotalWords];
-        _workspace.Provider.CopyDeviceToHost(host, values.DevicePointer, host.Length, _workspace.Stream);
+        Workspace.Provider.CopyDeviceToHost(host, values.DevicePointer, host.Length, Workspace.Stream);
         var result = new BigInteger[values.Length];
         for (var i = 0; i < values.Length; i++)
         {

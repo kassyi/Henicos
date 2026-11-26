@@ -177,7 +177,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         var countError = Record.Exception(() =>
         {
             using var countExpr = chain.Build(operands.Operands()).Count();
-            using var result = countExpr.Evaluate(_context);
+            using var result = countExpr.Evaluate(Context);
             count = (int)ToBigInt(result);
         });
 
@@ -185,7 +185,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         var evaluateError = Record.Exception(() =>
         {
             using var expr = chain.Build(operands.Operands());
-            length = expr.Evaluate(_context).Length;
+            length = expr.Evaluate(Context).Length;
         });
 
         // Count throws what System.Linq throws, and what Evaluate of the same chain throws: the result of a chain does
@@ -238,7 +238,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
 
         // A chain that cannot throw is not evaluated: its host length is written inside the graph, as before.
         // mutant: DeviceCounted.EvaluateIfMayThrow refusing every capture (NotSupportedException)
-        using var graph = count.CompileToGraph(_context);
+        using var graph = count.CompileToGraph(Context);
         graph.Execute();
 
         Assert.Equal(new BigInteger(s_countValues.Length), graph.Result.Value.ToBigInteger());
@@ -262,11 +262,11 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         // counts the same chain without a graph.
         // mutant: DeviceCounted.EvaluateIfMayThrow without ThrowIfCapturingChecks (SelectSqrt(): AggregateException
         // with CudaErrorStreamCaptureUnsupported; SelectDivide(3): the NotSupportedException of the scalar zero test)
-        var error = Assert.Throws<NotSupportedException>(() => count.CompileToGraph(_context));
+        var error = Assert.Throws<NotSupportedException>(() => count.CompileToGraph(Context));
         Assert.StartsWith("The check of a division, a square root or the lengths of a counted vector", error.Message);
 
         using var again = values.AsVectorizedEnumerable().SelectSqrt().Count();
-        using var result = again.Evaluate(_context);
+        using var result = again.Evaluate(Context);
         Assert.Equal(new BigInteger(s_countValues.Length), ToBigInt(result));
     }
 
@@ -275,7 +275,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     [Scenario(TestScenario.SadPath)]
     public void AnyAndAll_EmptyFlagsAndLongerFlags_ThrowLikeEvaluate()
     {
-        using var empty = new GpuBigIntArray(_context, 0, 8);
+        using var empty = new GpuBigIntArray(Context, 0, 8);
         using var values = CreateArray(s_countValues);
         using var three = CreateScalar(3);
         IGpuBoolVectorExpression Mismatched() =>
@@ -287,13 +287,13 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         // mutant: VectorLogicalExpression.MayThrow without `Capacity != _rightCapacity` (the same)
         using (var flags = Mismatched())
         {
-            Assert.Throws<ArgumentException>(() => flags.Evaluate(_context));
+            Assert.Throws<ArgumentException>(() => flags.Evaluate(Context));
         }
 
         using var any = Mismatched().Any();
-        Assert.Throws<ArgumentException>(() => any.Evaluate(_context));
+        Assert.Throws<ArgumentException>(() => any.Evaluate(Context));
         using var all = Mismatched().All();
-        Assert.Throws<ArgumentException>(() => all.Evaluate(_context));
+        Assert.Throws<ArgumentException>(() => all.Evaluate(Context));
     }
 
     [Fact]
@@ -301,7 +301,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     [Scenario(TestScenario.Boundary)]
     public void AnyAndAll_EmptyDivisionByZero_MatchSystemLinq()
     {
-        using var empty = new GpuBigIntArray(_context, 0, 8);
+        using var empty = new GpuBigIntArray(Context, 0, 8);
         using var zero = CreateScalar(0);
 
         // A division of no element divides nothing (System.Linq runs no projection), so the evaluation that Any and
@@ -309,11 +309,11 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         // mutant: BoolVectorQuantifier.Evaluate evaluating a MayThrow source of no capacity as a non-empty one
         // (CudaException: a grid of 0 blocks)
         using var any = empty.AsVectorizedEnumerable().SelectDivide(zero).IsLessThan(zero).Any();
-        Assert.Equal(Array.Empty<BigInteger>().Select(static x => x / 0 < 0).Any(), any.Evaluate(_context));
+        Assert.Equal(Array.Empty<BigInteger>().Select(static x => x / 0 < 0).Any(), any.Evaluate(Context));
         using var all = empty.AsVectorizedEnumerable().SelectDivide(zero).IsLessThan(zero).All();
         Assert.Equal(
             Array.Empty<BigInteger>().Select(static x => x / 0 < 0).All(static b => b),
-            all.Evaluate(_context)
+            all.Evaluate(Context)
         );
     }
 

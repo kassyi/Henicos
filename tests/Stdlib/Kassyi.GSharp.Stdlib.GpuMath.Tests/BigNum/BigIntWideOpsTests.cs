@@ -17,21 +17,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public sealed class BigIntWideOpsTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public BigIntWideOpsTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     public static TheoryData<int, int> WidthPairs() => WideCases.WidthPairs();
 
@@ -39,13 +35,13 @@ public sealed class BigIntWideOpsTests : IDisposable
     [MemberData(nameof(WidthPairs))]
     [Scenario(TestScenario.Boundary)]
     public void Add_IntoTheBound_IsExact(int aWords, int bWords) =>
-        WideCases.AddIntoTheBound(_workspace, aWords, bWords, static ws => ws.ThrowIfDeviceErrors());
+        WideCases.AddIntoTheBound(Workspace, aWords, bWords, static ws => ws.ThrowIfDeviceErrors());
 
     [Theory]
     [MemberData(nameof(WidthPairs))]
     [Scenario(TestScenario.HappyPath)]
     public void Subtract_NotBelowZero_IsExact(int aWords, int bWords) =>
-        WideCases.SubtractNotBelowZero(_workspace, aWords, bWords, static ws => ws.ThrowIfDeviceErrors());
+        WideCases.SubtractNotBelowZero(Workspace, aWords, bWords, static ws => ws.ThrowIfDeviceErrors());
 
     [Theory]
     [MemberData(nameof(WidthPairs))]
@@ -54,15 +50,15 @@ public sealed class BigIntWideOpsTests : IDisposable
     {
         foreach (var shape in WideCases.OutOfDomainShapes.Where(s => s.Applies(aWords, bWords)))
         {
-            using var a = WideCases.Operand(_workspace, shape.A(aWords, bWords), aWords);
-            using var b = WideCases.Operand(_workspace, shape.B(aWords, bWords), bWords);
-            using var result = new GpuBigUInt(_workspace, shape.ResultWords(aWords, bWords));
+            using var a = WideCases.Operand(Workspace, shape.A(aWords, bWords), aWords);
+            using var b = WideCases.Operand(Workspace, shape.B(aWords, bWords), bWords);
+            using var result = new GpuBigUInt(Workspace, shape.ResultWords(aWords, bWords));
 
             BigIntWideOps.AddSubtract(a, b, result, shape.Subtract);
 
             var error = Assert.Throws<OverflowException>(() => result.ToHostArray());
             Assert.Contains(shape.Message, error.Message);
-            _workspace.ThrowIfDeviceErrors();
+            Workspace.ThrowIfDeviceErrors();
         }
     }
 
@@ -70,7 +66,7 @@ public sealed class BigIntWideOpsTests : IDisposable
     [MemberData(nameof(WidthPairs))]
     [Scenario(TestScenario.Boundary)]
     public void Bitwise_FollowsBigInteger(int aWords, int bWords) =>
-        WideCases.Bitwise(_workspace, aWords, bWords, static ws => ws.ThrowIfDeviceErrors());
+        WideCases.Bitwise(Workspace, aWords, bWords, static ws => ws.ThrowIfDeviceErrors());
 
     [Theory]
     [InlineData(1)]
@@ -79,14 +75,14 @@ public sealed class BigIntWideOpsTests : IDisposable
     [Scenario(TestScenario.SadPath)]
     public void CheckFits_ReportsAValueWiderThanTheWords(int words)
     {
-        using var fits = WideCases.Operand(_workspace, WideCases.AllOnes(words), words + 3);
+        using var fits = WideCases.Operand(Workspace, WideCases.AllOnes(words), words + 3);
         BigIntWideOps.CheckFits(fits, words);
-        _workspace.ThrowIfDeviceErrors();
+        Workspace.ThrowIfDeviceErrors();
 
-        using var wider = WideCases.Operand(_workspace, BigInteger.One << (32 * (words + 2)), words + 3);
+        using var wider = WideCases.Operand(Workspace, BigInteger.One << (32 * (words + 2)), words + 3);
         BigIntWideOps.CheckFits(wider, words);
-        Assert.Throws<OverflowException>(() => _workspace.ThrowIfDeviceErrors());
-        _workspace.ThrowIfDeviceErrors();
+        Assert.Throws<OverflowException>(() => Workspace.ThrowIfDeviceErrors());
+        Workspace.ThrowIfDeviceErrors();
     }
 }
 

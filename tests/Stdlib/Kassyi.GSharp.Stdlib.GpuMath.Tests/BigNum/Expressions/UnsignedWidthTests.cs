@@ -17,21 +17,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public sealed class UnsignedWidthTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public UnsignedWidthTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     public static TheoryData<int, int> WidthPairs() => UnsignedCases.WidthPairs();
 
@@ -39,7 +35,7 @@ public sealed class UnsignedWidthTests : IDisposable
     [MemberData(nameof(WidthPairs))]
     [Scenario(TestScenario.Boundary)]
     public void Operators_FollowBigInteger_WithTheWordsOfTheirBound(int aWords, int bWords) =>
-        UnsignedCases.Operators(_workspace, aWords, bWords);
+        UnsignedCases.Operators(Workspace, aWords, bWords);
 
     [Theory]
     [MemberData(nameof(WidthPairs))]
@@ -48,43 +44,43 @@ public sealed class UnsignedWidthTests : IDisposable
     {
         foreach (var (a, b) in UnsignedCases.BelowZero(aWords, bWords))
         {
-            using var x = UnsignedCases.Value(_workspace, a, aWords);
-            using var y = UnsignedCases.Value(_workspace, b, bWords);
-            using var result = (x.Value - y).Node.Evaluate(_workspace);
-            Assert.Throws<OverflowException>(() => _workspace.ThrowIfDeviceErrors());
+            using var x = UnsignedCases.Value(Workspace, a, aWords);
+            using var y = UnsignedCases.Value(Workspace, b, bWords);
+            using var result = (x.Value - y).Node.Evaluate(Workspace);
+            Assert.Throws<OverflowException>(() => Workspace.ThrowIfDeviceErrors());
         }
     }
 
     [Theory]
     [MemberData(nameof(ShiftCounts))]
     [Scenario(TestScenario.Boundary)]
-    public void Shifts_ByAnyCount_FollowBigInteger(int count) => UnsignedCases.Shifts(_workspace, count);
+    public void Shifts_ByAnyCount_FollowBigInteger(int count) => UnsignedCases.Shifts(Workspace, count);
 
     public static TheoryData<int> ShiftCounts() => UnsignedCases.ShiftCounts();
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void DirectShifts_ByANegativeCount_ShiftTheOtherWay() => UnsignedCases.DirectShifts(_workspace);
+    public void DirectShifts_ByANegativeCount_ShiftTheOtherWay() => UnsignedCases.DirectShifts(Workspace);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Assignment_IntoAWiderValue_ClearsItsUpperWords() => UnsignedCases.Assignments(_workspace);
+    public void Assignment_IntoAWiderValue_ClearsItsUpperWords() => UnsignedCases.Assignments(Workspace);
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public void TruncateAndFit_NarrowAsUncheckedAndChecked()
     {
-        UnsignedCases.Narrowing(_workspace);
+        UnsignedCases.Narrowing(Workspace);
 
         // Fit of a value that does not fit
-        using var big = UnsignedCases.Value(_workspace, (BigInteger.One << 40) + 3, 2);
-        using var fitted = big.Value.Fit(1).Node.Evaluate(_workspace);
-        Assert.Throws<OverflowException>(() => _workspace.ThrowIfDeviceErrors());
+        using var big = UnsignedCases.Value(Workspace, (BigInteger.One << 40) + 3, 2);
+        using var fitted = big.Value.Fit(1).Node.Evaluate(Workspace);
+        Assert.Throws<OverflowException>(() => Workspace.ThrowIfDeviceErrors());
     }
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void PadTo_OnlyWidens() => UnsignedCases.PadTo(_workspace);
+    public void PadTo_OnlyWidens() => UnsignedCases.PadTo(Workspace);
 }
 
 /// <summary>Unsigned expression widths on the CPU fallback.</summary>

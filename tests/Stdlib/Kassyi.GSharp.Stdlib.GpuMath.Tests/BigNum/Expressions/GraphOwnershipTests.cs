@@ -1,4 +1,6 @@
 #nullable enable
+using Kassyi.GSharp.Core;
+
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 
 /// <summary>
@@ -23,8 +25,7 @@ public sealed class GraphOwnershipTests : IDisposable
     private static readonly BigInteger s_c = BigInteger.Parse("555555555555555555555555555555");
     private static readonly BigInteger s_d = BigInteger.Parse("111111111111111111111111111111");
 
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
     private readonly GpuBigInt _a;
     private readonly GpuBigInt _b;
     private readonly GpuBigInt _c;
@@ -33,13 +34,34 @@ public sealed class GraphOwnershipTests : IDisposable
     public GraphOwnershipTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
-        _a = Create(_workspace, s_a);
-        _b = Create(_workspace, s_b);
-        _c = Create(_workspace, s_c);
-        _d = Create(_workspace, s_d);
+        _testWorkspace = new GpuTestWorkspace(64, GpuExecutionEngine.GSharpAot);
+        GpuBigInt a = default;
+        GpuBigInt b = default;
+        GpuBigInt c = default;
+        GpuBigInt d = default;
+        try
+        {
+            a = Create(_testWorkspace.Workspace, s_a);
+            b = Create(_testWorkspace.Workspace, s_b);
+            c = Create(_testWorkspace.Workspace, s_c);
+            d = Create(_testWorkspace.Workspace, s_d);
+            _a = a;
+            _b = b;
+            _c = c;
+            _d = d;
+        }
+        catch
+        {
+            d.Dispose();
+            c.Dispose();
+            b.Dispose();
+            a.Dispose();
+            _testWorkspace.Dispose();
+            throw;
+        }
     }
+
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
 
     public void Dispose()
     {
@@ -47,8 +69,7 @@ public sealed class GraphOwnershipTests : IDisposable
         _b.Dispose();
         _c.Dispose();
         _d.Dispose();
-        _workspace.Dispose();
-        _scope.Dispose();
+        _testWorkspace.Dispose();
     }
 
     [SkippableFact]
@@ -58,14 +79,14 @@ public sealed class GraphOwnershipTests : IDisposable
         // The graph owns its result (G1): Result is a view, it lives until the graph is disposed, and disposing the
         // graph returns every buffer the compilation leased.
         // mutant: GraphHandles.Destroy without freeing the result (LiveBuffers stays one higher)
-        var start = _workspace.GetMemoryStatistics();
-        var graph = ((GpuBigIntExpr)_a + _b).CompileToGraph(_workspace);
+        var start = Workspace.GetMemoryStatistics();
+        var graph = ((GpuBigIntExpr)_a + _b).CompileToGraph(Workspace);
         graph.Execute();
         var value = Read(graph.Result);
         graph.Dispose();
 
         Assert.Equal(s_a + s_b, value);
-        Assert.Equal(start.LiveBuffers, _workspace.GetMemoryStatistics().LiveBuffers);
+        Assert.Equal(start.LiveBuffers, Workspace.GetMemoryStatistics().LiveBuffers);
         Assert.True(ResultThrowsAfterDispose(graph));
     }
 
@@ -77,19 +98,19 @@ public sealed class GraphOwnershipTests : IDisposable
         // Dispose, so ten evaluations leave the live count where it was (G2), and the expression stays usable (O15).
         // mutant: EvaluateWithCudaGraph without DetachResult (the graph frees the value it returns)
         var expression = (GpuBigIntExpr)_a + _b;
-        using (expression.EvaluateWithCudaGraph(_workspace))
+        using (expression.EvaluateWithCudaGraph(Workspace))
         {
         }
 
-        var start = _workspace.GetMemoryStatistics();
+        var start = Workspace.GetMemoryStatistics();
         for (var i = 0; i < 10; i++)
         {
-            using var result = expression.EvaluateWithCudaGraph(_workspace);
+            using var result = expression.EvaluateWithCudaGraph(Workspace);
             Assert.Equal(s_a + s_b, Read(result));
         }
 
-        Assert.Equal(start.LiveBuffers, _workspace.GetMemoryStatistics().LiveBuffers);
-        using var direct = expression.Evaluate(_workspace);
+        Assert.Equal(start.LiveBuffers, Workspace.GetMemoryStatistics().LiveBuffers);
+        using var direct = expression.Evaluate(Workspace);
         Assert.Equal(s_a + s_b, Read(direct));
     }
 
@@ -100,12 +121,12 @@ public sealed class GraphOwnershipTests : IDisposable
         // An intermediate result freed while the graph is captured stays with the graph (G3): an allocation made after
         // the compilation never receives it, so replaying the graph cannot overwrite the new owner's value.
         // mutant: DefaultGpuMemoryManager.Free without the capture branch (the intermediate goes to the shared pool)
-        var start = _workspace.GetMemoryStatistics();
-        using var graph = (((GpuBigIntExpr)_a + _b) + _c).CompileToGraph(_workspace);
-        var deferred = _workspace.GetMemoryStatistics().DeferredBuffers - start.DeferredBuffers;
+        var start = Workspace.GetMemoryStatistics();
+        using var graph = (((GpuBigIntExpr)_a + _b) + _c).CompileToGraph(Workspace);
+        var deferred = Workspace.GetMemoryStatistics().DeferredBuffers - start.DeferredBuffers;
 
         var pattern = Enumerable.Range(1, Words).Select(static i => 0x9E3779B9u * (uint)i).ToArray();
-        using var other = new GpuBigUInt(_workspace, pattern);
+        using var other = new GpuBigUInt(Workspace, pattern);
         graph.Execute();
         graph.Execute();
 
@@ -122,8 +143,8 @@ public sealed class GraphOwnershipTests : IDisposable
         // (G3b). It must leave the deferred set when it is taken, or disposing the graph returns it twice and two later
         // allocations share it.
         // mutant: DefaultGpuMemoryManager.Allocate does not remove a reused buffer from the deferred set
-        var start = _workspace.GetMemoryStatistics();
-        var graph = ((((GpuBigIntExpr)_a + _b) + _c) + _d).CompileToGraph(_workspace);
+        var start = Workspace.GetMemoryStatistics();
+        var graph = ((((GpuBigIntExpr)_a + _b) + _c) + _d).CompileToGraph(Workspace);
         graph.Execute();
         var value = Read(graph.Result);
         graph.Dispose();
@@ -134,8 +155,8 @@ public sealed class GraphOwnershipTests : IDisposable
         {
             for (var i = 0; i < 4; i++)
             {
-                var next = new GpuBigUInt(_workspace, Words);
-                allocated.Add(next);
+                var next = new GpuBigUInt(Workspace, Words);
+                AddOwned(allocated, next);
                 pointers.Add(next.DevicePointer);
             }
         }
@@ -144,7 +165,7 @@ public sealed class GraphOwnershipTests : IDisposable
             allocated.ForEach(static x => x.Dispose());
         }
 
-        var end = _workspace.GetMemoryStatistics();
+        var end = Workspace.GetMemoryStatistics();
         Assert.Equal(s_a + s_b + s_c + s_d, value);
         Assert.Equal(4, pointers.Count);
         Assert.Equal((start.LiveBuffers, start.DeferredBuffers), (end.LiveBuffers, end.DeferredBuffers));
@@ -156,11 +177,11 @@ public sealed class GraphOwnershipTests : IDisposable
     {
         // The graph gives the buffers freed during its capture back to the pool when it is disposed (G4, J8).
         // mutant: GraphHandles.Destroy without ReturnDeferred (DeferredBuffers does not come back)
-        var start = _workspace.GetMemoryStatistics();
-        var graph = (((GpuBigIntExpr)_a + _b) + _c).CompileToGraph(_workspace);
-        var compiled = _workspace.GetMemoryStatistics();
+        var start = Workspace.GetMemoryStatistics();
+        var graph = (((GpuBigIntExpr)_a + _b) + _c).CompileToGraph(Workspace);
+        var compiled = Workspace.GetMemoryStatistics();
         graph.Dispose();
-        var disposed = _workspace.GetMemoryStatistics();
+        var disposed = Workspace.GetMemoryStatistics();
 
         Assert.True(compiled.DeferredBuffers > start.DeferredBuffers, $"deferred {compiled.DeferredBuffers}");
         Assert.Equal(start.DeferredBuffers, disposed.DeferredBuffers);
@@ -228,11 +249,11 @@ public sealed class GraphOwnershipTests : IDisposable
         // alive is an error, because the graph replays the expression's buffers.
         // mutant: CompileToGraph without registering the root node with the graph
         var expression = (GpuBigIntExpr)_a + _b;
-        using var graph = expression.CompileToGraph(_workspace);
+        using var graph = expression.CompileToGraph(Workspace);
 
-        Assert.Throws<InvalidOperationException>(() => expression.Evaluate(_workspace));
-        Assert.Throws<InvalidOperationException>(() => expression.CompileToGraph(_workspace));
-        Assert.Throws<InvalidOperationException>(() => expression.EvaluateWithCudaGraph(_workspace));
+        Assert.Throws<InvalidOperationException>(() => expression.Evaluate(Workspace));
+        Assert.Throws<InvalidOperationException>(() => expression.CompileToGraph(Workspace));
+        Assert.Throws<InvalidOperationException>(() => expression.EvaluateWithCudaGraph(Workspace));
     }
 
     [SkippableFact]
@@ -242,14 +263,14 @@ public sealed class GraphOwnershipTests : IDisposable
         // The graph records raw pointers; a launch after an operand or the target was freed would read or write memory
         // that may belong to someone else, so it throws instead (G7).
         // mutant: GraphHandles without the liveness check before the launch
-        var left = Create(_workspace, s_a);
-        using var graph = ((GpuBigIntExpr)left + _b).CompileToGraph(_workspace);
+        var left = Create(Workspace, s_a);
+        using var graph = ((GpuBigIntExpr)left + _b).CompileToGraph(Workspace);
         left.Dispose();
         Assert.Throws<ObjectDisposedException>(graph.Execute);
 
         // A sum is one bit wider than its operands, so its target has one word more
-        var target = new GpuBigUInt(_workspace, Words + 1);
-        using var targetGraph = ((GpuBigIntExpr)_a + _b).CompileToGraph(_workspace, target);
+        var target = new GpuBigUInt(Workspace, Words + 1);
+        using var targetGraph = ((GpuBigIntExpr)_a + _b).CompileToGraph(Workspace, target);
         target.Dispose();
         Assert.Throws<ObjectDisposedException>(() => { _ = targetGraph.ExecuteAsync(); });
     }
@@ -310,9 +331,9 @@ public sealed class GraphOwnershipTests : IDisposable
         // While a capture runs, another thread that frees a buffer of the workspace is not part of the capture: its
         // buffer goes to the shared pool, not to the graph. The capturing thread's own free is deferred (m3).
         // mutant: DefaultGpuMemoryManager.CurrentSession without the thread check (the other thread's free is deferred)
-        var manager = (DefaultGpuMemoryManager)_workspace.MemoryManager;
+        var manager = (DefaultGpuMemoryManager)Workspace.MemoryManager;
         var deferral = manager.BeginDeferral();
-        var start = _workspace.GetMemoryStatistics();
+        var start = Workspace.GetMemoryStatistics();
         GpuMemoryStatistics afterOtherThread;
         GpuMemoryStatistics afterOwn;
         try
@@ -320,16 +341,16 @@ public sealed class GraphOwnershipTests : IDisposable
             var other = new Thread(() =>
             {
                 using var scope = new GpuKernelLoader.CudaContextScope();
-                var buffer = new GpuBigUInt(_workspace, Words);
+                var buffer = new GpuBigUInt(Workspace, Words);
                 buffer.Dispose();
             });
             other.Start();
             other.Join();
-            afterOtherThread = _workspace.GetMemoryStatistics();
+            afterOtherThread = Workspace.GetMemoryStatistics();
 
-            var own = new GpuBigUInt(_workspace, Words);
+            var own = new GpuBigUInt(Workspace, Words);
             own.Dispose();
-            afterOwn = _workspace.GetMemoryStatistics();
+            afterOwn = Workspace.GetMemoryStatistics();
         }
         finally
         {
@@ -338,7 +359,7 @@ public sealed class GraphOwnershipTests : IDisposable
 
         Assert.Equal(
             (start.DeferredBuffers, start.DeferredBuffers + 1, start.DeferredBuffers),
-            (afterOtherThread.DeferredBuffers, afterOwn.DeferredBuffers, _workspace.GetMemoryStatistics().DeferredBuffers)
+            (afterOtherThread.DeferredBuffers, afterOwn.DeferredBuffers, Workspace.GetMemoryStatistics().DeferredBuffers)
         );
     }
 
@@ -352,11 +373,11 @@ public sealed class GraphOwnershipTests : IDisposable
         // mutant: CompileToGraph without ReturnDeferred on the failure path (DeferredBuffers stays above 0)
         // The workspace uses the shared context: kernels launched in an isolated context would leave function handles
         // of a destroyed context behind for the next test.
-        var start = _workspace.GetMemoryStatistics();
+        var start = Workspace.GetMemoryStatistics();
 
         var error = Assert.ThrowsAny<Exception>(
-            () => ((((GpuBigIntExpr)_a + _b) % _c) + _a).CompileToGraph(_workspace));
-        var failed = _workspace.GetMemoryStatistics();
+            () => ((((GpuBigIntExpr)_a + _b) % _c) + _a).CompileToGraph(Workspace));
+        var failed = Workspace.GetMemoryStatistics();
 
         // Nothing invalidated the capture, so ending it succeeds and the original exception is rethrown (the branch
         // where the cleanup fails too is CaptureFailure_WhoseCleanupFailsToo_ReportsBoth)
@@ -364,7 +385,7 @@ public sealed class GraphOwnershipTests : IDisposable
         Assert.Equal((start.DeferredBuffers, start.LiveBuffers), (failed.DeferredBuffers, failed.LiveBuffers));
 
         // The stream is usable again after the failed capture
-        using var sum = ((GpuBigIntExpr)_a + _b).Evaluate(_workspace);
+        using var sum = ((GpuBigIntExpr)_a + _b).Evaluate(Workspace);
         Assert.Equal(s_a + s_b, Read(sum));
     }
 
@@ -377,27 +398,29 @@ public sealed class GraphOwnershipTests : IDisposable
         // still gives back every buffer it deferred, and reports the original exception first, then the cleanup
         // failure, in one AggregateException.
         // mutant: AbortCapture without ThrowIfCleanupFailed (no AggregateException; the caller rethrows the original)
-        var start = _workspace.GetMemoryStatistics();
-        var manager = (DefaultGpuMemoryManager)_workspace.MemoryManager;
+        var start = Workspace.GetMemoryStatistics();
+        var manager = (DefaultGpuMemoryManager)Workspace.MemoryManager;
         var deferral = manager.BeginDeferral();
-        _workspace.Provider.BeginCapture(_workspace.Stream);
+        Workspace.Provider.BeginCapture(Workspace.Stream);
 
         var original = Record.Exception(
-            () => _workspace.Provider.ReadWord(_a.Value.DevicePointer, 0, _workspace.Stream));
+            () => Workspace.Provider.ReadWord(_a.Value.DevicePointer, 0, Workspace.Stream));
         Assert.NotNull(original);
 
         var error = Assert.Throws<AggregateException>(
-            () => GpuBigIntExpr.AbortCapture(_workspace, manager, deferral, original));
-        var failed = _workspace.GetMemoryStatistics();
+            () => GpuBigIntExpr.AbortCapture(Workspace, manager, deferral, original));
+        var failed = Workspace.GetMemoryStatistics();
 
         Assert.Equal(2, error.InnerExceptions.Count);
         Assert.Same(original, error.InnerExceptions[0]);
         Assert.Equal((start.DeferredBuffers, start.LiveBuffers), (failed.DeferredBuffers, failed.LiveBuffers));
 
         // The stream is usable again after the failed capture
-        using var sum = ((GpuBigIntExpr)_a + _b).Evaluate(_workspace);
+        using var sum = ((GpuBigIntExpr)_a + _b).Evaluate(Workspace);
         Assert.Equal(s_a + s_b, Read(sum));
     }
+
+    private static void AddOwned(List<GpuBigUInt> allocated, [TakesOwnership] GpuBigUInt item) => allocated.Add(item);
 
     private static GpuBigInt Create(GpuWorkspace workspace, BigInteger value) =>
         new(GpuBigUInt.FromBigInteger(workspace, value, Words), false);

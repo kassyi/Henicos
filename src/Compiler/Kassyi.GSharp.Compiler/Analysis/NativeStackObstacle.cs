@@ -41,13 +41,6 @@ internal enum NativeStackObstacle
     WarpMethodGroup,
 
     /// <summary>
-    /// A method that reaches <c>Warp.ActiveMask()</c> declares a local with <c>using</c>: the CPU writes the statements
-    /// after the declaration inside a <c>try</c>, and a goto of the reconvergence regions (a <c>continue</c> that leaves
-    /// the region of a loop body) to a label among them would enter that <c>try</c>, which C++ forbids.
-    /// </summary>
-    UsingDeclarationWithActiveMask,
-
-    /// <summary>
     /// The body of a method that reaches <c>Warp.ActiveMask()</c> could not be lowered for the stacks
     /// (<c>AstLoweringPipeline.LowerForStack</c> failed): the method keeps its state machine, as on the managed stack
     /// model, instead of the stack form failing the native build.

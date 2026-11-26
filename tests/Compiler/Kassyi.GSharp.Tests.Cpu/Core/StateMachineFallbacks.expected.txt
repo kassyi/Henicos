@@ -1,7 +1,6 @@
 # Expected kernels and suspending device functions on the state machine under stack switches
 # Columns: <native|managed>	<Type.Method>	<reason>	#<issue>
 managed	CrossAssemblyStdlibKernels.WarpScanKernel	WarpLayout	#2105
-managed	WarpStackModelKernels.ContinuePastUsingKernel	UsingDeclarationWithActiveMask	#2280
 native	AtomicsDifferentialKernels.CooperativeCasLockFreeStackKernel	Cooperative	#2105
 native	BlockBarrierStepKernels.ShuffleBarrierAndGridSyncKernel	Cooperative	#2105
 native	CrossAssemblyDifferentialKernels.CrossAssemblyBarrierExchangeKernel	ImportedSuspendingCall	#2105
@@ -77,4 +76,3 @@ native	SyncGridBodyKernels.UniformReturnKernel	Cooperative	#2105
 native	SyncGridBodyKernels.WriteSyncRead	GridSync	#2105
 native	SyncSpellingKernels.SpelledGridSyncKernel	Cooperative	#2105
 native	ThreadStopKernels.FailureBeforeGridSyncKernel	Cooperative	#2105
-native	WarpStackModelKernels.ContinuePastUsingKernel	UsingDeclarationWithActiveMask	#2280

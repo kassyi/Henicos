@@ -16,21 +16,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 [Category(TestCategory.Stdlib)]
 public class GpuBigFloatRoundingTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public GpuBigFloatRoundingTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1024, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     /// <summary>
     /// The provider a case runs on: the G# kernels (<see cref="GSharpKernelFloatProvider"/>) or the C# reference
@@ -78,7 +74,7 @@ public class GpuBigFloatRoundingTests : IDisposable
     public void MultiplyOperator_ExponentBelowMin_ThrowsOverflow(Engine engine)
     {
         // 2^int.MinValue · 2^int.MinValue = 2^(2·int.MinValue): the exponent of the product does not fit in int.
-        using var tiny = new GpuBigFloat(new GpuBigUInt(_workspace, [1u]), int.MinValue, false);
+        using var tiny = new GpuBigFloat(new GpuBigUInt(Workspace, [1u]), int.MinValue, false);
         Assert.Throws<OverflowException>(() =>
         {
             using var product = MultiplyByOperator(engine, tiny, tiny);
@@ -93,8 +89,8 @@ public class GpuBigFloatRoundingTests : IDisposable
     [InlineData(Engine.Cpu)]
     public void MultiplyOperator_IntermediateAboveMax_Fits(Engine engine)
     {
-        using var huge = new GpuBigFloat(new GpuBigUInt(_workspace, [1u]), int.MaxValue, false);
-        using var two = new GpuBigFloat(new GpuBigUInt(_workspace, [1u]), 1, false);
+        using var huge = new GpuBigFloat(new GpuBigUInt(Workspace, [1u]), int.MaxValue, false);
+        using var two = new GpuBigFloat(new GpuBigUInt(Workspace, [1u]), 1, false);
         using var product = MultiplyByOperator(engine, huge, two);
         Assert.Equal(
             (new BigInteger(0x8000_0000u), int.MaxValue - 30, false),
@@ -115,8 +111,8 @@ public class GpuBigFloatRoundingTests : IDisposable
     {
         uint[] leftWords = [0x89AB_CDEFu, 0x0123_4567u, 0xFEDC_BA98u, 0x7654_3210u];
         uint[] rightWords = [0x1357_9BDFu, 0x2468_ACE0u, 0x0F1E_2D3Cu, 0x8000_0001u];
-        using var left = new GpuBigFloat(new GpuBigUInt(_workspace, leftWords), -50, true);
-        using var right = new GpuBigFloat(new GpuBigUInt(_workspace, rightWords), 17, false);
+        using var left = new GpuBigFloat(new GpuBigUInt(Workspace, leftWords), -50, true);
+        using var right = new GpuBigFloat(new GpuBigUInt(Workspace, rightWords), 17, false);
         using var product = MultiplyByOperator(engine, left, right);
         var actual = (product.UFloat.Significand.ToBigInteger(), (long)product.Exponent, product.IsNegative);
 
@@ -139,7 +135,7 @@ public class GpuBigFloatRoundingTests : IDisposable
             return product;
         }
 
-        var visitor = new GpuBigFloatExpressionVisitor(_workspace, CSharpCpuBigFloatArithmetic.Instance);
+        var visitor = new GpuBigFloatExpressionVisitor(Workspace, CSharpCpuBigFloatArithmetic.Instance);
         return visitor.Visit(left * right);
     }
 
@@ -518,9 +514,9 @@ public class GpuBigFloatRoundingTests : IDisposable
     [InlineData(Engine.Cpu)]
     public void AddOperators_FarApartExponents_AreRoundedTowardZero(Engine engine)
     {
-        using var huge = new GpuBigFloat(new GpuBigUInt(_workspace, [1u]), MaxExp, false);
-        using var quarter = new GpuBigFloat(new GpuBigUInt(_workspace, [1u]), -2, false);
-        var cpu = new GpuBigFloatExpressionVisitor(_workspace, CSharpCpuBigFloatArithmetic.Instance);
+        using var huge = new GpuBigFloat(new GpuBigUInt(Workspace, [1u]), MaxExp, false);
+        using var quarter = new GpuBigFloat(new GpuBigUInt(Workspace, [1u]), -2, false);
+        var cpu = new GpuBigFloatExpressionVisitor(Workspace, CSharpCpuBigFloatArithmetic.Instance);
         using var sum = engine == Engine.Gpu ? huge + quarter : cpu.Visit(huge + quarter);
         using var difference = engine == Engine.Gpu ? huge - quarter : cpu.Visit(huge - quarter);
         using var reversed = engine == Engine.Gpu ? quarter - huge : cpu.Visit(quarter - huge);
@@ -604,8 +600,8 @@ public class GpuBigFloatRoundingTests : IDisposable
     {
         var p = 32 * resultWords;
         var a = new Dyadic(FromWords(words), exponent);
-        using var value = new GpuBigUInt(_workspace, words);
-        using var result = new GpuBigUInt(_workspace, resultWords);
+        using var value = new GpuBigUInt(Workspace, words);
+        using var result = new GpuBigUInt(Workspace, resultWords);
         var context = CreateContext();
         var operand = new GpuFloatOperand(value.Handle, exponent);
 
@@ -666,8 +662,8 @@ public class GpuBigFloatRoundingTests : IDisposable
         var a = new Dyadic(rootCase.Value.Significand, rootCase.Value.Exponent);
         var (expectedSig, expectedExp) = BigFloatReference.RzSqrt(a.Mantissa, a.Exponent, p);
 
-        using var value = new GpuBigUInt(_workspace, rootCase.Value.Words);
-        using var result = new GpuBigUInt(_workspace, rootCase.ResultWords);
+        using var value = new GpuBigUInt(Workspace, rootCase.Value.Words);
+        using var result = new GpuBigUInt(Workspace, rootCase.ResultWords);
         var context = CreateContext();
         var operand = new GpuFloatOperand(value.Handle, rootCase.Value.Exponent);
         var sqrt = Arithmetic(engine).Sqrt(ref context, in operand, result.Handle);
@@ -691,9 +687,9 @@ public class GpuBigFloatRoundingTests : IDisposable
     public void Sqrt_NegativeThrows_ZeroIsZero(Engine engine)
     {
         var arithmetic = Arithmetic(engine);
-        using var value = new GpuBigUInt(_workspace, [9u]);
-        using var zero = new GpuBigUInt(_workspace, [0u, 0u]);
-        using var result = new GpuBigUInt(_workspace, [0x1234_5678u, 1u, 2u, 3u]);
+        using var value = new GpuBigUInt(Workspace, [9u]);
+        using var zero = new GpuBigUInt(Workspace, [0u, 0u]);
+        using var result = new GpuBigUInt(Workspace, [0x1234_5678u, 1u, 2u, 3u]);
         var context = CreateContext();
 
         var negative = new GpuFloatOperand(value.Handle, 0, true);
@@ -852,8 +848,8 @@ public class GpuBigFloatRoundingTests : IDisposable
         var a = new Dyadic(rootCase.Value.Significand, rootCase.Value.Exponent);
         var (expectedSig, expectedExp) = BigFloatReference.RzRsqrt(a.Mantissa, a.Exponent, p);
 
-        using var value = new GpuBigUInt(_workspace, rootCase.Value.Words);
-        using var result = new GpuBigUInt(_workspace, rootCase.ResultWords);
+        using var value = new GpuBigUInt(Workspace, rootCase.Value.Words);
+        using var result = new GpuBigUInt(Workspace, rootCase.ResultWords);
         var context = CreateContext();
         var operand = new GpuFloatOperand(value.Handle, rootCase.Value.Exponent);
         var rsqrt = Arithmetic(engine).Rsqrt(ref context, in operand, result.Handle);
@@ -877,9 +873,9 @@ public class GpuBigFloatRoundingTests : IDisposable
     public void Rsqrt_NegativeAndZeroThrow(Engine engine)
     {
         var arithmetic = Arithmetic(engine);
-        using var value = new GpuBigUInt(_workspace, [9u]);
-        using var zero = new GpuBigUInt(_workspace, [0u, 0u]);
-        using var result = new GpuBigUInt(_workspace, 4);
+        using var value = new GpuBigUInt(Workspace, [9u]);
+        using var zero = new GpuBigUInt(Workspace, [0u, 0u]);
+        using var result = new GpuBigUInt(Workspace, 4);
         var negative = new GpuFloatOperand(value.Handle, 0, true);
         var zeroOperand = new GpuFloatOperand(zero.Handle, 5);
 
@@ -1173,8 +1169,8 @@ public class GpuBigFloatRoundingTests : IDisposable
 
     private (BigInteger Significand, GpuFloatResult Result) Run(IGpuBigFloatArithmetic arithmetic, ArithmeticCase arithmeticCase)
     {
-        using var left = new GpuBigUInt(_workspace, arithmeticCase.Left.Words);
-        using var result = new GpuBigUInt(_workspace, arithmeticCase.Words);
+        using var left = new GpuBigUInt(Workspace, arithmeticCase.Left.Words);
+        using var result = new GpuBigUInt(Workspace, arithmeticCase.Words);
         var context = CreateContext();
         var leftOperand = new GpuFloatOperand(left.Handle, arithmeticCase.Left.Exponent, arithmeticCase.Left.IsNegative);
         if (arithmeticCase.Right is not { } right)
@@ -1183,7 +1179,7 @@ public class GpuBigFloatRoundingTests : IDisposable
             return (result.ToBigInteger(), reciprocal);
         }
 
-        using var rightSig = new GpuBigUInt(_workspace, right.Words);
+        using var rightSig = new GpuBigUInt(Workspace, right.Words);
         var rightOperand = new GpuFloatOperand(rightSig.Handle, right.Exponent, right.IsNegative);
         var r = arithmeticCase.Operation switch
         {
@@ -1209,15 +1205,15 @@ public class GpuBigFloatRoundingTests : IDisposable
     private (BigInteger Significand, GpuFloatResult Result) Normalize(
         IGpuBigFloatArithmetic arithmetic, uint[] words, int exponent, int resultWords)
     {
-        using var value = new GpuBigUInt(_workspace, words);
-        using var result = new GpuBigUInt(_workspace, resultWords);
+        using var value = new GpuBigUInt(Workspace, words);
+        using var result = new GpuBigUInt(Workspace, resultWords);
         var context = CreateContext();
         var r = arithmetic.Normalize(ref context, new GpuFloatOperand(value.Handle, exponent), result.Handle);
         return (result.ToBigInteger(), r);
     }
 
     private GpuBigIntExecutionContext CreateContext() =>
-        new(_workspace, _workspace.MemoryManager, new LegacyProviderArithmeticAdapter(), _workspace.Stream);
+        new(Workspace, Workspace.MemoryManager, new LegacyProviderArithmeticAdapter(), Workspace.Stream);
 
     private static IGpuBigFloatArithmetic Arithmetic(Engine engine) => engine switch
     {

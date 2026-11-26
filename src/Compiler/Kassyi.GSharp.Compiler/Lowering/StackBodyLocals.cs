@@ -18,10 +18,12 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// <para>
 /// So a declaration whose uses lie outside the block or switch section it is in moves to the innermost enclosing one
 /// that holds them all, in front of the first statement there that holds it or a use; an <c>out</c> variable declared
-/// in an argument becomes a declaration there and the argument names it. Every declaration without a value gets
-/// <c>default(T)</c>, with <c>var</c> replaced by the type of the local. The program reads the same values: C# assigns
-/// a local before any read in the source, and the move stays inside the scope the source gives the local, so no loop
-/// starts between the old and the new place.
+/// in an argument becomes a declaration there and the argument names it, and a local function moves as a declaration
+/// (leaving any label on its original statement behind) when <see cref="UsingDeclarationScopes"/> puts it inside a
+/// <c>using</c> block past an earlier call. Every local declaration without a value gets <c>default(T)</c>, with
+/// <c>var</c> replaced by the type of the local. The program reads the same values: C# assigns a local before any read
+/// in the source, and the move stays inside the scope the source gives the local, so no loop starts between the old and
+/// the new place.
 /// </para>
 /// </remarks>
 internal static class StackBodyLocals
@@ -34,18 +36,27 @@ internal static class StackBodyLocals
     /// </exception>
     public static BlockSyntax Normalize(BlockSyntax body, SemanticModel bodyModel)
     {
-        var plan = PlanMoves(body, bodyModel);
-        var moved = plan.ByDeclaration.Count == 0
-            ? body
-            : new MoveRewriter(plan).Visit(body) as BlockSyntax
-              ?? throw new InvalidOperationException("Moving the locals of a stack body removed the body.");
+        var moved = body;
+        while (true)
+        {
+            var plan = PlanMoves(moved, bodyModel);
+            if (plan.ByDeclaration.Count == 0)
+            {
+                break;
+            }
+
+            moved = new MoveRewriter(plan).Visit(moved) as BlockSyntax
+                    ?? throw new InvalidOperationException("Moving the locals of a stack body removed the body.");
+        }
+
         return new InitializerRewriter(bodyModel).Visit(moved) as BlockSyntax
                ?? throw new InvalidOperationException("Initializing the locals of a stack body removed the body.");
     }
 
-    // One local to move: its declaration (a declarator of a local declaration statement or the designation of an out
-    // argument), its declared type, and the statement of the target scope it goes in front of
-    private sealed record Move(SyntaxNode Declaration, ILocalSymbol Local, TypeSyntax Type, StatementSyntax Anchor);
+    // One local or local function to move: its declaration (a declarator of a local declaration statement, the
+    // designation of an out argument, or a local function statement), its symbol, its declared type (null for a local
+    // function), and the statement of the target scope it goes in front of
+    private sealed record Move(SyntaxNode Declaration, ISymbol Symbol, TypeSyntax? Type, StatementSyntax Anchor);
 
     private sealed class MovePlan
     {
@@ -57,26 +68,28 @@ internal static class StackBodyLocals
     private static MovePlan PlanMoves(BlockSyntax body, SemanticModel bodyModel)
     {
         var uses = new Dictionary<ISymbol, List<SyntaxNode>>(SymbolEqualityComparer.Default);
-        var declarations = new List<(SyntaxNode Declaration, TypeSyntax Type)>();
+        var declarations = new List<(SyntaxNode Declaration, TypeSyntax? Type)>();
         foreach (var node in body.DescendantNodes())
         {
             switch (node)
             {
-                case IdentifierNameSyntax name when bodyModel.GetSymbol(name) is ILocalSymbol used:
-                    if (!uses.TryGetValue(used, out var list))
+                case SimpleNameSyntax name when bodyModel.GetSymbol(name) is { } usedSymbol and
+                    (ILocalSymbol or IMethodSymbol { MethodKind: MethodKind.LocalFunction }):
+                    var key = usedSymbol.OriginalDefinition;
+                    if (!uses.TryGetValue(key, out var list))
                     {
                         list = [];
-                        uses.Add(used, list);
+                        uses.Add(key, list);
                     }
 
                     list.Add(name);
                     break;
-                // A constant has no value to move, and C# reads it where it is
+                // A constant or using local has no movable slot, and C# reads it where it is
                 case VariableDeclaratorSyntax
                 {
                     Parent: VariableDeclarationSyntax
                     {
-                        Parent: LocalDeclarationStatementSyntax { IsConst: false }, Type: var type
+                        Parent: LocalDeclarationStatementSyntax { IsConst: false, UsingKeyword.RawKind: 0 }, Type: var type
                     }
                 } declarator:
                     declarations.Add((declarator, type));
@@ -87,24 +100,30 @@ internal static class StackBodyLocals
                 }:
                     declarations.Add((designation, type));
                     break;
+                case LocalFunctionStatementSyntax function:
+                    declarations.Add((function, null));
+                    break;
             }
         }
 
         var plan = new MovePlan();
         foreach (var (declaration, type) in declarations)
         {
-            if (bodyModel.GetSymbol(declaration) is not ILocalSymbol local ||
-                !uses.TryGetValue(local, out var localUses) ||
+            var symbol = declaration is LocalFunctionStatementSyntax function
+                ? bodyModel.GetDeclaredSymbol<IMethodSymbol>(function)
+                : bodyModel.GetSymbol(declaration);
+            if (symbol is null ||
+                !uses.TryGetValue(symbol, out var symbolUses) ||
                 FindStatementInScope(declaration) is not { Parent: { } scope })
             {
                 continue;
             }
 
             var target = scope;
-            while (!localUses.AsStackEnumerable().All(ScopeOf(target), static (use, t) => IsInside(use, t)))
+            while (!symbolUses.AsStackEnumerable().All(ScopeOf(target), static (use, t) => IsInside(use, t)))
             {
                 target = FindScopeAbove(target) ?? throw new InvalidOperationException(
-                    $"G#: internal error: the uses of '{MessageText.Name(local)}' in a stack body lie outside the body " +
+                    $"G#: internal error: the uses of '{MessageText.Name(symbol)}' in a stack body lie outside the body " +
                     "(please report this G# bug).");
             }
 
@@ -117,12 +136,18 @@ internal static class StackBodyLocals
             if (type is RefTypeSyntax)
             {
                 throw new InvalidOperationException(
-                    $"G#: internal error: the ref local '{MessageText.Name(local)}' of a stack body lies outside the scope of its " +
+                    $"G#: internal error: the ref local '{MessageText.Name(symbol)}' of a stack body lies outside the scope of its " +
                     "uses (please report this G# bug).");
             }
 
-            ThrowIfNameTaken(ScopeOf(target), local, bodyModel);
-            var move = new Move(declaration, local, type, FindAnchor(target, declaration, localUses));
+            var anchor = FindAnchor(target, declaration, symbolUses);
+            if (declaration is LocalFunctionStatementSyntax movedFunction)
+            {
+                ThrowIfCapturesUnmovableLocal(movedFunction, ScopeOf(target), anchor, bodyModel);
+            }
+
+            ThrowIfNameTaken(ScopeOf(target), symbol, bodyModel);
+            var move = new Move(declaration, symbol, type, anchor);
             plan.ByDeclaration.Add(declaration, move);
             if (!plan.ByAnchor.TryGetValue(move.Anchor, out var atAnchor))
             {
@@ -196,22 +221,134 @@ internal static class StackBodyLocals
         throw new InvalidOperationException("A stack body local moves into a scope that does not hold it.");
     }
 
-    // [WHY] C# gives a local the scope of its block; another local of the same name declared anywhere inside the scope
-    // the local moves to would clash with the moved declaration (CS0136, CS0128)
-    private static void ThrowIfNameTaken(SyntaxNode target, ILocalSymbol local, SemanticModel bodyModel)
+    // [WHY] A local function cannot move past a using resource, fixed pointer, constant, for, foreach, catch, or pattern
+    // local it captures, nor past a local or out argument declared at or after the anchor that stays in or moves to
+    // targetScope after the moved function
+    private static void ThrowIfCapturesUnmovableLocal(LocalFunctionStatementSyntax function, SyntaxNode targetScope,
+        StatementSyntax anchor, SemanticModel bodyModel)
+    {
+        HashSet<ISymbol>? captured = null;
+        foreach (var node in function.DescendantNodes())
+        {
+            if (node is SimpleNameSyntax name && bodyModel.GetSymbol(name) is ILocalSymbol local)
+            {
+                captured ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+                captured.Add(local);
+            }
+        }
+
+        if (captured is null)
+        {
+            return;
+        }
+
+        var functionSymbol = bodyModel.GetDeclaredSymbol<IMethodSymbol>(function);
+        foreach (var node in targetScope.DescendantNodes(n => n != function))
+        {
+            if (node.SpanStart < anchor.SpanStart)
+            {
+                continue;
+            }
+
+            switch (node)
+            {
+                case UsingStatementSyntax { Declaration.Variables: var usingVars }:
+                    CheckCapturedVariables(usingVars, captured, functionSymbol, bodyModel);
+                    break;
+                case FixedStatementSyntax { Declaration.Variables: var fixedVars }:
+                    CheckCapturedVariables(fixedVars, captured, functionSymbol, bodyModel);
+                    break;
+                case ForStatementSyntax { Declaration.Variables: var forVars }:
+                    CheckCapturedVariables(forVars, captured, functionSymbol, bodyModel);
+                    break;
+                case LocalDeclarationStatementSyntax localDeclaration
+                    when localDeclaration.IsConst ||
+                         localDeclaration.UsingKeyword.RawKind != 0 ||
+                         !EnclosesThroughChildOfTargetScope(localDeclaration, function, targetScope):
+                    CheckCapturedVariables(localDeclaration.Declaration.Variables, captured, functionSymbol, bodyModel);
+                    break;
+                case CommonForEachStatementSyntax forEach:
+                    CheckCapturedSymbol(bodyModel.GetDeclaredSymbol<ILocalSymbol>(forEach), captured, functionSymbol);
+                    break;
+                case CatchDeclarationSyntax catchDeclaration:
+                    CheckCapturedSymbol(bodyModel.GetDeclaredSymbol<ILocalSymbol>(catchDeclaration), captured,
+                        functionSymbol);
+                    break;
+                case SingleVariableDesignationSyntax designation
+                    when designation.Parent is not DeclarationExpressionSyntax { Parent: ArgumentSyntax } ||
+                         !EnclosesThroughChildOfTargetScope(designation, function, targetScope):
+                    CheckCapturedSymbol(bodyModel.GetSymbol(designation), captured, functionSymbol);
+                    break;
+            }
+        }
+    }
+
+    // [WHY] A local or out var argument at or after the anchor can only move ahead of the moved local function when
+    // it lives inside a child scope of targetScope that also encloses the function (so the function moves out first and
+    // a later pass moves the local ahead of the function); otherwise PlanMoves leaves it in targetScope or moves it only
+    // to its own statement at or after the anchor
+    private static bool EnclosesThroughChildOfTargetScope(
+        SyntaxNode node,
+        LocalFunctionStatementSyntax function,
+        SyntaxNode targetScope)
+    {
+        if (FindStatementInScope(node)?.Parent is not { } scope ||
+            ScopeOf(scope) == targetScope)
+        {
+            return false;
+        }
+
+        while (FindScopeAbove(scope) is { } above && ScopeOf(above) != targetScope)
+        {
+            scope = above;
+        }
+
+        return IsInside(function, ScopeOf(scope));
+    }
+
+    private static void CheckCapturedVariables(SeparatedSyntaxList<VariableDeclaratorSyntax> variables,
+        HashSet<ISymbol> captured, IMethodSymbol? functionSymbol, SemanticModel bodyModel)
+    {
+        foreach (var variable in variables)
+        {
+            CheckCapturedSymbol(bodyModel.GetSymbol(variable), captured, functionSymbol);
+        }
+    }
+
+    private static void CheckCapturedSymbol(ISymbol? symbol, HashSet<ISymbol> captured,
+        IMethodSymbol? functionSymbol)
+    {
+        if (symbol is not null && captured.Contains(symbol))
+        {
+            var functionName = functionSymbol is not null
+                ? $"'{MessageText.Name(functionSymbol)}'"
+                : "a local function";
+            throw new InvalidOperationException(
+                $"G#: internal error: the local function {functionName} of a stack body captures " +
+                $"'{MessageText.Name(symbol)}', which cannot move to the scope of its uses (please report this G# bug).");
+        }
+    }
+
+    // [WHY] C# gives a local or local function the scope of its block; another declaration of the same name anywhere
+    // inside the scope it moves to would clash with the moved declaration (CS0136, CS0128)
+    private static void ThrowIfNameTaken(SyntaxNode target, ISymbol symbol, SemanticModel bodyModel)
     {
         foreach (var node in target.DescendantNodes())
         {
-            var name = node switch
+            var (name, declared) = node switch
             {
-                VariableDeclaratorSyntax declarator => declarator.Identifier.ValueText,
-                SingleVariableDesignationSyntax designation => designation.Identifier.ValueText,
-                _ => null
+                VariableDeclaratorSyntax declarator =>
+                    (declarator.Identifier.ValueText, bodyModel.GetSymbol(declarator)),
+                SingleVariableDesignationSyntax designation =>
+                    (designation.Identifier.ValueText, bodyModel.GetSymbol(designation)),
+                LocalFunctionStatementSyntax function =>
+                    (function.Identifier.ValueText, bodyModel.GetDeclaredSymbol<IMethodSymbol>(function)),
+                _ => ((string?)null, (ISymbol?)null)
             };
-            if (name == local.Name && !SymbolEqualityComparer.Default.Equals(bodyModel.GetSymbol(node), local))
+            if (name == symbol.Name && !declared.IsEqualTo(symbol))
             {
                 throw new InvalidOperationException(
-                    $"G#: internal error: the local '{MessageText.Name(local)}' of a stack body cannot move to the scope of its " +
+                    $"G#: internal error: the local '{MessageText.Name(symbol)}' of a stack body cannot move to the scope of its " +
                     "uses, which declares another local of the same name (please report this G# bug).");
             }
         }
@@ -244,7 +381,12 @@ internal static class StackBodyLocals
     // <type> <name> = default(<type>);
     private static LocalDeclarationStatementSyntax DeclareWithDefault(Move move)
     {
-        var type = WrittenType(move.Type, move.Local);
+        if (move.Type is not { } declaredType || move.Symbol is not ILocalSymbol local)
+        {
+            throw new InvalidOperationException("A moved local of a stack body has no local symbol or type.");
+        }
+
+        var type = WrittenType(declaredType, local);
         var declarator = SyntaxFactory.VariableDeclarator(DeclaredIdentifier(move.Declaration))
             .WithInitializer(SyntaxFactory.EqualsValueClause(DefaultOf(type)))
             .WithOriginalSpanFrom(move.Declaration);
@@ -281,8 +423,21 @@ internal static class StackBodyLocals
                 {
                     foreach (var move in moves)
                     {
-                        result.Add(DeclareWithDefault(move));
+                        result.Add(move.Declaration is LocalFunctionStatementSyntax function
+                            ? Visit(function) as LocalFunctionStatementSyntax ?? function
+                            : DeclareWithDefault(move));
                     }
+                }
+
+                if (StateMachineLocalFunctions.GetMoved(statement) is { } movedFunction &&
+                    plan.ByDeclaration.ContainsKey(movedFunction))
+                {
+                    if (StateMachineLocalFunctions.WithoutFunction(statement) is { } remainder)
+                    {
+                        result.Add(Visit(remainder) as StatementSyntax ?? remainder);
+                    }
+
+                    continue;
                 }
 
                 if (statement is LocalDeclarationStatementSyntax declaration &&

@@ -46,7 +46,7 @@ public static class AstLoweringPipeline
         var reconvergence = ReconvergenceInserter.TryCreate(bodyModel, owner, isDeviceFunction, stackForm: true);
         var names = new LoweringTempNames();
         var structuredBody = RunStructuredPasses(body, ReturnsValue(method), bodyModel, names,
-            CreateIrPass(bodyModel, owner, body, names), reconvergence);
+            CreateIrPass(bodyModel, owner, body, names), reconvergence, new UsingDeclarationScopes());
         // [WHY] PrepareBody detached the labels of the targets that hold a split point (LabeledStatementSplitter), so a
         // labeled break or continue to them finds its target only by the mark; the state machine turns those into plain
         // jumps and gotos right after the regions, and so does the stack body
@@ -60,11 +60,12 @@ public static class AstLoweringPipeline
 
     // The prepared body after the passes that keep the structure of the source (CreateStructuredPasses)
     private static BlockSyntax RunStructuredPasses(CSharpSyntaxNode body, bool returnsValue, SemanticModel bodyModel,
-        LoweringTempNames names, IrSplitLoweringPass? irPass, ReconvergenceInserter? reconvergence)
+        LoweringTempNames names, IrSplitLoweringPass? irPass, ReconvergenceInserter? reconvergence,
+        IBlockLoweringPass? beforeRegions = null)
     {
         var structuredBody = PrepareBody(body, returnsValue, bodyModel);
         var passes = CreateStructuredPasses(new ConditionalEvaluationRewriter(names),
-            new WarpInstructionRewriter(bodyModel, names), reconvergence, irPass);
+            new WarpInstructionRewriter(bodyModel, names), reconvergence, irPass, beforeRegions);
         foreach (var pass in passes)
         {
             structuredBody = pass.Rewrite(structuredBody);
@@ -191,9 +192,10 @@ public static class AstLoweringPipeline
     // (LowerForStack) both start with them, so the regions fall in the same places.
     private static ImmutableArray<IBlockLoweringPass> CreateStructuredPasses(
         ConditionalEvaluationRewriter conditionalRewriter, WarpInstructionRewriter warpRewriter,
-        ReconvergenceInserter? reconvergence, IrSplitLoweringPass? irPass)
+        ReconvergenceInserter? reconvergence, IrSplitLoweringPass? irPass,
+        IBlockLoweringPass? beforeRegions = null)
     {
-        var passes = ImmutableArray.CreateBuilder<IBlockLoweringPass>(4);
+        var passes = ImmutableArray.CreateBuilder<IBlockLoweringPass>(5);
         if (irPass != null)
         {
             passes.Add(irPass);
@@ -201,6 +203,11 @@ public static class AstLoweringPipeline
 
         passes.Add(conditionalRewriter);
         passes.Add(warpRewriter);
+        if (beforeRegions != null)
+        {
+            passes.Add(beforeRegions);
+        }
+
         if (reconvergence != null)
         {
             passes.Add(reconvergence);

@@ -18,16 +18,16 @@ public sealed class DeviceElementCountTests : IDisposable
 
     private static readonly BigInteger s_loud = BigInteger.One << 70;
 
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
     private readonly List<IDisposable> _owned = [];
 
     public DeviceElementCountTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1024, GpuExecutionEngine.GSharpAot);
     }
+
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
 
     public void Dispose()
     {
@@ -36,8 +36,7 @@ public sealed class DeviceElementCountTests : IDisposable
             owned.Dispose();
         }
 
-        _workspace.Dispose();
-        _scope.Dispose();
+        _testWorkspace.Dispose();
     }
 
     public enum Reduction
@@ -85,11 +84,11 @@ public sealed class DeviceElementCountTests : IDisposable
 
         if (count == 0 && reduction != Reduction.Sum)
         {
-            Assert.Throws<InvalidOperationException>(() => expression.Evaluate(_workspace));
+            Assert.Throws<InvalidOperationException>(() => expression.Evaluate(Workspace));
             return;
         }
 
-        using var result = expression.Evaluate(_workspace);
+        using var result = expression.Evaluate(Workspace);
         var expected = reduction switch
         {
             Reduction.Sum => values.Aggregate(BigInteger.Zero, (s, v) => s + v),
@@ -118,7 +117,7 @@ public sealed class DeviceElementCountTests : IDisposable
 
         // The destination has the width of the result (Sum: the bound of 1000 elements, one word more)
         var words = expression.Node.NumWords;
-        using var destination = GpuBigUInt.FromBigInteger(_workspace, (BigInteger.One << (words * 32)) - 1, words);
+        using var destination = GpuBigUInt.FromBigInteger(Workspace, (BigInteger.One << (words * 32)) - 1, words);
 
         if (reduction != Reduction.Sum)
         {
@@ -140,7 +139,7 @@ public sealed class DeviceElementCountTests : IDisposable
     {
         // mutant: Count writes the capacity
         using var expression = Leaf(capacity, Values(count, false)).Count();
-        using var result = expression.Evaluate(_workspace);
+        using var result = expression.Evaluate(Workspace);
         Assert.Equal(new BigInteger(count), result.Value.ToBigInteger(result.IsNegative));
     }
 
@@ -202,8 +201,8 @@ public sealed class DeviceElementCountTests : IDisposable
 
         using var count = Leaf(20, values).Skip(skip).Take(take).Skip(1).Take(take).Count();
         using var sum = Leaf(20, values).Skip(skip).Take(take).Skip(1).Take(take).Sum();
-        using var countResult = count.Evaluate(_workspace);
-        using var sumResult = sum.Evaluate(_workspace);
+        using var countResult = count.Evaluate(Workspace);
+        using var sumResult = sum.Evaluate(Workspace);
 
         Assert.Equal(new BigInteger(expected.Length), countResult.Value.ToBigInteger());
         Assert.Equal(expected.Aggregate(BigInteger.Zero, (s, v) => s + v), sumResult.Value.ToBigInteger(sumResult.IsNegative));
@@ -222,13 +221,13 @@ public sealed class DeviceElementCountTests : IDisposable
         var values = Enumerable.Range(1, count).Select(i => elementsPositive ? new BigInteger(i) : -i).ToArray();
         var tail = elementsPositive ? -s_loud : s_loud;
         var leaf = Leaf(16, values, tail);
-        using var zero = GpuBigUInt.FromBigInteger(_workspace, 0, Words);
-        var scalar = new GpuBigInt(zero, false);
+        using var zero = GpuBigUInt.FromBigInteger(Workspace, 0, Words);
+        using var scalar = new GpuBigInt(zero.AsBorrowed(), false);
 
         using var any = leaf.IsGreaterThan(scalar).Any();
-        var anyResult = any.Evaluate(_workspace);
+        var anyResult = any.Evaluate(Workspace);
         using var all = Leaf(16, values, tail).IsGreaterThan(scalar).All();
-        var allResult = all.Evaluate(_workspace);
+        var allResult = all.Evaluate(Workspace);
 
         Assert.Equal(values.Any(v => v > 0), anyResult);
         Assert.Equal(values.All(v => v > 0), allResult);
@@ -240,10 +239,10 @@ public sealed class DeviceElementCountTests : IDisposable
     {
         // SelectAdd keeps the descriptor of its input, so the Sum after it reads n elements
         var values = Values(10, false);
-        using var ten = GpuBigUInt.FromBigInteger(_workspace, 10, Words);
+        using var ten = GpuBigUInt.FromBigInteger(Workspace, 10, Words);
 
         using var sum = Leaf(1000, values).SelectAdd(new GpuBigInt(ten, false)).Sum();
-        using var result = sum.Evaluate(_workspace);
+        using var result = sum.Evaluate(Workspace);
 
         Assert.Equal(values.Aggregate(BigInteger.Zero, (s, v) => s + v + 10), result.Value.ToBigInteger(result.IsNegative));
     }
@@ -258,7 +257,7 @@ public sealed class DeviceElementCountTests : IDisposable
         var values = Enumerable.Range(1, 10).Select(i => new BigInteger(i * i)).ToArray();
 
         using var sum = Leaf(1000, values, -s_loud).SelectSqrt().Sum();
-        using var result = sum.Evaluate(_workspace);
+        using var result = sum.Evaluate(Workspace);
 
         Assert.Equal(new BigInteger(55), result.Value.ToBigInteger(result.IsNegative));
     }
@@ -273,7 +272,7 @@ public sealed class DeviceElementCountTests : IDisposable
         using var staticArray = CreateArray(other);
 
         using var sum = staticArray.AsVectorizedEnumerable().ZipAdd(Leaf(1000, values)).Sum();
-        using var result = sum.Evaluate(_workspace);
+        using var result = sum.Evaluate(Workspace);
 
         Assert.Equal(values.Select((v, i) => v + other[i]).Aggregate(BigInteger.Zero, (s, v) => s + v),
             result.Value.ToBigInteger(result.IsNegative));
@@ -285,7 +284,7 @@ public sealed class DeviceElementCountTests : IDisposable
     {
         // Two counts that only the device can compare (design J4): NotSupportedException, not a silent choice
         using var sum = Leaf(20, Values(7, false)).ZipAdd(Leaf(20, Values(5, false))).Sum();
-        Assert.Throws<NotSupportedException>(() => sum.Evaluate(_workspace));
+        Assert.Throws<NotSupportedException>(() => sum.Evaluate(Workspace));
     }
 
     [SkippableFact]
@@ -308,11 +307,11 @@ public sealed class DeviceElementCountTests : IDisposable
 
         var array = CreateArray(storage);
         _owned.Add(array);
-        using var countWord = GpuBigUInt.FromBigInteger(_workspace, values.Length, 1);
+        using var countWord = GpuBigUInt.FromBigInteger(Workspace, values.Length, 1);
         using var roots = new DeviceCountedLeafExpression(array, countWord).SelectSqrt();
         GpuBigUIntArrayView target = array.Values;
 
-        var result = roots.Evaluate(_workspace, 0, capacity, target);
+        var result = roots.Evaluate(Workspace, 0, capacity, target);
 
         // The elements are the square roots, delivered in the target
         Assert.Equal(values.Select(v => (BigInteger)Math.Sqrt((double)v)), Read(result));
@@ -320,7 +319,7 @@ public sealed class DeviceElementCountTests : IDisposable
 
         // The tail after the device count keeps the magnitudes it had
         var words = new uint[capacity * Words];
-        _workspace.Provider.CopyDeviceToHost(words, target.DevicePointer, words.Length, _workspace.Stream);
+        Workspace.Provider.CopyDeviceToHost(words, target.DevicePointer, words.Length, Workspace.Stream);
         for (var i = values.Length; i < capacity; i++)
         {
             Assert.True(words[i * Words] == 0u && words[i * Words + 1] == 0u && words[i * Words + 2] == 1u << 6,
@@ -335,7 +334,7 @@ public sealed class DeviceElementCountTests : IDisposable
         var values = Values(7, false);
         using var leaf = Leaf(20, values);
 
-        var result = leaf.Evaluate(_workspace);
+        var result = leaf.Evaluate(Workspace);
 
         Assert.Equal(7, result.Length);
         Assert.Equal(values, Read(result));
@@ -347,7 +346,7 @@ public sealed class DeviceElementCountTests : IDisposable
     {
         // Design V1 (J1 a): Length is known only on the device, so it throws; Capacity and TryGetLength answer
         using var leaf = Leaf(20, Values(7, false));
-        using var selected = leaf.SelectAdd(new GpuBigInt(GpuBigUInt.FromBigInteger(_workspace, 1, Words), false));
+        using var selected = leaf.SelectAdd(new GpuBigInt(GpuBigUInt.FromBigInteger(Workspace, 1, Words), false));
 
         Assert.Throws<InvalidOperationException>(() => leaf.Length);
         Assert.Throws<InvalidOperationException>(() => selected.Length);
@@ -365,7 +364,7 @@ public sealed class DeviceElementCountTests : IDisposable
         }
 
         var array = CreateArray(storage);
-        var countWord = GpuBigUInt.FromBigInteger(_workspace, values.Length, 1);
+        var countWord = GpuBigUInt.FromBigInteger(Workspace, values.Length, 1);
         _owned.Add(array);
         _owned.Add(countWord);
         return new DeviceCountedLeafExpression(array, countWord);
@@ -377,7 +376,7 @@ public sealed class DeviceElementCountTests : IDisposable
 
     private GpuBigIntArray CreateArray(BigInteger[] values)
     {
-        var array = new GpuBigIntArray(_workspace, values.Length, Words);
+        var array = new GpuBigIntArray(Workspace, values.Length, Words);
         var words = new uint[values.Length * Words];
         var signs = new uint[values.Length];
         for (var i = 0; i < values.Length; i++)
@@ -393,8 +392,8 @@ public sealed class DeviceElementCountTests : IDisposable
 
         if (values.Length > 0)
         {
-            _workspace.Provider.CopyHostToDevice(array.Values.DevicePointer, words, words.Length, _workspace.Stream);
-            _workspace.Provider.CopyHostToDevice(array.Signs.DevicePointer, signs, signs.Length, _workspace.Stream);
+            Workspace.Provider.CopyHostToDevice(array.Values.DevicePointer, words, words.Length, Workspace.Stream);
+            Workspace.Provider.CopyHostToDevice(array.Signs.DevicePointer, signs, signs.Length, Workspace.Stream);
         }
 
         return array;
@@ -404,8 +403,8 @@ public sealed class DeviceElementCountTests : IDisposable
     {
         var words = new uint[array.Length * Words];
         var signs = new uint[array.Length];
-        _workspace.Provider.CopyDeviceToHost(words, array.Values.DevicePointer, words.Length, _workspace.Stream);
-        _workspace.Provider.CopyDeviceToHost(signs, array.Signs.DevicePointer, signs.Length, _workspace.Stream);
+        Workspace.Provider.CopyDeviceToHost(words, array.Values.DevicePointer, words.Length, Workspace.Stream);
+        Workspace.Provider.CopyDeviceToHost(signs, array.Signs.DevicePointer, signs.Length, Workspace.Stream);
         var result = new BigInteger[array.Length];
         for (var i = 0; i < result.Length; i++)
         {

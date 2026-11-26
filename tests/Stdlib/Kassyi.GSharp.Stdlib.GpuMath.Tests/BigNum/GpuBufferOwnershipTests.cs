@@ -16,21 +16,17 @@ public sealed class GpuBufferOwnershipTests : IDisposable
 {
     private const int PoolWords = 37;
 
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public GpuBufferOwnershipTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(64, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
@@ -41,17 +37,17 @@ public sealed class GpuBufferOwnershipTests : IDisposable
         // mutant: DefaultGpuMemoryManager.Free: the LiveBuffers decrement removed (oneLive stays at 2)
         // mutant: DefaultGpuMemoryManager.Allocate: the PooledBuffers decrement on a pool hit removed
         // mutant: DefaultGpuMemoryManager.Allocate: the DriverAllocations increment moved before the pool lookup
-        var start = _workspace.GetMemoryStatistics();
-        var a = new GpuBigUInt(_workspace, PoolWords);
-        var b = new GpuBigUInt(_workspace, PoolWords);
-        var twoLive = _workspace.GetMemoryStatistics();
+        var start = Workspace.GetMemoryStatistics();
+        var a = new GpuBigUInt(Workspace, PoolWords);
+        var b = new GpuBigUInt(Workspace, PoolWords);
+        var twoLive = Workspace.GetMemoryStatistics();
         a.Dispose();
-        var oneLive = _workspace.GetMemoryStatistics();
-        var c = new GpuBigUInt(_workspace, PoolWords);
-        var reused = _workspace.GetMemoryStatistics();
+        var oneLive = Workspace.GetMemoryStatistics();
+        var c = new GpuBigUInt(Workspace, PoolWords);
+        var reused = Workspace.GetMemoryStatistics();
         b.Dispose();
         c.Dispose();
-        var end = _workspace.GetMemoryStatistics();
+        var end = Workspace.GetMemoryStatistics();
 
         Assert.Equal(
             [
@@ -73,13 +69,13 @@ public sealed class GpuBufferOwnershipTests : IDisposable
         // is a lease.
         // mutant: DefaultGpuMemoryManager.Allocate: the `numWords == 0` early return moved after the LiveBuffers increment
         // mutant: DefaultGpuMemoryManager.Free: the `IsDefault` early return moved after the LiveBuffers decrement
-        var start = _workspace.GetMemoryStatistics();
-        var empty = _workspace.MemoryManager.Allocate(0);
-        _workspace.MemoryManager.Free(empty);
-        _workspace.MemoryManager.Free(default);
+        var start = Workspace.GetMemoryStatistics();
+        var empty = Workspace.MemoryManager.Allocate(0);
+        Workspace.MemoryManager.Free(empty);
+        Workspace.MemoryManager.Free(default);
 
         Assert.True(empty.IsDefault);
-        Assert.Equal(start, _workspace.GetMemoryStatistics());
+        Assert.Equal(start, Workspace.GetMemoryStatistics());
     }
 
     [SkippableFact]
@@ -95,7 +91,7 @@ public sealed class GpuBufferOwnershipTests : IDisposable
         var start = workspace.GetMemoryStatistics();
         var pooled = new GpuBigUInt(workspace, PoolWords);
         pooled.Dispose();
-        _ = new GpuBigUInt(workspace, PoolWords + 1);
+        using var live = new GpuBigUInt(workspace, PoolWords + 1);
         var beforeDispose = workspace.GetMemoryStatistics();
 
         workspace.Dispose();
@@ -119,20 +115,20 @@ public sealed class GpuBufferOwnershipTests : IDisposable
         // GpuBigUInt is a value type. Disposing a stale copy after the buffer went to a new owner must not free it
         // (the ABA case: the pointer alone cannot tell the two leases apart).
         // mutant: GpuBigIntDeviceBuffer.TryRetire always returns true (the copy frees `b`, which then reads as zero)
-        var start = _workspace.GetMemoryStatistics();
-        var a = new GpuBigUInt(_workspace, PoolWords);
+        var start = Workspace.GetMemoryStatistics();
+        var a = new GpuBigUInt(Workspace, PoolWords);
         var pointer = a.DevicePointer;
         var copy = a;
         a.Dispose();
 
-        using var b = new GpuBigUInt(_workspace, PoolWords);
+        using var b = new GpuBigUInt(Workspace, PoolWords);
         Assert.Equal(pointer, b.DevicePointer);
         var pattern = Pattern(PoolWords);
-        _workspace.Provider.CopyHostToDevice(b.DevicePointer, pattern, PoolWords, _workspace.Stream);
+        Workspace.Provider.CopyHostToDevice(b.DevicePointer, pattern, PoolWords, Workspace.Stream);
         copy.Dispose();
 
         Assert.Equal(pattern, b.ToHostArray());
-        Assert.Equal(1, _workspace.GetMemoryStatistics().LiveBuffers - start.LiveBuffers);
+        Assert.Equal(1, Workspace.GetMemoryStatistics().LiveBuffers - start.LiveBuffers);
     }
 
     [SkippableFact]
@@ -141,12 +137,12 @@ public sealed class GpuBufferOwnershipTests : IDisposable
     {
         // Reading the pointer of a freed value throws, before and after its buffer is handed out again.
         // mutant: GpuBigIntMemoryHandle.DevicePointer without the generation check
-        var a = new GpuBigUInt(_workspace, PoolWords);
+        var a = new GpuBigUInt(Workspace, PoolWords);
         var copy = a;
         a.Dispose();
         Assert.Throws<ObjectDisposedException>(() => copy.DevicePointer);
 
-        using var b = new GpuBigUInt(_workspace, PoolWords);
+        using var b = new GpuBigUInt(Workspace, PoolWords);
         Assert.Equal(b.DevicePointer, b.Handle.DevicePointer);
         Assert.Throws<ObjectDisposedException>(() => copy.DevicePointer);
         Assert.Throws<ObjectDisposedException>(() => a.ToHostArray());
@@ -197,19 +193,19 @@ public sealed class GpuBufferOwnershipTests : IDisposable
         // A view of an array whose buffer has been through the pool belongs to the current lease: it can be read and
         // written without a false ObjectDisposedException.
         // mutant: GpuBigUIntArray.GetElement / Slice build the handle with generation 0 instead of the parent's
-        var first = new GpuBigUIntArray(_workspace, PoolWords, 1);
+        var first = new GpuBigUIntArray(Workspace, PoolWords, 1);
         var pointer = first.DevicePointer;
         first.Dispose();
 
-        using var array = new GpuBigUIntArray(_workspace, PoolWords, 1);
+        using var array = new GpuBigUIntArray(Workspace, PoolWords, 1);
         Assert.Equal(pointer, array.DevicePointer);
         var element = array.GetElement(1);
         var slice = array.Slice(2, 3);
-        _workspace.Provider.CopyHostToDevice(element.DevicePointer, [11u], 1, _workspace.Stream);
-        _workspace.Provider.CopyHostToDevice(slice.DevicePointer, [22u, 33u, 44u], 3, _workspace.Stream);
+        Workspace.Provider.CopyHostToDevice(element.DevicePointer, [11u], 1, Workspace.Stream);
+        Workspace.Provider.CopyHostToDevice(slice.DevicePointer, [22u, 33u, 44u], 3, Workspace.Stream);
 
         var host = new uint[5];
-        _workspace.Provider.CopyDeviceToHost(host, array.DevicePointer, host.Length, _workspace.Stream);
+        Workspace.Provider.CopyDeviceToHost(host, array.DevicePointer, host.Length, Workspace.Stream);
         Assert.Equal([0u, 11u, 22u, 33u, 44u], host);
         Assert.Equal([11u], element.ToHostArray());
     }
@@ -221,8 +217,8 @@ public sealed class GpuBufferOwnershipTests : IDisposable
         // Equals and GetHashCode agree on the identity of the buffer (#638); == and != compare the values on the GPU.
         // mutant: GpuBigUInt.Equals compares the values again (a.Equals(b) becomes true)
         // mutant: the generated operator == calls Equals (a == b becomes false)
-        using var a = new GpuBigUInt(_workspace, [7u]);
-        using var b = new GpuBigUInt(_workspace, [7u]);
+        using var a = new GpuBigUInt(Workspace, [7u]);
+        using var b = new GpuBigUInt(Workspace, [7u]);
         var copy = a;
 
         Assert.Equal(
@@ -239,11 +235,11 @@ public sealed class GpuBufferOwnershipTests : IDisposable
         // Equals, GetHashCode and ToString use the handle only, so a freed value can still be compared, hashed and
         // printed (for example by Assert.Equal or a dictionary).
         // mutant: GpuBigUInt.ToString formats DevicePointer
-        using var live = new GpuBigUInt(_workspace, [7u]);
-        var freed = new GpuBigUInt(_workspace, [7u]);
+        using var live = new GpuBigUInt(Workspace, [7u]);
+        var freed = new GpuBigUInt(Workspace, [7u]);
         var copy = freed;
         freed.Dispose();
-        var signed = new GpuBigInt(copy, isNegative: true);
+        using var signed = new GpuBigInt(copy, isNegative: true);
 
         Assert.Equal(
             (true, false, true, true),
@@ -266,13 +262,13 @@ public sealed class GpuBufferOwnershipTests : IDisposable
         // parent's size gets a new, whole buffer that does not overlap the parent (#630). The public views have no
         // Dispose (GpuMathViewEscapeTests), so this goes through the internal borrowed values of the owned type.
         // mutant: GpuBigUIntArray.GetElement returns an owning handle (Handle.Slice -> an owned whole-buffer handle)
-        using var array = new GpuBigUIntArray(_workspace, 4, 2);
+        using var array = new GpuBigUIntArray(Workspace, 4, 2);
         var start = array.DevicePointer;
         var end = start + array.TotalWords * 4;
 
         array.BorrowElement(1).Dispose();
         array.BorrowSlice(1, 2).Dispose();
-        using var next = new GpuBigUInt(_workspace, array.TotalWords);
+        using var next = new GpuBigUInt(Workspace, array.TotalWords);
 
         Assert.Equal(
             (array.TotalWords, false),
@@ -287,15 +283,15 @@ public sealed class GpuBufferOwnershipTests : IDisposable
     {
         // Disposing an element or a slice of a GpuBigIntArray keeps the parent's values (#630).
         // mutant: GpuBigUIntArray.Dispose frees a borrowed handle (the OwnsBuffer check removed)
-        using var array = new GpuBigIntArray(_workspace, 3, 2);
+        using var array = new GpuBigIntArray(Workspace, 3, 2);
         uint[] values = [11u, 0u, 22u, 0u, 33u, 0u];
-        _workspace.Provider.CopyHostToDevice(array.Values.DevicePointer, values, values.Length, _workspace.Stream);
+        Workspace.Provider.CopyHostToDevice(array.Values.DevicePointer, values, values.Length, Workspace.Stream);
 
         array.BorrowSlice(1, 2).Dispose();
         array.BorrowElement(0).Dispose();
 
         var host = new uint[values.Length];
-        _workspace.Provider.CopyDeviceToHost(host, array.Values.DevicePointer, host.Length, _workspace.Stream);
+        Workspace.Provider.CopyDeviceToHost(host, array.Values.DevicePointer, host.Length, Workspace.Stream);
         Assert.Equal(values, host);
     }
 
@@ -305,15 +301,15 @@ public sealed class GpuBufferOwnershipTests : IDisposable
     {
         // GpuBigFloatArray.GetElement builds its value from a significand element; disposing it frees nothing (#630).
         // mutant: GpuBigUInt.Dispose frees a borrowed handle (the OwnsBuffer check removed)
-        using var array = new GpuBigFloatArray(_workspace, 2, 2);
+        using var array = new GpuBigFloatArray(Workspace, 2, 2);
         uint[] significands = [5u, 6u, 7u, 8u];
-        _workspace.Provider.CopyHostToDevice(array.Significands.DevicePointer, significands, significands.Length,
-            _workspace.Stream);
+        Workspace.Provider.CopyHostToDevice(array.Significands.DevicePointer, significands, significands.Length,
+            Workspace.Stream);
 
         array.GetElement(0).AsBorrowed().Dispose();
 
         var host = new uint[significands.Length];
-        _workspace.Provider.CopyDeviceToHost(host, array.Significands.DevicePointer, host.Length, _workspace.Stream);
+        Workspace.Provider.CopyDeviceToHost(host, array.Significands.DevicePointer, host.Length, Workspace.Stream);
         Assert.Equal(significands, host);
     }
 
@@ -324,15 +320,15 @@ public sealed class GpuBufferOwnershipTests : IDisposable
         // Only the owning handle of a whole buffer can be freed. A whole-array slice has offset 0 and all words, so only
         // the ownership check rejects it; an element is rejected as well. Neither reaches the pool.
         // mutant: DefaultGpuMemoryManager.Free without the `!handle.OwnsBuffer` check
-        using var array = new GpuBigUIntArray(_workspace, PoolWords, 1);
+        using var array = new GpuBigUIntArray(Workspace, PoolWords, 1);
         var whole = array.Slice(0, array.Length).Handle;
         var element = array.GetElement(1).Handle;
-        var before = _workspace.GetMemoryStatistics();
+        var before = Workspace.GetMemoryStatistics();
 
         Assert.Equal((0, PoolWords), (whole.WordOffset, whole.NumWords));
-        Assert.Throws<InvalidOperationException>(() => _workspace.MemoryManager.Free(whole));
-        Assert.Throws<InvalidOperationException>(() => _workspace.MemoryManager.Free(element));
-        Assert.Equal(before, _workspace.GetMemoryStatistics());
+        Assert.Throws<InvalidOperationException>(() => Workspace.MemoryManager.Free(whole));
+        Assert.Throws<InvalidOperationException>(() => Workspace.MemoryManager.Free(element));
+        Assert.Equal(before, Workspace.GetMemoryStatistics());
         Assert.Equal((true, false, false), (array.Handle.OwnsBuffer, whole.OwnsBuffer, element.OwnsBuffer));
     }
 
@@ -343,7 +339,7 @@ public sealed class GpuBufferOwnershipTests : IDisposable
         // A view cannot leave its method, but inside the method its owner can still be disposed first; the generation
         // turns the use after free into ObjectDisposedException (V1).
         // mutant: GpuBigIntMemoryHandle.DevicePointer without the generation check (the view reads freed memory)
-        var array = new GpuBigUIntArray(_workspace, PoolWords, 1);
+        var array = new GpuBigUIntArray(Workspace, PoolWords, 1);
         var element = array.GetElement(0);
         array.Dispose();
 
@@ -367,9 +363,9 @@ public sealed class GpuBufferOwnershipTests : IDisposable
     {
         // ToOwned copies the element into a buffer of its own, which outlives the array (V2).
         // mutant: GpuBigUIntView.ToOwned wraps the view instead of copying (the value dies with the array)
-        var array = new GpuBigUIntArray(_workspace, 3, 2);
+        var array = new GpuBigUIntArray(Workspace, 3, 2);
         uint[] words = [1u, 2u, 3u, 4u, 5u, 6u];
-        _workspace.Provider.CopyHostToDevice(array.DevicePointer, words, words.Length, _workspace.Stream);
+        Workspace.Provider.CopyHostToDevice(array.DevicePointer, words, words.Length, Workspace.Stream);
         using var owned = array.GetElement(1).ToOwned();
         array.Dispose();
 
@@ -387,10 +383,10 @@ public sealed class GpuBufferOwnershipTests : IDisposable
         // mutant: GpuBigUIntView.ToOwned without the Dispose in its catch (LiveBuffers grows by one)
         Assert.True(default(GpuBigUIntView).ToOwned().Handle.IsDefault);
 
-        var array = new GpuBigUIntArray(_workspace, PoolWords, 1);
+        var array = new GpuBigUIntArray(Workspace, PoolWords, 1);
         var element = array.GetElement(0);
         array.Dispose();
-        var before = _workspace.GetMemoryStatistics();
+        var before = Workspace.GetMemoryStatistics();
         ObjectDisposedException? error = null;
         try
         {
@@ -402,7 +398,7 @@ public sealed class GpuBufferOwnershipTests : IDisposable
         }
 
         Assert.NotNull(error);
-        Assert.Equal(before.LiveBuffers, _workspace.GetMemoryStatistics().LiveBuffers);
+        Assert.Equal(before.LiveBuffers, Workspace.GetMemoryStatistics().LiveBuffers);
     }
 
     [SkippableFact]
@@ -412,12 +408,12 @@ public sealed class GpuBufferOwnershipTests : IDisposable
         // The public operations take views; an element view and an owned value can be mixed, and an element other than
         // the first keeps its offset (V3).
         // mutant: the GpuBigUInt -> GpuBigUIntView conversion drops WordOffset (element 1 reads element 0)
-        using var array = new GpuBigUIntArray(_workspace, 2, 2);
+        using var array = new GpuBigUIntArray(Workspace, 2, 2);
         uint[] words = [10u, 0u, 20u, 0u];
-        _workspace.Provider.CopyHostToDevice(array.DevicePointer, words, words.Length, _workspace.Stream);
-        using var five = GpuBigUInt.FromBigInteger(_workspace, 5, 2);
-        using var first = new GpuBigUInt(_workspace, 2);
-        using var second = new GpuBigUInt(_workspace, 2);
+        Workspace.Provider.CopyHostToDevice(array.DevicePointer, words, words.Length, Workspace.Stream);
+        using var five = GpuBigUInt.FromBigInteger(Workspace, 5, 2);
+        using var first = new GpuBigUInt(Workspace, 2);
+        using var second = new GpuBigUInt(Workspace, 2);
 
         GpuBigIntMath.Add(array.GetElement(0), five, first);
         GpuBigIntMath.Add(five, array.GetElement(1), second);
@@ -435,16 +431,16 @@ public sealed class GpuBufferOwnershipTests : IDisposable
         // without a driver allocation (S7, #631).
         // mutant: GpuWorkspace.RentTemp returns a borrowed handle (Dispose frees nothing)
         IntPtr first;
-        using (var temp = _workspace.RentTemp(PoolWords))
+        using (var temp = Workspace.RentTemp(PoolWords))
         {
             first = temp.DevicePointer;
         }
 
-        var start = _workspace.GetMemoryStatistics();
-        using var again = _workspace.RentTemp(PoolWords);
+        var start = Workspace.GetMemoryStatistics();
+        using var again = Workspace.RentTemp(PoolWords);
 
         Assert.Equal(first, again.DevicePointer);
-        Assert.Equal(start.DriverAllocations, _workspace.GetMemoryStatistics().DriverAllocations);
+        Assert.Equal(start.DriverAllocations, Workspace.GetMemoryStatistics().DriverAllocations);
         Assert.True(again.OwnsBuffer);
     }
 
@@ -455,19 +451,19 @@ public sealed class GpuBufferOwnershipTests : IDisposable
         // The float addition rents two temporaries per call; they come back, so a hundred additions leave the live
         // count where it was (S8).
         // mutant: GpuBigUInt.Dispose frees nothing for an owned rental (the old IsTemp check)
-        using var a = new GpuBigFloat(GpuBigUInt.FromBigInteger(_workspace, 12345, 4), -3, false);
-        using var b = new GpuBigFloat(GpuBigUInt.FromBigInteger(_workspace, 678, 4), 5, true);
+        using var a = new GpuBigFloat(GpuBigUInt.FromBigInteger(Workspace, 12345, 4), -3, false);
+        using var b = new GpuBigFloat(GpuBigUInt.FromBigInteger(Workspace, 678, 4), 5, true);
         using (a.Add(b))
         {
         }
 
-        var start = _workspace.GetMemoryStatistics();
+        var start = Workspace.GetMemoryStatistics();
         for (var i = 0; i < 100; i++)
         {
             using var sum = a.Add(b);
         }
 
-        Assert.Equal(start.LiveBuffers, _workspace.GetMemoryStatistics().LiveBuffers);
+        Assert.Equal(start.LiveBuffers, Workspace.GetMemoryStatistics().LiveBuffers);
     }
 
     [SkippableFact]
@@ -478,20 +474,20 @@ public sealed class GpuBufferOwnershipTests : IDisposable
         // twenty products neither grow the live count nor allocate from the driver after the first (S9).
         // mutant: NttWorkspaceBuffers.Dispose without one of its Dispose calls
         const int OperandWords = 300;
-        using var left = GpuBigUInt.FromBigInteger(_workspace, (BigInteger.One << (32 * OperandWords - 1)) - 7,
+        using var left = GpuBigUInt.FromBigInteger(Workspace, (BigInteger.One << (32 * OperandWords - 1)) - 7,
             OperandWords);
-        using var right = GpuBigUInt.FromBigInteger(_workspace, (BigInteger.One << (32 * OperandWords - 2)) + 11,
+        using var right = GpuBigUInt.FromBigInteger(Workspace, (BigInteger.One << (32 * OperandWords - 2)) + 11,
             OperandWords);
-        using var product = new GpuBigUInt(_workspace, 2 * OperandWords);
+        using var product = new GpuBigUInt(Workspace, 2 * OperandWords);
         GpuBigIntMath.MultiplyNtt(left, right, product);
 
-        var start = _workspace.GetMemoryStatistics();
+        var start = Workspace.GetMemoryStatistics();
         for (var i = 0; i < 20; i++)
         {
             GpuBigIntMath.MultiplyNtt(left, right, product);
         }
 
-        var end = _workspace.GetMemoryStatistics();
+        var end = Workspace.GetMemoryStatistics();
         Assert.Equal((start.LiveBuffers, start.DriverAllocations), (end.LiveBuffers, end.DriverAllocations));
         Assert.Equal(left.ToBigInteger() * right.ToBigInteger(), product.ToBigInteger());
     }
@@ -502,11 +498,11 @@ public sealed class GpuBufferOwnershipTests : IDisposable
     {
         // An expression leaf borrows its operand: evaluating (x + y) must not free x, even when x was rented (S10).
         // mutant: GpuBigIntLeafExpression.Evaluate returns the operand itself instead of a borrowed value
-        using var x = new GpuBigInt(_workspace.RentTemp(4), false);
-        _workspace.Provider.CopyHostToDevice(x.Value.DevicePointer, [5u, 0u, 0u, 0u], 4, _workspace.Stream);
-        using var y = new GpuBigInt(GpuBigUInt.FromBigInteger(_workspace, 7, 4), false);
+        using var x = new GpuBigInt(Workspace.RentTemp(4), false);
+        Workspace.Provider.CopyHostToDevice(x.Value.DevicePointer, [5u, 0u, 0u, 0u], 4, Workspace.Stream);
+        using var y = new GpuBigInt(GpuBigUInt.FromBigInteger(Workspace, 7, 4), false);
 
-        using var sum = ((GpuBigIntExpr)x + y).Evaluate(_workspace);
+        using var sum = ((GpuBigIntExpr)x + y).Evaluate(Workspace);
 
         Assert.Equal((new BigInteger(12), new BigInteger(5)), (sum.Value.ToBigInteger(), x.Value.ToBigInteger()));
     }

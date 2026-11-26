@@ -4,21 +4,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Algorithms;
 [TestTarget(ExecutionTarget.CpuExecution)]
 public class GpuBigIntMatrix2x2Tests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _context;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public GpuBigIntMatrix2x2Tests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1024, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _context.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Context => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
@@ -26,18 +22,18 @@ public class GpuBigIntMatrix2x2Tests : IDisposable
     {
         CudaCapability.EnsureGpuAvailable();
 
-        using var id = GpuBigIntMatrix2x2.Identity(_context, 4);
+        using var id = GpuBigIntMatrix2x2.Identity(Context, 4);
         Assert.False(id.IsOddStep);
 
-        using var m1 = new GpuBigIntMatrix2x2(_context, 4, false);
-        using var t1 = new GpuBigUInt(_context, [1u]);
-        using var t2 = new GpuBigUInt(_context, [2u]);
+        using var m1 = new GpuBigIntMatrix2x2(Context, 4, false);
+        using var t1 = new GpuBigUInt(Context, [1u]);
+        using var t2 = new GpuBigUInt(Context, [2u]);
         m1.M00.CopyFrom(t2);
         m1.M01.CopyFrom(t1);
         m1.M10.CopyFrom(t1);
         m1.M11.CopyFrom(t2);
 
-        using var id2 = GpuBigIntMatrix2x2.Identity(_context, 4);
+        using var id2 = GpuBigIntMatrix2x2.Identity(Context, 4);
         using var result = GpuBigIntMatrix2x2.Multiply(m1, id2);
 
         Assert.Equal(2u, result.M00.ToHostArray()[0]);
@@ -45,10 +41,10 @@ public class GpuBigIntMatrix2x2Tests : IDisposable
         Assert.Equal(1u, result.M10.ToHostArray()[0]);
         Assert.Equal(2u, result.M11.ToHostArray()[0]);
 
-        using var a = new GpuBigUInt(_context, [2u]);
-        using var b = new GpuBigUInt(_context, [2u]);
-        using var outA = new GpuBigUInt(_context, 4);
-        using var outB = new GpuBigUInt(_context, 4);
+        using var a = new GpuBigUInt(Context, [2u]);
+        using var b = new GpuBigUInt(Context, [2u]);
+        using var outA = new GpuBigUInt(Context, 4);
+        using var outB = new GpuBigUInt(Context, 4);
         result.Apply(a, b, outA, outB);
         Assert.Equal(2u, outA.ToHostArray()[0]); // 2*2 - 1*2 = 2
         Assert.Equal(2u, outB.ToHostArray()[0]); // 2*2 - 1*2 = 2
@@ -60,19 +56,19 @@ public class GpuBigIntMatrix2x2Tests : IDisposable
     {
         CudaCapability.EnsureGpuAvailable();
 
-        using var m = new GpuBigIntMatrix2x2(_context, 2, isOddStep: true);
-        using var t1 = new GpuBigUInt(_context, [1u]);
-        using var t3 = new GpuBigUInt(_context, [3u]);
+        using var m = new GpuBigIntMatrix2x2(Context, 2, isOddStep: true);
+        using var t1 = new GpuBigUInt(Context, [1u]);
+        using var t3 = new GpuBigUInt(Context, [3u]);
         m.M00.CopyFrom(t1);
         m.M01.CopyFrom(t3);
         m.M10.CopyFrom(t3);
         m.M11.CopyFrom(t1);
 
         // a has 1 word, b has 3 words (unequal NumWords)
-        using var a = new GpuBigUInt(_context, [5u]);
-        using var b = new GpuBigUInt(_context, [4u, 0u, 0u]);
-        using var outA = new GpuBigUInt(_context, 4);
-        using var outB = new GpuBigUInt(_context, 4);
+        using var a = new GpuBigUInt(Context, [5u]);
+        using var b = new GpuBigUInt(Context, [4u, 0u, 0u]);
+        using var outA = new GpuBigUInt(Context, 4);
+        using var outB = new GpuBigUInt(Context, 4);
 
         m.Apply(a, b, outA, outB);
 
@@ -89,11 +85,11 @@ public class GpuBigIntMatrix2x2Tests : IDisposable
     {
         CudaCapability.EnsureGpuAvailable();
 
-        using var v = new GpuBigIntMatrix2x2(_context, 1, isOddStep: false);
-        _context.Provider.CopyHostToDevice(v.M00.DevicePointer, [0xFFFFFFFFu], 1, _context.Stream);
-        _context.Provider.CopyHostToDevice(v.M01.DevicePointer, [0xFFFFFFFFu], 1, _context.Stream);
-        _context.Provider.CopyHostToDevice(v.M10.DevicePointer, [0xFFFFFFFFu], 1, _context.Stream);
-        _context.Provider.CopyHostToDevice(v.M11.DevicePointer, [0xFFFFFFFFu], 1, _context.Stream);
+        using var v = new GpuBigIntMatrix2x2(Context, 1, isOddStep: false);
+        Context.Provider.CopyHostToDevice(v.M00.DevicePointer, [0xFFFFFFFFu], 1, Context.Stream);
+        Context.Provider.CopyHostToDevice(v.M01.DevicePointer, [0xFFFFFFFFu], 1, Context.Stream);
+        Context.Provider.CopyHostToDevice(v.M10.DevicePointer, [0xFFFFFFFFu], 1, Context.Stream);
+        Context.Provider.CopyHostToDevice(v.M11.DevicePointer, [0xFFFFFFFFu], 1, Context.Stream);
 
         using var r = GpuBigIntMatrix2x2.Multiply(v, v);
         var maxWord = (BigInteger.One << 32) - 1;
@@ -122,10 +118,10 @@ public class GpuBigIntMatrix2x2Tests : IDisposable
         var fb = fPrev;
         var fc = fa - fb;
 
-        using var m = new GpuBigIntMatrix2x2(_context, 2, isOddStep: false);
-        using var gpuFa = GpuBigUInt.FromBigInteger(_context, fa, minWords: 2);
-        using var gpuFb = GpuBigUInt.FromBigInteger(_context, fb, minWords: 2);
-        using var gpuFc = GpuBigUInt.FromBigInteger(_context, fc, minWords: 2);
+        using var m = new GpuBigIntMatrix2x2(Context, 2, isOddStep: false);
+        using var gpuFa = GpuBigUInt.FromBigInteger(Context, fa, minWords: 2);
+        using var gpuFb = GpuBigUInt.FromBigInteger(Context, fb, minWords: 2);
+        using var gpuFc = GpuBigUInt.FromBigInteger(Context, fc, minWords: 2);
         m.M00.CopyFrom(gpuFa);
         m.M01.CopyFrom(gpuFb);
         m.M10.CopyFrom(gpuFb);
@@ -138,9 +134,9 @@ public class GpuBigIntMatrix2x2Tests : IDisposable
         Assert.Equal(fb * fa + fc * fb, mm.M10.ToBigInteger());
         Assert.Equal(fb * fb + fc * fc, mm.M11.ToBigInteger());
 
-        using var id = GpuBigIntMatrix2x2.Identity(_context, 2);
-        using var outA = new GpuBigUInt(_context, 4);
-        using var outB = new GpuBigUInt(_context, 4);
+        using var id = GpuBigIntMatrix2x2.Identity(Context, 2);
+        using var outA = new GpuBigUInt(Context, 4);
+        using var outB = new GpuBigUInt(Context, 4);
         id.Apply(gpuFa, gpuFb, outA, outB);
         Assert.Equal(fa, outA.ToBigInteger());
         Assert.Equal(fb, outB.ToBigInteger());
@@ -154,20 +150,20 @@ public class GpuBigIntMatrix2x2Tests : IDisposable
 
         // [WHY] Intentionally pass null workspace to verify ArgumentNullException guard.
         Assert.Throws<ArgumentNullException>(() => new GpuBigIntMatrix2x2(null!, 4, false));
-        Assert.Throws<ArgumentOutOfRangeException>(() => new GpuBigIntMatrix2x2(_context, 0, false));
-        Assert.Throws<ArgumentOutOfRangeException>(() => new GpuBigIntMatrix2x2(_context, -1, false));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new GpuBigIntMatrix2x2(Context, 0, false));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new GpuBigIntMatrix2x2(Context, -1, false));
 
-        var disposedMatrix = GpuBigIntMatrix2x2.Identity(_context, 2);
+        var disposedMatrix = GpuBigIntMatrix2x2.Identity(Context, 2);
         disposedMatrix.Dispose();
 
-        using var validMatrix = GpuBigIntMatrix2x2.Identity(_context, 2);
+        using var validMatrix = GpuBigIntMatrix2x2.Identity(Context, 2);
         Assert.Throws<ObjectDisposedException>(() => GpuBigIntMatrix2x2.Multiply(disposedMatrix, validMatrix));
         Assert.Throws<ObjectDisposedException>(() => GpuBigIntMatrix2x2.Multiply(validMatrix, disposedMatrix));
 
-        using var a = new GpuBigUInt(_context, [1u]);
-        using var b = new GpuBigUInt(_context, [1u]);
-        using var outA = new GpuBigUInt(_context, 2);
-        using var outB = new GpuBigUInt(_context, 2);
+        using var a = new GpuBigUInt(Context, [1u]);
+        using var b = new GpuBigUInt(Context, [1u]);
+        using var outA = new GpuBigUInt(Context, 2);
+        using var outB = new GpuBigUInt(Context, 2);
 
         Assert.Throws<ObjectDisposedException>(() => disposedMatrix.Apply(a, b, outA, outB));
 
@@ -186,9 +182,9 @@ public class GpuBigIntMatrix2x2Tests : IDisposable
         var cpuRight = ChudnovskyAlgorithm.ComputeSubtree(2, 4);
         var cpuExpected = ChudnovskyAlgorithm.ComputeSubtree(0, 4);
 
-        using var left = CreateHypergeometricTerms(_context, cpuLeft);
-        using var right = CreateHypergeometricTerms(_context, cpuRight);
-        using var merged = HypergeometricTerms.Merge(_context, left, right);
+        using var left = CreateHypergeometricTerms(Context, cpuLeft);
+        using var right = CreateHypergeometricTerms(Context, cpuRight);
+        using var merged = HypergeometricTerms.Merge(Context, left, right);
 
         Assert.Equal(BigInteger.Abs(cpuExpected.P), merged.P.Value.ToBigInteger());
         Assert.Equal(cpuExpected.P < 0, merged.P.IsNegative);

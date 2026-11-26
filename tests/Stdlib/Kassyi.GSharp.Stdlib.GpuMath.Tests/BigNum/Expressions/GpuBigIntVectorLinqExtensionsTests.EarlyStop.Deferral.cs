@@ -26,7 +26,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var y = CreateArray(s_whereY);
         using var m = CreateArray(s_whereMask);
         using var any = WhereChain(x, y, m, zero).Any();
-        Assert.Equal(expected, Outcome(() => any.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => any.Evaluate(Context)));
     }
 
     [Fact]
@@ -45,7 +45,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var y = CreateArray(s_whereY);
         using var m = CreateArray(s_whereMask);
         using var any = new PassThroughBoolVectorExpression(WhereChain(x, y, m, zero)).Any();
-        Assert.Equal(expected, Outcome(() => any.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => any.Evaluate(Context)));
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             .ZipAdd(arrC.AsVectorizedEnumerable().ZipAdd(arrD.AsVectorizedEnumerable()))
             .IsGreaterThan(zero)
             .Any();
-        Assert.IsType<InvalidOperationException>(Record.Exception(() => any.Evaluate(_context)));
+        Assert.IsType<InvalidOperationException>(Record.Exception(() => any.Evaluate(Context)));
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         // The scope of the Any that threw is gone, so the next evaluation throws instead of recording.
         // mutant: PendingThrows.Scope.Dispose doing nothing (the square root is recorded, no exception)
         using var sqrt = arrNeg.AsVectorizedEnumerable().SelectSqrt();
-        Assert.Throws<InvalidOperationException>(() => sqrt.Evaluate(_context));
+        Assert.Throws<InvalidOperationException>(() => sqrt.Evaluate(Context));
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var m = CreateArray(s_whereMask);
         using var any = new PassThroughBoolVectorExpression(WhereChain(x, y, m, zero)).Any();
         using var scope = PendingThrows.Begin();
-        Assert.Equal(expected, Outcome(() => any.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => any.Evaluate(Context)));
         Assert.Null(scope.Instance.Exception);
     }
 

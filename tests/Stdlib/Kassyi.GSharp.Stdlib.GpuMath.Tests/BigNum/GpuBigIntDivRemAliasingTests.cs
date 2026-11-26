@@ -17,21 +17,17 @@ public sealed class GpuBigIntDivRemAliasingTests : IDisposable
     private const int Words = 64;
     private const int Seed = 636;
 
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public GpuBigIntDivRemAliasingTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1024, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     public enum Divisor
     {
@@ -85,9 +81,9 @@ public sealed class GpuBigIntDivRemAliasingTests : IDisposable
         // loop; the power-of-two and a < b branches: a wrong remainder)
         // mutant: DivRem without the copy of an overlapping divisor (QuotientIsDivisor / RemainderIsDivisor)
         var (a0, b0) = Values(divisor);
-        using var a = GpuBigUInt.FromBigInteger(_workspace, a0, Words);
-        using var b = GpuBigUInt.FromBigInteger(_workspace, b0, Words);
-        using var other = new GpuBigUInt(_workspace, Words);
+        using var a = GpuBigUInt.FromBigInteger(Workspace, a0, Words);
+        using var b = GpuBigUInt.FromBigInteger(Workspace, b0, Words);
+        using var other = new GpuBigUInt(Workspace, Words);
 
         switch (alias)
         {
@@ -129,10 +125,10 @@ public sealed class GpuBigIntDivRemAliasingTests : IDisposable
         // Div and Mod go through DivRem, so Div(a, b, a), Div(a, b, b), Mod(a, b, a) and Mod(a, b, b) are guarded too
         // (the #636 repro is Div(a, b, a))
         var (a0, b0) = Values(Divisor.Barrett);
-        using var a = GpuBigUInt.FromBigInteger(_workspace, a0, Words);
-        using var b = GpuBigUInt.FromBigInteger(_workspace, b0, Words);
-        using var a2 = GpuBigUInt.FromBigInteger(_workspace, a0, Words);
-        using var b2 = GpuBigUInt.FromBigInteger(_workspace, b0, Words);
+        using var a = GpuBigUInt.FromBigInteger(Workspace, a0, Words);
+        using var b = GpuBigUInt.FromBigInteger(Workspace, b0, Words);
+        using var a2 = GpuBigUInt.FromBigInteger(Workspace, a0, Words);
+        using var b2 = GpuBigUInt.FromBigInteger(Workspace, b0, Words);
 
         GpuBigIntDivRem.Div(a, b, intoDivisor ? b : a);
         GpuBigIntDivRem.Mod(a2, b2, intoDivisor ? b2 : a2);
@@ -158,7 +154,7 @@ public sealed class GpuBigIntDivRemAliasingTests : IDisposable
             2 => (BigInteger.One << 62) + 5,
             _ => new BigInteger(15)
         };
-        using var a = GpuBigUInt.FromBigInteger(_workspace, value, Words);
+        using var a = GpuBigUInt.FromBigInteger(Workspace, value, Words);
 
         GpuBigIntDivRem.Sqrt(a, a);
 
@@ -173,9 +169,9 @@ public sealed class GpuBigIntDivRemAliasingTests : IDisposable
         // same buffer and for a buffer that overlaps part of it.
         // mutant: the quotient / remainder overlap check removed
         // mutant: Overlaps compares one side only (the partial overlap below starts after the quotient)
-        using var a = GpuBigUInt.FromBigInteger(_workspace, 1000, Words);
-        using var b = GpuBigUInt.FromBigInteger(_workspace, 7, Words);
-        using var q = new GpuBigUInt(_workspace, 2 * Words);
+        using var a = GpuBigUInt.FromBigInteger(Workspace, 1000, Words);
+        using var b = GpuBigUInt.FromBigInteger(Workspace, 7, Words);
+        using var q = new GpuBigUInt(Workspace, 2 * Words);
         GpuBigUIntView whole = q;
         var head = whole.Slice(0, Words);
         var tail = whole.Slice(Words / 2, Words);
@@ -194,10 +190,10 @@ public sealed class GpuBigIntDivRemAliasingTests : IDisposable
         // Reduce and ReduceZeroSync are the building blocks under DivRem and ModPow; they do not copy, so an output that
         // overlaps an input is an ArgumentException instead of a wrong value.
         // mutant: the Reduce overlap check removed
-        using var a = GpuBigUInt.FromBigInteger(_workspace, 1000, Words);
-        using var b = GpuBigUInt.FromBigInteger(_workspace, 7, Words);
-        using var reciprocal = new GpuBigUInt(_workspace, Words);
-        using var r = new GpuBigUInt(_workspace, Words);
+        using var a = GpuBigUInt.FromBigInteger(Workspace, 1000, Words);
+        using var b = GpuBigUInt.FromBigInteger(Workspace, 7, Words);
+        using var reciprocal = new GpuBigUInt(Workspace, Words);
+        using var r = new GpuBigUInt(Workspace, Words);
 
         Assert.Throws<ArgumentException>(() => GpuBigIntDivRem.Reduce(a, b, reciprocal, 64, 1, a, r));
         Assert.Throws<ArgumentException>(() => GpuBigIntDivRem.Reduce(a, b, reciprocal, 64, 1, r, reciprocal));
@@ -224,11 +220,11 @@ public sealed class GpuBigIntDivRemAliasingTests : IDisposable
 
         using var buffer = Load(4 * slot, slot, 3 * slot);
         GpuBigUIntView whole = buffer;
-        var before = _workspace.GetMemoryStatistics();
+        var before = Workspace.GetMemoryStatistics();
 
         GpuBigIntDivRem.DivRem(whole.Slice(slot, slot), whole.Slice(3 * slot, slot), whole.Slice(0, slot),
             whole.Slice(2 * slot, slot));
-        var after = _workspace.GetMemoryStatistics();
+        var after = Workspace.GetMemoryStatistics();
 
         Assert.Equal(new BigInteger(142), whole.Slice(0, slot).ToBigInteger());
         Assert.Equal(new BigInteger(6), whole.Slice(2 * slot, slot).ToBigInteger());
@@ -238,11 +234,11 @@ public sealed class GpuBigIntDivRemAliasingTests : IDisposable
     // One buffer of 'words' words with the dividend 1000 at word 'dividendAt' and the divisor 7 at word 'divisorAt'
     private GpuBigUInt Load(int words, int dividendAt, int divisorAt)
     {
-        var buffer = new GpuBigUInt(_workspace, words);
+        var buffer = new GpuBigUInt(Workspace, words);
         var host = new uint[words];
         host[dividendAt] = 1000;
         host[divisorAt] = 7;
-        _workspace.Provider.CopyHostToDevice(buffer.DevicePointer, host, host.Length, _workspace.Stream);
+        Workspace.Provider.CopyHostToDevice(buffer.DevicePointer, host, host.Length, Workspace.Stream);
         return buffer;
     }
 

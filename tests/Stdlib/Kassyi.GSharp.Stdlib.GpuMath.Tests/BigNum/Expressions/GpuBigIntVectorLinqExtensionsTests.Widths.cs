@@ -25,7 +25,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
 
         Assert.Equal(32L + 33, e.BitsPerElement);
         Assert.Equal(3, e.WordsPerElement);
-        var values = ToHostArray(e.Evaluate(_context));
+        var values = ToHostArray(e.Evaluate(Context));
         Assert.Equal([34 * (BigInteger)uint.MaxValue, 34], values);
         e.Dispose();
     }
@@ -77,9 +77,9 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var right = CreateArray([-5, 5, -2], 2);
         using var difference = left.AsVectorizedEnumerable().ZipSubtract(right.AsVectorizedEnumerable());
 
-        var result = difference.Evaluate(_context);
+        var result = difference.Evaluate(Context);
         var signs = new uint[3];
-        _context.Provider.CopyDeviceToHost(signs, result.Signs.DevicePointer, 3, _context.Stream);
+        Context.Provider.CopyDeviceToHost(signs, result.Signs.DevicePointer, 3, Context.Stream);
         Assert.Equal([0u, 0u, 1u], signs);
         Assert.Equal([BigInteger.Zero, 0, -5], ToHostArray(result));
     }

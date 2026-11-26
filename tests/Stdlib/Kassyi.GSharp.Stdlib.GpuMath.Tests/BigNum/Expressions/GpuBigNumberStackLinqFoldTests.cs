@@ -5,21 +5,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public class GpuBigNumberStackLinqFoldTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _context;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public GpuBigNumberStackLinqFoldTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _context = new GpuWorkspace(1024 * 1024, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1024 * 1024, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _context.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Context => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     // [10, 3, 2, 1] with a - b: the left fold of Enumerable.Aggregate gives ((10 - 3) - 2) - 1 = 4, the balanced tree
     // of AsParallel() (10 - 3) - (2 - 1) = 6. [64, 8, 4, 2] with a / b: ((64 / 8) / 4) / 2 = 1 against
@@ -35,18 +31,18 @@ public class GpuBigNumberStackLinqFoldTests : IDisposable
         //   -> source.AsParallel().Aggregate(func)
         Assert.Equal(
             new BigInteger(4),
-            ToBigInt(ints.AsStackEnumerable().Aggregate(static (a, b) => a - b).Evaluate(_context)));
+            ToBigInt(ints.AsStackEnumerable().Aggregate(static (a, b) => a - b).Evaluate(Context)));
 
         // mutant: GpuBigIntStackLinqExtensions.cs sequential Aggregate (GpuBigIntExpr)
         //   -> source.AsParallel().Aggregate(func)
         Assert.Equal(
             new BigInteger(4),
-            ToBigInt(ints.AsStackEnumerable().Select(ToExpr).Aggregate(static (a, b) => a - b).Evaluate(_context)));
+            ToBigInt(ints.AsStackEnumerable().Select(ToExpr).Aggregate(static (a, b) => a - b).Evaluate(Context)));
 
         // The marker keeps the tree.
         Assert.Equal(
             new BigInteger(6),
-            ToBigInt(ints.AsStackEnumerable().AsParallel().Aggregate(static (a, b) => a - b).Evaluate(_context)));
+            ToBigInt(ints.AsStackEnumerable().AsParallel().Aggregate(static (a, b) => a - b).Evaluate(Context)));
 
         var uints = CreateUIntArray(64, 8, 4, 2);
 
@@ -93,13 +89,13 @@ public class GpuBigNumberStackLinqFoldTests : IDisposable
 
         // mutant: SignedExpressions.cs SignedTree.Evaluate -> recursive left operand (the test host crashes)
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        using (var sum = signed.Evaluate(_context))
+        using (var sum = signed.Evaluate(Context))
         {
             Assert.Equal(new BigInteger(Count), ToBigInt(sum));
         }
 
         var expressionSum = ints.AsStackEnumerable().Select(ToExpr).Aggregate(static (a, b) => a + b);
-        using (var sum = expressionSum.Evaluate(_context))
+        using (var sum = expressionSum.Evaluate(Context))
         {
             Assert.Equal(new BigInteger(Count), ToBigInt(sum));
         }
@@ -132,18 +128,18 @@ public class GpuBigNumberStackLinqFoldTests : IDisposable
         var ints = CreateInts(8, values);
 
         var sum = ints.AsStackEnumerable().Sum();
-        Assert.Equal(expectedSum, ToBigInt(sum.Evaluate(_context)));
+        Assert.Equal(expectedSum, ToBigInt(sum.Evaluate(Context)));
 
         // mutant: GpuBigIntStackLinqExtensions.cs sequential Sum (GpuBigInt) -> left fold
         Assert.Equal(3, AdditionDepth(sum.Node));
 
         // mutant: GpuBigIntStackLinqExtensions.cs sequential Sum (GpuBigIntExpr) -> left fold
         var exprSum = ints.AsStackEnumerable().Select(ToExpr).Sum();
-        Assert.Equal(expectedSum, ToBigInt(exprSum.Evaluate(_context)));
+        Assert.Equal(expectedSum, ToBigInt(exprSum.Evaluate(Context)));
         Assert.Equal(3, AdditionDepth(exprSum.Node));
 
         var positives = CreateInts(8, 10, 20, 30, 41);
-        Assert.Equal(new BigInteger(25), ToBigInt(positives.AsStackEnumerable().Average().Evaluate(_context)));
+        Assert.Equal(new BigInteger(25), ToBigInt(positives.AsStackEnumerable().Average().Evaluate(Context)));
 
         uint[] unsignedValues = [uint.MaxValue, uint.MaxValue, 7, uint.MaxValue];
         var expectedUnsignedSum = (BigInteger)uint.MaxValue * 3 + 7;
@@ -214,10 +210,10 @@ public class GpuBigNumberStackLinqFoldTests : IDisposable
     {
         GpuBigUFloat[] array =
         [
-            new(new GpuBigUInt(_context, [64u, 0u]), 0),
-            new(new GpuBigUInt(_context, [8u, 0u]), 0),
-            new(new GpuBigUInt(_context, [4u, 0u]), 0),
-            new(new GpuBigUInt(_context, [2u, 0u]), 0),
+            new(new GpuBigUInt(Context, [64u, 0u]), 0),
+            new(new GpuBigUInt(Context, [8u, 0u]), 0),
+            new(new GpuBigUInt(Context, [4u, 0u]), 0),
+            new(new GpuBigUInt(Context, [2u, 0u]), 0),
         ];
 
         try
@@ -225,11 +221,11 @@ public class GpuBigNumberStackLinqFoldTests : IDisposable
             // mutant: GpuBigNumberStackLinqExtensions.cs Aggregate (GpuBigUFloat)
             //   -> source.AsParallel().Aggregate(func)
             using var quotient = array.AsStackEnumerable().Aggregate(static (a, b) => a / b);
-            using var expectedOne = new GpuBigUFloat(new GpuBigUInt(_context, [1u, 0u]), 0);
+            using var expectedOne = new GpuBigUFloat(new GpuBigUInt(Context, [1u, 0u]), 0);
             Assert.Equal(0, expectedOne.CompareTo(quotient));
 
             using var treeQuotient = array.AsStackEnumerable().AsParallel().Aggregate(static (a, b) => a / b);
-            using var expectedFour = new GpuBigUFloat(new GpuBigUInt(_context, [4u, 0u]), 0);
+            using var expectedFour = new GpuBigUFloat(new GpuBigUInt(Context, [4u, 0u]), 0);
             Assert.Equal(0, expectedFour.CompareTo(treeQuotient));
         }
         finally
@@ -291,7 +287,7 @@ public class GpuBigNumberStackLinqFoldTests : IDisposable
                 words[1] = (uint)(magnitude >> 32);
             }
 
-            array[i] = new GpuBigInt(new GpuBigUInt(_context, words), isNegative);
+            array[i] = new GpuBigInt(new GpuBigUInt(Context, words), isNegative);
         }
 
         return array;
@@ -302,7 +298,7 @@ public class GpuBigNumberStackLinqFoldTests : IDisposable
         var array = new GpuBigUInt[values.Length];
         for (var i = 0; i < values.Length; i++)
         {
-            array[i] = new GpuBigUInt(_context, [values[i], 0u, 0u, 0u]);
+            array[i] = new GpuBigUInt(Context, [values[i], 0u, 0u, 0u]);
         }
 
         return array;
@@ -313,6 +309,6 @@ public class GpuBigNumberStackLinqFoldTests : IDisposable
     {
         var isNegative = value < 0;
         var magnitude = (uint)(isNegative ? -value : value);
-        return new GpuBigFloat(new GpuBigUInt(_context, [magnitude]), exponent, isNegative);
+        return new GpuBigFloat(new GpuBigUInt(Context, [magnitude]), exponent, isNegative);
     }
 }

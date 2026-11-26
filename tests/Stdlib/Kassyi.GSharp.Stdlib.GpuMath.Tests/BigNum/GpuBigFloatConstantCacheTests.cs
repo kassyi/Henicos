@@ -15,21 +15,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 [Collection(TestCollections.GlobalStateSequential)]
 public class GpuBigFloatConstantCacheTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public GpuBigFloatConstantCacheTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1024, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     // A view holds floor(ln 2 · 2^F) for F = 32 · ceil(bits / 32), before and after the constant grows; a smaller
     // request is the top words of the uploaded value.
@@ -41,7 +37,7 @@ public class GpuBigFloatConstantCacheTests : IDisposable
     // (a request one word beyond the upload reads past the buffer's top words)
     public void GetLn2_ViewsAreFloorsAtWordPrecision()
     {
-        var constants = _workspace.Constants;
+        var constants = Workspace.Constants;
 
         AssertLn2(constants.GetLn2(64), 64);
         AssertLn2(constants.GetLn2(65), 96);
@@ -55,7 +51,7 @@ public class GpuBigFloatConstantCacheTests : IDisposable
     [Scenario(TestScenario.SadPath)]
     public void GetLn2_AfterDispose_Throws()
     {
-        var cache = new GpuBigFloatConstantCache(_workspace);
+        var cache = new GpuBigFloatConstantCache(Workspace);
         cache.GetLn2(64);
         cache.Dispose();
 

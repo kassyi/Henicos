@@ -4,21 +4,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public class KernelFusionTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _context;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public KernelFusionTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1024, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _context.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Context => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
@@ -26,11 +22,11 @@ public class KernelFusionTests : IDisposable
     {
         CudaCapability.EnsureGpuAvailable();
         // (a + b) * c
-        using var a = new GpuBigUInt(_context, new uint[] { 100, 0, 0, 0 });
-        using var b = new GpuBigUInt(_context, new uint[] { 200, 0, 0, 0 });
-        using var c = new GpuBigUInt(_context, new uint[] { 300, 0, 0, 0 });
+        using var a = new GpuBigUInt(Context, new uint[] { 100, 0, 0, 0 });
+        using var b = new GpuBigUInt(Context, new uint[] { 200, 0, 0, 0 });
+        using var c = new GpuBigUInt(Context, new uint[] { 300, 0, 0, 0 });
         // (4 words + 1 bit) * 4 words: the product has 9 words
-        using var result = new GpuBigUInt(_context, 9);
+        using var result = new GpuBigUInt(Context, 9);
 
         var expr = (a + b) * c;
 
@@ -52,12 +48,12 @@ public class KernelFusionTests : IDisposable
     {
         CudaCapability.EnsureGpuAvailable();
         // (a + b) * (c - d)
-        using var a = new GpuBigUInt(_context, new uint[] { 500, 0, 0, 0 });
-        using var b = new GpuBigUInt(_context, new uint[] { 250, 0, 0, 0 });
-        using var c = new GpuBigUInt(_context, new uint[] { 1000, 0, 0, 0 });
-        using var d = new GpuBigUInt(_context, new uint[] { 400, 0, 0, 0 });
+        using var a = new GpuBigUInt(Context, new uint[] { 500, 0, 0, 0 });
+        using var b = new GpuBigUInt(Context, new uint[] { 250, 0, 0, 0 });
+        using var c = new GpuBigUInt(Context, new uint[] { 1000, 0, 0, 0 });
+        using var d = new GpuBigUInt(Context, new uint[] { 400, 0, 0, 0 });
         // (4 words + 1 bit) * 4 words: the product has 9 words
-        using var result = new GpuBigUInt(_context, 9);
+        using var result = new GpuBigUInt(Context, 9);
 
         var expr = (a + b) * (c - d);
 
@@ -85,11 +81,11 @@ public class KernelFusionTests : IDisposable
     public void Evaluate_ExtremaOperandsFusion_MatchesBigIntegerReference(uint valA, uint valB, uint valC, uint dummy)
     {
         CudaCapability.EnsureGpuAvailable();
-        using var a = new GpuBigUInt(_context, new uint[] { valA, 0, 0, 0 });
-        using var b = new GpuBigUInt(_context, new uint[] { valB, 0, 0, 0 });
-        using var c = new GpuBigUInt(_context, new uint[] { valC, 0, 0, 0 });
+        using var a = new GpuBigUInt(Context, new uint[] { valA, 0, 0, 0 });
+        using var b = new GpuBigUInt(Context, new uint[] { valB, 0, 0, 0 });
+        using var c = new GpuBigUInt(Context, new uint[] { valC, 0, 0, 0 });
         // (4 words + 1 bit) * 4 words: the product has 9 words
-        using var result = new GpuBigUInt(_context, 9);
+        using var result = new GpuBigUInt(Context, 9);
 
         var expr = (a + b) * c;
         Assert.IsType<MulExpression>(expr.Node);
