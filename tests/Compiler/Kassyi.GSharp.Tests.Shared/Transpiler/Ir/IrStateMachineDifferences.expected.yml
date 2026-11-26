@@ -4679,6 +4679,10 @@
 - {file: "TestCases/Diagnostics/UnsupportedSyntaxNodes.cu.cs", method: "UnsupportedSyntaxNodeKernels.FunctionPointerVariableKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/UnsupportedSyntaxNodes.cu.cs", method: "UnsupportedSyntaxNodeKernels.NestedUncheckedConstantKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/UnsupportedSyntaxNodes.cu.cs", method: "UnsupportedSyntaxNodeKernels.StringVariableKernel", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/UserNameofMethodGroup.cu.cs", method: "NameofOperatorMethodGroupKernels.NamesHostStepKernel", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/UserNameofMethodGroup.cu.cs", method: "UserNameofMethodGroupKernels.CalleeKernel", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/UserNameofMethodGroup.cu.cs", method: "UserNameofMethodGroupKernels.PassesGroupsToUserNameofKernel", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/UserNameofMethodGroup.cu.cs", method: "UserNameofMethodGroupKernels.nameof", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Diagnostics/UsingBarrierScope.cu.cs", method: "UsingBarrierScopeKernels.BarrierInNestedBlockKernel", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/Diagnostics/UsingBarrierScope.cu.cs", method: "UsingBarrierScopeKernels.BarrierInUsingKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "TestCases/Diagnostics/UsingBarrierScope.cu.cs", method: "UsingBarrierScopeKernels.BarrierOutsideUsingKernel", status: "OpaqueStatement", count: 1}
