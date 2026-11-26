@@ -58,6 +58,17 @@ public class GpuBigIntExprNarrowingTests : TranspilerTestBase
         Assert.Empty(diagnostics);
     }
 
+    // A foreach variable is a copy of an element the collection owns; a value put into a tuple or a collection goes where
+    // the rule does not follow, so it is not reported (a form the analysis can only suspect is not an error)
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public async Task LocalDeclared_LoopVariableOrPassedIntoTupleOrCollection_ProducesNoDiagnostics()
+    {
+        var diagnostics = await AnalyzeCaseAsync("Analyzers/GpuBigIntExpr/EscapedAndLoopVariableAccepted.cs");
+
+        Assert.Empty(diagnostics);
+    }
+
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public async Task LocalDeclared_ReturnedFromHelper_ProducesNoDiagnostics()
