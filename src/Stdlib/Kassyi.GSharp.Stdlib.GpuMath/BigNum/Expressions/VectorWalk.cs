@@ -154,6 +154,11 @@ internal static class VectorWalk
             }
         }
 
+        /// <inheritdoc/>
+        public void BeginOperand(object node, int index)
+        {
+        }
+
         // A vector node that evaluates no input for this request, or a node that evaluates itself
         /// <inheritdoc/>
         public VectorValue EvaluateLeaf(object node, VectorRequest request) =>

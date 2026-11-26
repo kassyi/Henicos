@@ -8,18 +8,30 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 /// element index <c>D</c>.
 /// </summary>
 /// <remarks>
+/// <para>
 /// An element exception is kept when it has the lowest index so far, or the same index and an earlier record (the inner
 /// node of an expression records first, as C# runs the inner projection of an element first).
+/// </para>
+/// <para>
+/// Index spaces can be nested with <see cref="OpenSpace"/> and <see cref="CloseSpace"/> so an operator can record its
+/// operands in separate spaces and remap the winning index into the enclosing space; <see cref="RecordedOnInterrupt"/>
+/// returns the lowest-index record of the root space when all spaces are closed, or the earliest-in-time record when an
+/// inner space is still open.
+/// </para>
 /// </remarks>
 internal sealed class PendingThrows
 {
+    private const int InitialOuterCapacity = 4;
+
     [ThreadStatic]
     private static PendingThrows? t_current;
 
     private readonly PendingThrows? _previous;
     private int _nextOrder;
-    private int _bestIndex = int.MaxValue;
-    private int _bestOrder = int.MaxValue;
+    private Best _best = Best.Empty;
+    private Best[]? _outer;
+    private int _depth;
+    private Exception? _first;
 
     private PendingThrows(PendingThrows? previous)
     {
@@ -29,11 +41,21 @@ internal sealed class PendingThrows
     /// <summary>Gets whether a scope is active on the current thread.</summary>
     public static bool IsActive => t_current is not null;
 
-    /// <summary>Gets the lowest element index recorded, or <see cref="int.MaxValue"/> before a record.</summary>
-    public int MinIndex => _bestIndex;
+    /// <summary>
+    /// Gets the lowest element index recorded in the current space, or <see cref="int.MaxValue"/> before a record.
+    /// </summary>
+    public int MinIndex => _best.Index;
 
-    /// <summary>Gets the exception of the lowest element index, or <see langword="null"/>.</summary>
-    public Exception? Exception { get; private set; }
+    /// <summary>
+    /// Gets the exception of the lowest element index in the current space, or <see langword="null"/>.
+    /// </summary>
+    public Exception? Exception => _best.Exception;
+
+    /// <summary>
+    /// Gets the exception to throw when evaluation is interrupted: the lowest-index record of the root space when all
+    /// spaces are closed, or the earliest-in-time record of the scope when an inner space is still open.
+    /// </summary>
+    public Exception? RecordedOnInterrupt => _depth == 0 ? _best.Exception : _first;
 
     /// <summary>Starts recording on the current thread until the returned scope is disposed.</summary>
     /// <returns>The scope, which restores the previous one when disposed.</returns>
@@ -52,6 +74,18 @@ internal sealed class PendingThrows
         t_current = null;
         return new SuspendScope(previous);
     }
+
+    /// <summary>
+    /// Opens a nested index space when a scope is active on the current thread; does nothing otherwise.
+    /// </summary>
+    public static void OpenSpace() => t_current?.PushSpace();
+
+    /// <summary>
+    /// Closes the current index space and restores the enclosing space when a scope is active; returns
+    /// <see cref="Recorded.Empty"/> otherwise.
+    /// </summary>
+    /// <returns>The winning record of the closed space, or <see cref="Recorded.Empty"/>.</returns>
+    public static Recorded CloseSpace() => t_current is { } current ? current.PopSpace() : Recorded.Empty;
 
     /// <summary>
     /// Gets whether <paramref name="exception"/> is an error of an element value (a zero divisor, a value outside the
@@ -108,12 +142,52 @@ internal sealed class PendingThrows
 
     private void Record(int index, Exception exception)
     {
+        _first ??= exception;
         var order = _nextOrder++;
-        if (Exception is null || index < _bestIndex || (index == _bestIndex && order < _bestOrder))
+        if (_best.Exception is null || index < _best.Index || (index == _best.Index && order < _best.Order))
         {
-            _bestIndex = index;
-            _bestOrder = order;
-            Exception = exception;
+            _best = new Best(index, order, exception);
+        }
+    }
+
+    private void PushSpace()
+    {
+        if (_outer is null)
+        {
+            _outer = ArrayPool<Best>.Shared.Rent(InitialOuterCapacity);
+        }
+        else if (_depth == _outer.Length)
+        {
+            var grown = ArrayPool<Best>.Shared.Rent(_outer.Length * 2);
+            Array.Copy(_outer, grown, _depth);
+            ArrayPool<Best>.Shared.Return(_outer, clearArray: true);
+            _outer = grown;
+        }
+
+        _outer[_depth++] = _best;
+        _best = Best.Empty;
+    }
+
+    private Recorded PopSpace()
+    {
+        if (_depth == 0 || _outer is not { } outer)
+        {
+            return Recorded.Empty;
+        }
+
+        var closed = new Recorded(_best.Index, _best.Exception);
+        _best = outer[--_depth];
+        outer[_depth] = default;
+        return closed;
+    }
+
+    private void ReleaseOuter()
+    {
+        if (_outer is not null)
+        {
+            ArrayPool<Best>.Shared.Return(_outer, clearArray: true);
+            _outer = null;
+            _depth = 0;
         }
     }
 
@@ -124,8 +198,12 @@ internal sealed class PendingThrows
         /// <summary>Gets the records of the scope.</summary>
         public PendingThrows Instance => instance;
 
-        /// <summary>Restores the scope that was active before.</summary>
-        public void Dispose() => t_current = instance._previous;
+        /// <summary>Restores the scope that was active before and releases any pooled space stack.</summary>
+        public void Dispose()
+        {
+            t_current = instance._previous;
+            instance.ReleaseOuter();
+        }
     }
 
     /// <summary>A scope without recording; disposing it restores the scope that was active before.</summary>
@@ -134,5 +212,21 @@ internal sealed class PendingThrows
     {
         /// <summary>Restores the scope that was active before.</summary>
         public void Dispose() => t_current = previous;
+    }
+
+    /// <summary>The winning element exception of a closed index space.</summary>
+    /// <param name="Index">
+    /// The lowest recorded element index, or <see cref="int.MaxValue"/> when none was recorded.
+    /// </param>
+    /// <param name="Exception">The recorded exception, or <see langword="null"/> when none was recorded.</param>
+    internal readonly record struct Recorded(int Index, Exception? Exception)
+    {
+        /// <summary>Gets an empty record with no exception and <see cref="int.MaxValue"/> index.</summary>
+        public static Recorded Empty => new(int.MaxValue, null);
+    }
+
+    private readonly record struct Best(int Index, int Order, Exception? Exception)
+    {
+        public static Best Empty => new(int.MaxValue, int.MaxValue, null);
     }
 }
