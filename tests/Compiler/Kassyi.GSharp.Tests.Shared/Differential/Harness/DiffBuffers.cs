@@ -70,6 +70,32 @@ public abstract class DiffBuffer
 
     internal abstract bool CanPinAsBytes { get; }
 
+    internal virtual bool HasCustomComparer => false;
+
+    internal bool HasMultisetPolicy
+    {
+        get
+        {
+            if (Policy.Kind == OutputPolicyKind.Multiset)
+            {
+                return true;
+            }
+
+            if (ColumnPolicies is not null)
+            {
+                foreach (var colPolicy in ColumnPolicies)
+                {
+                    if (colPolicy.Kind == OutputPolicyKind.Multiset)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+    }
+
     internal abstract ReadOnlySpan<byte> AsReadOnlyBytes();
 
     internal abstract Span<byte> AsWritableBytes();
@@ -145,8 +171,10 @@ public sealed class DiffBuffer<T> : DiffBuffer
     internal DiffBuffer(BufferSpec<T> spec, T[] data)
         : base(spec.Name, spec.Columns, spec.Policy, spec.IsOutput, spec.ColumnPolicies, spec.IsReadOnly, spec.IsNullArray)
     {
-        var resolvedComparer = spec.CustomComparer ?? (spec.Policy.CustomComparer as IElementComparer<T>);
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>() && resolvedComparer is null && spec.Policy.Kind != OutputPolicyKind.Ignore)
+        var resolvedComparer = spec.CustomComparer ?? (spec.ColumnPolicies is null ? spec.Policy.CustomComparer as IElementComparer<T> : null);
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>() &&
+            resolvedComparer is null &&
+            !HasComparerForAllNonIgnoreColumns(spec))
         {
             throw new ArgumentException(
                 $"Buffer '{spec.Name}' holds reference-containing type '{typeof(T).Name}' and requires a StructElementComparer<{typeof(T).Name}>.",
@@ -155,6 +183,24 @@ public sealed class DiffBuffer<T> : DiffBuffer
 
         _spec = spec with { CustomComparer = resolvedComparer };
         _data = data;
+    }
+
+    private static bool HasComparerForAllNonIgnoreColumns(in BufferSpec<T> spec)
+    {
+        if (spec.ColumnPolicies is null)
+        {
+            return spec.Policy.Kind == OutputPolicyKind.Ignore;
+        }
+
+        foreach (var colPolicy in spec.ColumnPolicies)
+        {
+            if (colPolicy.Kind != OutputPolicyKind.Ignore && colPolicy.CustomComparer is not IElementComparer<T>)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>Gets the array that the launch and the oracle read and write.</summary>
@@ -176,6 +222,8 @@ public sealed class DiffBuffer<T> : DiffBuffer
 
     internal override bool CanPinAsBytes =>
         !IsNullArray && !RuntimeHelpers.IsReferenceOrContainsReferences<T>() && _data.Length > 0;
+
+    internal override bool HasCustomComparer => _spec.CustomComparer is not null;
 
     internal override ReadOnlySpan<byte> AsReadOnlyBytes() =>
         _data.Length == 0
@@ -250,9 +298,10 @@ public sealed class DiffBuffer<T> : DiffBuffer
             return true;
         }
 
-        if (_spec.CustomComparer is not null)
+        var comparer = _spec.CustomComparer ?? (policy.CustomComparer as IElementComparer<T>);
+        if (comparer is not null)
         {
-            return _spec.CustomComparer.Equals(in expected, in actual, policy);
+            return comparer.Equals(in expected, in actual, policy);
         }
 
         return policy.Kind switch
@@ -376,9 +425,10 @@ public sealed class DiffBuffer<T> : DiffBuffer
             return IsNullArray == otherBuffer.IsNullArray;
         }
 
-        if (_spec.CustomComparer is not null)
+        var comparer = _spec.CustomComparer ?? (PolicyOf(index).CustomComparer as IElementComparer<T>);
+        if (comparer is not null)
         {
-            return _spec.CustomComparer.Equals(in _data[index], in otherBuffer._data[index], OutputPolicy.Exact);
+            return comparer.Equals(in _data[index], in otherBuffer._data[index], OutputPolicy.Exact);
         }
 
         return BitsEqual(in _data[index], in otherBuffer._data[index]);
@@ -393,9 +443,10 @@ public sealed class DiffBuffer<T> : DiffBuffer
         }
 
         ref readonly var value = ref _data[index];
-        if (_spec.CustomComparer is not null)
+        var comparer = _spec.CustomComparer ?? (PolicyOf(index).CustomComparer as IElementComparer<T>);
+        if (comparer is not null)
         {
-            return _spec.CustomComparer.Format(in value);
+            return comparer.Format(in value);
         }
 
         return $"{string.Format(CultureInfo.InvariantCulture, "{0}", value)} ({Hex(in value)})";

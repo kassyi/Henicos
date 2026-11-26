@@ -28,8 +28,8 @@ const DefaultTestsDir = "tests";
 // just options and variable assignments may stand between just and the recipe: just -f justfile test, just a=b test
 const HenicosTestPattern = new RegExp(
   [
-    String.raw`\bjust\b[^;&|\n]*?\s(test[\w-]*|coverage-diff|mutate)(\s|$)`,
-    String.raw`\b(test-stability|test-memory|test-sanitized|mutate|coverage-diff)\.js\b`,
+    String.raw`\bjust\b[^;&|\n]*?\s(test[\w-]*|coverage-diff|mutate|diff-barrier-models)(\s|$)`,
+    String.raw`\b(test-stability|test-memory|test-sanitized|mutate|coverage-diff|compare-barrier-models)\.js\b`,
   ].join("|"),
 );
 

@@ -53,6 +53,11 @@ test-managed-stack *args="":
         --filter "(Category=Differential|Category=Execution|Category=GpuExecution|Category=CpuExecution)&Category!=Stress&Category!=Benchmark" \
         {{blame_crash}} {{args}}
 
+# Compare Differential tests between the default build and a stack barrier model (native | managed | both) in one queued job
+diff-barrier-models models="native" *args="":
+    {{queue}} -- node scripts/human/compare-barrier-models.js --run --models "{{models}}" \
+        {{ if args == "" { "" } else { "-- " + args } }}
+
 # Differential tests: C# oracle vs CUDA
 test-differential-cuda *args="":
     {{queue}} --gpu -- dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj \

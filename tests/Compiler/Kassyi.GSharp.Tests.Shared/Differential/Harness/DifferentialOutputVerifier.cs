@@ -22,10 +22,7 @@ internal static class DifferentialOutputVerifier
         for (int b = 0; b < expected.All.Count; b++)
         {
             var rawOracle = at.Initial.All[b].IsReadOnly ? at.Initial.All[b] : expected.All[b];
-            bool isMultiset =
-                rawOracle.Policy.Kind == OutputPolicyKind.Multiset ||
-                (rawOracle.ColumnPolicies is not null &&
-                 rawOracle.ColumnPolicies.Any(static p => p.Kind == OutputPolicyKind.Multiset));
+            bool isMultiset = rawOracle.HasMultisetPolicy;
             var oracle = isMultiset ? rawOracle.CreateSortedCopy() : rawOracle;
             var actualBuffers = PrepareActualBuffers(actuals, b, isMultiset);
             CompareBufferCells(in run, in at, oracle, actualBuffers, absentPathsMatch);
