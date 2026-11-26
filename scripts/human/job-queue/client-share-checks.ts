@@ -474,11 +474,12 @@ async function checkCheckShare(assert: AssertModule): Promise<void> {
     assert.strictEqual(sanitizeShareReason("bad(reason)", "shared"), undefined);
     assert.strictEqual(sanitizeShareReason("bad\nreason", "shared"), undefined);
     assert.strictEqual(sanitizeShareReason(42, "shared"), undefined);
-    assert.strictEqual(shareReasonField({ share: "exclusive", shareReason: "not-shared" }), undefined);
+    assert.strictEqual(shareReasonField({ share: "exclusive", shareReason: "not-shared" }, "exclusive"), undefined);
+    // The share passed counts, not the message's own: undefined is not shared
     assert.strictEqual(shareReasonField({ share: "shared", shareReason: "not-shared" }, undefined), undefined);
     assert.strictEqual(shareReasonField({ share: "shared", shareReason: "not-shared" }, "exclusive"), undefined);
-    assert.strictEqual(shareReasonField({ share: "shared", shareReason: "shared-foo" }), "shared-foo");
-    assert.strictEqual(shareReasonField({ shareReason: "env-prefix" }), "env-prefix");
+    assert.strictEqual(shareReasonField({ share: "exclusive", shareReason: "shared-foo" }, "shared"), "shared-foo");
+    assert.strictEqual(shareReasonField({ shareReason: "env-prefix" }, undefined), "env-prefix");
     const second: QueuePlugin = {
       name: "second",
       apiVersion: PluginApiVersion,

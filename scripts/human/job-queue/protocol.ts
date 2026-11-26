@@ -473,9 +473,12 @@ export function sanitizeShareReason(value: unknown, share?: ShareMode): string |
   return value;
 }
 
-/** The `shareReason` of a JobRequest, downgrade message, or saved job; undefined when missing or invalid. */
-export function shareReasonField(message: Incoming, share?: ShareMode): string | undefined {
-  return sanitizeShareReason(message.shareReason, arguments.length >= 2 ? share : shareField(message));
+/**
+ * The `shareReason` of a JobRequest, downgrade message, or saved job, checked against the share it goes with (not the
+ * message's own `share`); undefined when missing or invalid.
+ */
+export function shareReasonField(message: Incoming, share: ShareMode | undefined): string | undefined {
+  return sanitizeShareReason(message.shareReason, share);
 }
 
 /** The `offload` preference of a JobRequest; undefined when missing or invalid. */
