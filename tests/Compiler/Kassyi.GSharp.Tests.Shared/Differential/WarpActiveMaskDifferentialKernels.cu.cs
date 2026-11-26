@@ -1961,28 +1961,6 @@ public static partial class WarpActiveMaskDifferentialKernels
         result[t + 192] = Warp.ActiveMask();
     }
 
-    // A goto loop whose else branch is left by the lanes of every pass: the branch that goes back only goes back, so
-    // the lanes meet in the else after each of their own number of back gotos
-    [GpuKernel]
-    public static void GotoLoopLeftByElseOfBackGotoKernel(uint[] result, int u)
-    {
-        int t = ThreadIndex.X;
-        int n = 0;
-    L1:
-        result[t + 32 * (4 + n)] = Warp.ActiveMask();
-        if (((t >> n) & 1) != 0 && n < u + 2)
-        {
-            n++;
-            goto L1;
-        }
-        else
-        {
-            result[t + 32 * n] = Warp.ActiveMask();
-        }
-
-        result[t + 96] = (uint)n;
-    }
-
     // Two backward gotos in the label's list with a mask at the header and between the gotos: lanes that return by
     // either goto meet at L1 on the next pass. Slots: 0,1 header per pass; 2,3 between gotos per pass; 4 after; 5 n
     [GpuKernel]
@@ -2843,6 +2821,147 @@ public static partial class WarpActiveMaskDifferentialKernels
         result[t + 160] = (uint)n;
     }
 
+    // A goto loop whose last backward goto is inside a switch section: lanes falling out of the goto inside case 0 wait
+    // there for the lanes still in the loop and for lanes in default before running together after the switch. Slots:
+    // 0..2 header per pass; 3 after the goto inside case 0; 4 after switch; 5 n
+    [GpuKernel]
+    public static void GotoLoopEndingInSwitchSectionKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * n] = Warp.ActiveMask();
+        switch ((t & 4) + u)
+        {
+            case 0:
+                if ((t & 3) != 0 && n++ < 2)
+                {
+                    goto L1;
+                }
+
+                result[t + 96] = Warp.ActiveMask();
+                break;
+            default:
+                break;
+        }
+
+        result[t + 128] = Warp.ActiveMask();
+        result[t + 160] = (uint)n;
+    }
+
+    // A goto loop whose last backward goto is inside a switch without default: lanes skipping all cases close the loop
+    // on the fallthrough path after the switch before joining the breaking lanes. Slots: 0..2 header per pass; 3 after
+    // the goto inside case 0; 4 after switch; 5 n
+    [GpuKernel]
+    public static void GotoLoopEndingInSwitchSectionWithoutDefaultKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * n] = Warp.ActiveMask();
+        switch ((t & 4) + u)
+        {
+            case 0:
+                if ((t & 3) != 0 && n++ < 2)
+                {
+                    goto L1;
+                }
+
+                result[t + 96] = Warp.ActiveMask();
+                break;
+        }
+
+        result[t + 128] = Warp.ActiveMask();
+        result[t + 160] = (uint)n;
+    }
+
+    // A goto loop whose last backward goto is inside a uniform switch section: lanes falling out of the goto inside
+    // case 0 still reconverge with the loop before running the rest of the section. Slots: 0..2 header per pass; 3
+    // after the goto inside case 0; 4 after switch; 5 n
+    [GpuKernel]
+    public static void GotoLoopEndingInUniformSwitchSectionKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * n] = Warp.ActiveMask();
+        switch (u)
+        {
+            case 0:
+                if ((t & 3) != 0 && n++ < 2)
+                {
+                    goto L1;
+                }
+
+                result[t + 96] = Warp.ActiveMask();
+                break;
+            default:
+                break;
+        }
+
+        result[t + 128] = Warp.ActiveMask();
+        result[t + 160] = (uint)n;
+    }
+
+    // A goto loop whose single backward goto is inside a switch section that also loops to its own case head via
+    // goto case: lanes taking the intra-section loop arrive at the backward goto a round later, so the outer loop
+    // needs a latch to wait for them before running the next pass together. Slots: 0..1 header per pass; 2..3 inside
+    // case 0 before goto case; 4 after the goto inside case 0; 5 after switch
+    [GpuKernel]
+    public static void GotoLoopInSwitchSectionWithSelfGotoCaseKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        int k = 0;
+    L1:
+        result[t + 32 * n] = Warp.ActiveMask();
+        switch ((t & 4) + u)
+        {
+            case 0:
+                result[t + 32 * (2 + k)] = Warp.ActiveMask();
+                if ((t & 3) == 2 && k < 1)
+                {
+                    k++;
+                    goto case 0;
+                }
+
+                if ((t & 3) != 0 && n < 1)
+                {
+                    n++;
+                    goto L1;
+                }
+
+                result[t + 128] = Warp.ActiveMask();
+                break;
+            default:
+                break;
+        }
+
+        result[t + 160] = Warp.ActiveMask();
+    }
+
+    // A goto loop whose else branch is left by the lanes of every pass: the branch that goes back only goes back, so
+    // the lanes meet in the else after each of their own number of back gotos
+    [GpuKernel]
+    public static void GotoLoopLeftByElseOfBackGotoKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * (4 + n)] = Warp.ActiveMask();
+        if (((t >> n) & 1) != 0 && n < u + 2)
+        {
+            n++;
+            goto L1;
+        }
+        else
+        {
+            result[t + 32 * n] = Warp.ActiveMask();
+        }
+
+        result[t + 96] = (uint)n;
+    }
+
     // A goto loop left inside a for loop whose body always breaks: the lanes that leave after n back gotos call
     // together with every lane of the warp, as the loop around the call runs once for each of them
     [GpuKernel]
@@ -3002,6 +3121,38 @@ public static partial class WarpActiveMaskDifferentialKernels
 
         result[t + 32 * 6] = Warp.ActiveMask();
         result[t + 32 * 7] = (uint)n;
+    }
+
+    // The else of a branch that only goes back is the only gate of the goto loop, and it is inside a switch section
+    // that breaks. Slots 0..2: the header per pass; 3: the else; 4: the other section; 5: after; 6: n
+    [GpuKernel]
+    public static void GotoLoopWithBranchGateInSwitchSectionKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * n] = Warp.ActiveMask();
+        switch ((t & 4) + u)
+        {
+            case 0:
+                if ((t & 3) != 0 && n < 2)
+                {
+                    n++;
+                    goto L1;
+                }
+                else
+                {
+                    result[t + 32 * 3] = Warp.ActiveMask();
+                    break;
+                }
+
+            default:
+                result[t + 32 * 4] = Warp.ActiveMask();
+                break;
+        }
+
+        result[t + 32 * 5] = Warp.ActiveMask();
+        result[t + 32 * 6] = (uint)n;
     }
 
     // A goto loop left inside a for loop that runs once and has no break: the call is the last statement of the body.

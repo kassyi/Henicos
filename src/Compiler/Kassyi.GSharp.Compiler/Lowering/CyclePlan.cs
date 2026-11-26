@@ -77,20 +77,22 @@ internal sealed class CyclePlan
         !members.Contains(StatementFlow.EntryOf(candidateGate)) &&
         flow.ReachesEnd(prev);
 
-    public ImmutableArray<Cycle> FindCyclesGatedInside(StatementSyntax loop)
+    public ImmutableArray<Cycle> FindCyclesGatedInside(StatementSyntax statement)
     {
         if (_flow == null || _orderedCycles.IsDefaultOrEmpty)
         {
             return ImmutableArray<Cycle>.Empty;
         }
 
-        var body = CyclePlanner.GetLoopBody(loop);
+        SyntaxNode extent = statement is SwitchStatementSyntax
+            ? statement
+            : CyclePlanner.GetLoopBody(statement);
         var builder = ImmutableArray.CreateBuilder<Cycle>();
         _orderedCycles
             .AsStackEnumerable()
-            .Where((Self: this, Loop: loop, Body: body), static (cycle, state) =>
-                state.Self.DoesLoopExitCycle(state.Loop, state.Body, cycle) &&
-                state.Self.HasGateStatementInside(cycle, state.Body)
+            .Where((Self: this, Statement: statement, Extent: extent), static (cycle, state) =>
+                state.Self.DoesLoopExitCycle(state.Statement, state.Extent, cycle) &&
+                state.Self.HasGateStatementInside(cycle, state.Extent)
             ).AddTo(builder);
         return builder.ToImmutable();
     }
@@ -98,13 +100,13 @@ internal sealed class CyclePlan
     public bool HasNaturalLoop(StatementSyntax loop) =>
         _flow != null && CyclePlanner.HasNaturalLoop(_flow, loop);
 
-    private bool DoesLoopExitCycle(StatementSyntax loop, StatementSyntax body, Cycle cycle) =>
+    private bool DoesLoopExitCycle(StatementSyntax statement, SyntaxNode extent, Cycle cycle) =>
         _flow != null &&
-        !ReconvergenceSyntax.IsInside(cycle.Header, body) &&
-        _flow.TryGetBreakAfter(loop, out var after) &&
+        !ReconvergenceSyntax.IsInside(cycle.Header, extent) &&
+        _flow.TryGetBreakAfter(statement, out var after) &&
         !cycle.Members.Contains(after);
 
-    private bool HasGateStatementInside(Cycle cycle, StatementSyntax body)
+    private bool HasGateStatementInside(Cycle cycle, SyntaxNode extent)
     {
         if (_flow == null)
         {
@@ -123,7 +125,7 @@ internal sealed class CyclePlan
 
             var candidateGate = list[index + 1];
             if (IsGateTransition(_flow, cycle.Members, cycle.BackJumps, memberStatement, candidateGate) &&
-                ReconvergenceSyntax.IsInside(candidateGate, body))
+                ReconvergenceSyntax.IsInside(candidateGate, extent))
             {
                 return true;
             }
@@ -131,7 +133,7 @@ internal sealed class CyclePlan
 
         return cycle.BranchGates?
             .AsStackEnumerable()
-            .Any(body, static (gate, enclosing) => ReconvergenceSyntax.IsInside(gate, enclosing)) ?? false;
+            .Any(extent, static (gate, enclosing) => ReconvergenceSyntax.IsInside(gate, enclosing)) ?? false;
     }
 
     internal static bool HasBackJumpInside(ImmutableArray<GotoStatementSyntax> backJumps, StatementSyntax statement) =>
@@ -150,19 +152,23 @@ internal static class CyclePlanner
     public static CyclePlan Plan(
         BlockSyntax body,
         Func<StatementSyntax, bool> holdsSplitPoint,
-        Func<ExpressionSyntax, bool?> constantCondition)
+        Func<ExpressionSyntax, bool?> constantCondition,
+        SemanticModel? semanticModel = null)
     {
         var flow = StatementFlow.Build(body, constantCondition);
         var listPlans = ImmutableArray.CreateBuilder<(SyntaxList<StatementSyntax> Statements, JumpRegionPlan Plan)>();
         var allGotoLoops = ImmutableArray.CreateBuilder<(SyntaxList<StatementSyntax> Statements, JumpRegion Region)>();
-        CollectListPlans(body.Statements, holdsSplitPoint, listPlans, allGotoLoops);
+        var switchesWithJoins = new HashSet<SwitchStatementSyntax>();
+        CollectListPlans(body.Statements, holdsSplitPoint, semanticModel, listPlans, allGotoLoops, switchesWithJoins);
 
         var cycles = new Dictionary<CyclePlan.CycleKey, Cycle>();
         var orderedCycles = ImmutableArray.CreateBuilder<Cycle>();
         var gotoLoops = allGotoLoops.ToImmutable();
         foreach (var (statements, plan) in listPlans)
         {
-            PlanListCycles(statements, plan, flow, gotoLoops, holdsSplitPoint, constantCondition, cycles, orderedCycles);
+            PlanListCycles(
+                statements, plan, flow, semanticModel, gotoLoops, switchesWithJoins, holdsSplitPoint, constantCondition,
+                cycles, orderedCycles);
         }
 
         return new CyclePlan(flow, cycles, orderedCycles.ToImmutable());
@@ -231,8 +237,10 @@ internal static class CyclePlanner
     private static void CollectListPlans(
         SyntaxList<StatementSyntax> statements,
         Func<StatementSyntax, bool> holdsSplitPoint,
+        SemanticModel? semanticModel,
         ImmutableArray<(SyntaxList<StatementSyntax> Statements, JumpRegionPlan Plan)>.Builder listPlans,
-        ImmutableArray<(SyntaxList<StatementSyntax> Statements, JumpRegion Region)>.Builder allGotoLoops)
+        ImmutableArray<(SyntaxList<StatementSyntax> Statements, JumpRegion Region)>.Builder allGotoLoops,
+        HashSet<SwitchStatementSyntax> switchesWithJoins)
     {
         var plan = JumpRegionPlanner.Plan(statements, holdsSplitPoint);
         if (plan.Rejected.IsEmpty)
@@ -249,15 +257,17 @@ internal static class CyclePlanner
 
         foreach (var statement in statements)
         {
-            CollectStatementPlans(statement, holdsSplitPoint, listPlans, allGotoLoops);
+            CollectStatementPlans(statement, holdsSplitPoint, semanticModel, listPlans, allGotoLoops, switchesWithJoins);
         }
     }
 
     private static void CollectStatementPlans(
         StatementSyntax statement,
         Func<StatementSyntax, bool> holdsSplitPoint,
+        SemanticModel? semanticModel,
         ImmutableArray<(SyntaxList<StatementSyntax> Statements, JumpRegionPlan Plan)>.Builder listPlans,
-        ImmutableArray<(SyntaxList<StatementSyntax> Statements, JumpRegion Region)>.Builder allGotoLoops)
+        ImmutableArray<(SyntaxList<StatementSyntax> Statements, JumpRegion Region)>.Builder allGotoLoops,
+        HashSet<SwitchStatementSyntax> switchesWithJoins)
     {
         while (statement is LabeledStatementSyntax labeled)
         {
@@ -267,33 +277,51 @@ internal static class CyclePlanner
         switch (statement)
         {
             case BlockSyntax block:
-                CollectListPlans(block.Statements, holdsSplitPoint, listPlans, allGotoLoops);
+                CollectListPlans(block.Statements, holdsSplitPoint, semanticModel, listPlans, allGotoLoops, switchesWithJoins);
                 break;
             case CheckedStatementSyntax checkedStatement:
-                CollectListPlans(checkedStatement.Block.Statements, holdsSplitPoint, listPlans, allGotoLoops);
+                CollectListPlans(
+                    checkedStatement.Block.Statements,
+                    holdsSplitPoint,
+                    semanticModel,
+                    listPlans,
+                    allGotoLoops,
+                    switchesWithJoins);
                 break;
             case UnsafeStatementSyntax unsafeStatement:
-                CollectListPlans(unsafeStatement.Block.Statements, holdsSplitPoint, listPlans, allGotoLoops);
+                CollectListPlans(
+                    unsafeStatement.Block.Statements,
+                    holdsSplitPoint,
+                    semanticModel,
+                    listPlans,
+                    allGotoLoops,
+                    switchesWithJoins);
                 break;
             case IfStatementSyntax ifStatement:
-                CollectStatementPlans(ifStatement.Statement, holdsSplitPoint, listPlans, allGotoLoops);
+                CollectStatementPlans(
+                    ifStatement.Statement, holdsSplitPoint, semanticModel, listPlans, allGotoLoops, switchesWithJoins);
                 if (ifStatement.Else is { } elseClause)
                 {
-                    CollectStatementPlans(elseClause.Statement, holdsSplitPoint, listPlans, allGotoLoops);
+                    CollectStatementPlans(
+                        elseClause.Statement, holdsSplitPoint, semanticModel, listPlans, allGotoLoops, switchesWithJoins);
                 }
 
                 break;
             case WhileStatementSyntax whileStatement:
-                CollectStatementPlans(whileStatement.Statement, holdsSplitPoint, listPlans, allGotoLoops);
+                CollectStatementPlans(
+                    whileStatement.Statement, holdsSplitPoint, semanticModel, listPlans, allGotoLoops, switchesWithJoins);
                 break;
             case DoStatementSyntax doStatement:
-                CollectStatementPlans(doStatement.Statement, holdsSplitPoint, listPlans, allGotoLoops);
+                CollectStatementPlans(
+                    doStatement.Statement, holdsSplitPoint, semanticModel, listPlans, allGotoLoops, switchesWithJoins);
                 break;
             case ForStatementSyntax forStatement:
-                CollectStatementPlans(forStatement.Statement, holdsSplitPoint, listPlans, allGotoLoops);
+                CollectStatementPlans(
+                    forStatement.Statement, holdsSplitPoint, semanticModel, listPlans, allGotoLoops, switchesWithJoins);
                 break;
             case CommonForEachStatementSyntax forEachStatement:
-                CollectStatementPlans(forEachStatement.Statement, holdsSplitPoint, listPlans, allGotoLoops);
+                CollectStatementPlans(
+                    forEachStatement.Statement, holdsSplitPoint, semanticModel, listPlans, allGotoLoops, switchesWithJoins);
                 break;
             case SwitchStatementSyntax switchStatement:
                 var sectionPlans = new JumpRegionPlan[switchStatement.Sections.Count];
@@ -304,6 +332,11 @@ internal static class CyclePlanner
 
                 var crossSectionRejected =
                     JumpRegionPlanner.FindCrossSectionRejectedGotos(switchStatement, sectionPlans);
+                if (HasCrossSectionSwitchJump(switchStatement, crossSectionRejected, semanticModel))
+                {
+                    switchesWithJoins.Add(switchStatement);
+                }
+
                 for (var s = 0; s < switchStatement.Sections.Count; s++)
                 {
                     var sectionStatements = switchStatement.Sections[s].Statements;
@@ -321,7 +354,8 @@ internal static class CyclePlanner
 
                     foreach (var sectionStatement in sectionStatements)
                     {
-                        CollectStatementPlans(sectionStatement, holdsSplitPoint, listPlans, allGotoLoops);
+                        CollectStatementPlans(
+                            sectionStatement, holdsSplitPoint, semanticModel, listPlans, allGotoLoops, switchesWithJoins);
                     }
                 }
 
@@ -329,11 +363,45 @@ internal static class CyclePlanner
         }
     }
 
+    private static bool HasCrossSectionSwitchJump(
+        SwitchStatementSyntax switchStatement,
+        ImmutableArray<CrossSectionRejectedGoto> crossSectionRejected,
+        SemanticModel? semanticModel)
+    {
+        if (!crossSectionRejected.IsEmpty)
+        {
+            return true;
+        }
+
+        var sectionLookup = SwitchCaseLookup.CreateSectionLookup(switchStatement, semanticModel);
+        var joinPlan = SwitchJoinPlanner.Plan(switchStatement, sectionLookup);
+        if (!joinPlan.Joins.IsEmpty || !joinPlan.Rejected.IsEmpty)
+        {
+            return true;
+        }
+
+        foreach (var node in switchStatement.DescendantNodes(static n =>
+                     n is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)))
+        {
+            if (node is GotoStatementSyntax gotoStatement &&
+                gotoStatement.IsKind(SyntaxKind.GotoCaseStatement, SyntaxKind.GotoDefaultStatement) &&
+                ReconvergenceSyntax.EnclosingSwitchIs(gotoStatement, switchStatement) &&
+                sectionLookup(gotoStatement) < 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static void PlanListCycles(
         SyntaxList<StatementSyntax> statements,
         JumpRegionPlan plan,
         StatementFlow flow,
+        SemanticModel? semanticModel,
         ImmutableArray<(SyntaxList<StatementSyntax> Statements, JumpRegion Region)> allGotoLoops,
+        HashSet<SwitchStatementSyntax> switchesWithJoins,
         Func<StatementSyntax, bool> holdsSplitPoint,
         Func<ExpressionSyntax, bool?> constantCondition,
         Dictionary<CyclePlan.CycleKey, Cycle> cycles,
@@ -382,8 +450,8 @@ internal static class CyclePlanner
             backJumps = liveBackJumps.ToImmutable();
 
             var branchGates = FindBranchGates(members, backJumps, constantCondition);
-            if (!HasOnlyAllowedParents(backJumps, members, flow, owner) ||
-                !AreBranchGatesAllowed(branchGates, members, flow, owner))
+            if (!HasOnlyAllowedParents(backJumps, members, flow, owner, switchesWithJoins) ||
+                !AreBranchGatesAllowed(branchGates, members, flow, owner, switchesWithJoins))
             {
                 continue;
             }
@@ -394,7 +462,8 @@ internal static class CyclePlanner
             }
 
             var needsLatch = backJumps.Length >= 2 ||
-                NeedsLatchForSingleBackJump(backJumps[0], owner, statements, region, members, flow, allGotoLoops) ||
+                NeedsLatchForSingleBackJump(
+                    backJumps[0], owner, statements, region, members, flow, semanticModel, allGotoLoops) ||
                 HasUngatedSplit(statements, region, flow, members, backJumps, branchGates, holdsSplitPoint);
             var cycle = new Cycle(
                 header,
@@ -413,11 +482,12 @@ internal static class CyclePlanner
         ImmutableHashSet<StatementSyntax> branchGates,
         ImmutableHashSet<FlowNode> members,
         StatementFlow flow,
-        SyntaxNode owner)
+        SyntaxNode owner,
+        HashSet<SwitchStatementSyntax> switchesWithJoins)
     {
         foreach (var gate in branchGates)
         {
-            if (!HasAllowedAncestors(gate, owner) || IsInsideNonNaturalLoopWithJump(gate, owner, flow, members))
+            if (!HasAllowedAncestors(gate, owner, switchesWithJoins) || IsInsideNonNaturalLoopWithJump(gate, owner, flow, members))
             {
                 return false;
             }
@@ -632,6 +702,7 @@ internal static class CyclePlanner
         JumpRegion region,
         ImmutableHashSet<FlowNode> members,
         StatementFlow flow,
+        SemanticModel? semanticModel,
         ImmutableArray<(SyntaxList<StatementSyntax> Statements, JumpRegion Region)> allGotoLoops)
     {
         for (var current = backJump.Parent; current != null && current != owner; current = current.Parent)
@@ -640,6 +711,14 @@ internal static class CyclePlanner
                 or CommonForEachStatementSyntax &&
                 members.Contains(flow.ResolveNode(current)) &&
                 HasNaturalLoop(flow, (StatementSyntax)current))
+            {
+                return true;
+            }
+
+            if (current is SwitchSectionSyntax section &&
+                section.Parent is SwitchStatementSyntax switchStatement &&
+                members.Contains(flow.ResolveNode(switchStatement)) &&
+                HasIntraSectionSwitchJump(switchStatement, section, semanticModel))
             {
                 return true;
             }
@@ -662,6 +741,45 @@ internal static class CyclePlanner
         }
 
         return false;
+    }
+
+    private static bool HasIntraSectionSwitchJump(
+        SwitchStatementSyntax switchStatement,
+        SwitchSectionSyntax section,
+        SemanticModel? semanticModel)
+    {
+        var sectionIndex = switchStatement.Sections.IndexOf(section);
+        if (sectionIndex < 0)
+        {
+            return false;
+        }
+
+        var hasSwitchGoto = section
+            .DescendantNodes(static n =>
+                n is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax))
+            .AsStackEnumerable()
+            .Any(switchStatement, static (node, @switch) =>
+                node is GotoStatementSyntax gotoStatement &&
+                gotoStatement.IsKind(SyntaxKind.GotoCaseStatement, SyntaxKind.GotoDefaultStatement) &&
+                ReconvergenceSyntax.EnclosingSwitchIs(gotoStatement, @switch)
+            );
+        if (!hasSwitchGoto)
+        {
+            return false;
+        }
+
+        var sectionLookup = SwitchCaseLookup.CreateSectionLookup(switchStatement, semanticModel);
+        return section
+            .DescendantNodes(static n =>
+                n is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax))
+            .AsStackEnumerable()
+            .Any((Switch: switchStatement, Index: sectionIndex, Lookup: sectionLookup), static (node, state) =>
+                node is GotoStatementSyntax gotoStatement &&
+                gotoStatement.IsKind(SyntaxKind.GotoCaseStatement, SyntaxKind.GotoDefaultStatement) &&
+                ReconvergenceSyntax.EnclosingSwitchIs(gotoStatement, state.Switch) &&
+                state.Lookup(gotoStatement) is var target &&
+                (target == state.Index || target < 0)
+            );
     }
 
     private static HashSet<FlowNode> CollectHeaderNodes(
@@ -823,11 +941,12 @@ internal static class CyclePlanner
         ImmutableArray<GotoStatementSyntax> backJumps,
         ImmutableHashSet<FlowNode> members,
         StatementFlow flow,
-        SyntaxNode owner)
+        SyntaxNode owner,
+        HashSet<SwitchStatementSyntax> switchesWithJoins)
     {
         foreach (var backJump in backJumps)
         {
-            if (!HasAllowedAncestors(backJump, owner))
+            if (!HasAllowedAncestors(backJump, owner, switchesWithJoins))
             {
                 return false;
             }
@@ -845,7 +964,7 @@ internal static class CyclePlanner
 
             var candidateGate = list[index + 1];
             if (CyclePlan.IsGateTransition(flow, members, backJumps, memberStatement, candidateGate) &&
-                (!HasAllowedAncestors(candidateGate, owner) ||
+                (!HasAllowedAncestors(candidateGate, owner, switchesWithJoins) ||
                  IsInsideNonNaturalLoopWithJump(candidateGate, owner, flow, members)))
             {
                 return false;
@@ -877,7 +996,10 @@ internal static class CyclePlanner
         return false;
     }
 
-    private static bool HasAllowedAncestors(SyntaxNode node, SyntaxNode owner)
+    private static bool HasAllowedAncestors(
+        SyntaxNode node,
+        SyntaxNode owner,
+        HashSet<SwitchStatementSyntax> switchesWithJoins)
     {
         for (var current = node.Parent; current != null; current = current.Parent)
         {
@@ -886,10 +1008,20 @@ internal static class CyclePlanner
                 return true;
             }
 
+            if (current is SwitchStatementSyntax switchStatement)
+            {
+                if (switchesWithJoins.Contains(switchStatement))
+                {
+                    return false;
+                }
+
+                continue;
+            }
+
             if (current is not (BlockSyntax or LabeledStatementSyntax or CheckedStatementSyntax
                 or UnsafeStatementSyntax or IfStatementSyntax or ElseClauseSyntax
                 or WhileStatementSyntax or DoStatementSyntax or ForStatementSyntax
-                or CommonForEachStatementSyntax))
+                or CommonForEachStatementSyntax or SwitchSectionSyntax))
             {
                 return false;
             }
