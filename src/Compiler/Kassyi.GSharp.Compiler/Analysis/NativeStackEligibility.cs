@@ -385,19 +385,27 @@ internal static class NativeStackEligibility
             };
         }
 
-        if (declaration.GetBodyNode() is { } body)
+        return facts | ScanWarpMethodGroups(declaration, semanticModel);
+    }
+
+    // A suspending function that reaches a warp collective, named as a method group (#2272)
+    private static BodyFacts ScanWarpMethodGroups(MethodDeclarationSyntax declaration, SemanticModel semanticModel)
+    {
+        if (declaration.GetBodyNode() is not { } body)
         {
-            foreach (var (referenced, isMethodGroup) in
-                     SuspensionAnalysis.GetReferencedSuspendingFunctions(body, semanticModel.Compilation,
-                         semanticModel))
+            return BodyFacts.None;
+        }
+
+        var compilation = semanticModel.Compilation;
+        foreach (var (referenced, isMethodGroup) in
+                 SuspensionAnalysis.GetReferencedSuspendingFunctions(body, compilation, semanticModel))
+        {
+            if (isMethodGroup && SuspensionAnalysis.ReachesWarpShuffle(referenced, compilation))
             {
-                if (isMethodGroup && SuspensionAnalysis.ReachesWarpShuffle(referenced, semanticModel.Compilation))
-                {
-                    facts |= BodyFacts.WarpMethodGroup;
-                }
+                return BodyFacts.WarpMethodGroup;
             }
         }
 
-        return facts;
+        return BodyFacts.None;
     }
 }
