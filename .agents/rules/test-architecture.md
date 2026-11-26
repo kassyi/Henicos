@@ -134,6 +134,7 @@ public abstract class StateMachineTestBase
     - **Axis 1 (Execution Target)**: `[TestTarget(ExecutionTarget.GpuExecution)]`, `[TestTarget(ExecutionTarget.CpuExecution)]`
     - **Axis 2 (Domain Category)**: `[Category(TestCategory.Compiler)]`, `[Category(TestCategory.Runtime)]`, `[Category(TestCategory.Syntax)]`, `[Category(TestCategory.Stdlib)]`, etc.
     - **Axis 3 (Behavior Scenario)**: `[Scenario(TestScenario.HappyPath)]`, `[Scenario(TestScenario.SadPath)]`, `[Scenario(TestScenario.Boundary)]`
+    - **Platform constraint (orthogonal to Category)**: `[Platform(TestPlatform.Windows)]` (`PlatformDiscoverer`, `emitCategoryAlias: false`) on any test or class that requires Windows and skips on non-Windows hosts; keep the runtime `Skip.IfNot(OperatingSystem.IsWindows(), ...)` guard inside the method for local Linux runs, and never substitute raw `[Trait("Platform", "Windows")]` (`HNT0008`).
     - Never hardcode ticket numbers, roadmap IDs, or Feature IDs into test attributes.
 
 ### 3.3. Test Parallelization & Global State Protection
@@ -202,6 +203,7 @@ public abstract class StateMachineTestBase
 | HNT0008 | Error | Raw `[Trait]` (`Xunit.TraitAttribute`) on a class or method in a test assembly; use `[Category]`, `[TestTarget]` or `[Scenario]` instead |
 | HNT0009 | Error | A test method starting with `Test` or `Test_`, or whose name does not match `<Unit>_<Condition>[_<Expected>]`; attributes (HNT0002) already state that it is a test and classify it |
 | HNT0010 | Error | `#if` or `#elif` referencing `GSHARP_CPU` or `GSHARP_CUDA` in a shared test file under `tests/Compiler/Kassyi.GSharp.Tests.Shared/` |
+| HNT0011 | Error | A test method that skips on non-Windows hosts (`Skip.IfNot(OperatingSystem.IsWindows(), ...)`, `Skip.If(!OperatingSystem.IsWindows(), ...)`, `RuntimeInformation.IsOSPlatform(OSPlatform.Windows)`, conditional `SkipException`, or `[SupportedOSPlatform("windows")]`, directly or through same-compilation helpers) without `[Platform(TestPlatform.Windows)]` on the method or its class |
 
 Where shared and dialect tests belong: tests under `tests/Compiler/Kassyi.GSharp.Tests.Shared/` run in both `Tests.Cpu` and `Tests.Cuda` without dialect preprocessor branches. Dialect-specific tests and dialect-only members must reside under `tests/Compiler/Kassyi.GSharp.Tests.Cpu/` or `tests/Compiler/Kassyi.GSharp.Tests.Cuda/`, splitting shared test classes across files as `partial` classes when private state must be shared.
 
