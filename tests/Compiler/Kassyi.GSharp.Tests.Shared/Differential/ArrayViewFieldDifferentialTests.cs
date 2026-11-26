@@ -148,7 +148,7 @@ public sealed class ArrayViewFieldDifferentialTests
             var managed = b.Get<int>("managed");
 
             // A view that no array holds: a MemoryManager over the bytes of the buffer
-            var manager = new HostAliasMemoryManager<int>(managed, sizeof(int), managed.Length - 1);
+            using var manager = new HostAliasMemoryManager<int>(managed, sizeof(int), managed.Length - 1);
             var fields = new ArrayViewElementFields
             {
                 Elements = elements.AsMemory(1, 6),

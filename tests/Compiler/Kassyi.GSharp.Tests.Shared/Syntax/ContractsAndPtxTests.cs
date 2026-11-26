@@ -68,11 +68,13 @@ public class ContractsAndPtxTarget
         output[0] = TileSize * 2;
     }
 
+#pragma warning disable GSH0018 // Roslyn TranspileMethod input (not invoked on host or compiled by nvcc)
     public static void WmmaTensorCores(uint[] output)
     {
         Gpu.InlinePtx("// wmma.mma.sync.aligned.row.col.m16n16k16.f32.f32");
         output[0] = 16u;
     }
+#pragma warning restore GSH0018
 }
 
 

@@ -7,7 +7,7 @@ public struct Pair_StringsTest<T> where T : unmanaged
     public T First;
     public T Second;
 }
-
+#pragma warning disable GSH0018 // Roslyn TranspileMethod input; lines 15, 17, 29 are pinned by existing snapshots
 public class StringsAndAttributesTarget
 {
     public static void StringInterpolationPrintf(uint[] data)
@@ -46,7 +46,7 @@ public class StringsAndAttributesTarget
         output[0] = p.First + p.Second;
     }
 }
-
+#pragma warning restore GSH0018
 public class StringsAndAttributesTests : TranspilerTestBase
 {
     [Fact]

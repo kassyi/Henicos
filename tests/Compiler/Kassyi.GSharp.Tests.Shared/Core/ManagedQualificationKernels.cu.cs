@@ -85,7 +85,7 @@ namespace Kassyi.GSharp.Tests.Shared.Core.Qualification
 
     // Internal: the generator snapshot compiles this file against the test assembly, where public extension methods of
     // the same name would make the calls ambiguous (CS0121)
-    internal static class QualifyExtensions
+    internal static partial class QualifyExtensions
     {
         [GpuDeviceFunction]
         public static int Doubled(this int x) => x * 2;

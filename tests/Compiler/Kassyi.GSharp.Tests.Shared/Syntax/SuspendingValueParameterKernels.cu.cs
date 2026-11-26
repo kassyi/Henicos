@@ -33,7 +33,7 @@ public struct SuspendWithBuffer
     public int Tag;
 }
 
-public static class SuspendVector2Extensions
+public static partial class SuspendVector2Extensions
 {
     [GpuDeviceFunction]
     public static void AddToX(this ref SuspendVector2 v, float d)

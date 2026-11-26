@@ -33,8 +33,14 @@ public sealed partial class DiffPointerScope
         return deviceBuffer.DevicePointer;
     }
 
-    private partial void DisposeStorage()
+    /// <summary>Copies device memory back to the host buffers and releases all allocations.</summary>
+    public void Dispose()
     {
+        if (!BeginDispose())
+        {
+            return;
+        }
+
         try
         {
             foreach (var (buffer, deviceBuffer) in _deviceAllocations)

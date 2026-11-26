@@ -20,14 +20,14 @@ public static partial class StructHostOnlyMemberKernels
         Gpu.SyncThreads();
         return shared[tid ^ 1];
     }
-
+#pragma warning disable GSH0068 // HostOnlyMembers.Dispose() is intentionally host-only and must not be called in device code
     [GpuKernel]
     public static void HostOnlyMembersKernel(int[] output)
     {
         var h = new HostOnlyMembers { V = ThreadIndex.X };
         output[ThreadIndex.X] = h.V + 1;
     }
-
+#pragma warning restore GSH0068
     /// <summary>Calls every host-only member, and the constructor of a struct that no kernel uses.</summary>
     public static int UseOnHost()
     {

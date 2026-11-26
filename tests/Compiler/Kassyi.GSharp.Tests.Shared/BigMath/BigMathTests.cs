@@ -52,7 +52,7 @@ public class BigMathTests : TranspilerTestBase
         using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
         var uInt = new GpuBigUInt(context, 4); // 4 words
         var uFloat = new GpuBigUFloat(uInt, 0);
-        var bigFloat = new GpuBigFloat(uFloat, false);
+        using var bigFloat = new GpuBigFloat(uFloat, false);
 
         Assert.NotNull(bigFloat);
         Assert.Equal(0, bigFloat.UFloat.Exponent);
