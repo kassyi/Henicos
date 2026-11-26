@@ -28,6 +28,7 @@ import {
   offloadField,
   optionalNumberField,
   placesField,
+  quarantineField,
   remoteField,
   resourceField,
   send,
@@ -35,6 +36,7 @@ import {
   type Incoming,
   type Outcome,
   type Outlook,
+  type QuarantineSummary,
   type ServerMessage,
 } from "./protocol.ts";
 import { MachineProfile } from "./machine.ts";
@@ -95,6 +97,8 @@ export class JobServer {
   readonly records = new Map<number, ServerJob>();
   /** How the jobs that ended went, oldest first, for --after (also across a restart, through jobs-<port>.json). */
   readonly outcomes = new Map<number, Outcome>();
+  /** Quarantine summaries of ended remote jobs, bounded to KeptOutcomes (also across restarts). */
+  readonly quarantines = new Map<number, QuarantineSummary>();
   /** The connections waiting for a job to end (await, wait). */
   readonly awaiters = new Map<number, net.Socket[]>();
   /**
@@ -353,6 +357,7 @@ export class JobServer {
     const share = shareField(message);
     const offload = offloadField(message);
     const remote = remoteField(message);
+    const quarantine = quarantineField(message);
     const gpuTurn = message.gpuTurn === true;
     const remoteEstimates = new Map<string, Estimate | null>();
     for (const state of this.scheduler.remoteStates()) {
@@ -405,7 +410,18 @@ export class JobServer {
       completed: false,
       exitCode: null,
       cancelPending: false,
+      ...(quarantine !== undefined ? { quarantine } : {}),
     };
+  }
+
+  /** Records an ended job's quarantine summary, bounded to KeptOutcomes entries. */
+  recordQuarantine(id: number, quarantine: QuarantineSummary): void {
+    const quarantines = this.quarantines;
+    quarantines.delete(id);
+    quarantines.set(id, quarantine);
+    while (quarantines.size > KeptOutcomes) {
+      quarantines.delete(quarantines.keys().next().value as number);
+    }
   }
 
   /**
@@ -464,6 +480,9 @@ export class JobServer {
       targetHistory.record(job.command, actualMs, this.nextId, Date.now(), context, job.keys);
     }
     this.scheduler.detach(job);
+    if (job.quarantine !== undefined) {
+      this.recordQuarantine(job.id, job.quarantine);
+    }
     this.recordOutcome(job.id, outcome);
     if (this.scheduler.isIdle()) {
       this.idleSince = Date.now();

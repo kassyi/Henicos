@@ -10,13 +10,17 @@ import { describeResource } from "./resources.ts";
 import { describeJob, type ServerJob } from "./server-job.ts";
 import type { JobServer } from "./server.ts";
 
-function status(connection: Connection): void {
+function status(connection: Connection, message: Incoming): void {
   const server = connection.server;
   const scheduler = server.scheduler;
   scheduler.order();
   const forecast = scheduler.forecast();
   const view = (j: ServerJob) => ({ ...describeJob(j), ...server.outlook(j, forecast) });
   const remotes = scheduler.remoteStates().map((state) => describeRemote(state, scheduler.running));
+  const requestedId = idField(message, "id");
+  const quarantine =
+    requestedId !== null && server.find(requestedId) === undefined ? server.quarantines.get(requestedId) : undefined;
+  const outcome = quarantine !== undefined && requestedId !== null ? server.outcomes.get(requestedId) : undefined;
   connection.reply({
     type: "status",
     pid: process.pid,
@@ -32,6 +36,9 @@ function status(connection: Connection): void {
     ...(remotes.length > 0 ? { remotes } : {}),
     running: scheduler.running.map(view),
     waiting: scheduler.waiting.map(view),
+    ...(quarantine !== undefined && requestedId !== null
+      ? { endedJob: { id: requestedId, ...(outcome !== undefined ? { outcome } : {}), quarantine } }
+      : {}),
   });
 }
 
@@ -49,7 +56,7 @@ function resolve(connection: Connection, message: Incoming): void {
     id: job.id,
     state: job.provisional !== null ? "lost unless its client reports" : job.phase,
   }));
-  const picked = pickSuffixMatch(digits, live, server.outcomes.keys());
+  const picked = pickSuffixMatch(digits, live, [...server.outcomes.keys(), ...server.quarantines.keys()]);
   connection.reply(
     "error" in picked
       ? { type: "error", code: "unknown-job", message: picked.error }

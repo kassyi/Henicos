@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Backends.Cpp;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
@@ -292,7 +293,7 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
             EvaluationOrder.AppendTempName(writer, left);
             writer.Append(',');
             EvaluationOrder.AppendTempName(writer, right);
-            DivisorCheck.AppendSiteArgument(writer, site);
+            NullCheckSiteWriter.AppendSiteArgument(writer, site);
         }
     }
 

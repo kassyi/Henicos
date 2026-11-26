@@ -2,19 +2,38 @@
 // warm build-server flag stripping, automatic lightweight `--blame`, MSBuild node limits, Verify `*.received.*`
 // failure artifacts, and VSTest `Sequence_*.xml` crash attribution.
 
-import type {
-  RemoteCommandGrant,
-  RemoteCommandRewrite,
-  RemoteCrashSummaryRule,
-  RemoteFailureArtifactRule,
-  RemoteOffloadContribution,
-  RemoteStatementContext,
-  RemoteStatementRewrite,
+import {
+  hasEnvKey,
+  type RemoteCommandGrant,
+  type RemoteCommandRewrite,
+  type RemoteCrashSummaryRule,
+  type RemoteFailureArtifactRule,
+  type RemoteOffloadContribution,
+  type RemoteStatementContext,
+  type RemoteStatementRewrite,
 } from "../../plugin-api.ts";
 
 const MsbuildArgsVariable = "GSHARP_JOB_QUEUE_MSBUILD_ARGS";
 const CoreLimitVariable = "MSBUILDCORELIMIT";
 const CoreWeightVariable = "MSBUILDNODECOREALLOCATIONWEIGHT";
+
+const DotnetAllowedEnv = [
+  "DiffEngine_Disabled",
+  "CI",
+  "VSTEST_CONNECTION_TIMEOUT",
+  "DOTNET_CLI_UI_LANGUAGE",
+  "DOTNET_NOLOGO",
+  "DOTNET_CLI_TELEMETRY_OPTOUT",
+  "VSLANG",
+] as const;
+
+// Host MSBuild core limits differ between local and remote worker slots.
+// DOTNET_ROOT is intentionally omitted (like CUDA_PATH) because actions/setup-dotnet and dev SDK setups set it
+// globally in process.env while test-sanitized.js resolves ~/.dotnet on the target worker itself.
+// MSBUILDDISABLENODEREUSE is also intentionally omitted from both lists: Windows hosts set MSBUILDDISABLENODEREUSE=1
+// globally to avoid file locks, so forwarding it would defeat keepBuildServersWarm on Linux workers while adding it
+// to localOnlyEnv would block Windows offload.
+const DotnetLocalOnlyEnv = ["MSBUILDCORELIMIT", "MSBUILDNODECOREALLOCATIONWEIGHT"] as const;
 
 const DotnetPathValueOptions = [
   "--results-directory",
@@ -55,7 +74,8 @@ const DotnetPathExtensions = ["csproj", "fsproj", "vbproj", "sln", "slnx", "slnf
 export const DotnetReceivedArtifactRule: RemoteFailureArtifactRule = {
   searchDirs: ["tests", "src"],
   findName: "*.received.*",
-  allowPattern: /^(?:tests|src)\/[A-Za-z0-9_./-]+\.received\.(?:txt|cs|cu|cpp|h|hpp|json|xml|md)$/,
+  allowPattern:
+    /^(?:tests|src)\/(?:[A-Za-z0-9_./-]*\/)?[A-Za-z0-9_](?:[A-Za-z0-9_.-]*[A-Za-z0-9_-])?\.received\.(?:txt|cs|cu|cpp|c|h|hpp|json|xml|md)$/,
   requireKnownLocalDir: true,
   cleanBeforeRun: true,
 };
@@ -185,13 +205,14 @@ function prepareDotnetRemoteCommand(command: string, grant: RemoteCommandGrant):
   if (grant.cpus <= 0) {
     return undefined;
   }
+  const platform = grant.platform ?? process.platform;
   const env: Record<string, string> = {
     [MsbuildArgsVariable]: `-m:${grant.cpus}`,
   };
-  if (grant.env[CoreLimitVariable] === undefined) {
+  if (!hasEnvKey(grant.env, CoreLimitVariable, platform)) {
     env[CoreLimitVariable] = String(grant.cpus);
   }
-  if (grant.env[CoreWeightVariable] === undefined) {
+  if (!hasEnvKey(grant.env, CoreWeightVariable, platform)) {
     env[CoreWeightVariable] = "100";
   }
   return {
@@ -212,6 +233,8 @@ export function dotnetRemoteOffload(): RemoteOffloadContribution {
     pathExtensions: DotnetPathExtensions,
     collectDirOptions: ["--results-directory"],
     defaultEnv: { DiffEngine_Disabled: "true" },
+    allowedEnv: DotnetAllowedEnv,
+    localOnlyEnv: DotnetLocalOnlyEnv,
     syncExcludePrefixes: ["TestResults/", "BenchmarkDotNet.Artifacts/"],
     syncExcludeFindNames: ["*.received.*", "*.user"],
     rewriteStatement: rewriteDotnetStatement,

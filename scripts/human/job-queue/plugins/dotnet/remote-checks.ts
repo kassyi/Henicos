@@ -6,13 +6,23 @@ import * as os from "node:os";
 import * as path from "node:path";
 import type { AssertModule } from "../../plugin-api.ts";
 import type { PluginHost } from "../../plugin-host.ts";
-import { ArtifactCollector, validateAndWriteArtifacts } from "../../remote/artifact-collector.ts";
+import {
+  ArtifactCollector,
+  QuarantineFolderName,
+  removeReadOnlyTree,
+  validateAndWriteArtifacts,
+} from "../../remote/artifact-collector.ts";
 import { FakeRemoteTransport, makeFrame, makeRemote } from "../../remote/checks-support.ts";
 import { translateForRemote } from "../../remote/command-translator.ts";
 import { EmptyRemoteRules } from "../../remote/rules.ts";
 import { isExcludedSyncPath } from "../../remote/syncer.ts";
 import dotnetPlugin from "./plugin.ts";
-import { DotnetCrashSummaryRule, MaxSequenceXmlBytes, parseSequenceXmlInProgress } from "./remote.ts";
+import {
+  DotnetCrashSummaryRule,
+  DotnetReceivedArtifactRule,
+  MaxSequenceXmlBytes,
+  parseSequenceXmlInProgress,
+} from "./remote.ts";
 
 export async function checkDotnetRemoteOffload(assert: AssertModule, dotnetOnlyHost: PluginHost): Promise<void> {
   assert.strictEqual(dotnetOnlyHost.plugins[0]?.name, dotnetPlugin.name);
@@ -59,6 +69,44 @@ export async function checkDotnetRemoteOffload(assert: AssertModule, dotnetOnlyH
     assert.strictEqual(plan.env.GSHARP_JOB_QUEUE_MSBUILD_ARGS, "-m:4");
     assert.strictEqual(plan.note, "4 MSBuild nodes");
     assert.deepStrictEqual(plan.collectPaths, [{ path: "tmp/trx", kind: "dir" }]);
+    assert.deepStrictEqual(plan.redirectedResultsDirs, ["tmp/trx"]);
+
+    // A mixed-case Windows leading assignment of an allowlisted default takes its canonical spelling and wins
+    const winMixedLead = translateForRemote(`$env:diffengine_disabled='false'; dotnet test ${projB}`, {
+      cwd: wtA,
+      worktree: wtA,
+      shell: "pwsh",
+      places: { [projB]: { root: wtB, ignored: false } },
+      cpus: 4,
+      keepBuildServersWarm: true,
+      env: {},
+      platform: "win32",
+      remoteRules: rules,
+    });
+    assert.ok(winMixedLead !== null);
+    assert.strictEqual(winMixedLead.env.DiffEngine_Disabled, "false");
+    assert.strictEqual(winMixedLead.env.diffengine_disabled, undefined);
+    assert.strictEqual(winMixedLead.env.MSBUILDCORELIMIT, "4");
+    assert.strictEqual(winMixedLead.env.MSBUILDNODECOREALLOCATIONWEIGHT, "100");
+
+    // The core limits are local-only: written in the command (any case) they keep the job local like in the caller env
+    for (const lead of ["$env:msbuildcorelimit='2'", "$env:msbuildnodecoreallocationweight='50'"]) {
+      assert.strictEqual(
+        translateForRemote(`${lead}; dotnet test ${projB}`, {
+          cwd: wtA,
+          worktree: wtA,
+          shell: "pwsh",
+          places: { [projB]: { root: wtB, ignored: false } },
+          cpus: 4,
+          keepBuildServersWarm: true,
+          env: {},
+          platform: "win32",
+          remoteRules: rules,
+        }),
+        null,
+        `${lead} stays local`,
+      );
+    }
 
     // Cold server opt-out preserves --disable-build-servers
     const coldPlan = translateForRemote(cmd, {
@@ -132,12 +180,18 @@ export async function checkDotnetRemoteOffload(assert: AssertModule, dotnetOnlyH
     assert.strictEqual(isExcludedSyncPath("tests/Snap.verified.cs", syncRules), false);
 
     fs.mkdirSync(path.join(wtB, "tests", "Snapshots"), { recursive: true });
+    const qDotnet = path.join(tmp, "state", QuarantineFolderName, "700");
     const writeRes = validateAndWriteArtifacts(
       Buffer.concat([
         makeFrame("tests/Snapshots/Snap.Foo.received.txt", "actual"),
+        makeFrame("tests/Snapshots/Snap.Foo.received.cs", "// received cs"),
+        makeFrame("tests/Snapshots/Snap.Foo.received.c", "// received c"),
+        makeFrame("tests/Snapshots/.received.txt", "empty-stem"),
+        makeFrame("tests/Snapshots/.hidden.received.cs", "dotfile-received"),
         makeFrame("tests/Snapshots/Snap.Foo.verified.txt", "tamper"),
       ]),
       {
+        quarantineDir: qDotnet,
         worktree: wtB,
         allowReceived: true,
         knownLocalDirs: new Set(["tests/Snapshots"]),
@@ -145,8 +199,27 @@ export async function checkDotnetRemoteOffload(assert: AssertModule, dotnetOnlyH
         failureArtifacts: rules.failureArtifacts,
       },
     );
-    assert.deepStrictEqual(writeRes.writtenFiles, ["tests/Snapshots/Snap.Foo.received.txt"]);
-    assert.strictEqual(writeRes.rejectedFiles.length, 1);
+    assert.deepStrictEqual(writeRes.writtenFiles, [
+      "tests/Snapshots/Snap.Foo.received.txt",
+      "tests/Snapshots/Snap.Foo.received.cs",
+      "tests/Snapshots/Snap.Foo.received.c",
+    ]);
+    assert.strictEqual(writeRes.rejectedFiles.length, 3);
+    assert.strictEqual(DotnetReceivedArtifactRule.allowPattern.test("tests/A/Foo.received.c"), true);
+    assert.strictEqual(DotnetReceivedArtifactRule.allowPattern.test("tests/A/A-B.received.cs"), true);
+    assert.strictEqual(DotnetReceivedArtifactRule.allowPattern.test("tests/A/.hidden.received.cs"), false);
+    assert.strictEqual(DotnetReceivedArtifactRule.allowPattern.test("tests/Snapshots/.received.txt"), false);
+    assert.ok(!fs.existsSync(path.join(wtB, "tests", "Snapshots", "Snap.Foo.received.txt")));
+    assert.ok(!fs.existsSync(path.join(wtB, "tests", "Snapshots", "Snap.Foo.received.cs")));
+    const receivedCsQuarantined = path.join(qDotnet, "tests", "Snapshots", "Snap.Foo.received.cs");
+    assert.strictEqual(fs.readFileSync(receivedCsQuarantined, "utf8"), "// received cs");
+    assert.strictEqual(fs.statSync(receivedCsQuarantined).mode & 0o777, 0o444);
+    if (process.platform === "win32") {
+      assert.strictEqual(
+        fs.readFileSync(`${receivedCsQuarantined}:Zone.Identifier`, "utf8"),
+        "[ZoneTransfer]\r\nZoneId=3\r\n",
+      );
+    }
 
     // Sequence_*.xml crash attribution & DotnetCrashSummaryRule path pattern
     const seqPath = "tests/Compiler/Kassyi.GSharp.Tests.Cpu/TestResults/abc/Sequence_123.xml";
@@ -179,11 +252,13 @@ export async function checkDotnetRemoteOffload(assert: AssertModule, dotnetOnlyH
     const transport = new FakeRemoteTransport(makeRemote({ workspace: "~/repo" }));
     transport.binaryHandler = () => makeFrame(seqPath, xml);
     const collector = new ArtifactCollector(transport, { ...EmptyRemoteRules, ...rules });
-    const pulled = await collector.pull(wtB, true, new Set(), []);
+    const stateDir = path.join(tmp, "state");
+    const pulled = await collector.pull(wtB, true, new Set(), [], { stateDir, jobId: 701 });
     assert.deepStrictEqual(pulled.crashedTests, ["B.NativeCrash"]);
     assert.strictEqual(pulled.written, 0);
     assert.ok(!fs.existsSync(path.join(wtB, "tests", "Compiler")));
+    assert.ok(!fs.existsSync(pulled.quarantineDir), "no empty quarantine dir when 0 files written");
   } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
+    removeReadOnlyTree(tmp);
   }
 }

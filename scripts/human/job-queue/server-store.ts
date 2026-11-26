@@ -4,7 +4,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { errorCode, errorMessage, isObject, replaceFile } from "./history.ts";
-import { idField, type Incoming, type Outcome } from "./protocol.ts";
+import { idField, parseQuarantineSummary, type Incoming, type Outcome } from "./protocol.ts";
 import { describeJob, type ServerJob } from "./server-job.ts";
 import type { Phase } from "./server-job-state.ts";
 import type { JobServer } from "./server.ts";
@@ -38,6 +38,7 @@ export class JobStore {
       ...(job.stub ? { stub: true } : {}),
       ...(job.startNow === true ? { startNow: true } : {}),
       ...(job.provisional !== null ? { provisional: job.provisional } : {}),
+      ...(job.quarantine !== undefined ? { quarantine: job.quarantine } : {}),
     };
   }
 
@@ -67,6 +68,7 @@ export class JobStore {
           waiting: of("waiting"),
           provisional: of("ended"),
           ended: [...server.outcomes],
+          ...(server.quarantines.size > 0 ? { quarantines: [...server.quarantines] } : {}),
           // An older scheduler ignores it (and would start the waiting jobs)
           ...(server.scheduler.paused ? { paused: true, pausedAt: server.scheduler.pausedAt } : {}),
           // Only for an older scheduler, which waits for these ids as predecessors (--after) until they come back
@@ -137,6 +139,16 @@ export class JobStore {
       for (const entry of saved.ended as unknown[]) {
         if (Array.isArray(entry) && Number.isInteger(entry[0]) && Outcomes.includes(String(entry[1]))) {
           server.outcomes.set(entry[0] as number, entry[1] as Outcome);
+        }
+      }
+    }
+    if (Array.isArray(saved.quarantines)) {
+      for (const entry of saved.quarantines as unknown[]) {
+        if (Array.isArray(entry) && typeof entry[0] === "number" && Number.isInteger(entry[0]) && entry[0] > 0) {
+          const summary = parseQuarantineSummary(entry[1]);
+          if (summary !== undefined) {
+            server.recordQuarantine(entry[0], summary);
+          }
         }
       }
     }

@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.Literals;
+namespace Kassyi.GSharp.Compiler.Backends.Cpp;
 
 /// <summary>
 /// Writes a string as a C++ string literal whose bytes do not depend on the character sets of the C++ compiler: a double

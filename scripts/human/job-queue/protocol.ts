@@ -10,9 +10,27 @@ import type { WaitFor } from "./scheduler.ts";
 
 export const MaxMemoryMb = 2 ** 20;
 export const MaxKeyLength = 2000;
+export const MaxResultsDirs = 64;
+export const MaxResultsDirLength = 512;
 
 /** How a job ended, as --after reads it. `lost`: its client died and its command exited with an unknown code. */
 export type Outcome = "succeeded" | "failed" | "cancelled" | "lost";
+
+/** Summary of quarantined remote artifacts pulled back for a job. */
+export interface QuarantineSummary {
+  dir: string;
+  files: number;
+  bytes: number;
+  resultsRedirected: boolean;
+  resultsDirs?: string[];
+}
+
+/** Ended job quarantine metadata returned by `status <id>` when available. */
+export interface EndedJobStatus {
+  id: number;
+  outcome?: Outcome;
+  quarantine: QuarantineSummary;
+}
 
 /** What a client asks to be queued with, and brings again when it re-registers after a scheduler restart. */
 export interface JobRequest {
@@ -64,8 +82,8 @@ export type ClientMessage =
   | ({ type: "request" | "adopt" } & JobRequest)
   | { type: "started"; commandPid: number; spawnedAt: number }
   /** completed: the command ran to its own end (not stopped by a signal or a cancel). */
-  | { type: "done"; completed: boolean; exitCode: number; cancelled?: boolean }
-  | { type: "status" }
+  | { type: "done"; completed: boolean; exitCode: number; cancelled?: boolean; quarantine?: QuarantineSummary }
+  | { type: "status"; id?: number }
   /** The full id of the newest job whose id ends in these 1 to 4 digits (an older scheduler answers with an error). */
   | { type: "resolve"; digits: string }
   | { type: "cancel"; id?: number; all?: boolean }
@@ -105,6 +123,7 @@ export type ClientMessage =
       cancelled?: boolean;
       pid?: number;
       queuedAt?: number;
+      quarantine?: QuarantineSummary;
     };
 
 /** A job as `status` shows it. */
@@ -211,6 +230,8 @@ export interface StatusReply {
   remotes?: RemoteStatus[];
   running: StatusJob[];
   waiting: StatusJob[];
+  /** Present when `status` requested a specific ended job id that has quarantine metadata. */
+  endedJob?: EndedJobStatus;
 }
 
 /** The placement a client keeps, so that it brings it when it re-registers. */
@@ -443,4 +464,70 @@ export function offloadField(message: Incoming): OffloadPreference | undefined {
 /** The `remote` worker name of a JobRequest or saved job; undefined when missing or invalid. */
 export function remoteField(message: Incoming): string | undefined {
   return isRemoteName(message.remote) ? message.remote : undefined;
+}
+
+/** Validates and copies a QuarantineSummary object; undefined when missing or invalid. */
+export function parseQuarantineSummary(value: unknown): QuarantineSummary | undefined {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+  const raw = value as Record<string, unknown>;
+  if (
+    typeof raw.dir !== "string" ||
+    raw.dir.length === 0 ||
+    raw.dir.length > MaxKeyLength ||
+    /[\x00-\x1f\x7f-\x9f]/.test(raw.dir)
+  ) {
+    return undefined;
+  }
+  if (typeof raw.files !== "number" || !Number.isInteger(raw.files) || raw.files < 0 || raw.files > 1_000_000) {
+    return undefined;
+  }
+  if (
+    typeof raw.bytes !== "number" ||
+    !Number.isInteger(raw.bytes) ||
+    raw.bytes < 0 ||
+    raw.bytes > 10 * 1024 * 1024 * 1024
+  ) {
+    return undefined;
+  }
+  if (typeof raw.resultsRedirected !== "boolean") {
+    return undefined;
+  }
+  let resultsDirs: string[] | undefined;
+  if (raw.resultsDirs !== undefined) {
+    if (!Array.isArray(raw.resultsDirs) || raw.resultsDirs.length > MaxResultsDirs) {
+      return undefined;
+    }
+    const clean: string[] = [];
+    for (const item of raw.resultsDirs) {
+      if (
+        typeof item !== "string" ||
+        item.length === 0 ||
+        item.length > MaxResultsDirLength ||
+        /[\x00-\x1f\x7f-\x9f]/.test(item)
+      ) {
+        return undefined;
+      }
+      clean.push(item);
+    }
+    if (clean.length > 0) {
+      if (!raw.resultsRedirected) {
+        return undefined;
+      }
+      resultsDirs = clean;
+    }
+  }
+  return {
+    dir: raw.dir,
+    files: raw.files,
+    bytes: raw.bytes,
+    resultsRedirected: raw.resultsRedirected,
+    ...(resultsDirs !== undefined ? { resultsDirs } : {}),
+  };
+}
+
+/** The `quarantine` summary of a `done`, `report`, or saved job message; undefined when missing or invalid. */
+export function quarantineField(message: Incoming): QuarantineSummary | undefined {
+  return parseQuarantineSummary(message.quarantine);
 }

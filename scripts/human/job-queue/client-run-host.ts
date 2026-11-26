@@ -15,6 +15,7 @@ import {
 } from "./constants.ts";
 import { SchedulerLauncher } from "./client-connect.ts";
 import type { RunOptions } from "./client.ts";
+import type { QuarantineSummary } from "./protocol.ts";
 import type { RemoteCommandPlan } from "./remote/command-translator.ts";
 import type { ResolvedRemoteRules } from "./remote/rules.ts";
 import { executeRemotePlan, type RemoteRunResult } from "./remote/runner.ts";
@@ -124,6 +125,7 @@ export interface RunHost {
     exitCode: number,
     cancelled: boolean,
     reporter: { pid: number; queuedAt: number },
+    quarantine?: QuarantineSummary,
   ): Promise<void>;
   /** Runs the command in the caller's shell (CommandShell.run). */
   runCommand(command: string, env: NodeJS.ProcessEnv, onChild: (child: ChildProcess) => void): Promise<ShellResult>;
@@ -134,6 +136,7 @@ export interface RunHost {
     onChild: (child: ChildProcess) => void,
     remoteRules?: ResolvedRemoteRules,
     signal?: AbortSignal,
+    jobId?: number,
   ): Promise<RemoteRunResult>;
   /**
    * Runs the command under gpu-lock.js for a GPU turn (`turn`: the run's job id, 0 when unknown), on one seat of the
@@ -172,8 +175,9 @@ export class ProcessRunHost implements RunHost {
     exitCode: number,
     cancelled: boolean,
     reporter: { pid: number; queuedAt: number },
+    quarantine?: QuarantineSummary,
   ): Promise<void> {
-    return this.launcher.reportEnd(id, completed, exitCode, cancelled, reporter);
+    return this.launcher.reportEnd(id, completed, exitCode, cancelled, reporter, quarantine);
   }
 
   runCommand(command: string, env: NodeJS.ProcessEnv, onChild: (child: ChildProcess) => void): Promise<ShellResult> {
@@ -186,8 +190,9 @@ export class ProcessRunHost implements RunHost {
     onChild: (child: ChildProcess) => void,
     remoteRules?: ResolvedRemoteRules,
     signal?: AbortSignal,
+    jobId?: number,
   ): Promise<RemoteRunResult> {
-    return executeRemotePlan(remote, plan, onChild, undefined, remoteRules, signal);
+    return executeRemotePlan(remote, plan, onChild, undefined, remoteRules, signal, jobId);
   }
 
   runUnderGpuLock(

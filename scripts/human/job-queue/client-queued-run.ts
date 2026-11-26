@@ -35,6 +35,7 @@ import {
   type ClientMessage,
   type Incoming,
   type Placement,
+  type QuarantineSummary,
 } from "./protocol.ts";
 import type { ShareAnswer } from "./plugin-api.ts";
 import { RemoteWithFallbackExecutor, resolveOffloadPreference } from "./remote/executor.ts";
@@ -126,6 +127,8 @@ export class QueuedRun {
   private abortController: AbortController | null = null;
   /** Remote transport failed before execution: waiting for server "queued" + fresh local "granted". */
   private fallingBackLocal = false;
+  /** Quarantine summary produced by remote execution, forwarded on "done" and "report". */
+  private quarantine: QuarantineSummary | null = null;
 
   constructor(
     options: RunOptions,
@@ -162,7 +165,7 @@ export class QueuedRun {
     }
 
     await this.resolveShare();
-    if (!this.resolveOffloadAndMemory()) {
+    if (!(await this.resolveOffloadAndMemory())) {
       return;
     }
     await this.attach();
@@ -178,12 +181,13 @@ export class QueuedRun {
     this.state = "done";
     const current = this.socket;
     const jobId = this.jobId;
+    const quarantine = this.quarantine;
     if (current === null || current.destroyed) {
       if (ran && jobId > 0) {
         // No scheduler listens right now (it restarts): report the outcome to the next one, for the jobs that wait for
         // this one, then exit
         void this.host
-          .reportEnd(jobId, completed, code, cancelled, this.reporter())
+          .reportEnd(jobId, completed, code, cancelled, this.reporter(), ...(quarantine !== null ? [quarantine] : []))
           .finally(() => this.host.exit(code));
         return;
       }
@@ -198,6 +202,7 @@ export class QueuedRun {
       completed,
       exitCode: code,
       cancelled,
+      ...(quarantine !== null ? { quarantine } : {}),
     });
     if (!ran || jobId === 0 || !this.receipts) {
       setTimeout(() => this.host.exit(code), 1000).unref();
@@ -220,7 +225,14 @@ export class QueuedRun {
       }
       current.destroy();
       void this.host
-        .reportEnd(this.jobId, completed, code, cancelled, this.reporter())
+        .reportEnd(
+          this.jobId,
+          completed,
+          code,
+          cancelled,
+          this.reporter(),
+          ...(quarantine !== null ? [quarantine] : []),
+        )
         .finally(() => this.host.exit(code));
     };
     setTimeout(() => this.doneReceipt?.(false), 2000);
@@ -398,6 +410,9 @@ export class QueuedRun {
       this.requestLocalFallback(jobId);
       return;
     }
+    if (result.quarantine !== undefined) {
+      this.quarantine = result.quarantine;
+    }
     // The command's result decides, also after a cancel; a run a signal cut short is not recorded
     const end = commandEnd(result, this.cancelRequested);
     this.finish(end.exitCode, end.completed, end.cancelled);
@@ -407,6 +422,7 @@ export class QueuedRun {
   private requestLocalFallback(jobId: number): void {
     this.offload = "never";
     this.grantedRemote = null;
+    this.quarantine = null;
     this.child = null;
     this.spawnedAt = 0;
     this.state = "waiting";
@@ -725,21 +741,28 @@ export class QueuedRun {
   }
 
   /**
-   * Resolves memory budget and remote offload eligibility once per run; exits with UsageExitCode on invalid `--remote`.
+   * Synchronous portion of memory/offload resolution; leaves async plugin `checkOffload` for `resolveOffloadAndMemory`.
    */
-  private resolveOffloadAndMemory(): boolean {
+  private resolveOffloadAndMemorySync(): {
+    done: boolean;
+    ok: boolean;
+    places?: Record<string, PathPlace>;
+    resolvedMemoryMb?: number;
+    offload?: OffloadPreference;
+    reason?: string;
+  } {
     if (this.gpuTurn) {
-      return true;
+      return { done: true, ok: true };
     }
     const hasPlugins = this.plugins !== undefined && this.plugins.plugins.length > 0;
     if ((!hasPlugins || this.memoryMb !== null) && this.offload !== null) {
-      return true;
+      return { done: true, ok: true };
     }
     const { options } = this;
     const enabledRemotes = (options.remotes ?? []).filter((r) => r.mode !== "off");
     if (!hasPlugins && options.remote !== true && enabledRemotes.length === 0) {
       this.offload = "never";
-      return true;
+      return { done: true, ok: true };
     }
     const cwd = process.cwd();
     const worktree = (this.worktree ??= resolveWorktree(cwd));
@@ -756,6 +779,7 @@ export class QueuedRun {
       options,
       inGpuLock: this.inGpuLock,
       classifiedOffloadable: classified.offloadable === true,
+      classifiedLocalReason: classified.localReason,
       memoryMb: resolvedMemoryMb,
       cwd,
       worktree,
@@ -769,12 +793,61 @@ export class QueuedRun {
       this.socket?.destroy();
       this.socket = null;
       this.host.exit(UsageExitCode);
-      return false;
+      return { done: true, ok: false };
+    }
+    return {
+      done: false,
+      ok: true,
+      places,
+      resolvedMemoryMb,
+      offload: decision.offload,
+      reason: decision.reason,
+    };
+  }
+
+  /**
+   * Resolves memory budget and remote offload eligibility once per run (including async `checkOffload` when
+   * synchronous gates pass); exits with UsageExitCode on invalid `--remote`.
+   */
+  private async resolveOffloadAndMemory(): Promise<boolean> {
+    const sync = this.resolveOffloadAndMemorySync();
+    if (sync.done) {
+      return sync.ok;
+    }
+    const { options } = this;
+    const hasPlugins = this.plugins !== undefined && this.plugins.plugins.length > 0;
+    let offload = sync.offload ?? "never";
+    let reason = sync.reason;
+    if (offload !== "never" && hasPlugins) {
+      const answer = await (this.plugins as PluginHost).checkOffload(
+        options.command,
+        { remoteForced: options.remote === true, places: sync.places ?? {} },
+        this.contextOf(this.plugins as PluginHost),
+      );
+      if (this.ended()) {
+        return false;
+      }
+      if (answer?.offload === "local") {
+        const localWhy = answer.reason ?? "plugin required local execution";
+        if (options.remote === true) {
+          prefix(`--remote requested, but ${localWhy}`);
+          this.state = "done";
+          this.socket?.destroy();
+          this.socket = null;
+          this.host.exit(UsageExitCode);
+          return false;
+        }
+        reason = localWhy.startsWith("running locally:") ? localWhy : `running locally: ${localWhy}`;
+        offload = "never";
+      }
     }
     if (hasPlugins) {
-      this.memoryMb = resolvedMemoryMb;
+      this.memoryMb = sync.resolvedMemoryMb ?? 0;
     }
-    this.offload = decision.offload;
+    if (reason !== undefined) {
+      prefix(reason);
+    }
+    this.offload = offload;
     return true;
   }
 
@@ -782,8 +855,19 @@ export class QueuedRun {
   private register(current: net.Socket): void {
     const { options, placement } = this;
     const running = this.child;
-    if (!this.resolveOffloadAndMemory()) {
+    const sync = this.resolveOffloadAndMemorySync();
+    if (!sync.ok) {
       return;
+    }
+    if (!sync.done) {
+      if (this.plugins !== undefined && this.plugins.plugins.length > 0) {
+        this.memoryMb = sync.resolvedMemoryMb ?? 0;
+      }
+      // checkOffload has not answered yet: the synchronous preference is not a decision, so the job registers local
+      if (sync.offload === "never" && sync.reason !== undefined) {
+        prefix(sync.reason);
+      }
+      this.offload = "never";
     }
     // Resolved once per job (git), kept for the re-registrations after a scheduler restart
     const cwd = process.cwd();

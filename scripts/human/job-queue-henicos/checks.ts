@@ -18,7 +18,14 @@ import { shortCommand } from "../job-queue/view.ts";
 import { selectsCategory } from "../job-queue/plugins/dotnet/plugin.ts";
 import { cpuOnlyTestProjects, parseBudgets, testMemoryMb } from "./budgets.ts";
 import { checkNameFilter } from "./name-filter-checks.ts";
-import { checkOffloadClassification, checkQueuedRunMemoryMb, checkRepoBaselineConfig } from "./offload-checks.ts";
+import { checkHenicosOffloadSources } from "./offload-source-checks.ts";
+import {
+  checkHenicosEnvAllowlist,
+  checkHenicosOffloadProbe,
+  checkOffloadClassification,
+  checkQueuedRunMemoryMb,
+  checkRepoBaselineConfig,
+} from "./offload-checks.ts";
 import henicosPlugin, { isHenicosTest } from "./plugin.ts";
 
 const require = createRequire(import.meta.url);
@@ -480,6 +487,13 @@ function checkDialectOf(assert: AssertModule): void {
     );
     assert.strictEqual(dialectOf(cpuProj), "cpu", "lowercase dialect with whitespace must return 'cpu'");
 
+    const attrProj = path.join(tempDir, "attr.csproj");
+    fs.writeFileSync(
+      attrProj,
+      '<Project><PropertyGroup><GSharpTargetDialect Condition="true">Cpu</GSharpTargetDialect></PropertyGroup></Project>',
+    );
+    assert.strictEqual(dialectOf(attrProj), "cpu", "dialect tag with attributes must return 'cpu'");
+
     const noneProj = path.join(tempDir, "none.csproj");
     fs.writeFileSync(
       noneProj,
@@ -555,5 +569,8 @@ export async function checks(assert: AssertModule): Promise<void> {
   await quietly(() => checkQueuedRunMemoryMb(assert, host, FixedBudgetsYaml));
   checkShortCommandWithPlugins(assert, host);
   checkOffloadClassification(assert, host, loaded.configRoot);
+  checkHenicosEnvAllowlist(assert, host, loaded.configRoot);
+  await checkHenicosOffloadProbe(assert, loaded.configRoot);
+  await checkHenicosOffloadSources(assert, loaded.configRoot);
   await checkNameFilter(assert);
 }

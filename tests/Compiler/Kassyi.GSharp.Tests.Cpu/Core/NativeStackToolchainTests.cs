@@ -213,6 +213,7 @@ public sealed class NativeStackToolchainTests(ITestOutputHelper output)
     }
 
     [SkippableFact]
+    [Platform(TestPlatform.Windows)]
     [Scenario(TestScenario.SadPath)]
     public void StackThreads_WindowsAddressSanitizer_FailsWithPreprocessorError()
     {

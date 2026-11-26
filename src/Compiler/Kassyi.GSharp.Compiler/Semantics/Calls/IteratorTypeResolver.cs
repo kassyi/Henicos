@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Transpiler;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>
 /// Resolves <c>[GpuDeviceFunction]</c> iterator methods (<c>IEnumerable&lt;T&gt;</c> with <c>yield</c>) and their

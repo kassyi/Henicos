@@ -2,7 +2,16 @@
 // (the end of a job whose command ended while no scheduler listened).
 
 import { ProtocolVersion } from "./constants.ts";
-import { environmentField, idField, numberField, remoteField, send, shareField, type Incoming } from "./protocol.ts";
+import {
+  environmentField,
+  idField,
+  numberField,
+  quarantineField,
+  remoteField,
+  send,
+  shareField,
+  type Incoming,
+} from "./protocol.ts";
 import type { Connection, MessageHandler } from "./server-connection.ts";
 import type { ServerJob } from "./server-job.ts";
 import {
@@ -318,6 +327,10 @@ function done(connection: Connection, message: Incoming): void {
   job.completed = message.completed === true;
   // Protocol 2 clients send no exit code: their outcome is unknown ('lost')
   job.exitCode = typeof message.exitCode === "number" ? message.exitCode : null;
+  const quarantine = quarantineField(message);
+  if (quarantine !== undefined) {
+    job.quarantine = quarantine;
+  }
   if (!server.stopping && job.phase === "running") {
     // The command has ended: free the slot and record the outcome now (settle saves it at the end of this message),
     // then give the receipt. A stopping scheduler saves nothing and gives none: the client then reports the outcome to
@@ -342,15 +355,22 @@ function report(connection: Connection, message: Incoming): void {
   const record = id === null ? undefined : server.find(id);
   const reporter = { pid: numberField(message, "pid"), queuedAt: numberField(message, "queuedAt") };
   const step = id === null ? "ignore" : planReport(record, server.outcomes.get(id), reporter, endOf(message));
+  const quarantine = quarantineField(message);
   if (step === "ignore") {
     server.log(id === null ? "report ignored" : `report ${formatJobId(id)} ignored`);
   } else if (record === undefined) {
     if (id !== null) {
       server.log(`report ${formatJobId(id)}: ${step.end}`);
+      if (quarantine !== undefined) {
+        server.recordQuarantine(id, quarantine);
+      }
       server.recordOutcome(id, step.end);
     }
   } else {
     // Its old connection may not have closed here yet (the client saw the close first): it ends with the record
+    if (quarantine !== undefined) {
+      record.quarantine = quarantine;
+    }
     const old = record.connection;
     server.finish(record, step.end, "its client reported");
     old?.socket.destroy();

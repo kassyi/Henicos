@@ -1,7 +1,7 @@
 using Kassyi.GSharp.Compiler.Analysis.Checks;
 using Microsoft.CodeAnalysis.Operations;
 
-namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.Numeric;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>What IntegerSemantics decides a binary operator from.</summary>
 /// <param name="Kind">The operator.</param>

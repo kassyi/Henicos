@@ -16,6 +16,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Providers;
 public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
 {
     private const string InverseSqrtKernelName = "GpuBigIntSqrtKernels.InverseSqrtNewtonRaphsonMegaKernel";
+    private const string ReciprocalKernelName = "GpuBigIntDivRemKernels.ReciprocalNewtonRaphsonMegaKernel";
     private const int BlockSizeOfTheRule = 0;
     private static readonly int[] CandidateBlockSizes = [1024, 768, 512, 256];
 
@@ -357,26 +358,30 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
     // input: 258 words
     [SkippableTheory]
     [Scenario(TestScenario.HappyPath)]
-    [InlineData(258, 256)]
-    [InlineData(2430, 0)]
-    public void PrepareLaunchShape_ThreeSms_ChoosesTheBlockSizeOfTheRule(int requiredLen, int expectedBlockSize)
+    [InlineData(false, 258, 256)]
+    [InlineData(false, 2430, 0)]
+    [InlineData(true, 258, 256)]
+    [InlineData(true, 2430, 0)]
+    public void PrepareLaunchShape_ThreeSms_ChoosesTheBlockSizeOfTheRule(
+        bool isReciprocal, int requiredLen, int expectedBlockSize)
     {
         CudaCapability.EnsureGpuAvailable();
         using var workspace = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot) { DeviceSmCount = 3 };
+        var (resolveKernel, kernelName) = KernelTarget(isReciprocal);
 
         var shape = CooperativeMegaKernelLauncher.PrepareLaunchShape(
             workspace,
             requiredLen,
-            static () => GpuBigIntSqrtKernels.ResolveInverseSqrtNewtonRaphsonMegaKernel(),
-            InverseSqrtKernelName);
+            resolveKernel,
+            kernelName);
 
         // 0: the largest block size that fits, as ResolveCooperativeBlockDim finds it.
         var expected = expectedBlockSize != 0
             ? (uint)expectedBlockSize
             : CooperativeMegaKernelLauncher.ResolveCooperativeBlockDim(
                 workspace,
-                static () => GpuBigIntSqrtKernels.ResolveInverseSqrtNewtonRaphsonMegaKernel(),
-                InverseSqrtKernelName,
+                resolveKernel,
+                kernelName,
                 shape.SharedMemBytes);
         Assert.Equal(expected, shape.BlockDim);
         Assert.Equal(3u, shape.GridDim);
@@ -390,15 +395,20 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
     // input: candidateBlockSize = 512 (or 768 / 1024) on 258 words, 3 SMs
     [SkippableTheory]
     [Scenario(TestScenario.HappyPath)]
-    [InlineData(1024, 1u)]
-    [InlineData(768, 2u)]
-    [InlineData(512, 2u)]
-    [InlineData(256, 3u)]
+    [InlineData(false, 1024, 1u)]
+    [InlineData(false, 768, 2u)]
+    [InlineData(false, 512, 2u)]
+    [InlineData(false, 256, 3u)]
+    [InlineData(true, 1024, 1u)]
+    [InlineData(true, 768, 2u)]
+    [InlineData(true, 512, 2u)]
+    [InlineData(true, 256, 3u)]
     public void PrepareLaunchShape_ThreeSmsWithCandidateOverride_LaunchesWithTheOverrideBlockSize(
-        int candidateBlockSize, uint expectedGridDim)
+        bool isReciprocal, int candidateBlockSize, uint expectedGridDim)
     {
         CudaCapability.EnsureGpuAvailable();
         using var workspace = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot) { DeviceSmCount = 3 };
+        var (resolveKernel, kernelName) = KernelTarget(isReciprocal);
 
         try
         {
@@ -406,8 +416,8 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
             var shape = CooperativeMegaKernelLauncher.PrepareLaunchShape(
                 workspace,
                 258,
-                static () => GpuBigIntSqrtKernels.ResolveInverseSqrtNewtonRaphsonMegaKernel(),
-                InverseSqrtKernelName);
+                resolveKernel,
+                kernelName);
 
             Assert.Equal((uint)candidateBlockSize, shape.BlockDim);
             Assert.Equal(expectedGridDim, shape.GridDim);
@@ -417,6 +427,11 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
             CooperativeMegaKernelLauncher.CandidateBlockSizesOverride = null;
         }
     }
+
+    private static (Func<IntPtr> ResolveKernel, string KernelName) KernelTarget(bool isReciprocal) =>
+        isReciprocal
+            ? (static () => GpuBigIntDivRemKernels.ResolveReciprocalNewtonRaphsonMegaKernel(), ReciprocalKernelName)
+            : (static () => GpuBigIntSqrtKernels.ResolveInverseSqrtNewtonRaphsonMegaKernel(), InverseSqrtKernelName);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
@@ -532,7 +547,7 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
         }
     }
 
-    private static uint[] CreateNormalizedWords(int seed, int numWords)
+    internal static uint[] CreateNormalizedWords(int seed, int numWords)
     {
         var rng = new Random(seed);
         var words = new uint[numWords];
