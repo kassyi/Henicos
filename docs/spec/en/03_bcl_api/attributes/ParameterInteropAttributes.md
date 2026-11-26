@@ -48,9 +48,13 @@ public static void VectorAdd([In] float[] a, [In] float[] b, [Out] float[] c, in
   member addresses at its element offset; a struct passed to two `ref` parameters is the same. A launch without
   overlapping arguments allocates and copies as before. Three forms cannot share one region and throw
   `NotSupportedException` naming the arguments: converted members of different element types, or a converted member
-  beside one whose bytes the device reads as they are (their layouts differ in different ways); converted members that
-  do not start at element boundaries of each other; and members that overlap at offsets no device address can align
-  for all of their element types (the device alignment of each element type counts, not its size). The CPU paths pass
+  beside one whose bytes the device reads as they are (their layouts differ in different ways; use an element type
+  whose device layout is its host layout, or copy one of the arguments); converted members that do not start at element
+  boundaries of each other (use an element type whose device layout is its host layout, or copy one of the arguments);
+  and members that overlap at offsets no device address can align for all of their element types (the device alignment
+  of each element type counts, not its size — this form throws on every path, CUDA and the CPU paths alike, because C#
+  leaves misaligned views to the platform (`MemoryMarshal.Cast`); pass views whose offsets differ by a multiple of the
+  element alignment, or copy one of them). The CPU paths pass
   the caller's memory, and give the `[In]` members of a group of `[In]` arguments one shared copy, which members of
   different element types view as on the device: a `Span<T>` or `ReadOnlySpan<T>` reinterprets its bytes, a
   `Memory<T>` or `ReadOnlyMemory<T>` views them through a `MemoryManager<T>`, and a `T[]` of another element type

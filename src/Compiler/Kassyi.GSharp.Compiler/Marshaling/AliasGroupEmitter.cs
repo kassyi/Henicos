@@ -306,9 +306,42 @@ internal static class AliasGroupEmitter
         WriteDeclaration(writer, plan);
         WriteHeldArrays(writer, sharing, isCuda: false);
         var scope = AliasRangeEmitter.WritePinnedRanges(writer, plan.Ranges);
+        WriteCpuDeviceAlignmentCheck(writer, plan);
         AliasRangeEmitter.WriteFind(writer, plan.Ranges, plan.HasHeldArrays);
         WriteClearedOutArguments(writer, sharing);
         return scope;
+    }
+
+    // HostAliasGroups.ThrowIfNoDeviceAlignment(<ranges>, <traits>, <names>, <device alignments>);
+    private static void WriteCpuDeviceAlignmentCheck(SourceWriter writer, in LaunchAliasPlan plan)
+    {
+        writer.Append($"{GroupsType}.ThrowIfNoDeviceAlignment");
+        using (writer.Parentheses())
+        {
+            writer.Append($"{AliasRangeEmitter.RangesSpan(plan.Ranges, plan.HasHeldArrays)}, ");
+            AliasRangeEmitter.WriteTraitsArgument(writer, plan.Ranges, plan.HasHeldArrays);
+            writer.Append(", ");
+            AliasRangeEmitter.WriteNamesArgument(writer, plan.Ranges, plan.HasHeldArrays);
+            writer.Append(", ");
+            if (plan.Ranges.Length == 0)
+            {
+                writer.Append("global::System.ReadOnlySpan<int>.Empty");
+            }
+            else
+            {
+                writer.Append("stackalloc int[] ");
+                using (writer.Braces())
+                {
+                    for (var k = 0; k < plan.Ranges.Length; k++)
+                    {
+                        writer.AppendIf(k > 0, ", ");
+                        writer.Append($"{plan.Ranges[k].DeviceAlignment}");
+                    }
+                }
+            }
+        }
+
+        writer.AppendLine(";");
     }
 
     // if (__gsharp_aliases != null)

@@ -316,7 +316,10 @@ public class LaunchAliasPlanTests
         Assert.True(cuda.HasHeldArrays);
         Assert.Equal([0], cuda.HeldSources.ToArray());
         Assert.Equal([1], cuda.Candidates.ToArray());
-        Assert.False(cpu.IsActive);
+        Assert.True(cpu.IsActive);
+        Assert.True(cpu.HasHeldArrays);
+        Assert.Equal([0], cpu.HeldSources.ToArray());
+        Assert.Equal([1], cpu.Candidates.ToArray());
     }
 
     [Theory]
@@ -334,7 +337,9 @@ public class LaunchAliasPlanTests
         Assert.True(cuda.HasHeldArrays);
         Assert.Empty(cuda.Candidates);
         Assert.Equal(-1, cuda.MemberIndexOf(0));
-        Assert.False(cpu.IsActive);
+        Assert.True(cpu.IsActive);
+        Assert.True(cpu.HasHeldArrays);
+        Assert.Empty(cpu.Candidates);
     }
 
     [Fact]
@@ -1051,6 +1056,151 @@ public class LaunchAliasPlanTests
                 var result = Assert.IsType<int[]>(disjointMethod.Invoke(null, null));
 #pragma warning restore RS0030
                 Assert.Equal([11, 99], result);
+            }
+        }
+        finally
+        {
+            loadContext.Unload();
+        }
+    }
+
+    private const string DeviceAlignmentSource = """
+        using System;
+        using System.Numerics;
+        using System.Runtime.InteropServices;
+        using Kassyi.GSharp.Core;
+
+        namespace Kassyi.GSharp.Tests.Shared.TestCases.Marshaling.DeviceAlignment;
+
+        public struct ConvertedVec2Padded
+        {
+            public float A;
+            public Vector2 V;
+        }
+
+        public static partial class DeviceAlignmentKernels
+        {
+            [GpuKernel]
+            public static void MixedElementKernel(
+                Span<int> ints,
+                Span<long> longs,
+                Span<Vector2> vectors,
+                Span<ConvertedVec2Padded> padded)
+            {
+            }
+
+            [GpuKernel]
+            public static void TwoVector2Kernel(Span<Vector2> a, Span<Vector2> b, [Out] float[] observed)
+            {
+                if (ThreadIndex.X == 0)
+                {
+                    a[0] = new Vector2(a[0].X + 1f, a[0].Y + 2f);
+                    a[1] = new Vector2(a[1].X + 10f, a[1].Y + 20f);
+                    observed[0] = b[0].X;
+                    observed[1] = b[0].Y;
+                }
+            }
+        }
+
+        public static class DeviceAlignmentDriver
+        {
+            public static float[] RunMisalignedVector2()
+            {
+                float[] backing = [1f, 2f, 3f, 4f, 5f];
+                float[] observed = new float[2];
+                DeviceAlignmentKernels.LaunchTwoVector2Kernel(
+                    MemoryMarshal.Cast<float, Vector2>(backing.AsSpan(0, 4)),
+                    MemoryMarshal.Cast<float, Vector2>(backing.AsSpan(1, 4)),
+                    observed,
+                    blockDimX: 1);
+                return observed;
+            }
+
+            public static float[] RunAlignedVector2()
+            {
+                float[] backing = [1f, 2f, 3f, 4f, 5f, 6f];
+                float[] observed = new float[2];
+                DeviceAlignmentKernels.LaunchTwoVector2Kernel(
+                    MemoryMarshal.Cast<float, Vector2>(backing.AsSpan(0, 4)),
+                    MemoryMarshal.Cast<float, Vector2>(backing.AsSpan(2, 4)),
+                    observed,
+                    blockDimX: 1);
+                return observed;
+            }
+        }
+        """;
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void ForCpu_DeviceAlignment_PopulatesCudaAlignmentAndNegativeSentinelForConverted()
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(DeviceAlignmentSource);
+        var type = compilation.GetTypeByMetadataName(
+            "Kassyi.GSharp.Tests.Shared.TestCases.Marshaling.DeviceAlignment.DeviceAlignmentKernels");
+        Assert.NotNull(type);
+        var method = type.GetMembers("MixedElementKernel").OfType<IMethodSymbol>().Single();
+        var model = KernelHostModel.Create(method, default);
+        var cpu = ArraySharingPlan.ForCpu(model).Aliases;
+
+        Assert.True(cpu.IsActive);
+        Assert.Equal(4, cpu.Ranges.Length);
+        Assert.Equal(4, cpu.Ranges[0].DeviceAlignment);
+        Assert.Equal(8, cpu.Ranges[1].DeviceAlignment);
+        Assert.Equal(8, cpu.Ranges[2].DeviceAlignment);
+        Assert.Equal(-1, cpu.Ranges[3].DeviceAlignment);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void ForCpu_MisalignedVector2Spans_ThrowsNotSupportedAndAlignedSucceeds()
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(DeviceAlignmentSource);
+        var (_, outputCompilation, generatorDiagnostics) = GeneratorTestRunner.RunGenerator(compilation, "Cpu");
+
+        Assert.Empty(generatorDiagnostics.Where(static d => d.Severity == DiagnosticSeverity.Error));
+        var compileErrors = outputCompilation
+            .GetDiagnostics()
+            .Where(static d => d.Severity == DiagnosticSeverity.Error)
+            .ToArray();
+        Assert.Empty(compileErrors);
+
+        using var stream = new MemoryStream();
+        var emitResult = outputCompilation.Emit(stream);
+        Assert.True(emitResult.Success, string.Join(Environment.NewLine, emitResult.Diagnostics));
+
+        var loadContext = new System.Runtime.Loader.AssemblyLoadContext(
+            $"CpuDeviceAlignment_{Guid.NewGuid():N}",
+            isCollectible: true);
+        try
+        {
+            stream.Position = 0;
+            var assembly = loadContext.LoadFromStream(stream);
+            var driverType = assembly.GetType(
+                "Kassyi.GSharp.Tests.Shared.TestCases.Marshaling.DeviceAlignment.DeviceAlignmentDriver");
+            Assert.NotNull(driverType);
+
+#pragma warning disable RS0030 // Reflection to inspect generated test driver method compiled at run time
+            var misalignedMethod = driverType.GetMethod("RunMisalignedVector2");
+            var alignedMethod = driverType.GetMethod("RunAlignedVector2");
+#pragma warning restore RS0030
+            Assert.NotNull(misalignedMethod);
+            Assert.NotNull(alignedMethod);
+
+            using (Kassyi.GSharp.Runtime.GpuExecution.Use(Kassyi.GSharp.Runtime.KernelExecution.Managed))
+            {
+                var tie = Assert.Throws<System.Reflection.TargetInvocationException>(() =>
+                {
+#pragma warning disable RS0030 // Reflection to invoke launcher wrapper compiled at run time
+                    misalignedMethod.Invoke(null, null);
+#pragma warning restore RS0030
+                });
+                var notSupported = Assert.IsType<NotSupportedException>(tie.InnerException);
+                Assert.Contains("MemoryMarshal.Cast", notSupported.Message, StringComparison.Ordinal);
+
+#pragma warning disable RS0030 // Reflection to invoke launcher wrapper compiled at run time
+                var observed = Assert.IsType<float[]>(alignedMethod.Invoke(null, null));
+#pragma warning restore RS0030
+                Assert.Equal([13f, 24f], observed);
             }
         }
         finally

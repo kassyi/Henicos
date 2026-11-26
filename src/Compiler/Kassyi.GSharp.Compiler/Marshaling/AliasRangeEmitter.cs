@@ -64,6 +64,16 @@ internal static class AliasRangeEmitter
         // With held arrays, their entries follow those of the arguments: the traits and the names are completed at run
         // time, as the ranges are (HostAliasHeldArrays.Combine)
         writer.Append($"{Aliases} = {GroupsType}.Find({RangesSpan(ranges, heldArrays)}, ");
+        WriteTraitsArgument(writer, ranges, heldArrays);
+        writer.Append(", ");
+        WriteNamesArgument(writer, ranges, heldArrays);
+        writer.AppendLine(");");
+    }
+
+    /// <summary>Writes the traits array argument (including held arrays when present).</summary>
+    public static void WriteTraitsArgument(SourceWriter writer, ImmutableArray<AliasRange> ranges,
+        bool heldArrays = false)
+    {
         writer.AppendIf(heldArrays, $"{Held}.Combine(");
         writer.Append("new byte[] ");
         using (writer.Braces())
@@ -76,7 +86,12 @@ internal static class AliasRangeEmitter
         }
 
         writer.AppendIf(heldArrays, ")");
-        writer.Append(", ");
+    }
+
+    /// <summary>Writes the comma-separated names argument (including held arrays when present).</summary>
+    public static void WriteNamesArgument(SourceWriter writer, ImmutableArray<AliasRange> ranges,
+        bool heldArrays = false)
+    {
         writer.AppendIf(heldArrays, $"{Held}.Combine(");
         writer.Append("\"");
         for (var k = 0; k < ranges.Length; k++)
@@ -87,7 +102,6 @@ internal static class AliasRangeEmitter
 
         writer.Append("\"");
         writer.AppendIf(heldArrays, ")");
-        writer.AppendLine(");");
     }
 
     /// <summary>The range list as the span that the <c>HostAliasGroups</c> methods take.</summary>

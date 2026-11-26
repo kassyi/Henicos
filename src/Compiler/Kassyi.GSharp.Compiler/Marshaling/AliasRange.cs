@@ -13,6 +13,9 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// <param name="ElementType">The host element type.</param>
 /// <param name="DeviceElementType">The device element type: the shadow struct of a converted element.</param>
 /// <param name="Alignment">The device alignment of the element, 0 to derive it from the size at run time.</param>
+/// <param name="DeviceAlignment">
+/// The CUDA device alignment for CPU misalignment checks, or -1 when the element is converted on CUDA.
+/// </param>
 /// <param name="ConversionKey">
 /// 0 when the device reads the bytes as they are, otherwise the number of the converted element type in the launch
 /// (<see cref="AliasConversion"/>).
@@ -26,6 +29,7 @@ internal readonly record struct AliasRange(
     string ElementType,
     string DeviceElementType,
     int Alignment,
+    int DeviceAlignment,
     int ConversionKey,
     byte Traits,
     string Name)
@@ -34,22 +38,31 @@ internal readonly record struct AliasRange(
     public static AliasRange ForArray(string pinned, string span, string count, in AliasElement element,
         byte traits, string name) =>
         new(pinned, $"Start({span})", $"({HostTypeNames.IntPtr}){count} * sizeof({element.HostType})", element.HostType,
-            element.DeviceType, element.Alignment, element.ConversionKey, traits, name);
+            element.DeviceType, element.Alignment, element.DeviceAlignment, element.ConversionKey, traits, name);
 
     /// <summary>The range of a value passed by reference: <c>StartOf(ref &lt;value&gt;)</c>, one element.</summary>
     public static AliasRange ForReference(string pinned, string reference, in AliasElement element, byte traits,
         string name) =>
         new(pinned, $"StartOf(ref {reference})", $"sizeof({element.HostType})", element.HostType,
-            element.DeviceType, element.Alignment, element.ConversionKey, traits, name);
+            element.DeviceType, element.Alignment, element.DeviceAlignment, element.ConversionKey, traits, name);
 }
 
 /// <summary>The element of an <see cref="AliasRange"/>: host and device types, device alignment, conversion.</summary>
 /// <param name="HostType">The host element type.</param>
 /// <param name="DeviceType">The device element type (the host type when the device reads it as it is).</param>
 /// <param name="Alignment">The device alignment, 0 to derive it from the size at run time.</param>
+/// <param name="DeviceAlignment">
+/// The CUDA device alignment for CPU misalignment checks, or -1 when the element is converted on CUDA.
+/// </param>
 /// <param name="ConversionKey">0, or the number of the converted element type in the launch.</param>
-internal readonly record struct AliasElement(string HostType, string DeviceType, int Alignment, int ConversionKey)
+internal readonly record struct AliasElement(
+    string HostType,
+    string DeviceType,
+    int Alignment,
+    int DeviceAlignment,
+    int ConversionKey)
 {
     /// <summary>An element that the device reads as it is.</summary>
-    public static AliasElement Raw(string type, int alignment) => new(type, type, alignment, 0);
+    public static AliasElement Raw(string type, int alignment, int deviceAlignment = 0) =>
+        new(type, type, alignment, deviceAlignment, 0);
 }

@@ -86,8 +86,9 @@ internal readonly struct LaunchAliasPlan
     /// <summary>
     /// The plan of the CPU launcher, which hands the kernel the caller's memory except the copies of <c>[In]</c>
     /// arguments (<see cref="ArraySharingPlan.NeedsKernelCopy"/>) and the shadows of converted elements: an <c>[In]</c>
-    /// or read-only argument is copied in only, any other one is the caller's memory, read and written. Without a copy
-    /// or a shadow the caller's memory already overlaps as in C#, so the launcher compares nothing.
+    /// or read-only argument is copied in only, any other one is the caller's memory, read and written. Any launch
+    /// with a partial candidate is still compared so that overlapping arguments that no device address aligns throw
+    /// <see cref="NotSupportedException"/> on the CPU paths as on CUDA.
     /// </summary>
     public static LaunchAliasPlan ForCpu(in ArraySharingPlan sharing)
     {
@@ -97,7 +98,6 @@ internal readonly struct LaunchAliasPlan
             return default;
         }
 
-        var copies = false;
         var builder = new Builder(parameters, HostDialects.Cpu);
         for (var i = 0; i < parameters.Length; i++)
         {
@@ -109,14 +109,10 @@ internal readonly struct LaunchAliasPlan
 
             var readOnly = shape.IsArray && (sharing.NeedsKernelCopy(i) || shape.IsReadOnlyContainer);
             var spanView = shape.Container is ArrayContainerKind.Span or ArrayContainerKind.ReadOnlySpan;
-            // An out struct that holds arrays is compared as well: it keeps the caller's value when another argument
-            // refers to the same variable (#1841) and is cleared otherwise, which only the comparison can tell
-            copies |= IsConverted(shape, HostDialects.Cpu) || (shape.IsArray && sharing.NeedsKernelCopy(i)) ||
-                shape.HeldArraysMethodName is not null || (shape.RefKind == RefKind.Out && shape.HasArrayFields);
             builder.Add(i, GetTraits(shape, copiesIn: true, copiesBack: !readOnly && !shape.IsInReference, spanView));
         }
 
-        return copies ? builder.ToPlan() : default;
+        return builder.ToPlan();
     }
 
     /// <summary>The candidate number of parameter <paramref name="parameterIndex"/>, or -1.</summary>
@@ -230,13 +226,14 @@ internal readonly struct LaunchAliasPlan
         {
             var host = shape.IsArray ? ConvertedArrayEmitter.GetElementTypeName(shape) : shape.TypeName;
             var alignment = dialect.IsCuda ? shape.CudaAliasAlignment : shape.CpuAliasAlignment;
+            var deviceAlignment = IsConverted(shape, HostDialects.Cuda) ? -1 : shape.CudaAliasAlignment;
             if (!IsConverted(shape, dialect))
             {
-                return AliasElement.Raw(host, alignment);
+                return AliasElement.Raw(host, alignment, deviceAlignment);
             }
 
             var conversion = GetConversion(shape, host);
-            return new AliasElement(host, conversion.ShadowType, alignment, conversion.Key);
+            return new AliasElement(host, conversion.ShadowType, alignment, deviceAlignment, conversion.Key);
         }
 
         // The conversion of the element type of <shape>, numbered on its first use

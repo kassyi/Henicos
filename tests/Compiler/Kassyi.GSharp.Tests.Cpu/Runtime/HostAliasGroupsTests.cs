@@ -184,6 +184,8 @@ public class HostAliasGroupsTests
 
         Assert.Contains("'first', 'second'", exception.Message, StringComparison.Ordinal);
         Assert.Contains("not aligned", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("MemoryMarshal.Cast", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("multiple of the element alignment, or copy one of them", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -199,6 +201,10 @@ public class HostAliasGroupsTests
 
         Assert.Contains("'bags', 'slice'", exception.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("other", exception.Message, StringComparison.Ordinal);
+        Assert.Contains(
+            "Use an element type whose device layout is its host layout, or copy one of the arguments.",
+            exception.Message,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -243,6 +249,10 @@ public class HostAliasGroupsTests
             () => HostAliasGroups.Find(ranges, [InOut, InOut], "a,b"));
 
         Assert.Contains("element boundaries", exception.Message, StringComparison.Ordinal);
+        Assert.Contains(
+            "Use an element type whose device layout is its host layout, or copy one of the arguments.",
+            exception.Message,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -529,5 +539,73 @@ public class HostAliasGroupsTests
 
         Assert.False(HostAliasCopies.TryGetHostCopy<int>(groups, 0, ranges, out var copy, out _));
         Assert.Null(copy);
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
+    public void ThrowIfNoDeviceAlignment_DisjointAndAlignedRanges_DoesNotThrow()
+    {
+        var disjoint = Ranges((1000, 8, 8), (1008, 8, 8));
+        var aligned = FullRanges((1000, 16, 8, 8, 4, 0), (1008, 16, 8, 8, 4, 0));
+
+        Assert.Null(Record.Exception(() => HostAliasGroups.ThrowIfNoDeviceAlignment(disjoint, [InOut, InOut], "a,b", [8, 8])));
+        Assert.Null(Record.Exception(() => HostAliasGroups.ThrowIfNoDeviceAlignment(aligned, [InOut, InOut], "a,b", [8, 8])));
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void ThrowIfNoDeviceAlignment_WiderDeviceAlignmentFourBytesApart_ThrowsNotSupportedNamingArguments()
+    {
+        // Vector2-like: host size/align is 8/4, CUDA device alignment is 8
+        var ranges = FullRanges((1000, 16, 8, 8, 4, 0), (1004, 16, 8, 8, 4, 0), (3000, 8, 4, 4, 4, 0));
+
+        var exception = Assert.Throws<NotSupportedException>(
+            () => HostAliasGroups.ThrowIfNoDeviceAlignment(ranges, [InOut, InOut, InOut], "first,second,other", [8, 8, 4]));
+
+        Assert.Contains("'first', 'second'", exception.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("other", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("MemoryMarshal.Cast", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public void ThrowIfNoDeviceAlignment_ConvertedSentinelInGroup_SkipsMisalignmentCheck()
+    {
+        // DiffVec2Padded-like on CPU: 12-byte elements overlapping 12 bytes apart, flagged -1 for CUDA conversion
+        var ranges = FullRanges((1000, 36, 12, 12, 4, 0), (1012, 36, 12, 12, 4, 0));
+
+        Assert.Null(Record.Exception(() => HostAliasGroups.ThrowIfNoDeviceAlignment(ranges, [InOut, InOut], "a,b", [-1, -1])));
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public void ThrowIfNoDeviceAlignment_HeldEntryBeyondDeviceAlignments_UsesRangeAlignment()
+    {
+        var ranges = FullRanges((1000, 16, 8, 8, 8, 0), (1004, 16, 8, 8, 8, 0));
+
+        var exception = Assert.Throws<NotSupportedException>(
+            () => HostAliasGroups.ThrowIfNoDeviceAlignment(ranges, [InOut, InOut], "slice,held", [8]));
+
+        Assert.Contains("'slice', 'held'", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void ThrowIfNoDeviceAlignment_MismatchedRangeLength_ThrowsArgumentException()
+    {
+        var ranges = new nint[HostAliasGroups.RangeFields - 1];
+
+        Assert.Throws<ArgumentException>(
+            () => HostAliasGroups.ThrowIfNoDeviceAlignment(ranges, [InOut], "a", [4]));
     }
 }

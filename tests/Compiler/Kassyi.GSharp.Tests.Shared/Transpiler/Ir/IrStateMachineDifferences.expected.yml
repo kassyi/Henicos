@@ -1124,7 +1124,10 @@
 - {file: "Differential/MarshalingOverlapDifferentialKernels.cu.cs", method: "MarshalingOverlapDifferentialKernels.TwoConvertedRefsKernel", status: "Compared", count: 1}
 - {file: "Differential/MarshalingOverlapDifferentialKernels.cu.cs", method: "MarshalingOverlapDifferentialKernels.TwoInFieldsKernel", status: "Compared", count: 1}
 - {file: "Differential/MarshalingOverlapDifferentialKernels.cu.cs", method: "MarshalingOverlapDifferentialKernels.TwoInSpansKernel", status: "Compared", count: 1}
+- {file: "Differential/MarshalingOverlapDifferentialKernels.cu.cs", method: "MarshalingOverlapDifferentialKernels.TwoLongViewsKernel", status: "Compared", count: 1}
+- {file: "Differential/MarshalingOverlapDifferentialKernels.cu.cs", method: "MarshalingOverlapDifferentialKernels.TwoRefLongsKernel", status: "Compared", count: 1}
 - {file: "Differential/MarshalingOverlapDifferentialKernels.cu.cs", method: "MarshalingOverlapDifferentialKernels.TwoRefStructsKernel", status: "Compared", count: 1}
+- {file: "Differential/MarshalingOverlapDifferentialKernels.cu.cs", method: "MarshalingOverlapDifferentialKernels.TwoVector2ViewsKernel", status: "Compared", count: 1}
 - {file: "Differential/MarshalingTwoFormsDifferentialKernels.cu.cs", method: "MarshalingTwoFormsDifferentialKernels.InAndRefSeparateVariablesKernel", status: "Compared", count: 1}
 - {file: "Differential/MarshalingTwoFormsDifferentialKernels.cu.cs", method: "MarshalingTwoFormsDifferentialKernels.MultiBlockInAndRefKernel", status: "Compared", count: 1}
 - {file: "Differential/MarshalingTwoFormsDifferentialKernels.cu.cs", method: "MarshalingTwoFormsDifferentialKernels.NestedFunctionsAndCtorKernel", status: "OpaqueStatement", count: 1}
