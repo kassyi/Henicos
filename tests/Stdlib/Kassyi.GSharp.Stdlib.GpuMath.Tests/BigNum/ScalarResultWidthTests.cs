@@ -15,21 +15,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public sealed class ScalarResultWidthTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public ScalarResultWidthTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     public static TheoryData<ScalarOperation> Operations() =>
         [ScalarOperation.Add, ScalarOperation.Sub, ScalarOperation.Mul];
@@ -53,8 +49,8 @@ public sealed class ScalarResultWidthTests : IDisposable
     [Scenario(TestScenario.SadPath)]
     public void NarrowerResult_IsRejected_AndNothingIsWritten(ScalarOperation operation)
     {
-        using var a = new GpuBigUInt(_workspace, [5u, 6u, 7u, 8u]);
-        using var buffer = new GpuBigUInt(_workspace, Enumerable.Repeat(ScalarCases.Fill, 8).ToArray());
+        using var a = new GpuBigUInt(Workspace, [5u, 6u, 7u, 8u]);
+        using var buffer = new GpuBigUInt(Workspace, Enumerable.Repeat(ScalarCases.Fill, 8).ToArray());
 
         foreach (var resultWords in new[] { 1, 3 })
         {
@@ -63,7 +59,7 @@ public sealed class ScalarResultWidthTests : IDisposable
         }
 
         Assert.All(buffer.ToHostArray(), static w => Assert.Equal(ScalarCases.Fill, w));
-        _workspace.ThrowIfDeviceErrors();
+        Workspace.ThrowIfDeviceErrors();
     }
 
     [Theory]
@@ -72,18 +68,18 @@ public sealed class ScalarResultWidthTests : IDisposable
     public void WiderResult_HoldsTheExactValue_AndZerosAbove(ScalarOperation operation, int words)
     {
         var (value, scalar) = ScalarCases.CarryChain(operation, words);
-        using var a = GpuBigUInt.FromBigInteger(_workspace, value, words);
+        using var a = GpuBigUInt.FromBigInteger(Workspace, value, words);
 
         foreach (var extra in new[] { 1, 3 })
         {
-            using var result = new GpuBigUInt(_workspace, Enumerable.Repeat(ScalarCases.Fill, words + extra).ToArray());
+            using var result = new GpuBigUInt(Workspace, Enumerable.Repeat(ScalarCases.Fill, words + extra).ToArray());
             ScalarCases.Apply(operation, a, scalar, result);
 
             Assert.Equal(ScalarCases.Limbs(ScalarCases.Oracle(operation, value, scalar), words + extra),
                 result.ToHostArray());
         }
 
-        _workspace.ThrowIfDeviceErrors();
+        Workspace.ThrowIfDeviceErrors();
     }
 
     [Theory]
@@ -92,13 +88,13 @@ public sealed class ScalarResultWidthTests : IDisposable
     public void EqualWidth_WithoutCarry_IsExact(ScalarOperation operation, int words)
     {
         var (value, scalar) = ScalarCases.NoCarry(operation, words);
-        using var a = GpuBigUInt.FromBigInteger(_workspace, value, words);
-        using var result = new GpuBigUInt(_workspace, Enumerable.Repeat(ScalarCases.Fill, words).ToArray());
+        using var a = GpuBigUInt.FromBigInteger(Workspace, value, words);
+        using var result = new GpuBigUInt(Workspace, Enumerable.Repeat(ScalarCases.Fill, words).ToArray());
 
         ScalarCases.Apply(operation, a, scalar, result);
 
         Assert.Equal(ScalarCases.Limbs(ScalarCases.Oracle(operation, value, scalar), words), result.ToHostArray());
-        _workspace.ThrowIfDeviceErrors();
+        Workspace.ThrowIfDeviceErrors();
     }
 
     [Theory]
@@ -107,8 +103,8 @@ public sealed class ScalarResultWidthTests : IDisposable
     public void EqualWidth_WithCarry_IsReportedOnceAtTheNextRead(ScalarOperation operation, int words)
     {
         var (value, scalar) = ScalarCases.OutOfDomain(operation, words);
-        using var a = GpuBigUInt.FromBigInteger(_workspace, value, words);
-        using var result = new GpuBigUInt(_workspace, words);
+        using var a = GpuBigUInt.FromBigInteger(Workspace, value, words);
+        using var result = new GpuBigUInt(Workspace, words);
 
         ScalarCases.Apply(operation, a, scalar, result);
 
@@ -117,7 +113,7 @@ public sealed class ScalarResultWidthTests : IDisposable
 
         // Reported once: the next read and an explicit check pass
         result.ToHostArray();
-        _workspace.ThrowIfDeviceErrors();
+        Workspace.ThrowIfDeviceErrors();
     }
 
     [Theory]
@@ -127,12 +123,12 @@ public sealed class ScalarResultWidthTests : IDisposable
     [Scenario(TestScenario.SadPath)]
     public void Subtraction_BelowZero_IsReported_AlsoIntoAWiderResult(int words)
     {
-        using var a = GpuBigUInt.FromBigInteger(_workspace, 1, words);
-        using var result = new GpuBigUInt(_workspace, words + 2);
+        using var a = GpuBigUInt.FromBigInteger(Workspace, 1, words);
+        using var result = new GpuBigUInt(Workspace, words + 2);
 
         GpuBigIntMath.Sub(a, 2u, result);
 
-        Assert.Throws<OverflowException>(() => _workspace.ThrowIfDeviceErrors());
+        Assert.Throws<OverflowException>(() => Workspace.ThrowIfDeviceErrors());
     }
 
     [Theory]
@@ -144,14 +140,14 @@ public sealed class ScalarResultWidthTests : IDisposable
     {
         // Below 2^(32 words - 1), so that doubling fits; doubling carries across every word boundary of a pass
         var value = (BigInteger.One << (32 * words - 1)) - 5;
-        using var x = GpuBigUInt.FromBigInteger(_workspace, value, words);
+        using var x = GpuBigUInt.FromBigInteger(Workspace, value, words);
 
         GpuBigIntMath.Mul(x, 2u, x);
         GpuBigIntMath.Add(x, 7u, x);
         GpuBigIntMath.Sub(x, 3u, x);
 
         Assert.Equal(value * 2 + 4, x.ToBigInteger());
-        _workspace.ThrowIfDeviceErrors();
+        Workspace.ThrowIfDeviceErrors();
     }
 
     // In place, the borrow of 2^(32 words - 1) - 1 runs through every word, also across the passes of one block (1500,
@@ -166,12 +162,12 @@ public sealed class ScalarResultWidthTests : IDisposable
     public void Sub_OneFromTopBitOnlyInPlace_BorrowsThroughEveryWord(int words)
     {
         var x = BigInteger.One << (32 * words - 1);
-        using var buffer = GpuBigUInt.FromBigInteger(_workspace, x, words);
+        using var buffer = GpuBigUInt.FromBigInteger(Workspace, x, words);
 
         GpuBigIntMath.Sub(buffer, 1u, buffer);
 
         Assert.Equal(x - 1, buffer.ToBigInteger());
-        _workspace.ThrowIfDeviceErrors();
+        Workspace.ThrowIfDeviceErrors();
     }
 
     [Fact]
@@ -179,8 +175,8 @@ public sealed class ScalarResultWidthTests : IDisposable
     public async Task EqualWidth_WithCarry_IsReportedByAnAsynchronousRead()
     {
         var (value, scalar) = ScalarCases.OutOfDomain(ScalarOperation.Mul, 33);
-        using var a = GpuBigUInt.FromBigInteger(_workspace, value, 33);
-        using var result = new GpuBigUInt(_workspace, 33);
+        using var a = GpuBigUInt.FromBigInteger(Workspace, value, 33);
+        using var result = new GpuBigUInt(Workspace, 33);
 
         GpuBigIntMath.Mul(a, scalar, result);
 
@@ -192,28 +188,28 @@ public sealed class ScalarResultWidthTests : IDisposable
     [Scenario(TestScenario.SadPath)]
     public void CorrectionFailure_AndDomainError_AreThrownTogether()
     {
-        var status = _workspace.CorrectionStatus ?? throw new InvalidOperationException("The workspace has no status.");
+        var status = Workspace.CorrectionStatus ?? throw new InvalidOperationException("The workspace has no status.");
         var (value, scalar) = ScalarCases.OutOfDomain(ScalarOperation.Add, 2);
-        using var a = GpuBigUInt.FromBigInteger(_workspace, value, 2);
-        using var result = new GpuBigUInt(_workspace, 2);
+        using var a = GpuBigUInt.FromBigInteger(Workspace, value, 2);
+        using var result = new GpuBigUInt(Workspace, 2);
 
         // One failure of the reciprocal correction, written into its words directly, and one domain error from a kernel
-        _workspace.Provider.WriteWord(status.DevicePointer, 0, (uint)status.ReportedFailures + 1u, _workspace.Stream);
-        _workspace.Provider.WriteWord(status.DevicePointer, 1, GpuBigIntDivRemKernels.ReciprocalCorrectionFailed,
-            _workspace.Stream);
+        Workspace.Provider.WriteWord(status.DevicePointer, 0, (uint)status.ReportedFailures + 1u, Workspace.Stream);
+        Workspace.Provider.WriteWord(status.DevicePointer, 1, GpuBigIntDivRemKernels.ReciprocalCorrectionFailed,
+            Workspace.Stream);
         GpuBigIntMath.Add(a, scalar, result);
 
         var error = Assert.Throws<AggregateException>(() => result.ToHostArray());
         Assert.Contains(error.InnerExceptions, static e => e is InvalidOperationException);
         Assert.Contains(error.InnerExceptions, static e => e is OverflowException);
-        _workspace.ThrowIfDeviceErrors();
+        Workspace.ThrowIfDeviceErrors();
     }
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public void IncrementOfTheLargestValue_AndDecrementOfZero_AreDomainErrors()
     {
-        var max = new GpuBigUInt(_workspace, [uint.MaxValue, uint.MaxValue]);
+        var max = new GpuBigUInt(Workspace, [uint.MaxValue, uint.MaxValue]);
         try
         {
             max++;
@@ -224,11 +220,11 @@ public sealed class ScalarResultWidthTests : IDisposable
             max.Dispose();
         }
 
-        var zero = new GpuBigUInt(_workspace, 2);
+        var zero = new GpuBigUInt(Workspace, 2);
         try
         {
             zero--;
-            Assert.Throws<OverflowException>(() => _workspace.ThrowIfDeviceErrors());
+            Assert.Throws<OverflowException>(() => Workspace.ThrowIfDeviceErrors());
         }
         finally
         {

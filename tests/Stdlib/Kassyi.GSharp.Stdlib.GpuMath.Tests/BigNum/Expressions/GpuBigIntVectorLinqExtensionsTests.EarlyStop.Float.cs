@@ -53,8 +53,8 @@ public partial class GpuBigIntVectorLinqExtensionsTests
 
         using var x = CreateFloatArray(c.X);
         using var y = CreateFloatArray(c.Y.Length == 0 ? c.X : c.Y);
-        using var zero = GpuBigFloatTestHelpers.CreateFloat(_context, 0);
-        using var one = GpuBigFloatTestHelpers.CreateFloat(_context, 1);
+        using var zero = GpuBigFloatTestHelpers.CreateFloat(Context, 0);
+        using var one = GpuBigFloatTestHelpers.CreateFloat(Context, 1);
         var xs = x.AsVectorizedEnumerable();
         var flags = c.Chain switch
         {
@@ -65,7 +65,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         };
 
         using var quantifier = c.All ? flags.All() : flags.Any();
-        Assert.Equal(expected, Outcome(() => quantifier.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => quantifier.Evaluate(Context)));
     }
 
     private static bool FloatReference(FloatCase c)
@@ -82,11 +82,11 @@ public partial class GpuBigIntVectorLinqExtensionsTests
 
     private GpuBigFloatArray CreateFloatArray(long[] values, int numWords = 4)
     {
-        var array = new GpuBigFloatArray(_context, values.Length, numWords);
+        var array = new GpuBigFloatArray(Context, values.Length, numWords);
         for (var i = 0; i < values.Length; i++)
         {
             using var element =
-                GpuBigFloatTestHelpers.CreateFloat(_context, values[i], exponent: 0, numWords: numWords);
+                GpuBigFloatTestHelpers.CreateFloat(Context, values[i], exponent: 0, numWords: numWords);
             array.SetElement(i, element);
         }
 

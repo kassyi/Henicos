@@ -107,8 +107,8 @@ public sealed class VectorCpuFallbackTests
             using var array = CreateIntArray(ws, [1, 2, 3, 4]);
             using var floatArray = CreateFloatArray(ws, [1, 2, 3, 4]);
             using var oneMag = GpuBigUInt.FromBigInteger(ws, 1, Words);
-            var scalar = new GpuBigInt(oneMag, false);
-            var fScalar = new GpuBigFloat(oneMag, 0, false);
+            using var scalar = new GpuBigInt(oneMag.AsBorrowed(), false);
+            using var fScalar = new GpuBigFloat(oneMag.AsBorrowed(), 0, false);
 
             var v = array.AsVectorizedEnumerable();
             var fv = floatArray.AsVectorizedEnumerable();

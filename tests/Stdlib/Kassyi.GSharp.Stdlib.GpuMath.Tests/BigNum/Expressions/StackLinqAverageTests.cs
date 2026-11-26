@@ -13,21 +13,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public sealed class StackLinqAverageTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public StackLinqAverageTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     public static TheoryData<int> Counts() => AverageCases.Counts();
 
@@ -35,13 +31,13 @@ public sealed class StackLinqAverageTests : IDisposable
     [MemberData(nameof(Counts))]
     [Scenario(TestScenario.Boundary)]
     public void SignedAverage_OfMixedWidths_IsTheTruncatedQuotient(int count) =>
-        AverageCases.Signed(_workspace, count);
+        AverageCases.Signed(Workspace, count);
 
     [Theory]
     [MemberData(nameof(Counts))]
     [Scenario(TestScenario.Boundary)]
     public void UnsignedAverage_OfMixedWidths_IsTheTruncatedQuotient(int count) =>
-        AverageCases.Unsigned(_workspace, count);
+        AverageCases.Unsigned(Workspace, count);
 
     // The count buffer outlived the expression (one live buffer per Average that nobody disposed)
     // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntStackLinqExtensions.cs Average -> the count
@@ -51,14 +47,14 @@ public sealed class StackLinqAverageTests : IDisposable
     public void SignedAverage_LeavesNoBufferBehind()
     {
         var values = AverageCases.Values(9, 21);
-        var elements = AverageCases.Leaves(_workspace, values);
+        var elements = AverageCases.Leaves(Workspace, values);
         try
         {
             // Warm the pool with one evaluation, so that the measured one allocates nothing new that stays
-            AverageCases.EvaluateAndDispose(_workspace, elements);
-            var before = _workspace.GetMemoryStatistics();
-            AverageCases.EvaluateAndDispose(_workspace, elements);
-            var after = _workspace.GetMemoryStatistics();
+            AverageCases.EvaluateAndDispose(Workspace, elements);
+            var before = Workspace.GetMemoryStatistics();
+            AverageCases.EvaluateAndDispose(Workspace, elements);
+            var after = Workspace.GetMemoryStatistics();
             Assert.Equal(before.LiveBuffers, after.LiveBuffers);
         }
         finally

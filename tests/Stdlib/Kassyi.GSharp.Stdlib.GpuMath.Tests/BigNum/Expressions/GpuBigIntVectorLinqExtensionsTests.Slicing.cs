@@ -18,7 +18,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     {
         using var array = CreateArray(input);
         var expr = array.AsVectorizedEnumerable().Take(takeCount);
-        var result = expr.Evaluate(_context);
+        var result = expr.Evaluate(Context);
         var hostResult = ToHostArray(result);
         Assert.Equal(expectedTake.Length, hostResult.Length);
         for(int i=0; i<expectedTake.Length; i++) Assert.Equal(expectedTake[i], hostResult[i]);
@@ -31,7 +31,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     {
         using var array = CreateArray(input);
         var expr = array.AsVectorizedEnumerable().Skip(skipCount);
-        var result = expr.Evaluate(_context);
+        var result = expr.Evaluate(Context);
         var hostResult = ToHostArray(result);
         Assert.Equal(expectedSkip.Length, hostResult.Length);
         for(int i=0; i<expectedSkip.Length; i++) Assert.Equal(expectedSkip[i], hostResult[i]);
@@ -44,7 +44,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var array = CreateArray(new BigInteger[] { 10, 20, 30, 40, 50, 60 });
         // Skip 2 (30, 40, 50, 60) -> Take 2 (30, 40)
         var expr = array.AsVectorizedEnumerable().Skip(2).Take(2);
-        var result = expr.Evaluate(_context);
+        var result = expr.Evaluate(Context);
         var hostResult = ToHostArray(result);
         Assert.Equal(2, hostResult.Length);
         Assert.Equal(30, hostResult[0]);
@@ -65,10 +65,10 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var difference = e.Skip(1).ZipSubtract(e.Take(3));
         using var greater = e.Skip(1).IsGreaterThan(e.Take(3));
 
-        var differences = ToHostArray(difference.Evaluate(_context));
-        var flags = greater.Evaluate(_context);
+        var differences = ToHostArray(difference.Evaluate(Context));
+        var flags = greater.Evaluate(Context);
         var flagsHost = new uint[3];
-        _context.Provider.CopyDeviceToHost(flagsHost, flags.DevicePointer, 3);
+        Context.Provider.CopyDeviceToHost(flagsHost, flags.DevicePointer, 3);
 
         BigInteger[] expected = [3, 6, 12];
         uint[] expectedFlags = [1, 1, 1];
@@ -91,7 +91,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         var e = array.AsVectorizedEnumerable().SelectMultiply(scalar);
         using var selected = e.Skip(1).Where(e.Take(3).IsGreaterThan(five));
 
-        var values = ToHostArray(selected.Evaluate(_context));
+        var values = ToHostArray(selected.Evaluate(Context));
 
         BigInteger[] expected = [12, 24];
         Assert.Equal(expected, values);
@@ -107,7 +107,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         var e = array.AsVectorizedEnumerable().SelectMultiply(scalar);
         using var square = e.ZipMultiply(e);
 
-        var squares = ToHostArray(square.Evaluate(_context));
+        var squares = ToHostArray(square.Evaluate(Context));
 
         BigInteger[] expected = [9, 36, 144];
         Assert.Equal(expected, squares);

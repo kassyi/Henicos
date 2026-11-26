@@ -12,21 +12,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Algorithms;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public sealed class HypergeometricTermsMergeTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public HypergeometricTermsMergeTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     public static TheoryData<int, int, int> Widths() => MergeCases.Widths();
 
@@ -38,7 +34,7 @@ public sealed class HypergeometricTermsMergeTests : IDisposable
         // which the two-word result lost
         // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Algorithms/HypergeometricTerms.cs
         // `BigIntWidths.Add(...)` -> `Math.Max(...)` (T as wide as the wider product)
-        MergeCases.Check(_workspace,
+        MergeCases.Check(Workspace,
             new MergeInput(uint.MaxValue, 1, uint.MaxValue, 1, 1, 1),
             new MergeInput(1, uint.MaxValue, uint.MaxValue, 1, 1, 1));
     }
@@ -47,11 +43,11 @@ public sealed class HypergeometricTermsMergeTests : IDisposable
     [MemberData(nameof(Widths))]
     [Scenario(TestScenario.Boundary)]
     public void Merge_MatchesTheOracle_ForEverySign(int pWords, int qWords, int tWords) =>
-        MergeCases.EverySign(_workspace, pWords, qWords, tWords);
+        MergeCases.EverySign(Workspace, pWords, qWords, tWords);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void CancellingProducts_GiveAPositiveZero() => MergeCases.Cancelling(_workspace);
+    public void CancellingProducts_GiveAPositiveZero() => MergeCases.Cancelling(Workspace);
 }
 
 /// <summary><see cref="HypergeometricTerms.Merge"/> on the CPU fallback.</summary>

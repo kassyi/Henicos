@@ -4,21 +4,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 [TestTarget(ExecutionTarget.CpuExecution)]
 public class GpuRadixConverterTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _context;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public GpuRadixConverterTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1024, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _context.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Context => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
@@ -26,10 +22,10 @@ public class GpuRadixConverterTests : IDisposable
     {
         CudaCapability.EnsureGpuAvailable();
 
-        using var value = new GpuBigUInt(_context, new uint[] { 12345 });
+        using var value = new GpuBigUInt(Context, new uint[] { 12345 });
         using var sw = new StringWriter();
 
-        GpuRadixConverter.ConvertAndWrite(_context, value, 5, sw, true);
+        GpuRadixConverter.ConvertAndWrite(Context, value, 5, sw, true);
         
         var output = sw.ToString();
         Assert.Equal("1.2345", output);
@@ -40,11 +36,11 @@ public class GpuRadixConverterTests : IDisposable
     {
         CudaCapability.EnsureGpuAvailable();
 
-        using var value = new GpuBigUInt(_context, new uint[] { 1 });
+        using var value = new GpuBigUInt(Context, new uint[] { 1 });
         using var sw = new StringWriter();
 
         // 10001 digits, which forces the GPU Divide & Conquer loop
-        GpuRadixConverter.ConvertAndWrite(_context, value, 10001, sw, false);
+        GpuRadixConverter.ConvertAndWrite(Context, value, 10001, sw, false);
         
         var output = sw.ToString();
         Assert.Equal(10001, output.Length);
@@ -59,7 +55,7 @@ public class GpuRadixConverterTests : IDisposable
     [Scenario(TestScenario.SadPath)]
     public void ConvertAndWrite_InvalidArguments_Throw()
     {
-        using var value = new GpuBigUInt(_context, new uint[] { 12345 });
+        using var value = new GpuBigUInt(Context, new uint[] { 12345 });
         using var sw = new StringWriter();
 
         // A 5-digit value takes the leaf path, which never uses the workspace, so only the argument check rejects null.
@@ -69,13 +65,13 @@ public class GpuRadixConverterTests : IDisposable
 
         // mutant: GpuRadixConverter.cs:66 `ArgumentNullException.ThrowIfNull(writer)` removed (the leaf throws a
         //         NullReferenceException)
-        var writerError = Assert.Throws<ArgumentNullException>(() => GpuRadixConverter.ConvertAndWrite(_context, value, 5, null));
+        var writerError = Assert.Throws<ArgumentNullException>(() => GpuRadixConverter.ConvertAndWrite(Context, value, 5, null));
         Assert.Equal("writer", writerError.ParamName);
 
         // At least one digit is written.
         // mutant: GpuRadixConverter.cs:67 `ArgumentOutOfRangeException.ThrowIfNegativeOrZero(targetDigits)` removed
-        Assert.Throws<ArgumentOutOfRangeException>(() => GpuRadixConverter.ConvertAndWrite(_context, value, 0, sw));
-        Assert.Throws<ArgumentOutOfRangeException>(() => GpuRadixConverter.ConvertAndWrite(_context, value, -1, sw));
+        Assert.Throws<ArgumentOutOfRangeException>(() => GpuRadixConverter.ConvertAndWrite(Context, value, 0, sw));
+        Assert.Throws<ArgumentOutOfRangeException>(() => GpuRadixConverter.ConvertAndWrite(Context, value, -1, sw));
         Assert.Equal(string.Empty, sw.ToString());
     }
 
@@ -89,10 +85,10 @@ public class GpuRadixConverterTests : IDisposable
         // The caller keeps the value: after the conversion it still holds the same number (a freed buffer is zeroed
         // and returned to the pool). 5 digits is a leaf; 10001 digits splits on the GPU first.
         // mutant: GpuRadixConverter.cs:78 `OwnsValue = false` -> `OwnsValue = true`
-        using var value = new GpuBigUInt(_context, new uint[] { word });
+        using var value = new GpuBigUInt(Context, new uint[] { word });
         using var sw = new StringWriter();
 
-        GpuRadixConverter.ConvertAndWrite(_context, value, targetDigits, sw);
+        GpuRadixConverter.ConvertAndWrite(Context, value, targetDigits, sw);
 
         Assert.Equal(new BigInteger(word), value.ToBigInteger());
     }
@@ -129,10 +125,10 @@ public class GpuRadixConverterTests : IDisposable
         bool isMostSignificant)
     {
         var expected = BigInteger.Parse(decimalValue);
-        using var value = GpuBigUInt.FromBigInteger(_context, expected);
+        using var value = GpuBigUInt.FromBigInteger(Context, expected);
         using var sw = new StringWriter();
 
-        GpuRadixConverter.ConvertAndWrite(_context, value, targetDigits, sw, isMostSignificant);
+        GpuRadixConverter.ConvertAndWrite(Context, value, targetDigits, sw, isMostSignificant);
 
         Assert.Equal(FixedPointText(expected, targetDigits, isMostSignificant), sw.ToString());
     }
@@ -155,10 +151,10 @@ public class GpuRadixConverterTests : IDisposable
         }
 
         var expected = BigInteger.Parse(new string(digits));
-        using var value = GpuBigUInt.FromBigInteger(_context, expected);
+        using var value = GpuBigUInt.FromBigInteger(Context, expected);
         using var sw = new StringWriter();
 
-        GpuRadixConverter.ConvertAndWrite(_context, value, TargetDigits, sw, isMostSignificant: true);
+        GpuRadixConverter.ConvertAndWrite(Context, value, TargetDigits, sw, isMostSignificant: true);
 
         var text = sw.ToString();
         Assert.Equal(FixedPointText(expected, TargetDigits, true), text);
@@ -182,10 +178,10 @@ public class GpuRadixConverterTests : IDisposable
     [InlineData(3u, 2, "0.3")]
     public void ConvertAndWrite_MostSignificant_WritesTheDocumentedText(uint word, int targetDigits, string expected)
     {
-        using var value = new GpuBigUInt(_context, new uint[] { word });
+        using var value = new GpuBigUInt(Context, new uint[] { word });
         using var sw = new StringWriter();
 
-        GpuRadixConverter.ConvertAndWrite(_context, value, targetDigits, sw, isMostSignificant: true);
+        GpuRadixConverter.ConvertAndWrite(Context, value, targetDigits, sw, isMostSignificant: true);
 
         Assert.Equal(expected, sw.ToString());
     }
@@ -228,10 +224,10 @@ public class GpuRadixConverterTests : IDisposable
         // Witness: the top word is partial.
         Assert.InRange((int)(expected.GetBitLength() % 32), 1, 31);
 
-        using var value = GpuBigUInt.FromBigInteger(_context, expected);
+        using var value = GpuBigUInt.FromBigInteger(Context, expected);
         using var sw = new StringWriter();
 
-        GpuRadixConverter.ConvertAndWrite(_context, value, Digits, sw, isMostSignificant);
+        GpuRadixConverter.ConvertAndWrite(Context, value, Digits, sw, isMostSignificant);
 
         var text = expected.ToString();
         Assert.Equal(isMostSignificant ? text[..1] + "." + text[1..] : text, sw.ToString());

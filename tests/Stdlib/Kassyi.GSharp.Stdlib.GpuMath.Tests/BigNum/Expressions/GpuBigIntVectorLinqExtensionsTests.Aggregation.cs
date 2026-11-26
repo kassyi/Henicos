@@ -31,7 +31,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     {
         using var array = CreateArray(input);
         var sumExpr = array.AsVectorizedEnumerable().Sum();
-        using var result = sumExpr.Evaluate(_context);
+        using var result = sumExpr.Evaluate(Context);
         Assert.Equal(expectedSum, ToBigInt(result));
     }
 
@@ -42,7 +42,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     {
         using var array = CreateArray(input);
         var maxExpr = array.AsVectorizedEnumerable().Max();
-        using var result = maxExpr.Evaluate(_context);
+        using var result = maxExpr.Evaluate(Context);
         Assert.Equal(expectedMax, ToBigInt(result));
     }
 
@@ -53,7 +53,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     {
         using var array = CreateArray(input);
         var minExpr = array.AsVectorizedEnumerable().Min();
-        using var result = minExpr.Evaluate(_context);
+        using var result = minExpr.Evaluate(Context);
         Assert.Equal(expectedMin, ToBigInt(result));
     }
 
@@ -64,7 +64,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     {
         using var array = CreateArray(input);
         var countExpr = array.AsVectorizedEnumerable().Count();
-        using var result = countExpr.Evaluate(_context);
+        using var result = countExpr.Evaluate(Context);
         Assert.Equal(expectedCount, (int)ToBigInt(result));
     }
 
@@ -129,7 +129,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     {
         try
         {
-            using var result = expr.Evaluate(_context);
+            using var result = expr.Evaluate(Context);
             return ToBigInt(result);
         }
         finally
@@ -155,7 +155,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     {
         try
         {
-            using var result = expr.Evaluate(_context);
+            using var result = expr.Evaluate(Context);
             Assert.True(expected == ToBigInt(result), $"{what}: expected {expected}, actual {ToBigInt(result)}");
             Assert.True(expected.Sign < 0 == result.IsNegative, $"{what}: IsNegative is {result.IsNegative}");
         }
@@ -212,8 +212,8 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         Assert.Equal(values.Aggregate(BigInteger.Zero, static (acc, v) => acc + v.Value), whole);
 
         // P4: Max(v) == -Min(v * -1).
-        using var minusOneMagnitude = new GpuBigUInt(_context, [1u]);
-        var minusOne = new GpuBigInt(minusOneMagnitude, isNegative: true);
+        using var minusOneMagnitude = new GpuBigUInt(Context, [1u]);
+        using var minusOne = new GpuBigInt(minusOneMagnitude.AsBorrowed(), isNegative: true);
         var max = EvaluateReduction(array.AsVectorizedEnumerable().Max());
         var minOfNegated = EvaluateReduction(array.AsVectorizedEnumerable().SelectMultiply(minusOne).Min());
         Assert.Equal(max, -minOfNegated);
@@ -245,7 +245,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         {
             // The destination has the width of the result (Sum of two elements: one word more)
             var words = expr.Node.NumWords;
-            using var destination = new GpuBigUInt(_context, Enumerable.Repeat(0xFFFFFFFFu, words).ToArray());
+            using var destination = new GpuBigUInt(Context, Enumerable.Repeat(0xFFFFFFFFu, words).ToArray());
 
             var result = expr.Evaluate(destination);
 
@@ -314,11 +314,11 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var array = CreateSignedArray([SignedElement.From(AllOnes(8)), 1], 8);
         using var bound = CreateScalar(AllOnes(8));
         var v = array.AsVectorizedEnumerable();
-        using var destination = new GpuBigUInt(_context, 8);
+        using var destination = new GpuBigUInt(Context, 8);
 
         Assert.Throws<InvalidOperationException>(() => v.Where(v.IsGreaterThan(bound)).Max().Evaluate(destination));
 
-        using var next = new GpuBigUInt(_context, 8);
+        using var next = new GpuBigUInt(Context, 8);
         Assert.NotEqual(destination.DevicePointer, next.DevicePointer);
     }
 
@@ -337,14 +337,14 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         var v = array.AsVectorizedEnumerable();
         using var max = v.Where(v.IsGreaterThan(bound)).Max();
         IntPtr released;
-        using (var probe = new GpuBigUInt(_context, 8))
+        using (var probe = new GpuBigUInt(Context, 8))
         {
             released = probe.DevicePointer;
         }
 
-        Assert.Throws<InvalidOperationException>(() => max.Evaluate(_context));
+        Assert.Throws<InvalidOperationException>(() => max.Evaluate(Context));
 
-        using var next = new GpuBigUInt(_context, 8);
+        using var next = new GpuBigUInt(Context, 8);
         Assert.Equal(released, next.DevicePointer);
     }
 
@@ -357,7 +357,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     {
         using var array = CreateArray([1, 2]);
         uint[] filled = [.. Enumerable.Repeat(0xDEADBEEFu, destinationWords)];
-        using var destination = new GpuBigUInt(_context, filled);
+        using var destination = new GpuBigUInt(Context, filled);
 
         // Sum of two 8-word elements has 9 words, Max 8: a narrower destination is rejected and not touched
         // mutant: VectorReductionExpressions.cs ThrowIfCannotEvaluate `target.NumWords < NumWords` -> `false`
@@ -381,7 +381,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             ("Max", array.AsVectorizedEnumerable().Max(), (BigInteger)(-5))
         })
         {
-            using var destination = new GpuBigUInt(_context, [.. Enumerable.Repeat(0xDEADBEEFu, 6)]);
+            using var destination = new GpuBigUInt(Context, [.. Enumerable.Repeat(0xDEADBEEFu, 6)]);
             var result = expr.Evaluate(destination);
             Assert.True(expected.Sign < 0 == result.IsNegative, name);
             Assert.True(result.Value.NumWords == 6, name);
@@ -443,18 +443,18 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         Assert.IsType<InvalidOperationException>(expectedMax);
         Assert.IsType<InvalidOperationException>(expectedMin);
 
-        using var empty = new GpuBigIntArray(_context, 0, numWords);
+        using var empty = new GpuBigIntArray(Context, 0, numWords);
 
-        var max = Assert.Throws<InvalidOperationException>(() => empty.AsVectorizedEnumerable().Max().Evaluate(_context));
-        var min = Assert.Throws<InvalidOperationException>(() => empty.AsVectorizedEnumerable().Min().Evaluate(_context));
+        var max = Assert.Throws<InvalidOperationException>(() => empty.AsVectorizedEnumerable().Max().Evaluate(Context));
+        var min = Assert.Throws<InvalidOperationException>(() => empty.AsVectorizedEnumerable().Min().Evaluate(Context));
         Assert.Equal(expectedMax.Message, max.Message);
         Assert.Equal(expectedMin.Message, min.Message);
 
-        using var sum = empty.AsVectorizedEnumerable().Sum().Evaluate(_context);
+        using var sum = empty.AsVectorizedEnumerable().Sum().Evaluate(Context);
         Assert.Equal(reference.Aggregate(BigInteger.Zero, BigInteger.Add), ToBigInt(sum));
         Assert.False(sum.IsNegative);
 
-        using var count = empty.AsVectorizedEnumerable().Count().Evaluate(_context);
+        using var count = empty.AsVectorizedEnumerable().Count().Evaluate(Context);
         Assert.Equal(new BigInteger(reference.Length), ToBigInt(count));
     }
 
@@ -466,9 +466,9 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         // An empty Max / Min throws before anything is launched, so the destination keeps what the caller put there.
         // mutant: VectorReductionExpressions.cs `if (_passes.Count == 0 && EmptyIsError)` -> `if (_passes.Count < 0 && EmptyIsError)`
         // input: this test (the finalize kernel clears the destination before the header check throws)
-        using var empty = new GpuBigIntArray(_context, 0, 8);
+        using var empty = new GpuBigIntArray(Context, 0, 8);
         var filled = Enumerable.Repeat(0xFFFFFFFFu, 8).ToArray();
-        using var destination = new GpuBigUInt(_context, filled);
+        using var destination = new GpuBigUInt(Context, filled);
 
         Assert.Throws<InvalidOperationException>(() => empty.AsVectorizedEnumerable().Max().Evaluate(destination));
         Assert.Equal(filled, destination.ToHostArray());
@@ -491,13 +491,13 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         // input: none alone, the empty SelectAdd now launches nothing; with the first mutant as well, Sum fails
         SignedElement[] values = [3, -4, 5];
         using var array = CreateSignedArray(values, numWords);
-        using var oneMagnitude = new GpuBigUInt(_context, [1u]);
+        using var oneMagnitude = new GpuBigUInt(Context, [1u]);
         var one = new GpuBigInt(oneMagnitude, isNegative: false);
         var reference = values.Skip(values.Length).Select(static v => v.Value + 1).ToArray();
 
         using (var direct = array.AsVectorizedEnumerable().Skip(values.Length).SelectAdd(one))
         {
-            Assert.Equal(0, direct.Evaluate(_context).Length);
+            Assert.Equal(0, direct.Evaluate(Context).Length);
         }
 
         AssertReduction(
@@ -520,8 +520,8 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         // value wraps it.
         // mutant: GpuBigIntVectorKernels.Reductions.cu.cs finalize, count 0 `ctx.Destination[idx] = 0u;` -> `ctx.Destination[idx] = ctx.Destination[idx];`
         // input: this test (the destination keeps 0xFFFFFFFF)
-        using var empty = new GpuBigIntArray(_context, 0, 8);
-        using var destination = new GpuBigUInt(_context, Enumerable.Repeat(0xFFFFFFFFu, 8).ToArray());
+        using var empty = new GpuBigIntArray(Context, 0, 8);
+        using var destination = new GpuBigUInt(Context, Enumerable.Repeat(0xFFFFFFFFu, 8).ToArray());
 
         var result = empty.AsVectorizedEnumerable().Sum().Evaluate(destination);
 

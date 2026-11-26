@@ -4,22 +4,19 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public class UnsignedExpressionsTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _context;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public UnsignedExpressionsTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _context = new GpuWorkspace(1024 * 1024, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1024 * 1024, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _context.Dispose();
-        _scope.Dispose();
-    }
-    private static GpuBigUInt Create(GpuWorkspace _context, BigInteger val, int numWords)
+    private GpuWorkspace Context => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
+
+    private static GpuBigUInt Create(GpuWorkspace context, BigInteger val, int numWords)
     {
         val = BigInteger.Abs(val);
         var bytes = val.ToByteArray(isUnsigned: true, isBigEndian: false);
@@ -28,7 +25,7 @@ public class UnsignedExpressionsTests : IDisposable
         
         var hostData = new uint[numWords];
         buffer.CopyTo(hostData, 0);
-        return new GpuBigUInt(_context, hostData);
+        return new GpuBigUInt(context, hostData);
     }
 
     private static BigInteger ToBigInt(GpuBigUInt gpuVal)
@@ -43,11 +40,11 @@ public class UnsignedExpressionsTests : IDisposable
         
         
 
-        using var gpuA = Create(_context, a, 1);
-        using var gpuB = Create(_context, b, 1);
+        using var gpuA = Create(Context, a, 1);
+        using var gpuB = Create(Context, b, 1);
 
         var expr = gpuA + gpuB;
-        using var gpuRes = expr.Node.Evaluate(_context);
+        using var gpuRes = expr.Node.Evaluate(Context);
         
         var res = ToBigInt(gpuRes);
         Assert.Equal(new BigInteger(a + b), res);
@@ -61,11 +58,11 @@ public class UnsignedExpressionsTests : IDisposable
         
         
 
-        using var gpuA = Create(_context, a, 1);
-        using var gpuB = Create(_context, b, 1);
+        using var gpuA = Create(Context, a, 1);
+        using var gpuB = Create(Context, b, 1);
 
         var expr = gpuA - gpuB;
-        using var gpuRes = expr.Node.Evaluate(_context);
+        using var gpuRes = expr.Node.Evaluate(Context);
         
         var res = ToBigInt(gpuRes);
         Assert.Equal(new BigInteger(a - b), res);
@@ -79,11 +76,11 @@ public class UnsignedExpressionsTests : IDisposable
         
         
 
-        using var gpuA = Create(_context, a, 1);
-        using var gpuB = Create(_context, b, 1);
+        using var gpuA = Create(Context, a, 1);
+        using var gpuB = Create(Context, b, 1);
 
         var expr = gpuA * gpuB;
-        using var gpuRes = expr.Node.Evaluate(_context);
+        using var gpuRes = expr.Node.Evaluate(Context);
         
         var res = ToBigInt(gpuRes);
         Assert.Equal(new BigInteger(a * b), res);
@@ -97,11 +94,11 @@ public class UnsignedExpressionsTests : IDisposable
         
         
 
-        using var gpuA = Create(_context, a, 1);
-        using var gpuB = Create(_context, b, 1);
+        using var gpuA = Create(Context, a, 1);
+        using var gpuB = Create(Context, b, 1);
 
         var expr = gpuA / gpuB;
-        using var gpuRes = expr.Node.Evaluate(_context);
+        using var gpuRes = expr.Node.Evaluate(Context);
         
         var res = ToBigInt(gpuRes);
         Assert.Equal(new BigInteger(a / b), res);
@@ -115,11 +112,11 @@ public class UnsignedExpressionsTests : IDisposable
         
         
 
-        using var gpuA = Create(_context, a, 1);
-        using var gpuB = Create(_context, b, 1);
+        using var gpuA = Create(Context, a, 1);
+        using var gpuB = Create(Context, b, 1);
 
         var expr = gpuA % gpuB;
-        using var gpuRes = expr.Node.Evaluate(_context);
+        using var gpuRes = expr.Node.Evaluate(Context);
         
         var res = ToBigInt(gpuRes);
         Assert.Equal(new BigInteger(a % b), res);
@@ -133,11 +130,11 @@ public class UnsignedExpressionsTests : IDisposable
         
         
 
-        using var gpuA = Create(_context, a, 1);
-        using var gpuB = Create(_context, b, 1);
+        using var gpuA = Create(Context, a, 1);
+        using var gpuB = Create(Context, b, 1);
 
         var expr = gpuA & gpuB;
-        using var gpuRes = expr.Node.Evaluate(_context);
+        using var gpuRes = expr.Node.Evaluate(Context);
         
         var res = ToBigInt(gpuRes);
         Assert.Equal(new BigInteger(a & b), res);
@@ -151,11 +148,11 @@ public class UnsignedExpressionsTests : IDisposable
         
         
 
-        using var gpuA = Create(_context, a, 1);
-        using var gpuB = Create(_context, b, 1);
+        using var gpuA = Create(Context, a, 1);
+        using var gpuB = Create(Context, b, 1);
 
         var expr = gpuA | gpuB;
-        using var gpuRes = expr.Node.Evaluate(_context);
+        using var gpuRes = expr.Node.Evaluate(Context);
         
         var res = ToBigInt(gpuRes);
         Assert.Equal(new BigInteger(a | b), res);
@@ -169,11 +166,11 @@ public class UnsignedExpressionsTests : IDisposable
         
         
 
-        using var gpuA = Create(_context, a, 1);
-        using var gpuB = Create(_context, b, 1);
+        using var gpuA = Create(Context, a, 1);
+        using var gpuB = Create(Context, b, 1);
 
         var expr = gpuA ^ gpuB;
-        using var gpuRes = expr.Node.Evaluate(_context);
+        using var gpuRes = expr.Node.Evaluate(Context);
         
         var res = ToBigInt(gpuRes);
         Assert.Equal(new BigInteger(a ^ b), res);
@@ -186,10 +183,10 @@ public class UnsignedExpressionsTests : IDisposable
         
         
 
-        using var gpuA = Create(_context, a, 1);
+        using var gpuA = Create(Context, a, 1);
 
         var expr = gpuA << shift;
-        using var gpuRes = expr.Node.Evaluate(_context);
+        using var gpuRes = expr.Node.Evaluate(Context);
         
         var res = ToBigInt(gpuRes);
         Assert.Equal(new BigInteger(a << shift), res);
@@ -202,10 +199,10 @@ public class UnsignedExpressionsTests : IDisposable
         
         
 
-        using var gpuA = Create(_context, a, 1);
+        using var gpuA = Create(Context, a, 1);
 
         var expr = gpuA >> shift;
-        using var gpuRes = expr.Node.Evaluate(_context);
+        using var gpuRes = expr.Node.Evaluate(Context);
         
         var res = ToBigInt(gpuRes);
         Assert.Equal(new BigInteger(a >> shift), res);
@@ -215,9 +212,9 @@ public class UnsignedExpressionsTests : IDisposable
     [InlineData(0xFF)]
     public void BitwiseNot_Tests(long a)
     {
-        using var gpuA = Create(_context, a, 1);
+        using var gpuA = Create(Context, a, 1);
         var expr = ~gpuA;
-        using var gpuRes = expr.Node.Evaluate(_context);
+        using var gpuRes = expr.Node.Evaluate(Context);
         
         var res = ToBigInt(gpuRes);
         var expected = new BigInteger(~(uint)a); // since it's 1 word (uint)
@@ -230,9 +227,9 @@ public class UnsignedExpressionsTests : IDisposable
     [InlineData(0, 0)]
     public void Sqrt_Tests(long a, long expectedSqrt)
     {
-        using var gpuA = Create(_context, a, 1);
+        using var gpuA = Create(Context, a, 1);
         var expr = GpuBigUIntExpr.Sqrt(gpuA);
-        using var gpuRes = expr.Node.Evaluate(_context);
+        using var gpuRes = expr.Node.Evaluate(Context);
         
         var res = ToBigInt(gpuRes);
         Assert.Equal(new BigInteger(expectedSqrt), res);
@@ -255,9 +252,9 @@ public class UnsignedExpressionsTests : IDisposable
         // (Add, Mul, Not, ShiftLeft write 4 words through the 1-word target; Leaf truncates)
         // mutant: the check `<` -> `<=` (every equal-width target in this class throws)
         const uint Guard = 0xDEAD_BEEFu;
-        using var a = Create(_context, 1, 4);
-        using var b = Create(_context, 2, 4);
-        using var guardBuffer = new GpuBigUInt(_context, Enumerable.Repeat(Guard, 9).ToArray());
+        using var a = Create(Context, 1, 4);
+        using var b = Create(Context, 2, 4);
+        using var guardBuffer = new GpuBigUInt(Context, Enumerable.Repeat(Guard, 9).ToArray());
         GpuBigUIntView whole = guardBuffer;
         var target = whole.Slice(0, 1).AsBorrowedBigUInt();
         GpuBigUIntExpr ea = a;
@@ -272,7 +269,7 @@ public class UnsignedExpressionsTests : IDisposable
             _ => throw new ArgumentOutOfRangeException(nameof(root), root, "Unknown root."),
         };
 
-        var error = Assert.Throws<ArgumentException>(() => expression.Node.Evaluate(_context, target));
+        var error = Assert.Throws<ArgumentException>(() => expression.Node.Evaluate(Context, target));
 
         Assert.Equal("targetResult", error.ParamName);
         Assert.Equal(Enumerable.Repeat(Guard, 9).ToArray(), guardBuffer.ToHostArray());
@@ -285,11 +282,11 @@ public class UnsignedExpressionsTests : IDisposable
     {
         // The same width as the expression is accepted (the check rejects only a narrower target). A sum of 4-word
         // operands has 4 words + 1 bit, so 5 words.
-        using var a = Create(_context, 1, 4);
-        using var b = Create(_context, 2, 4);
-        using var target = new GpuBigUInt(_context, 5);
+        using var a = Create(Context, 1, 4);
+        using var b = Create(Context, 2, 4);
+        using var target = new GpuBigUInt(Context, 5);
 
-        ((GpuBigUIntExpr)a + b).Node.Evaluate(_context, target);
+        ((GpuBigUIntExpr)a + b).Node.Evaluate(Context, target);
 
         Assert.Equal(new BigInteger(3), target.ToBigInteger());
     }
@@ -308,9 +305,9 @@ public class UnsignedExpressionsTests : IDisposable
         // mutant: BigIntExpressionVisitor.GetResultBuffer width check removed
         //   (4 words written through the 1-word target)
         const uint Guard = 0xDEAD_BEEFu;
-        using var a = Create(_context, 1, 4);
-        using var b = Create(_context, 2, 4);
-        using var guardBuffer = new GpuBigUInt(_context, Enumerable.Repeat(Guard, 9).ToArray());
+        using var a = Create(Context, 1, 4);
+        using var b = Create(Context, 2, 4);
+        using var guardBuffer = new GpuBigUInt(Context, Enumerable.Repeat(Guard, 9).ToArray());
         GpuBigUIntView whole = guardBuffer;
         var target = whole.Slice(0, 1).AsBorrowedBigUInt();
         GpuBigUIntExpr ea = a;
@@ -332,7 +329,7 @@ public class UnsignedExpressionsTests : IDisposable
 
     private void EvaluateThroughVisitor(GpuBigUIntExpr expression, GpuBigUInt target)
     {
-        var context = GpuWorkspaceArithmetic.CreateContext(_context);
+        var context = GpuWorkspaceArithmetic.CreateContext(Context);
         var visitor = new BigIntExpressionVisitor(context, new ScopedBigIntMemory(target.Handle.Borrow()));
         using var result = expression.Node.Accept(ref visitor);
     }

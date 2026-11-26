@@ -55,7 +55,7 @@ public sealed class GpuWorkspaceReleaseTests : IDisposable
     {
         // A buffer still live when the workspace is disposed goes back to the driver as well.
         // mutant: GpuWorkspace.DisposeEngineResources: the cuStreamSynchronize before cuStreamDestroy removed
-        AssertDisposeReturnsMemory(static workspace => _ = new GpuBigUInt(workspace, LargeWords));
+        AssertDisposeReturnsMemory(static workspace => new GpuBigUInt(workspace, LargeWords));
     }
 
     [SkippableFact]
@@ -76,7 +76,14 @@ public sealed class GpuWorkspaceReleaseTests : IDisposable
         });
     }
 
-    private static void AssertDisposeReturnsMemory(Action<GpuWorkspace> use)
+    private static void AssertDisposeReturnsMemory(Action<GpuWorkspace> use) =>
+        AssertDisposeReturnsMemory(workspace =>
+        {
+            use(workspace);
+            return null;
+        });
+
+    private static void AssertDisposeReturnsMemory(Func<GpuWorkspace, IDisposable?> use)
     {
         // A first workspace outside the measurement loads the kernel modules and anything else created once per
         // process, so that only the memory of the measured workspaces is compared.
@@ -107,11 +114,11 @@ public sealed class GpuWorkspaceReleaseTests : IDisposable
     }
 
     private static (GpuMemoryStatistics BeforeUse, GpuMemoryStatistics AfterUse, GpuMemoryStatistics AfterDispose)
-        RunWorkspace(Action<GpuWorkspace> use)
+        RunWorkspace(Func<GpuWorkspace, IDisposable?> use)
     {
         var workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
         var beforeUse = workspace.GetMemoryStatistics();
-        use(workspace);
+        using var held = use(workspace);
         var afterUse = workspace.GetMemoryStatistics();
         workspace.Dispose();
         return (beforeUse, afterUse, workspace.GetMemoryStatistics());

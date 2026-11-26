@@ -7,21 +7,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public sealed class GpuBigIntMathTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public GpuBigIntMathTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(4096, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     /// <summary>
     /// Operation name and the word counts of (left, right, result): a result one word narrower than the minimum of the
@@ -60,9 +56,9 @@ public sealed class GpuBigIntMathTests : IDisposable
     {
         // A result narrower than the minimum is rejected on the host instead of running the kernel past a buffer.
         // mutant: GpuBigIntMath.cs ThrowIfResultNarrower `<` -> `<=` (every row but BitwiseNot fails to throw)
-        using var left = new GpuBigUInt(_workspace, Words(leftWords, 7u));
-        using var right = new GpuBigUInt(_workspace, Words(Math.Max(rightWords, 1), 3u));
-        using var result = new GpuBigUInt(_workspace, Math.Max(resultWords, 1));
+        using var left = new GpuBigUInt(Workspace, Words(leftWords, 7u));
+        using var right = new GpuBigUInt(Workspace, Words(Math.Max(rightWords, 1), 3u));
+        using var result = new GpuBigUInt(Workspace, Math.Max(resultWords, 1));
 
         Action call = operation switch
         {
@@ -101,9 +97,9 @@ public sealed class GpuBigIntMathTests : IDisposable
         // zero sum (equal magnitudes with opposite signs, -5 + 5) must return false.
         // mutant: BigIntWideOps.cs AddSigned `negated ? bNegative : aNegative` -> `aNegative` (3 + -5, -3 + 5)
         // mutant: BigIntWideOps.cs AddSigned `!isZero && (...)` -> `(...)` (-5 + 5)
-        using var left = new GpuBigUInt(_workspace, Words(2, (uint)Math.Abs(leftValue)));
-        using var right = new GpuBigUInt(_workspace, Words(2, (uint)Math.Abs(rightValue)));
-        using var result = new GpuBigUInt(_workspace, 2);
+        using var left = new GpuBigUInt(Workspace, Words(2, (uint)Math.Abs(leftValue)));
+        using var right = new GpuBigUInt(Workspace, Words(2, (uint)Math.Abs(rightValue)));
+        using var result = new GpuBigUInt(Workspace, 2);
 
         var negative = GpuBigIntMath.AddSignedMagnitude(left, leftValue < 0, right, rightValue < 0, result);
 
@@ -136,8 +132,8 @@ public sealed class GpuBigIntMathTests : IDisposable
         // range or more.
         // mutant: GpuBigIntMath.cs IsLessThanCore `< 0` -> `<= 0` (7 < 7)
         // mutant: GpuBigIntMath.cs IsLessThanCore back to the top bit of `Sub` (0x80000000 < 0, 0 < 0x80000001)
-        using var left = GpuBigUInt.FromBigInteger(_workspace, leftValue, words);
-        using var right = GpuBigUInt.FromBigInteger(_workspace, rightValue, words);
+        using var left = GpuBigUInt.FromBigInteger(Workspace, leftValue, words);
+        using var right = GpuBigUInt.FromBigInteger(Workspace, rightValue, words);
 
         Assert.Equal(leftValue < rightValue, GpuBigIntMath.IsLessThan(left, right));
     }
@@ -179,7 +175,7 @@ public sealed class GpuBigIntMathTests : IDisposable
         // mutant: GpuBigIntMath.cs:609 `return` removed (the host path shifts a second time)
         const int Words = 2048;
         var value = RandomValue(seed: 598, Words);
-        using var buffer = GpuBigUInt.FromBigInteger(_workspace, value, Words);
+        using var buffer = GpuBigUInt.FromBigInteger(Workspace, value, Words);
 
         GpuBigIntMath.ShiftAndResize(buffer, shift, buffer);
 
@@ -234,8 +230,8 @@ public sealed class GpuBigIntMathTests : IDisposable
     {
         // A zero source has no top bit: the result is cleared and the shift and bit count are 0.
         // mutant: GpuBigIntMath.cs:653 `ClearMemoryAsync(resultBuffer...)` removed
-        using var source = new GpuBigUInt(_workspace, 4);
-        using var result = new GpuBigUInt(_workspace, Enumerable.Repeat(uint.MaxValue, 6).ToArray());
+        using var source = new GpuBigUInt(Workspace, 4);
+        using var result = new GpuBigUInt(Workspace, Enumerable.Repeat(uint.MaxValue, 6).ToArray());
 
         var shift = GpuBigIntMath.NormalizeToMsb(source, result, out var actualBits);
 
@@ -252,7 +248,7 @@ public sealed class GpuBigIntMathTests : IDisposable
         // 10^e is exact and trimmed to the words its bit length needs.
         // mutant: GpuBigIntMath.cs:878 `(actualBits + 31) / 32` -> `(actualBits + 31) * 32`
         var expected = BigInteger.Pow(10, exponent);
-        using var power = GpuBigIntMath.Pow10(_workspace, exponent);
+        using var power = GpuBigIntMath.Pow10(Workspace, exponent);
 
         Assert.Equal((expected, (int)((expected.GetBitLength() + 31) / 32)), (power.ToBigInteger(), power.NumWords));
     }
@@ -265,10 +261,10 @@ public sealed class GpuBigIntMathTests : IDisposable
         // (under a second on an RTX 3070 Ti); the value is checked by its bit length (log2(10) * e, rounded up).
         // mutant: GpuBigIntMath.cs:814 `exponent > MaxPow10Exponent` -> `exponent >= MaxPow10Exponent`
         const int MaxExponent = 50_000_000;
-        Assert.Throws<ArgumentOutOfRangeException>(() => GpuBigIntMath.Pow10(_workspace, MaxExponent + 1));
-        Assert.Throws<ArgumentOutOfRangeException>(() => GpuBigIntMath.Pow10(_workspace, -1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => GpuBigIntMath.Pow10(Workspace, MaxExponent + 1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => GpuBigIntMath.Pow10(Workspace, -1));
 
-        using var power = GpuBigIntMath.Pow10(_workspace, MaxExponent);
+        using var power = GpuBigIntMath.Pow10(Workspace, MaxExponent);
 
         var expectedBits = (int)Math.Ceiling(MaxExponent * Math.Log2(10));
         Assert.Equal(expectedBits, power.GetBitLength());

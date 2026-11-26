@@ -266,8 +266,8 @@ public class GpuBigIntCoreComparisonTests
         // An 8-word buffer [v0, v1, garbage x 6]; `shortView` is a 2-word view of its start.
         using var backing = new GpuBigUInt(
             ctx, [5u, 7u, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu]);
-        // The view does not own the buffer (disposing it frees nothing), so it is not disposed.
-        var shortView = new GpuBigUInt(ctx, 2, backing.DevicePointer);
+        // The view does not own the buffer, so disposing it frees nothing.
+        using var shortView = new GpuBigUInt(ctx, 2, backing.DevicePointer);
         using var equal = new GpuBigUInt(ctx, [5u, 7u, 0u, 0u]);
         using var larger = new GpuBigUInt(ctx, [6u, 7u, 0u, 0u]);
 

@@ -13,22 +13,18 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public sealed class VectorCheckOrderTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
     private readonly List<string> _log = [];
 
     public VectorCheckOrderTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Expressions/FloatVectorCompareExpressions.cs
     // FloatVectorCompareVectorExpression.Enter -> no check (the kernel reads the shorter input past its end)
@@ -40,7 +36,7 @@ public sealed class VectorCheckOrderTests : IDisposable
         using var longer = FloatArray([1, 2, 3]);
         using var comparison = Leaf("left", shorter).IsLessThan(Leaf("right", longer));
 
-        Assert.Throws<ArgumentException>(() => comparison.Evaluate(_workspace));
+        Assert.Throws<ArgumentException>(() => comparison.Evaluate(Workspace));
         Assert.Empty(_log);
     }
 
@@ -54,7 +50,7 @@ public sealed class VectorCheckOrderTests : IDisposable
         using var longer = FloatArray([1, 2, 3]);
         using var difference = Leaf("left", longer).ZipSubtract(Leaf("right", shorter));
 
-        Assert.Throws<ArgumentException>(() => difference.Evaluate(_workspace));
+        Assert.Throws<ArgumentException>(() => difference.Evaluate(Workspace));
         Assert.Empty(_log);
     }
 
@@ -66,7 +62,7 @@ public sealed class VectorCheckOrderTests : IDisposable
         using var right = FloatArray([2, 4, 3]);
         using var comparison = Leaf("left", left).IsLessThan(Leaf("right", right));
 
-        var flags = ReadFlags(comparison.Evaluate(_workspace));
+        var flags = ReadFlags(comparison.Evaluate(Workspace));
 
         Assert.Equal(["left", "right"], _log);
         Assert.Equal([1u, 0u, 0u], flags);
@@ -82,7 +78,7 @@ public sealed class VectorCheckOrderTests : IDisposable
         using var longer = IntArray([1, 2, 3]);
         using var quotient = Leaf("left", longer).ZipDivide(Leaf("right", shorter));
 
-        Assert.Throws<ArgumentException>(() => quotient.Evaluate(_workspace));
+        Assert.Throws<ArgumentException>(() => quotient.Evaluate(Workspace));
         Assert.Empty(_log);
     }
 
@@ -94,7 +90,7 @@ public sealed class VectorCheckOrderTests : IDisposable
         using var divisors = IntArray([2, 3, 5]);
         using var quotient = Leaf("left", dividends).ZipDivide(Leaf("right", divisors));
 
-        var values = ReadInts(quotient.Evaluate(_workspace));
+        var values = ReadInts(quotient.Evaluate(Workspace));
 
         Assert.Equal(["left", "right"], _log);
         Assert.Equal([3u, 3u, 2u], values);
@@ -142,7 +138,7 @@ public sealed class VectorCheckOrderTests : IDisposable
         using var right = IntArray(Ones(rightLength));
         using var zipped = zip.Build(Leaf("left", left), Leaf("right", right));
 
-        Assert.Throws<ArgumentException>(() => zipped.Evaluate(_workspace));
+        Assert.Throws<ArgumentException>(() => zipped.Evaluate(Workspace));
         Assert.Empty(_log);
     }
 
@@ -186,7 +182,7 @@ public sealed class VectorCheckOrderTests : IDisposable
         {
             using var expr = shape.Build(name => Leaf(name, arrays[name]));
 
-            var error = Assert.Throws<ArgumentException>(() => expr.Evaluate(_workspace));
+            var error = Assert.Throws<ArgumentException>(() => expr.Evaluate(Workspace));
             Assert.Equal(VectorShape.ZipLengthsMessage, error.Message);
             Assert.Equal(shape.Evaluated, _log);
         }
@@ -215,7 +211,7 @@ public sealed class VectorCheckOrderTests : IDisposable
         using var rightArray = IntArray(right);
         using var zipped = zip.Build(Leaf("left", leftArray), Leaf("right", rightArray));
 
-        var values = ReadInts(zipped.Evaluate(_workspace));
+        var values = ReadInts(zipped.Evaluate(Workspace));
 
         Assert.Equal(["left", "right"], _log);
         Assert.Equal(left.Zip(right, zip.Oracle).ToArray(), values);
@@ -232,7 +228,7 @@ public sealed class VectorCheckOrderTests : IDisposable
         using var right = IntArray([1, 2, 3]);
         using var zipped = left.AsVectorizedEnumerable().ZipAdd(new ShortIntInput(right.AsVectorizedEnumerable()));
 
-        var error = Assert.Throws<ArgumentException>(() => zipped.Evaluate(_workspace));
+        var error = Assert.Throws<ArgumentException>(() => zipped.Evaluate(Workspace));
         Assert.Equal(VectorShape.ZipLengthsMessage, error.Message);
     }
 
@@ -246,7 +242,7 @@ public sealed class VectorCheckOrderTests : IDisposable
         using var right = FloatArray([1, 2, 3]);
         using var zipped = left.AsVectorizedEnumerable().ZipAdd(new ShortFloatInput(right.AsVectorizedEnumerable()));
 
-        var error = Assert.Throws<ArgumentException>(() => zipped.Evaluate(_workspace));
+        var error = Assert.Throws<ArgumentException>(() => zipped.Evaluate(Workspace));
         Assert.Equal(VectorShape.ZipLengthsMessage, error.Message);
     }
 
@@ -280,18 +276,18 @@ public sealed class VectorCheckOrderTests : IDisposable
 
     private GpuBigIntArray IntArray(uint[] values)
     {
-        var array = new GpuBigIntArray(_workspace, values.Length, 1);
-        _workspace.Provider.CopyHostToDevice(array.Values.DevicePointer, values, values.Length);
-        _workspace.Provider.CopyHostToDevice(array.Signs.DevicePointer, new uint[values.Length], values.Length);
+        var array = new GpuBigIntArray(Workspace, values.Length, 1);
+        Workspace.Provider.CopyHostToDevice(array.Values.DevicePointer, values, values.Length);
+        Workspace.Provider.CopyHostToDevice(array.Signs.DevicePointer, new uint[values.Length], values.Length);
         return array;
     }
 
     private GpuBigFloatArray FloatArray(long[] values)
     {
-        var array = new GpuBigFloatArray(_workspace, values.Length, 4);
+        var array = new GpuBigFloatArray(Workspace, values.Length, 4);
         for (var i = 0; i < values.Length; i++)
         {
-            using var element = GpuBigFloatTestHelpers.CreateFloat(_workspace, values[i]);
+            using var element = GpuBigFloatTestHelpers.CreateFloat(Workspace, values[i]);
             array.SetElement(i, element);
         }
 
@@ -302,7 +298,7 @@ public sealed class VectorCheckOrderTests : IDisposable
     private uint[] ReadInts(GpuBigIntArrayView view)
     {
         var words = new uint[view.Values.TotalWords];
-        _workspace.Provider.CopyDeviceToHost(words, view.Values.DevicePointer, words.Length);
+        Workspace.Provider.CopyDeviceToHost(words, view.Values.DevicePointer, words.Length);
         var stride = view.WordsPerElement;
         return Enumerable.Range(0, view.Length).Select(i => words[i * stride]).ToArray();
     }
@@ -310,7 +306,7 @@ public sealed class VectorCheckOrderTests : IDisposable
     private uint[] ReadFlags(GpuBigUIntArrayView view)
     {
         var flags = new uint[view.Length];
-        _workspace.Provider.CopyDeviceToHost(flags, view.DevicePointer, flags.Length);
+        Workspace.Provider.CopyDeviceToHost(flags, view.DevicePointer, flags.Length);
         return flags;
     }
 

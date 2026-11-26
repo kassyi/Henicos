@@ -3,25 +3,21 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
 public class CSharpCpuBigFloatArithmeticTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _context;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public CSharpCpuBigFloatArithmeticTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1024, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _context.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Context => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     private GpuBigIntExecutionContext CreateExecContext()
     {
-        return new GpuBigIntExecutionContext(_context, _context.MemoryManager, new LegacyProviderArithmeticAdapter(), _context.Stream);
+        return new GpuBigIntExecutionContext(Context, Context.MemoryManager, new LegacyProviderArithmeticAdapter(), Context.Stream);
     }
 
     private static double ToDouble(GpuBigUInt sig, GpuFloatResult res)
@@ -37,9 +33,9 @@ public class CSharpCpuBigFloatArithmeticTests : IDisposable
         var execContext = CreateExecContext();
         var arith = CSharpCpuBigFloatArithmetic.Instance;
 
-        using var aSig = new GpuBigUInt(_context, new uint[] { 4 });
-        using var bSig = new GpuBigUInt(_context, new uint[] { 2 });
-        using var resSig = new GpuBigUInt(_context, 4);
+        using var aSig = new GpuBigUInt(Context, new uint[] { 4 });
+        using var bSig = new GpuBigUInt(Context, new uint[] { 2 });
+        using var resSig = new GpuBigUInt(Context, 4);
 
         var aOp = new GpuFloatOperand(aSig.Handle, 0, false);
         var bOp = new GpuFloatOperand(bSig.Handle, 0, false);
@@ -68,8 +64,8 @@ public class CSharpCpuBigFloatArithmeticTests : IDisposable
         var execContext = CreateExecContext();
         var arith = CSharpCpuBigFloatArithmetic.Instance;
 
-        using var aSig = new GpuBigUInt(_context, new uint[] { 4 });
-        using var resSig = new GpuBigUInt(_context, 4);
+        using var aSig = new GpuBigUInt(Context, new uint[] { 4 });
+        using var resSig = new GpuBigUInt(Context, 4);
 
         var aOp = new GpuFloatOperand(aSig.Handle, 0, false);
         var resHandle = resSig.Handle;
@@ -97,9 +93,9 @@ public class CSharpCpuBigFloatArithmeticTests : IDisposable
         var execContext = CreateExecContext();
         var arith = CSharpCpuBigFloatArithmetic.Instance;
 
-        using var aSig = new GpuBigUInt(_context, new uint[] { 2 });
-        using var bSig = new GpuBigUInt(_context, new uint[] { 3 });
-        using var resSig = new GpuBigUInt(_context, 4);
+        using var aSig = new GpuBigUInt(Context, new uint[] { 2 });
+        using var bSig = new GpuBigUInt(Context, new uint[] { 3 });
+        using var resSig = new GpuBigUInt(Context, 4);
 
         var aOp = new GpuFloatOperand(aSig.Handle, 0, false);
         var bOp = new GpuFloatOperand(bSig.Handle, 0, false);
@@ -128,8 +124,8 @@ public class CSharpCpuBigFloatArithmeticTests : IDisposable
         var execContext = CreateExecContext();
         var arith = CSharpCpuBigFloatArithmetic.Instance;
 
-        using var aSig = new GpuBigUInt(_context, new uint[] { 10 });
-        using var resSig = new GpuBigUInt(_context, 4);
+        using var aSig = new GpuBigUInt(Context, new uint[] { 10 });
+        using var resSig = new GpuBigUInt(Context, 4);
 
         var aOp = new GpuFloatOperand(aSig.Handle, 0, false);
         var resHandle = resSig.Handle;

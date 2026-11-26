@@ -4,29 +4,25 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public class GpuBigIntegerTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _context;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public GpuBigIntegerTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1024, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _context.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Context => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void Construct_WithSignAndMagnitude_PreservesProperties()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var gpuBigInt = new GpuBigUInt(_context, 4);
-        var signed = new GpuBigInt(gpuBigInt, isNegative: true);
+        using var gpuBigInt = new GpuBigUInt(Context, 4);
+        using var signed = new GpuBigInt(gpuBigInt.AsBorrowed(), isNegative: true);
 
         Assert.True(signed.IsNegative);
         Assert.Equal(gpuBigInt, signed.Value);
@@ -55,7 +51,7 @@ public class GpuBigIntegerTests : IDisposable
     }
 
     private GpuBigInt CreateSigned(BigInteger value, bool negativeZero = false, int words = 2) =>
-        new(GpuBigUInt.FromBigInteger(_context, BigInteger.Abs(value), words), value.Sign < 0 || negativeZero);
+        new(GpuBigUInt.FromBigInteger(Context, BigInteger.Abs(value), words), value.Sign < 0 || negativeZero);
 
     [SkippableTheory]
     [Category(TestCategory.Stdlib)]
@@ -87,13 +83,13 @@ public class GpuBigIntegerTests : IDisposable
     {
         // An integer has exponent 0.
         // mutant: GpuBigInt.cs:59 `exponent != 0` -> `exponent == 0`; :61 throw removed
-        using var seven = GpuBigUInt.FromBigInteger(_context, 7, 2);
+        using var seven = GpuBigUInt.FromBigInteger(Context, 7, 2);
         var error = Assert.Throws<ArgumentOutOfRangeException>(() => GpuBigInt.Create(seven, 1, false));
         Assert.Equal("exponent", error.ParamName);
 
         // The sign is kept for a non-zero magnitude and dropped for zero (no negative zero).
         // mutant: GpuBigInt.cs:64 `isNegative && !magnitude.IsZero()` -> `||` / `magnitude.IsZero()`
-        using var zero = GpuBigUInt.FromBigInteger(_context, 0, 2);
+        using var zero = GpuBigUInt.FromBigInteger(Context, 0, 2);
         Assert.False(GpuBigInt.Create(zero, 0, true).IsNegative);
         Assert.True(GpuBigInt.Create(seven, 0, true).IsNegative);
         Assert.False(GpuBigInt.Create(seven, 0, false).IsNegative);
@@ -112,8 +108,8 @@ public class GpuBigIntegerTests : IDisposable
         // mutant: GpuBigInt operator == calls Equals (positiveZero == negativeZero becomes false)
         using var positiveZero = CreateSigned(0);
         using var negativeZero = CreateSigned(0, negativeZero: true);
-        var sameBuffer = new GpuBigInt(positiveZero.Value, positiveZero.IsNegative);
-        var negated = new GpuBigInt(positiveZero.Value, !positiveZero.IsNegative);
+        using var sameBuffer = new GpuBigInt(positiveZero.Value.AsBorrowed(), positiveZero.IsNegative);
+        using var negated = new GpuBigInt(positiveZero.Value.AsBorrowed(), !positiveZero.IsNegative);
 
         Assert.Equal(
             (false, true, true, true, false, 2),

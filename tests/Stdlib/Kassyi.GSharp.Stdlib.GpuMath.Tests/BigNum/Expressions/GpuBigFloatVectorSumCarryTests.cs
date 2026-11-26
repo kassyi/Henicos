@@ -10,21 +10,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public sealed class GpuBigFloatVectorSumCarryTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public GpuBigFloatVectorSumCarryTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(1024 * 1024, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1024 * 1024, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     // One-word significands with equal exponents: the sum of two full words carries out of the element width and is
     // kept by raising the exponent, and a sum of opposite signs takes its sign from the borrow, not from the top bit.
@@ -77,7 +73,7 @@ public sealed class GpuBigFloatVectorSumCarryTests : IDisposable
 
     private void AssertSum(string label, int numWords, BigInteger[] values, BigInteger expected)
     {
-        using var array = new GpuBigFloatArray(_workspace, values.Length, numWords);
+        using var array = new GpuBigFloatArray(Workspace, values.Length, numWords);
         for (var i = 0; i < values.Length; i++)
         {
             var words = new uint[numWords];
@@ -88,11 +84,11 @@ public sealed class GpuBigFloatVectorSumCarryTests : IDisposable
                 magnitude >>= 32;
             }
 
-            using var element = new GpuBigFloat(new GpuBigUInt(_workspace, words), 0, values[i].Sign < 0);
+            using var element = new GpuBigFloat(new GpuBigUInt(Workspace, words), 0, values[i].Sign < 0);
             array.SetElement(i, element);
         }
 
-        using var sum = array.AsVectorizedEnumerable().Sum(_workspace);
+        using var sum = array.AsVectorizedEnumerable().Sum(Workspace);
 
         var significand = sum.Magnitude.ToBigInteger();
         Assert.True(

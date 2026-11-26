@@ -17,21 +17,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public sealed class SignedWidthTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public SignedWidthTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     public static TheoryData<int, int> WidthPairs() => SignedCases.WidthPairs();
 
@@ -39,31 +35,31 @@ public sealed class SignedWidthTests : IDisposable
     [MemberData(nameof(WidthPairs))]
     [Scenario(TestScenario.Boundary)]
     public void AddSubtract_KeepTheCarry_ForEverySign(int aWords, int bWords) =>
-        SignedCases.AddSubtract(_workspace, aWords, bWords);
+        SignedCases.AddSubtract(Workspace, aWords, bWords);
 
     [Theory]
     [MemberData(nameof(WidthPairs))]
     [Scenario(TestScenario.Boundary)]
     public void Difference_TakesItsSignFromTheBorrow_AndZeroIsPositive(int aWords, int bWords) =>
-        SignedCases.Differences(_workspace, aWords, bWords);
+        SignedCases.Differences(Workspace, aWords, bWords);
 
     [Theory]
     [MemberData(nameof(WidthPairs))]
     [Scenario(TestScenario.HappyPath)]
     public void OtherOperators_AcceptDifferentWidths(int aWords, int bWords) =>
-        SignedCases.OtherOperators(_workspace, aWords, bWords);
+        SignedCases.OtherOperators(Workspace, aWords, bWords);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void ReportedSums_FromTheIssue()
     {
         // (+0xFFFFFFFF) + (+1) and (-0xFFFFFFFF) - (+1) in one word gave 0 and -0
-        using var x = SignedCases.Value(_workspace, uint.MaxValue, 1);
-        using var minusX = SignedCases.Value(_workspace, -(BigInteger)uint.MaxValue, 1);
-        using var one = SignedCases.Value(_workspace, 1, 1);
+        using var x = SignedCases.Value(Workspace, uint.MaxValue, 1);
+        using var minusX = SignedCases.Value(Workspace, -(BigInteger)uint.MaxValue, 1);
+        using var one = SignedCases.Value(Workspace, 1, 1);
 
-        using var sum = ((GpuBigIntExpr)x + one).Evaluate(_workspace);
-        using var difference = ((GpuBigIntExpr)minusX - one).Evaluate(_workspace);
+        using var sum = ((GpuBigIntExpr)x + one).Evaluate(Workspace);
+        using var difference = ((GpuBigIntExpr)minusX - one).Evaluate(Workspace);
 
         Assert.Equal(BigInteger.One << 32, SignedCases.Read(sum));
         Assert.Equal(-(BigInteger.One << 32), SignedCases.Read(difference));
@@ -78,17 +74,17 @@ public sealed class SignedWidthTests : IDisposable
     public void Evaluate_NarrowAndWideTargets_RejectsNarrowAndClearsUpperWordsOfWide(int sourceWords)
     {
         var value = -((BigInteger.One << (32 * sourceWords - 1)) + 7);
-        using var source = SignedCases.Value(_workspace, value, sourceWords);
+        using var source = SignedCases.Value(Workspace, value, sourceWords);
         GpuBigIntExpr leaf = source;
 
         if (sourceWords > 1)
         {
-            using var narrow = SignedCases.Filled(_workspace, sourceWords - 1);
+            using var narrow = SignedCases.Filled(Workspace, sourceWords - 1);
             Assert.Throws<ArgumentException>(() => leaf.Evaluate(narrow));
             Assert.All(narrow.ToHostArray(), static w => Assert.Equal(SignedCases.Fill, w));
         }
 
-        using var wide = SignedCases.Filled(_workspace, sourceWords + 2);
+        using var wide = SignedCases.Filled(Workspace, sourceWords + 2);
         var result = leaf.Evaluate(wide);
         Assert.Equal(value, SignedCases.Read(result));
         Assert.Equal(SignedCases.Limbs(BigInteger.Abs(value), sourceWords + 2), wide.ToHostArray());
@@ -98,15 +94,15 @@ public sealed class SignedWidthTests : IDisposable
     [Scenario(TestScenario.Boundary)]
     public void Evaluate_OperatorRootWithNarrowAndWideTargets_RejectsNarrowAndClearsUpperWordsOfWide()
     {
-        using var a = SignedCases.Value(_workspace, -(BigInteger)uint.MaxValue, 1);
-        using var b = SignedCases.Value(_workspace, -(BigInteger)uint.MaxValue, 1);
+        using var a = SignedCases.Value(Workspace, -(BigInteger)uint.MaxValue, 1);
+        using var b = SignedCases.Value(Workspace, -(BigInteger)uint.MaxValue, 1);
         var sum = (GpuBigIntExpr)a + b;
 
-        using var narrow = SignedCases.Filled(_workspace, 1);
+        using var narrow = SignedCases.Filled(Workspace, 1);
         Assert.Throws<ArgumentException>(() => sum.Evaluate(narrow));
         Assert.All(narrow.ToHostArray(), static w => Assert.Equal(SignedCases.Fill, w));
 
-        using var wide = SignedCases.Filled(_workspace, 5);
+        using var wide = SignedCases.Filled(Workspace, 5);
         var result = sum.Evaluate(wide);
         Assert.Equal(-2 * (BigInteger)uint.MaxValue, SignedCases.Read(result));
         Assert.Equal(SignedCases.Limbs(2 * (BigInteger)uint.MaxValue, 5), wide.ToHostArray());
@@ -116,18 +112,18 @@ public sealed class SignedWidthTests : IDisposable
     [Scenario(TestScenario.SadPath)]
     public void Fit_KeepsAValueThatFits_AndReportsOneThatDoesNot()
     {
-        using var a = SignedCases.Value(_workspace, -(BigInteger)uint.MaxValue, 1);
-        using var b = SignedCases.Value(_workspace, 1, 1);
+        using var a = SignedCases.Value(Workspace, -(BigInteger)uint.MaxValue, 1);
+        using var b = SignedCases.Value(Workspace, 1, 1);
 
         // -0xFFFFFFFF + 1 fits in one word
-        using var fits = ((GpuBigIntExpr)a + b).Fit(1).Evaluate(_workspace);
+        using var fits = ((GpuBigIntExpr)a + b).Fit(1).Evaluate(Workspace);
         Assert.Equal(1, fits.Value.NumWords);
         Assert.Equal(-(BigInteger)uint.MaxValue + 1, SignedCases.Read(fits));
-        _workspace.ThrowIfDeviceErrors();
+        Workspace.ThrowIfDeviceErrors();
 
         // -0xFFFFFFFF - 1 does not
-        using var tooWide = ((GpuBigIntExpr)a - b).Fit(1).Evaluate(_workspace);
-        Assert.Throws<OverflowException>(() => _workspace.ThrowIfDeviceErrors());
+        using var tooWide = ((GpuBigIntExpr)a - b).Fit(1).Evaluate(Workspace);
+        Assert.Throws<OverflowException>(() => Workspace.ThrowIfDeviceErrors());
         Assert.Throws<ArgumentOutOfRangeException>(() => ((GpuBigIntExpr)a).Fit(0));
     }
 
@@ -135,7 +131,7 @@ public sealed class SignedWidthTests : IDisposable
     [MemberData(nameof(NotCases))]
     [Scenario(TestScenario.Boundary)]
     public void Not_IsMinusXMinusOne_OneBitWider(string value, int words, bool negativeZero) =>
-        SignedCases.Not(_workspace, BigInteger.Parse(value), words, negativeZero);
+        SignedCases.Not(Workspace, BigInteger.Parse(value), words, negativeZero);
 
     public static TheoryData<string, int, bool> NotCases() => SignedCases.NotCases();
 
@@ -143,10 +139,10 @@ public sealed class SignedWidthTests : IDisposable
     [Scenario(TestScenario.SadPath)]
     public void Not_OfEitherSign_IsCaptured()
     {
-        using var positive = SignedCases.Value(_workspace, 5, 1);
-        using var negative = SignedCases.Value(_workspace, -5, 1);
+        using var positive = SignedCases.Value(Workspace, 5, 1);
+        using var negative = SignedCases.Value(Workspace, -5, 1);
 
-        using (var graph = (~(GpuBigIntExpr)positive).CompileToGraph(_workspace))
+        using (var graph = (~(GpuBigIntExpr)positive).CompileToGraph(Workspace))
         {
             graph.Execute();
             using var owned = graph.Result.ToOwned();
@@ -154,7 +150,7 @@ public sealed class SignedWidthTests : IDisposable
         }
 
         // A negative value's ~ is decided on the device (-0 tells apart there), so it is captured as well
-        using (var graph = (~(GpuBigIntExpr)negative).CompileToGraph(_workspace))
+        using (var graph = (~(GpuBigIntExpr)negative).CompileToGraph(Workspace))
         {
             graph.Execute();
             using var owned = graph.Result.ToOwned();
@@ -166,11 +162,11 @@ public sealed class SignedWidthTests : IDisposable
     [Scenario(TestScenario.SadPath)]
     public void Capture_OfAValueDependentSign_AndOfSameSigns_Works()
     {
-        using var a = SignedCases.Value(_workspace, 5, 2);
-        using var b = SignedCases.Value(_workspace, 7, 2);
-        using var minusB = SignedCases.Value(_workspace, -7, 2);
+        using var a = SignedCases.Value(Workspace, 5, 2);
+        using var b = SignedCases.Value(Workspace, 7, 2);
+        using var minusB = SignedCases.Value(Workspace, -7, 2);
 
-        using (var graph = ((GpuBigIntExpr)a + b).CompileToGraph(_workspace))
+        using (var graph = ((GpuBigIntExpr)a + b).CompileToGraph(Workspace))
         {
             graph.Execute();
             using var owned = graph.Result.ToOwned();
@@ -178,7 +174,7 @@ public sealed class SignedWidthTests : IDisposable
         }
 
         // The sign of a + (-b) is written on the device and read after the launch
-        using (var graph = ((GpuBigIntExpr)a + minusB).CompileToGraph(_workspace))
+        using (var graph = ((GpuBigIntExpr)a + minusB).CompileToGraph(Workspace))
         {
             graph.Execute();
             using var owned = graph.Result.ToOwned();
@@ -186,7 +182,7 @@ public sealed class SignedWidthTests : IDisposable
         }
 
         // The workspace is still usable afterwards
-        using var after = ((GpuBigIntExpr)a + minusB).Evaluate(_workspace);
+        using var after = ((GpuBigIntExpr)a + minusB).Evaluate(Workspace);
         Assert.Equal(-2, SignedCases.Read(after));
     }
 }

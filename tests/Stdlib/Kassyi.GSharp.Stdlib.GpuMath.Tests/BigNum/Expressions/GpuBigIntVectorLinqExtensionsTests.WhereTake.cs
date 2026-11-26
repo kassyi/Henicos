@@ -67,7 +67,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             .Sum();
         var actual = Outcome(() =>
         {
-            using var sum = sumExpr.Evaluate(_context);
+            using var sum = sumExpr.Evaluate(Context);
             return ToBigInt(sum);
         });
         Assert.Equal(expected, actual);
@@ -100,7 +100,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             .ZipDivide(arrB.AsVectorizedEnumerable())
             .Where(arrM.AsVectorizedEnumerable().IsGreaterThan(zero))
             .Take(1);
-        var actual = Outcome(() => ToHostArray(expr.Evaluate(_context)));
+        var actual = Outcome(() => ToHostArray(expr.Evaluate(Context)));
         Assert.Equal(expected.Error, actual.Error);
         Assert.Equal(expected.Value, actual.Value);
     }
@@ -132,7 +132,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             .ZipDivide(arrB.AsVectorizedEnumerable())
             .Where(arrM.AsVectorizedEnumerable().IsGreaterThan(zero))
             .Take(1);
-        Assert.Equal(expected, Outcome(() => filtered.Count(_context)));
+        Assert.Equal(expected, Outcome(() => filtered.Count(Context)));
     }
 
     [Fact]
@@ -162,7 +162,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             .ZipDivide(arrB.AsVectorizedEnumerable())
             .Where(arrP.AsVectorizedEnumerable().SelectSqrt().IsGreaterThan(zero))
             .Take(1);
-        Assert.Equal(expected, Outcome(() => filtered.Count(_context)));
+        Assert.Equal(expected, Outcome(() => filtered.Count(Context)));
     }
 
     [Fact]

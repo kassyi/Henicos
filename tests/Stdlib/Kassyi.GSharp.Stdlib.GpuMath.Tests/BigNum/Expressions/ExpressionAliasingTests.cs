@@ -19,26 +19,22 @@ public sealed class ExpressionAliasingTests : IDisposable
     private const int WideWords = 4096;
     private const int Seed = 636;
 
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
     private readonly BigInteger _a;
     private readonly BigInteger _b;
 
     public ExpressionAliasingTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1024, GpuExecutionEngine.GSharpAot);
         var random = new Random(Seed);
         _a = RandomValue(random, 32 * 32);
         _b = RandomValue(random, 16 * 32) | 1;
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     public enum Op
     {
@@ -80,17 +76,17 @@ public sealed class ExpressionAliasingTests : IDisposable
             Op.Mul => Words,
             _ => 0
         };
-        using var aOwner = GpuBigUInt.FromBigInteger(_workspace, _a, Words + extra);
-        using var bOwner = GpuBigUInt.FromBigInteger(_workspace, _b, Words + extra);
+        using var aOwner = GpuBigUInt.FromBigInteger(Workspace, _a, Words + extra);
+        using var bOwner = GpuBigUInt.FromBigInteger(Workspace, _b, Words + extra);
         var a = Head(aOwner, Words);
         var b = Head(bOwner, Words);
         GpuBigUIntExpr ea = a;
         GpuBigUIntExpr eb = b;
-        var before = _workspace.GetMemoryStatistics();
+        var before = Workspace.GetMemoryStatistics();
 
-        Binary(op, ea, eb).Node.Evaluate(_workspace, intoRight ? bOwner : aOwner);
+        Binary(op, ea, eb).Node.Evaluate(Workspace, intoRight ? bOwner : aOwner);
 
-        var after = _workspace.GetMemoryStatistics();
+        var after = Workspace.GetMemoryStatistics();
         var expected = Expected(op, _a, _b);
         Assert.True(expected == (intoRight ? bOwner : aOwner).ToBigInteger(),
             $"{op} into {(intoRight ? "b" : "a")}, seed {Seed}");
@@ -117,11 +113,11 @@ public sealed class ExpressionAliasingTests : IDisposable
         // 4096 words, so that a shift runs in several blocks (thread i reads the word that thread i - 1 writes)
         // A left shift keeps every bit: its target holds the operand in its low words and has two words more
         var value = RandomValue(new Random(Seed), WideWords * 32 - 7);
-        using var owner = GpuBigUInt.FromBigInteger(_workspace, value, WideWords + (op == Unary.ShiftLeft ? 2 : 0));
+        using var owner = GpuBigUInt.FromBigInteger(Workspace, value, WideWords + (op == Unary.ShiftLeft ? 2 : 0));
         var a = Head(owner, WideWords);
         GpuBigUIntExpr ea = a;
 
-        UnaryExpression(op, ea).Node.Evaluate(_workspace, owner);
+        UnaryExpression(op, ea).Node.Evaluate(Workspace, owner);
 
         var modulus = BigInteger.One << (WideWords * 32);
         var expected = op switch
@@ -143,12 +139,12 @@ public sealed class ExpressionAliasingTests : IDisposable
         // mutant: BigIntExpressionVisitor.GetResultBuffer without the overlap check (the root writes into its operand)
         // The targets hold the operands in their low words and are wide enough for every result here (the nested
         // product has 2 * Words + 1 words)
-        using var aOwner = GpuBigUInt.FromBigInteger(_workspace, _a, 2 * Words + 1);
-        using var bOwner = GpuBigUInt.FromBigInteger(_workspace, _b, 2 * Words + 1);
+        using var aOwner = GpuBigUInt.FromBigInteger(Workspace, _a, 2 * Words + 1);
+        using var bOwner = GpuBigUInt.FromBigInteger(Workspace, _b, 2 * Words + 1);
         var a = Head(aOwner, Words);
         var b = Head(bOwner, Words);
-        using var a0 = GpuBigUInt.FromBigInteger(_workspace, _a, Words);
-        using var b0 = GpuBigUInt.FromBigInteger(_workspace, _b, Words);
+        using var a0 = GpuBigUInt.FromBigInteger(Workspace, _a, Words);
+        using var b0 = GpuBigUInt.FromBigInteger(Workspace, _b, Words);
         GpuBigUIntExpr ea = a;
         GpuBigUIntExpr eb = b;
         var recorder = new RecordingArithmetic();
@@ -177,8 +173,8 @@ public sealed class ExpressionAliasingTests : IDisposable
     public void ValueSetter_InPlaceUpdate_IsCorrect()
     {
         // The form users write: a.Value = a / b (the #636 repro) and a.Value = a << 5
-        using var a = GpuBigUInt.FromBigInteger(_workspace, _a, Words);
-        using var b = GpuBigUInt.FromBigInteger(_workspace, _b, Words);
+        using var a = GpuBigUInt.FromBigInteger(Workspace, _a, Words);
+        using var b = GpuBigUInt.FromBigInteger(Workspace, _b, Words);
 
         a.Value = a.Value / b.Value;
         var quotient = a.ToBigInteger();
@@ -194,13 +190,13 @@ public sealed class ExpressionAliasingTests : IDisposable
     public void LeafRoot_IntoItself_KeepsTheValue()
     {
         // d.Value = d: the root is the leaf and the target is the same memory; nothing is copied
-        using var d = GpuBigUInt.FromBigInteger(_workspace, _a, Words);
-        var before = _workspace.GetMemoryStatistics();
+        using var d = GpuBigUInt.FromBigInteger(Workspace, _a, Words);
+        var before = Workspace.GetMemoryStatistics();
 
         d.Value = d.Value;
 
         Assert.Equal(_a, d.ToBigInteger());
-        Assert.Equal(before.DriverAllocations, _workspace.GetMemoryStatistics().DriverAllocations);
+        Assert.Equal(before.DriverAllocations, Workspace.GetMemoryStatistics().DriverAllocations);
     }
 
     [SkippableTheory]
@@ -217,15 +213,15 @@ public sealed class ExpressionAliasingTests : IDisposable
         // mutant: GpuBigIntLeafExpression.Evaluate without the partial-overlap staging (one CopyFrom for any pointer)
         var value = RandomValue(new Random(Seed), WideWords * 32 - 5);
         var leafAt = targetShift < 0 ? -targetShift : 0;
-        using var buffer = GpuBigUInt.FromBigInteger(_workspace, value << (32 * leafAt), WideWords + Math.Abs(targetShift));
+        using var buffer = GpuBigUInt.FromBigInteger(Workspace, value << (32 * leafAt), WideWords + Math.Abs(targetShift));
         GpuBigUIntView whole = buffer;
         var leaf = whole.Slice(leafAt, WideWords).AsBorrowedBigUInt();
         var target = whole.Slice(leafAt + targetShift, WideWords).AsBorrowedBigUInt();
-        GpuBigIntExpr expression = new GpuBigInt(leaf, true);
-        var before = _workspace.GetMemoryStatistics();
+        using GpuBigIntExpr expression = new GpuBigInt(leaf, true);
+        var before = Workspace.GetMemoryStatistics();
 
         var result = expression.Evaluate(target);
-        var after = _workspace.GetMemoryStatistics();
+        var after = Workspace.GetMemoryStatistics();
 
         Assert.True(value == target.ToBigInteger(), $"shift {targetShift}, seed {Seed}");
         Assert.True(result.IsNegative);
@@ -281,12 +277,12 @@ public sealed class ExpressionAliasingTests : IDisposable
         var a0 = negativeA ? -_a : _a;
         var b0 = negativeA ? _b : -_b;
         var extra = op is SignedOp.Add or SignedOp.Sub or SignedOp.Not ? 1 : 0;
-        using var aOwner = GpuBigUInt.FromBigInteger(_workspace, _a, Words + extra);
-        using var bOwner = GpuBigUInt.FromBigInteger(_workspace, _b, Words + extra);
+        using var aOwner = GpuBigUInt.FromBigInteger(Workspace, _a, Words + extra);
+        using var bOwner = GpuBigUInt.FromBigInteger(Workspace, _b, Words + extra);
         var aMagnitude = Head(aOwner, Words);
         var bMagnitude = Head(bOwner, Words);
-        var a = new GpuBigInt(aMagnitude, negativeA);
-        var b = new GpuBigInt(bMagnitude, !negativeA);
+        using var a = new GpuBigInt(aMagnitude, negativeA);
+        using var b = new GpuBigInt(bMagnitude, !negativeA);
         var target = intoRight && op is not (SignedOp.Negate or SignedOp.Not) ? bOwner : aOwner;
 
         var result = SignedExpression(op, a, b).Evaluate(target);
@@ -326,16 +322,16 @@ public sealed class ExpressionAliasingTests : IDisposable
         // mutant: SignedBinaryExpression / SignedUnaryExpression without the overlap check
         // A sum and ~ are one bit wider than their operands: the target holds the operand a in its low words
         var extra = op is SignedOp.Add or SignedOp.Not ? 1 : 0;
-        using var aOwner = GpuBigUInt.FromBigInteger(_workspace, _a, Words + extra);
-        using var bMagnitude = GpuBigUInt.FromBigInteger(_workspace, _b, Words);
-        using var separate = new GpuBigUInt(_workspace, Words + extra);
-        var a = new GpuBigInt(Head(aOwner, Words), false);
-        var b = new GpuBigInt(bMagnitude, false);
+        using var aOwner = GpuBigUInt.FromBigInteger(Workspace, _a, Words + extra);
+        using var bMagnitude = GpuBigUInt.FromBigInteger(Workspace, _b, Words);
+        using var separate = new GpuBigUInt(Workspace, Words + extra);
+        using var a = new GpuBigInt(Head(aOwner, Words), false);
+        using var b = new GpuBigInt(bMagnitude.AsBorrowed(), false);
 
         SignedExpression(op, a, b).Evaluate(separate);
-        var before = _workspace.GetMemoryStatistics();
+        var before = Workspace.GetMemoryStatistics();
         SignedExpression(op, a, b).Evaluate(aOwner);
-        var after = _workspace.GetMemoryStatistics();
+        var after = Workspace.GetMemoryStatistics();
 
         Assert.Equal(before.LiveBuffers, before.PeakLiveBuffers);
         Assert.Equal(before.PeakLiveBuffers + 1, after.PeakLiveBuffers);
@@ -343,7 +339,7 @@ public sealed class ExpressionAliasingTests : IDisposable
     }
 
     // The first words of owner, borrowed
-    private GpuBigUInt Head(GpuBigUInt owner, int words) => new(_workspace, owner.Handle.Slice(0, words));
+    private GpuBigUInt Head(GpuBigUInt owner, int words) => new(Workspace, owner.Handle.Slice(0, words));
 
     private static GpuBigIntExpr SignedExpression(SignedOp op, GpuBigInt a, GpuBigInt b)
     {
@@ -366,7 +362,7 @@ public sealed class ExpressionAliasingTests : IDisposable
     {
         a.CopyFrom(a0);
         b.CopyFrom(b0);
-        var context = new GpuBigIntExecutionContext(_workspace, _workspace.MemoryManager, recorder, _workspace.Stream);
+        var context = new GpuBigIntExecutionContext(Workspace, Workspace.MemoryManager, recorder, Workspace.Stream);
         var visitor = new BigIntExpressionVisitor(context, new ScopedBigIntMemory(target.Handle.Borrow()));
         using var result = expression.Node.Accept(ref visitor);
     }

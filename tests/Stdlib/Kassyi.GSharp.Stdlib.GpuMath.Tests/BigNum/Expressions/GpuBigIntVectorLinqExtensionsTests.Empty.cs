@@ -13,9 +13,9 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         // input: And / Or (CudaException: invalid value)
         // mutant: BoolVectorLogicalExpressions.cs VectorNotExpression `if (Length == 0)` -> `if (Length < 0)`
         // input: Not
-        using var empty = new GpuBigIntArray(_context, 0, 8);
-        using var scalarMagnitude = new GpuBigUInt(_context, [5u]);
-        var scalar = new GpuBigInt(scalarMagnitude, isNegative: false);
+        using var empty = new GpuBigIntArray(Context, 0, 8);
+        using var scalarMagnitude = new GpuBigUInt(Context, [5u]);
+        using var scalar = new GpuBigInt(scalarMagnitude.AsBorrowed(), isNegative: false);
         var reference = Array.Empty<bool>();
 
         var and = EvaluateBools(empty.AsVectorizedEnumerable().IsLessThan(scalar)
@@ -39,16 +39,16 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         // input: Any (CudaException: invalid value)
         // mutant: BoolVectorLogicalExpressions.cs VectorAllTrueExpression `if (source.Length == 0)` -> `if (source.Length < 0)`
         // input: All
-        using var empty = new GpuBigIntArray(_context, 0, 8);
-        using var scalarMagnitude = new GpuBigUInt(_context, [5u]);
-        var scalar = new GpuBigInt(scalarMagnitude, isNegative: false);
+        using var empty = new GpuBigIntArray(Context, 0, 8);
+        using var scalarMagnitude = new GpuBigUInt(Context, [5u]);
+        using var scalar = new GpuBigInt(scalarMagnitude.AsBorrowed(), isNegative: false);
         var reference = Array.Empty<bool>();
 
         using var any = empty.AsVectorizedEnumerable().IsLessThan(scalar).Any();
         using var all = empty.AsVectorizedEnumerable().IsLessThan(scalar).All();
 
-        Assert.Equal(reference.Any(static b => b), any.Evaluate(_context));
-        Assert.Equal(reference.All(static b => b), all.Evaluate(_context));
+        Assert.Equal(reference.Any(static b => b), any.Evaluate(Context));
+        Assert.Equal(reference.All(static b => b), all.Evaluate(Context));
     }
 
     [Fact]
@@ -61,10 +61,10 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         // mutant: VectorUnaryExpressions.cs VectorUnaryExpressionBase `if (evalCount > 0)` -> `if (evalCount >= 0)`
         // equivalent: the host loop runs no iteration and its copies of 0 words succeed, so this test fixes the result
         // without a mutant that fails it.
-        using var empty = new GpuBigIntArray(_context, 0, 8);
+        using var empty = new GpuBigIntArray(Context, 0, 8);
 
         using var expr = empty.AsVectorizedEnumerable().SelectDivideByUInt32(3u);
-        var result = expr.Evaluate(_context);
+        var result = expr.Evaluate(Context);
 
         Assert.Equal(Array.Empty<BigInteger>().Select(static v => v / 3).Count(), result.Length);
     }

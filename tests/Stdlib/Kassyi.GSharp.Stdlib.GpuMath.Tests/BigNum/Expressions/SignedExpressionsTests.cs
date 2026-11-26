@@ -4,22 +4,19 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public class SignedExpressionsTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _context;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public SignedExpressionsTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _context = new GpuWorkspace(1024 * 1024, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1024 * 1024, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _context.Dispose();
-        _scope.Dispose();
-    }
-    private static GpuBigInt Create(GpuWorkspace _context, BigInteger val, int numWords)
+    private GpuWorkspace Context => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
+
+    private static GpuBigInt Create(GpuWorkspace context, BigInteger val, int numWords)
     {
         bool isNeg = val < 0;
         if (isNeg) val = -val;
@@ -28,10 +25,10 @@ public class SignedExpressionsTests : IDisposable
         var buffer = new uint[numWords];
         Buffer.BlockCopy(bytes, 0, buffer, 0, Math.Min(bytes.Length, buffer.Length * 4));
         
-        var u = _context.RentTemp(numWords);
+        var u = context.RentTemp(numWords);
         var hostData = new uint[numWords];
         buffer.CopyTo(hostData, 0);
-        _context.Provider.CopyHostToDevice(u.DevicePointer, hostData, numWords, _context.Stream);
+        context.Provider.CopyHostToDevice(u.DevicePointer, hostData, numWords, context.Stream);
         return new GpuBigInt(u, isNeg);
     }
 
@@ -53,11 +50,11 @@ public class SignedExpressionsTests : IDisposable
         
         
 
-        var gpuA = Create(_context, a, 1);
-        var gpuB = Create(_context, b, 1);
+        var gpuA = Create(Context, a, 1);
+        var gpuB = Create(Context, b, 1);
 
         var expr = gpuA + gpuB;
-        using var gpuRes = expr.Evaluate(_context);
+        using var gpuRes = expr.Evaluate(Context);
         
         var res = ToBigInt(gpuRes);
         Assert.Equal(new BigInteger(a + b), res);
@@ -76,11 +73,11 @@ public class SignedExpressionsTests : IDisposable
         
         
 
-        var gpuA = Create(_context, a, 1);
-        var gpuB = Create(_context, b, 1);
+        var gpuA = Create(Context, a, 1);
+        var gpuB = Create(Context, b, 1);
 
         var expr = gpuA - gpuB;
-        using var gpuRes = expr.Evaluate(_context);
+        using var gpuRes = expr.Evaluate(Context);
         
         var res = ToBigInt(gpuRes);
         Assert.Equal(new BigInteger(a - b), res);
@@ -96,11 +93,11 @@ public class SignedExpressionsTests : IDisposable
         
         
 
-        var gpuA = Create(_context, a, 1);
-        var gpuB = Create(_context, b, 1);
+        var gpuA = Create(Context, a, 1);
+        var gpuB = Create(Context, b, 1);
 
         var expr = gpuA * gpuB;
-        using var gpuRes = expr.Evaluate(_context);
+        using var gpuRes = expr.Evaluate(Context);
         
         var res = ToBigInt(gpuRes);
         Assert.Equal(new BigInteger(a * b), res);
@@ -118,11 +115,11 @@ public class SignedExpressionsTests : IDisposable
         
         
 
-        var gpuA = Create(_context, a, 1);
-        var gpuB = Create(_context, b, 1);
+        var gpuA = Create(Context, a, 1);
+        var gpuB = Create(Context, b, 1);
 
         var expr = gpuA / gpuB;
-        using var gpuRes = expr.Evaluate(_context);
+        using var gpuRes = expr.Evaluate(Context);
         
         var res = ToBigInt(gpuRes);
         Assert.Equal(new BigInteger(a / b), res);
@@ -137,10 +134,10 @@ public class SignedExpressionsTests : IDisposable
         
         
 
-        var gpuA = Create(_context, a, 1);
+        var gpuA = Create(Context, a, 1);
 
         var expr = -((GpuBigIntExpr)gpuA);
-        using var gpuRes = expr.Evaluate(_context);
+        using var gpuRes = expr.Evaluate(Context);
         
         var res = ToBigInt(gpuRes);
         Assert.Equal(new BigInteger(-a), res);
@@ -155,10 +152,10 @@ public class SignedExpressionsTests : IDisposable
         
         
 
-        var gpuA = Create(_context, a, 1);
+        var gpuA = Create(Context, a, 1);
 
         var expr = ~((GpuBigIntExpr)gpuA);
-        using var gpuRes = expr.Evaluate(_context);
+        using var gpuRes = expr.Evaluate(Context);
 
         // ~x == -x - 1, as BigInteger, independent of the word count
         Assert.Equal(~new BigInteger(a), ToBigInt(gpuRes));
@@ -177,11 +174,11 @@ public class SignedExpressionsTests : IDisposable
     [InlineData(-3, 10)]
     public void Modulo_Tests(long a, long b)
     {
-        var gpuA = Create(_context, a, 1);
-        var gpuB = Create(_context, b, 1);
+        var gpuA = Create(Context, a, 1);
+        var gpuB = Create(Context, b, 1);
 
         var expr = gpuA % gpuB;
-        using var gpuRes = expr.Evaluate(_context);
+        using var gpuRes = expr.Evaluate(Context);
 
         var res = ToBigInt(gpuRes);
         Assert.Equal(new BigInteger(a % b), res);

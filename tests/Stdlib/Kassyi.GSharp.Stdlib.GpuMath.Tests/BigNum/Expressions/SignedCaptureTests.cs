@@ -11,21 +11,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public sealed class SignedCaptureTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public SignedCaptureTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     // Division reads the bit lengths of its operands, and % the zero test of a negative remainder; both refuse the
     // capture before reading, also for non-negative operands
@@ -38,14 +34,14 @@ public sealed class SignedCaptureTests : IDisposable
     [Scenario(TestScenario.SadPath)]
     public void Division_CannotBeCaptured(int dividend)
     {
-        using var a = SignedCases.Value(_workspace, dividend, 2);
-        using var b = SignedCases.Value(_workspace, 5, 2);
+        using var a = SignedCases.Value(Workspace, dividend, 2);
+        using var b = SignedCases.Value(Workspace, 5, 2);
 
-        Assert.Throws<NotSupportedException>(() => ((GpuBigIntExpr)a % b).CompileToGraph(_workspace));
-        Assert.Throws<NotSupportedException>(() => ((GpuBigIntExpr)a / b).CompileToGraph(_workspace));
+        Assert.Throws<NotSupportedException>(() => ((GpuBigIntExpr)a % b).CompileToGraph(Workspace));
+        Assert.Throws<NotSupportedException>(() => ((GpuBigIntExpr)a / b).CompileToGraph(Workspace));
 
         // The workspace is still usable afterwards; C# % takes the sign of the dividend
-        using var remainder = ((GpuBigIntExpr)a % b).Evaluate(_workspace);
+        using var remainder = ((GpuBigIntExpr)a % b).Evaluate(Workspace);
         Assert.Equal(dividend % 5, SignedCases.Read(remainder));
     }
 
@@ -57,15 +53,15 @@ public sealed class SignedCaptureTests : IDisposable
     [Scenario(TestScenario.SadPath)]
     public void Average_CannotBeCaptured()
     {
-        using var a = SignedCases.Value(_workspace, 17, 2);
-        using var b = SignedCases.Value(_workspace, 6, 2);
+        using var a = SignedCases.Value(Workspace, 17, 2);
+        using var b = SignedCases.Value(Workspace, 6, 2);
         GpuBigInt[] values = [a, b];
 
         using var average = values.AsStackEnumerable().AsParallel().Average();
-        Assert.Throws<NotSupportedException>(() => average.CompileToGraph(_workspace));
+        Assert.Throws<NotSupportedException>(() => average.CompileToGraph(Workspace));
 
         // The workspace is still usable afterwards
-        using var result = average.Evaluate(_workspace);
+        using var result = average.Evaluate(Workspace);
         Assert.Equal(11, SignedCases.Read(result));
     }
 }

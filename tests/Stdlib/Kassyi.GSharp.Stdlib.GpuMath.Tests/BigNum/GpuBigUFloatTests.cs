@@ -4,21 +4,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public class GpuBigUFloatTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _context;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public GpuBigUFloatTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1024, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _context.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Context => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
@@ -26,7 +22,7 @@ public class GpuBigUFloatTests : IDisposable
     {
         CudaCapability.EnsureGpuAvailable();
 
-        using var sig = new GpuBigUInt(_context, new uint[] { 10 });
+        using var sig = new GpuBigUInt(Context, new uint[] { 10 });
         using var a = new GpuBigUFloat(sig, 0);
 
         using var normalized = a.Normalize(0, false);
@@ -41,8 +37,8 @@ public class GpuBigUFloatTests : IDisposable
     {
         CudaCapability.EnsureGpuAvailable();
 
-        using var aSig = new GpuBigUInt(_context, new uint[] { 4 });
-        using var bSig = new GpuBigUInt(_context, new uint[] { 2 });
+        using var aSig = new GpuBigUInt(Context, new uint[] { 4 });
+        using var bSig = new GpuBigUInt(Context, new uint[] { 2 });
         using var a = new GpuBigUFloat(aSig, 0);
         using var b = new GpuBigUFloat(bSig, 0);
 
@@ -87,8 +83,8 @@ public class GpuBigUFloatTests : IDisposable
     {
         CudaCapability.EnsureGpuAvailable();
 
-        using var leftBuffer = new GpuBigUInt(_context, [leftSig]);
-        using var rightBuffer = new GpuBigUInt(_context, [rightSig]);
+        using var leftBuffer = new GpuBigUInt(Context, [leftSig]);
+        using var rightBuffer = new GpuBigUInt(Context, [rightSig]);
         var left = new GpuBigUFloat(leftBuffer, leftExp);
         var right = new GpuBigUFloat(rightBuffer, rightExp);
 
@@ -122,8 +118,8 @@ public class GpuBigUFloatTests : IDisposable
     {
         CudaCapability.EnsureGpuAvailable();
 
-        using var leftBuffer = new GpuBigUInt(_context, [leftSig]);
-        using var rightBuffer = new GpuBigUInt(_context, [rightSig]);
+        using var leftBuffer = new GpuBigUInt(Context, [leftSig]);
+        using var rightBuffer = new GpuBigUInt(Context, [rightSig]);
         var left = new GpuBigUFloat(leftBuffer, leftExp);
         var right = new GpuBigUFloat(rightBuffer, rightExp);
 
@@ -145,9 +141,9 @@ public class GpuBigUFloatTests : IDisposable
     {
         CudaCapability.EnsureGpuAvailable();
 
-        using var aSig = new GpuBigUInt(_context, new uint[] { 12 });
-        using var bSig = new GpuBigUInt(_context, new uint[] { 3 });
-        using var cSig = new GpuBigUInt(_context, new uint[] { 3 });
+        using var aSig = new GpuBigUInt(Context, new uint[] { 12 });
+        using var bSig = new GpuBigUInt(Context, new uint[] { 3 });
+        using var cSig = new GpuBigUInt(Context, new uint[] { 3 });
         using var a = new GpuBigUFloat(aSig, 0);
         using var b = new GpuBigUFloat(bSig, 0);
         using var c = new GpuBigUFloat(cSig, 2); // 3 * 2^2 = 12
@@ -188,16 +184,16 @@ public class GpuBigUFloatTests : IDisposable
 
         // The value 12 * 2^-3 = 1.5 lies in [2^0, 2^1): EffectiveScale = bit length 4 + exponent -3 = 1.
         // mutant: GpuBigUFloat.cs:49 `Exponent + GetBitLength()` -> `Exponent - GetBitLength()`
-        using var twelveSig = new GpuBigUInt(_context, [12u]);
+        using var twelveSig = new GpuBigUInt(Context, [12u]);
         using var scaled = new GpuBigUFloat(twelveSig, -3);
         Assert.Equal(1L, scaled.EffectiveScale);
 
         // An unsigned value cannot be negative, except zero, whose sign carries no value.
         // mutant: GpuBigUFloat.cs:63 `isNegative && !IsZero()` -> `isNegative || !IsZero()` / `isNegative && IsZero()`,
         // L65 `throw` removed
-        using var nonZero = new GpuBigUInt(_context, [7u]);
+        using var nonZero = new GpuBigUInt(Context, [7u]);
         Assert.Throws<ArgumentOutOfRangeException>(() => GpuBigUFloat.Create(nonZero, 0, isNegative: true));
-        using var zero = new GpuBigUInt(_context, [0u]);
+        using var zero = new GpuBigUInt(Context, [0u]);
         var negativeZero = GpuBigUFloat.Create(zero, 0, isNegative: true);
         Assert.False(negativeZero.IsNegative);
         var positive = GpuBigUFloat.Create(nonZero, 0, isNegative: false);
@@ -205,8 +201,8 @@ public class GpuBigUFloatTests : IDisposable
 
         // Equal values with different representations are neither greater nor less than each other.
         // mutant: GpuBigUFloat.cs:285 `CompareTo(right) > 0` -> `>= 0` (and the same for `<` at L277)
-        using var aSig = new GpuBigUInt(_context, [12u]);
-        using var cSig = new GpuBigUInt(_context, [3u]);
+        using var aSig = new GpuBigUInt(Context, [12u]);
+        using var cSig = new GpuBigUInt(Context, [3u]);
         using var a = new GpuBigUFloat(aSig, 0);
         using var c = new GpuBigUFloat(cSig, 2);
         Assert.False(a > c);
@@ -242,8 +238,8 @@ public class GpuBigUFloatTests : IDisposable
     {
         CudaCapability.EnsureGpuAvailable();
 
-        using var sigBuffer = new GpuBigUInt(_context, [sig, 0u]);
-        var value = new GpuBigUFloat(sigBuffer, exp);
+        using var sigBuffer = new GpuBigUInt(Context, [sig, 0u]);
+        using var value = new GpuBigUFloat(sigBuffer.AsBorrowed(), exp);
 
         // The result may share the significand buffer with the input; sigBuffer owns it.
         var normalized = value.Normalize(leadingZeros, carryOut);
@@ -269,8 +265,8 @@ public class GpuBigUFloatTests : IDisposable
     {
         CudaCapability.EnsureGpuAvailable();
 
-        using var sig = new GpuBigUInt(_context, [10u]);
-        var value = new GpuBigUFloat(sig, 3);
+        using var sig = new GpuBigUInt(Context, [10u]);
+        using var value = new GpuBigUFloat(sig.AsBorrowed(), 3);
 
         // mutant: GpuBigUFloat.cs:182 body removed / `Exponent` replaced
         var (quotient, remainder) = value.DivideByUInt32(3);
@@ -294,15 +290,15 @@ public class GpuBigUFloatTests : IDisposable
         // mutant: GpuBigFloat.Equals ignores IsNegative (fa.Equals(negated) becomes true)
         // mutant: GpuBigUFloat / GpuBigFloat operator == calls Equals (a == c becomes false)
         CudaCapability.EnsureGpuAvailable();
-        using var aSig = new GpuBigUInt(_context, [12u]);
-        using var cSig = new GpuBigUInt(_context, [3u]);
+        using var aSig = new GpuBigUInt(Context, [12u]);
+        using var cSig = new GpuBigUInt(Context, [3u]);
         var a = new GpuBigUFloat(aSig, 0);
         var c = new GpuBigUFloat(cSig, 2);
         var copy = a;
-        var shifted = new GpuBigUFloat(aSig, 1);
+        using var shifted = new GpuBigUFloat(aSig.AsBorrowed(), 1);
         var fa = new GpuBigFloat(a, false);
         var fc = new GpuBigFloat(c, false);
-        var negated = new GpuBigFloat(a, true);
+        using var negated = new GpuBigFloat(a.Significand.AsBorrowed(), a.Exponent, true);
 
         Assert.Equal(
             (false, true, true, true, false, 2),

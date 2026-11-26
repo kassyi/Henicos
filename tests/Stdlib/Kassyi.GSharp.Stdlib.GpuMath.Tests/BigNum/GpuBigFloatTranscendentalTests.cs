@@ -31,21 +31,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 [Collection(TestCollections.GlobalStateSequential)]
 public class GpuBigFloatTranscendentalTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public GpuBigFloatTranscendentalTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1024, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     /// <summary>
     /// Named Log inputs <c>x = Significand · 2^Exponent</c> with the number of result words and optional series
@@ -162,9 +158,9 @@ public class GpuBigFloatTranscendentalTests : IDisposable
     public void ZivRetry_RetriesAndIsRz_OnGpu(string caseName)
     {
         var (kind, sig, exp, negative) = ZivRetryInputs.Cases[caseName];
-        using var x = new GpuBigUInt(_workspace, ToWords(sig));
-        using var gpuResult = new GpuBigUInt(_workspace, 4);
-        var options = _workspace.Transcendental;
+        using var x = new GpuBigUInt(Workspace, ToWords(sig));
+        using var gpuResult = new GpuBigUInt(Workspace, 4);
+        var options = Workspace.Transcendental;
         ApplyOptions(null, null, 8);
         var operand = new GpuFloatOperand(x.Handle, exp, negative);
 
@@ -174,7 +170,7 @@ public class GpuBigFloatTranscendentalTests : IDisposable
         (BigInteger Significand, long Exponent, bool IsNegative) cpu;
         if (kind == "Log")
         {
-            gpu = GpuBigFloatTranscendentals.Log(_workspace, operand, gpuResult.Handle, out gpuAttempts);
+            gpu = GpuBigFloatTranscendentals.Log(Workspace, operand, gpuResult.Handle, out gpuAttempts);
             var (s, e, n) = BigFloatTranscendentalMath.Log(sig, exp, 128, options, out cpuAttempts);
             cpu = (s, e, n);
             var gpuSig = gpuResult.ToBigInteger();
@@ -183,7 +179,7 @@ public class GpuBigFloatTranscendentalTests : IDisposable
         }
         else
         {
-            gpu = GpuBigFloatTranscendentals.Exp(_workspace, operand, gpuResult.Handle, out gpuAttempts);
+            gpu = GpuBigFloatTranscendentals.Exp(Workspace, operand, gpuResult.Handle, out gpuAttempts);
             var (s, e) = BigFloatTranscendentalMath.Exp(sig, exp, negative, 128, options, out cpuAttempts);
             cpu = (s, e, false);
             var (num, denShift) = BigFloatIntervalOracle.ToRatio(sig, exp);
@@ -232,9 +228,9 @@ public class GpuBigFloatTranscendentalTests : IDisposable
     public void Log_OutsideDomain_Throws(string engine)
     {
         var arithmetic = Arithmetic(engine);
-        using var zero = new GpuBigUInt(_workspace, [0u, 0u]);
-        using var one = new GpuBigUInt(_workspace, [1u]);
-        using var result = new GpuBigUInt(_workspace, 4);
+        using var zero = new GpuBigUInt(Workspace, [0u, 0u]);
+        using var one = new GpuBigUInt(Workspace, [1u]);
+        using var result = new GpuBigUInt(Workspace, 4);
 
         var zeroError = Assert.Throws<InvalidOperationException>(() =>
         {
@@ -438,8 +434,8 @@ public class GpuBigFloatTranscendentalTests : IDisposable
 
     private (BigInteger Significand, GpuFloatResult Result) RunExp(IGpuBigFloatArithmetic arithmetic, ExpCase expCase)
     {
-        using var x = new GpuBigUInt(_workspace, ToWords(expCase.Significand));
-        using var result = new GpuBigUInt(_workspace, expCase.Words);
+        using var x = new GpuBigUInt(Workspace, ToWords(expCase.Significand));
+        using var result = new GpuBigUInt(Workspace, expCase.Words);
         ApplyOptions(expCase.Halvings, expCase.BlockSize, 8);
         var context = CreateContext();
 
@@ -454,18 +450,18 @@ public class GpuBigFloatTranscendentalTests : IDisposable
         if (engine == "Cpu")
         {
             return BigFloatTranscendentalMath.ExpApproximation(
-                expCase.Significand, expCase.Exponent, expCase.Negative, 32 * expCase.Words, _workspace.Transcendental);
+                expCase.Significand, expCase.Exponent, expCase.Negative, 32 * expCase.Words, Workspace.Transcendental);
         }
 
-        using var x = new GpuBigUInt(_workspace, ToWords(expCase.Significand));
+        using var x = new GpuBigUInt(Workspace, ToWords(expCase.Significand));
         return GpuBigFloatTranscendentals.ExpApproximation(
-            _workspace, new GpuFloatOperand(x.Handle, expCase.Exponent, expCase.Negative), expCase.Words);
+            Workspace, new GpuFloatOperand(x.Handle, expCase.Exponent, expCase.Negative), expCase.Words);
     }
 
     private (BigInteger Significand, GpuFloatResult Result) RunLog(IGpuBigFloatArithmetic arithmetic, LogCase logCase)
     {
-        using var x = new GpuBigUInt(_workspace, ToWords(logCase.Significand));
-        using var result = new GpuBigUInt(_workspace, logCase.Words);
+        using var x = new GpuBigUInt(Workspace, ToWords(logCase.Significand));
+        using var result = new GpuBigUInt(Workspace, logCase.Words);
         ApplyOptions(null, logCase.BlockSize, logCase.HornerMaxTerms);
         var context = CreateContext();
 
@@ -479,24 +475,24 @@ public class GpuBigFloatTranscendentalTests : IDisposable
         if (engine == "Cpu")
         {
             return BigFloatTranscendentalMath.LogApproximation(
-                logCase.Significand, logCase.Exponent, 32 * logCase.Words, _workspace.Transcendental);
+                logCase.Significand, logCase.Exponent, 32 * logCase.Words, Workspace.Transcendental);
         }
 
-        using var x = new GpuBigUInt(_workspace, ToWords(logCase.Significand));
+        using var x = new GpuBigUInt(Workspace, ToWords(logCase.Significand));
         return GpuBigFloatTranscendentals.LogApproximation(
-            _workspace, new GpuFloatOperand(x.Handle, logCase.Exponent), logCase.Words);
+            Workspace, new GpuFloatOperand(x.Handle, logCase.Exponent), logCase.Words);
     }
 
     private void ApplyOptions(int? halvings, int? blockSize, int hornerMaxTerms)
     {
-        var options = _workspace.Transcendental;
+        var options = Workspace.Transcendental;
         options.ExpHalvingCount = halvings;
         options.SeriesBlockSize = blockSize;
         options.AtanhHornerMaxTerms = hornerMaxTerms;
     }
 
     private GpuBigIntExecutionContext CreateContext() =>
-        new(_workspace, _workspace.MemoryManager, new LegacyProviderArithmeticAdapter(), _workspace.Stream);
+        new(Workspace, Workspace.MemoryManager, new LegacyProviderArithmeticAdapter(), Workspace.Stream);
 
     private static IGpuBigFloatArithmetic Arithmetic(string engine) =>
         engine == "Gpu" ? GSharpKernelFloatProvider.Instance : CSharpCpuBigFloatArithmetic.Instance;
