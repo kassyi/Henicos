@@ -71,29 +71,8 @@ export async function checkDotnetRemoteOffload(assert: AssertModule, dotnetOnlyH
     assert.deepStrictEqual(plan.collectPaths, [{ path: "tmp/trx", kind: "dir" }]);
     assert.deepStrictEqual(plan.redirectedResultsDirs, ["tmp/trx"]);
 
-    // Mixed-case Windows leading env overrides DiffEngine_Disabled, MSBUILDCORELIMIT, and MSBUILDNODECOREALLOCATIONWEIGHT
-    const winMixedLead = translateForRemote(
-      `$env:diffengine_disabled='false'; $env:msbuildcorelimit='2'; dotnet test ${projB}`,
-      {
-        cwd: wtA,
-        worktree: wtA,
-        shell: "pwsh",
-        places: { [projB]: { root: wtB, ignored: false } },
-        cpus: 4,
-        keepBuildServersWarm: true,
-        env: {},
-        platform: "win32",
-        remoteRules: rules,
-      },
-    );
-    assert.ok(winMixedLead !== null);
-    assert.strictEqual(winMixedLead.env.diffengine_disabled, "false");
-    assert.strictEqual(winMixedLead.env.DiffEngine_Disabled, undefined);
-    assert.strictEqual(winMixedLead.env.msbuildcorelimit, "2");
-    assert.strictEqual(winMixedLead.env.MSBUILDCORELIMIT, undefined);
-    assert.strictEqual(winMixedLead.env.MSBUILDNODECOREALLOCATIONWEIGHT, "100");
-
-    const winMixedWeight = translateForRemote(`$env:msbuildnodecoreallocationweight='50'; dotnet test ${projB}`, {
+    // A mixed-case Windows leading assignment of an allowlisted default takes its canonical spelling and wins
+    const winMixedLead = translateForRemote(`$env:diffengine_disabled='false'; dotnet test ${projB}`, {
       cwd: wtA,
       worktree: wtA,
       shell: "pwsh",
@@ -104,9 +83,30 @@ export async function checkDotnetRemoteOffload(assert: AssertModule, dotnetOnlyH
       platform: "win32",
       remoteRules: rules,
     });
-    assert.ok(winMixedWeight !== null);
-    assert.strictEqual(winMixedWeight.env.msbuildnodecoreallocationweight, "50");
-    assert.strictEqual(winMixedWeight.env.MSBUILDNODECOREALLOCATIONWEIGHT, undefined);
+    assert.ok(winMixedLead !== null);
+    assert.strictEqual(winMixedLead.env.DiffEngine_Disabled, "false");
+    assert.strictEqual(winMixedLead.env.diffengine_disabled, undefined);
+    assert.strictEqual(winMixedLead.env.MSBUILDCORELIMIT, "4");
+    assert.strictEqual(winMixedLead.env.MSBUILDNODECOREALLOCATIONWEIGHT, "100");
+
+    // The core limits are local-only: written in the command (any case) they keep the job local like in the caller env
+    for (const lead of ["$env:msbuildcorelimit='2'", "$env:msbuildnodecoreallocationweight='50'"]) {
+      assert.strictEqual(
+        translateForRemote(`${lead}; dotnet test ${projB}`, {
+          cwd: wtA,
+          worktree: wtA,
+          shell: "pwsh",
+          places: { [projB]: { root: wtB, ignored: false } },
+          cpus: 4,
+          keepBuildServersWarm: true,
+          env: {},
+          platform: "win32",
+          remoteRules: rules,
+        }),
+        null,
+        `${lead} stays local`,
+      );
+    }
 
     // Cold server opt-out preserves --disable-build-servers
     const coldPlan = translateForRemote(cmd, {
