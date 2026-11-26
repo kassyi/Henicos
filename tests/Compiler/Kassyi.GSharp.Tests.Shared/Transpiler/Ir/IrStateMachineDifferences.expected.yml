@@ -1490,6 +1490,8 @@
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.GotoLoopInForForwardGotoToMemberPastBreakGateKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.GotoLoopInsideLabeledStatementKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.GotoLoopLeftByElseOfBackGotoKernel", status: "Reconvergence", count: 1}
+- {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.GotoLoopLeftByElseOfIfThatFallsThroughKernel", status: "Reconvergence", count: 1}
+- {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.GotoLoopLeftByElseOfLabeledBackOnlyBranchKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.GotoLoopLeftByForwardGotoBlockKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.GotoLoopLeftInsideConstantFalseDoLoopKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.GotoLoopLeftInsideForLoopKernel", status: "Reconvergence", count: 1}

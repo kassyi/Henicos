@@ -156,6 +156,10 @@ public class WarpActiveMaskDifferentialTests
     }
 
     // value for the lanes of a warp of 32 that select, 0 for the others
+    // The value on the lanes whose bit is set in the mask and zero on the other lanes
+    private static uint[] OnLanes(uint lanes, uint value) =>
+        PerLane(32, t => ((lanes >> t) & 1u) != 0u, value);
+
     private static uint[] PerLane(int lanes, Func<int, bool> select, uint value) =>
         Enumerable.Range(0, lanes).Select(t => select(t) ? value : 0u).ToArray();
 
@@ -1852,5 +1856,39 @@ public class WarpActiveMaskDifferentialTests
                 .Concat(PerLane(32, static t => (t & 3) == 1, 0xFFFFFFFFu))
                 .Concat(PerLane(32, static t => (t & 3) == 3, 0xFFFFFFFFu))
                 .Concat(Enumerable.Range(0, 32).Select(static t => (t & 3) == 3 ? 2u : (t & 1) != 0 ? 1u : 0u))
+                .ToArray());
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_GotoLoopLeftByElseOfLabeledBackOnlyBranch_ReconvergesInTheElse() =>
+        RunOnEveryPath(224,
+            static output => WarpActiveMaskDifferentialKernels.LaunchGotoLoopLeftByElseOfLabeledBackOnlyBranchKernel(
+                output, 0, blockDimX: 32),
+            PerLane(32, static t => (t & 1) == 0, 0xFFFFFFFFu)
+                .Concat(PerLane(32, static t => (t & 3) == 1, 0xFFFFFFFFu))
+                .Concat(PerLane(32, static t => (t & 3) == 3, 0xFFFFFFFFu))
+                .Concat(Enumerable.Range(0, 32).Select(static t => (t & 3) == 3 ? 2u : (t & 1) != 0 ? 1u : 0u))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .Concat(PerLane(32, static t => (t & 1) != 0, 0xAAAAAAAAu))
+                .Concat(PerLane(32, static t => (t & 3) == 3, 0x88888888u))
+                .ToArray());
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_GotoLoopLeftByElseOfIfThatFallsThrough_ReconvergesInTheElse() =>
+        RunOnEveryPath(352,
+            static output => WarpActiveMaskDifferentialKernels.LaunchGotoLoopLeftByElseOfIfThatFallsThroughKernel(
+                output, 0, blockDimX: 32),
+            OnLanes(0x55555555u, 0x55555555u)
+                .Concat(OnLanes(0x22222222u, 0x22222222u))
+                .Concat(OnLanes(0x08080808u, 0x08080808u))
+                .Concat(OnLanes(0x00800080u, 0x00800080u))
+                .Concat(OnLanes(0x80008000u, 0x80008000u))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .Concat(PerLane(32, static _ => true, 1u))
+                .Concat(OnLanes(0xAAAAAAAAu, 1u))
+                .Concat(OnLanes(0x88888888u, 1u))
+                .Concat(OnLanes(0x80808080u, 1u))
+                .Concat(Enumerable.Range(0, 32).Select(static t => (t & 7) == 7 ? 3u : (t & 3) == 3 ? 2u : (t & 1) != 0 ? 1u : 0u))
                 .ToArray());
 }
