@@ -111,7 +111,7 @@ public static class ManagedStackRunner
             geometry.TotalBlocks, blockDimX, blockDimY, blockDimZ, kernelName);
         if (cooperative)
         {
-            LaunchLimits.CheckManagedCooperativeStackMemory(geometry.TotalBlocks, geometry.ThreadsPerBlock, kernelName);
+            CooperativeStackBudget.Check(geometry.TotalBlocks, geometry.ThreadsPerBlock, kernelName);
         }
 
         // [WHY] A wait of the scheduler can run another launch on the same thread (a SynchronizationContext that asks
