@@ -13,22 +13,16 @@ public class ReadOnlyArrayCastDifferentialTests
 {
     private const int Rows = 128;
 
-    internal static readonly DifferentialCase s_castLocal = new(
-        DiffKernelNames.Of(
-            typeof(ReadOnlyArrayCastDifferentialKernels),
-            nameof(ReadOnlyArrayCastDifferentialKernels.CastLocalKernel)))
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_castLocal = DiffCases.Create(
+        ReadOnlyArrayCastDifferentialKernels.LaunchCastLocalKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("source", DiffValues.Int32(rng, rows), readOnly: true)
             .Out<int>("output", rows, OutputPolicy.Exact),
-        Launch = static (b, s) => ReadOnlyArrayCastDifferentialKernels.LaunchCastLocalKernel(
-            b.Get<int>("source"),
-            b.Get<int>("output"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
+        shape: LaunchShape.ForRows(Rows, blockX: 64),
+        inputName: "source",
+        outputName: "output",
         // The barrier keeps the kernel from running as one sequential C# loop, so the oracle is the reference below
-        Reference = static (b, _) =>
+        reference: static (b, _) =>
         {
             var source = b.Get<int>("source");
             var output = b.Get<int>("output");
@@ -36,8 +30,7 @@ public class ReadOnlyArrayCastDifferentialTests
             {
                 output[i] = source[i] + 1;
             }
-        },
-    };
+        });
 
     [SkippableFact]
     public void CastLocal_ReadOnlyArrayHeldAcrossBarrier_MatchesTheReferenceOnEveryPath() =>

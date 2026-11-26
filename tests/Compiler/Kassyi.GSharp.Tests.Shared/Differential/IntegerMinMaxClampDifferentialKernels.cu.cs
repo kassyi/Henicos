@@ -5,6 +5,88 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
+public struct SByteClampInputs
+{
+    [GpuReadOnly] public sbyte[] Values;
+    [GpuReadOnly] public sbyte[] Minimums;
+    [GpuReadOnly] public sbyte[] Maximums;
+}
+
+public struct ByteClampInputs
+{
+    [GpuReadOnly] public byte[] Values;
+    [GpuReadOnly] public byte[] Minimums;
+    [GpuReadOnly] public byte[] Maximums;
+}
+
+public struct Int16ClampInputs
+{
+    [GpuReadOnly] public short[] Values;
+    [GpuReadOnly] public short[] Minimums;
+    [GpuReadOnly] public short[] Maximums;
+}
+
+public struct UInt16ClampInputs
+{
+    [GpuReadOnly] public ushort[] Values;
+    [GpuReadOnly] public ushort[] Minimums;
+    [GpuReadOnly] public ushort[] Maximums;
+}
+
+public struct UInt32ClampInputs
+{
+    [GpuReadOnly] public uint[] Values;
+    [GpuReadOnly] public uint[] Minimums;
+    [GpuReadOnly] public uint[] Maximums;
+}
+
+public struct Int64ClampInputs
+{
+    [GpuReadOnly] public long[] Values;
+    [GpuReadOnly] public long[] Minimums;
+    [GpuReadOnly] public long[] Maximums;
+}
+
+public struct UInt64ClampInputs
+{
+    [GpuReadOnly] public ulong[] Values;
+    [GpuReadOnly] public ulong[] Minimums;
+    [GpuReadOnly] public ulong[] Maximums;
+}
+
+public struct IntegerSignInputs
+{
+    [GpuReadOnly] public sbyte[] Signed8Values;
+    [GpuReadOnly] public short[] Signed16Values;
+    [GpuReadOnly] public int[] Signed32Values;
+    [GpuReadOnly] public long[] Signed64Values;
+}
+
+public struct MixedOperandInputs
+{
+    [GpuReadOnly] public long[] Signed64Values;
+    [GpuReadOnly] public byte[] Unsigned8Values;
+    [GpuReadOnly] public ushort[] Unsigned16Values;
+    [GpuReadOnly] public sbyte[] Signed8Values;
+    [GpuReadOnly] public uint[] Unsigned32Values;
+    [GpuReadOnly] public int[] Signed32Values;
+}
+
+public struct NarrowResultInputs
+{
+    [GpuReadOnly] public byte[] Unsigned8Values;
+    [GpuReadOnly] public sbyte[] Signed8Values;
+    [GpuReadOnly] public ushort[] Unsigned16Values;
+    [GpuReadOnly] public short[] Signed16Values;
+}
+
+public struct NarrowArgumentInputs
+{
+    [GpuReadOnly] public byte[] Unsigned8Values;
+    [GpuReadOnly] public sbyte[] Signed8Values;
+    [GpuReadOnly] public ushort[] Unsigned16Values;
+}
+
 /// <summary>
 /// Differential kernels for integer <see cref="Math.Max(sbyte, sbyte)"/>, <see cref="Math.Min(sbyte, sbyte)"/> and
 /// <see cref="Math.Clamp(sbyte, sbyte, sbyte)"/>, one kernel per type, <see cref="Math.Sign(sbyte)"/>, the overloads C#
@@ -159,7 +241,7 @@ public static partial class IntegerMinMaxClampDifferentialKernels
     }
 
     [GpuKernel]
-    public static void ClampSByteKernel(sbyte[] value, sbyte[] min, sbyte[] max, sbyte[] dst, int rows)
+    public static void ClampSByteKernel(SByteClampInputs inputs, sbyte[] results, int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
         if (t >= rows)
@@ -167,11 +249,11 @@ public static partial class IntegerMinMaxClampDifferentialKernels
             return;
         }
 
-        dst[t] = Math.Clamp(value[t], min[t], max[t]);
+        results[t] = Math.Clamp(inputs.Values[t], inputs.Minimums[t], inputs.Maximums[t]);
     }
 
     [GpuKernel]
-    public static void ClampByteKernel(byte[] value, byte[] min, byte[] max, byte[] dst, int rows)
+    public static void ClampByteKernel(ByteClampInputs inputs, byte[] results, int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
         if (t >= rows)
@@ -179,11 +261,11 @@ public static partial class IntegerMinMaxClampDifferentialKernels
             return;
         }
 
-        dst[t] = Math.Clamp(value[t], min[t], max[t]);
+        results[t] = Math.Clamp(inputs.Values[t], inputs.Minimums[t], inputs.Maximums[t]);
     }
 
     [GpuKernel]
-    public static void ClampInt16Kernel(short[] value, short[] min, short[] max, short[] dst, int rows)
+    public static void ClampInt16Kernel(Int16ClampInputs inputs, short[] results, int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
         if (t >= rows)
@@ -191,11 +273,11 @@ public static partial class IntegerMinMaxClampDifferentialKernels
             return;
         }
 
-        dst[t] = Math.Clamp(value[t], min[t], max[t]);
+        results[t] = Math.Clamp(inputs.Values[t], inputs.Minimums[t], inputs.Maximums[t]);
     }
 
     [GpuKernel]
-    public static void ClampUInt16Kernel(ushort[] value, ushort[] min, ushort[] max, ushort[] dst, int rows)
+    public static void ClampUInt16Kernel(UInt16ClampInputs inputs, ushort[] results, int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
         if (t >= rows)
@@ -203,11 +285,11 @@ public static partial class IntegerMinMaxClampDifferentialKernels
             return;
         }
 
-        dst[t] = Math.Clamp(value[t], min[t], max[t]);
+        results[t] = Math.Clamp(inputs.Values[t], inputs.Minimums[t], inputs.Maximums[t]);
     }
 
     [GpuKernel]
-    public static void ClampUInt32Kernel(uint[] value, uint[] min, uint[] max, uint[] dst, int rows)
+    public static void ClampUInt32Kernel(UInt32ClampInputs inputs, uint[] results, int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
         if (t >= rows)
@@ -215,11 +297,11 @@ public static partial class IntegerMinMaxClampDifferentialKernels
             return;
         }
 
-        dst[t] = Math.Clamp(value[t], min[t], max[t]);
+        results[t] = Math.Clamp(inputs.Values[t], inputs.Minimums[t], inputs.Maximums[t]);
     }
 
     [GpuKernel]
-    public static void ClampInt64Kernel(long[] value, long[] min, long[] max, long[] dst, int rows)
+    public static void ClampInt64Kernel(Int64ClampInputs inputs, long[] results, int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
         if (t >= rows)
@@ -227,11 +309,11 @@ public static partial class IntegerMinMaxClampDifferentialKernels
             return;
         }
 
-        dst[t] = Math.Clamp(value[t], min[t], max[t]);
+        results[t] = Math.Clamp(inputs.Values[t], inputs.Minimums[t], inputs.Maximums[t]);
     }
 
     [GpuKernel]
-    public static void ClampUInt64Kernel(ulong[] value, ulong[] min, ulong[] max, ulong[] dst, int rows)
+    public static void ClampUInt64Kernel(UInt64ClampInputs inputs, ulong[] results, int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
         if (t >= rows)
@@ -239,11 +321,11 @@ public static partial class IntegerMinMaxClampDifferentialKernels
             return;
         }
 
-        dst[t] = Math.Clamp(value[t], min[t], max[t]);
+        results[t] = Math.Clamp(inputs.Values[t], inputs.Minimums[t], inputs.Maximums[t]);
     }
 
     [GpuKernel]
-    public static void ClampIntPtrKernel(long[] value, long[] min, long[] max, long[] dst, int rows)
+    public static void ClampIntPtrKernel(Int64ClampInputs inputs, long[] results, int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
         if (t >= rows)
@@ -251,11 +333,11 @@ public static partial class IntegerMinMaxClampDifferentialKernels
             return;
         }
 
-        dst[t] = Math.Clamp((nint)value[t], (nint)min[t], (nint)max[t]);
+        results[t] = Math.Clamp((nint)inputs.Values[t], (nint)inputs.Minimums[t], (nint)inputs.Maximums[t]);
     }
 
     [GpuKernel]
-    public static void ClampUIntPtrKernel(ulong[] value, ulong[] min, ulong[] max, ulong[] dst, int rows)
+    public static void ClampUIntPtrKernel(UInt64ClampInputs inputs, ulong[] results, int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
         if (t >= rows)
@@ -263,17 +345,11 @@ public static partial class IntegerMinMaxClampDifferentialKernels
             return;
         }
 
-        dst[t] = Math.Clamp((nuint)value[t], (nuint)min[t], (nuint)max[t]);
+        results[t] = Math.Clamp((nuint)inputs.Values[t], (nuint)inputs.Minimums[t], (nuint)inputs.Maximums[t]);
     }
 
     [GpuKernel]
-    public static void IntegerSignKernel(
-        sbyte[] sbV,
-        short[] sV,
-        int[] iV,
-        long[] lV,
-        int[] dst,
-        int rows)
+    public static void IntegerSignKernel(IntegerSignInputs inputs, int[] results, int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
         if (t >= rows)
@@ -282,30 +358,30 @@ public static partial class IntegerMinMaxClampDifferentialKernels
         }
 
         int baseIdx = t * 5;
-        dst[baseIdx + 0] = Math.Sign(sbV[t]);
-        dst[baseIdx + 1] = Math.Sign(sV[t]);
-        dst[baseIdx + 2] = Math.Sign(iV[t]);
-        dst[baseIdx + 3] = Math.Sign(lV[t]);
-        dst[baseIdx + 4] = Math.Sign((nint)lV[t]);
+        results[baseIdx + 0] = Math.Sign(inputs.Signed8Values[t]);
+        results[baseIdx + 1] = Math.Sign(inputs.Signed16Values[t]);
+        results[baseIdx + 2] = Math.Sign(inputs.Signed32Values[t]);
+        results[baseIdx + 3] = Math.Sign(inputs.Signed64Values[t]);
+        results[baseIdx + 4] = Math.Sign((nint)inputs.Signed64Values[t]);
     }
 
     // Each call is bound by C# to the overload in its comment; the arguments are converted to its parameter type
     [GpuKernel]
-    public static void MixedOperandKernel(
-        long[] l,
-        byte[] b,
-        ushort[] us,
-        sbyte[] sb,
-        uint[] u,
-        int[] iv,
-        long[] r,
-        int rows)
+    public static void MixedOperandKernel(MixedOperandInputs inputs, long[] results, int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
         if (t >= rows)
         {
             return;
         }
+
+        var l = inputs.Signed64Values;
+        var b = inputs.Unsigned8Values;
+        var us = inputs.Unsigned16Values;
+        var sb = inputs.Signed8Values;
+        var u = inputs.Unsigned32Values;
+        var iv = inputs.Signed32Values;
+        var r = results;
 
         int o = t * 9;
         r[o] = Math.Max(l[t], 0); // Max(long, long)
@@ -334,13 +410,19 @@ public static partial class IntegerMinMaxClampDifferentialKernels
     // A narrow result kept in `var` keeps its type: `++` wraps in it, and `ref` passes a pointer to it, which a pointer
     // to an int would not convert to
     [GpuKernel]
-    public static void NarrowResultKernel(byte[] b, sbyte[] sb, ushort[] us, short[] s, long[] r, int rows)
+    public static void NarrowResultKernel(NarrowResultInputs inputs, long[] results, int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
         if (t >= rows)
         {
             return;
         }
+
+        var b = inputs.Unsigned8Values;
+        var sb = inputs.Signed8Values;
+        var us = inputs.Unsigned16Values;
+        var s = inputs.Signed16Values;
+        var r = results;
 
         int o = t * 8;
         var mb = Math.Max(b[t], (byte)254);
@@ -371,13 +453,18 @@ public static partial class IntegerMinMaxClampDifferentialKernels
 
     // C# binds a narrow argument to a wider overload: the comment names it
     [GpuKernel]
-    public static void NarrowArgumentKernel(byte[] b, sbyte[] sb, ushort[] us, long[] r, int rows)
+    public static void NarrowArgumentKernel(NarrowArgumentInputs inputs, long[] results, int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
         if (t >= rows)
         {
             return;
         }
+
+        var b = inputs.Unsigned8Values;
+        var sb = inputs.Signed8Values;
+        var us = inputs.Unsigned16Values;
+        var r = results;
 
         int o = t * 5;
         r[o] = BitOperations.IsPow2(b[t]) ? 1 : 0; // IsPow2(int)

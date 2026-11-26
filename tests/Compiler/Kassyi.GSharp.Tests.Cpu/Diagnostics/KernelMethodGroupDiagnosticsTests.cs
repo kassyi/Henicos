@@ -11,6 +11,7 @@ public class KernelMethodGroupDiagnosticsTests
 {
     private const string TestCase = "Diagnostics/KernelMethodGroupAndDelegateCombination.cu.cs";
     private const string DeviceFunctionParameterTestCase = "Diagnostics/DeviceFunctionHeapObjectParameters.cu.cs";
+    private const string UserNameofTestCase = "Diagnostics/UserNameofMethodGroup.cu.cs";
 
     // Line 23 names the kernel alone, line 24 through its type; line 25 converts a device function, which is fine
     [Theory]
@@ -27,6 +28,25 @@ public class KernelMethodGroupDiagnosticsTests
                 (Analyzer, 24, 24, 24, 61)
             ],
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "used as a method group"));
+    }
+
+    // A method named nameof binds as a call, so the method groups in its argument are checked: a kernel (line 25,
+    // GSH0003) and a host method (line 26, GSH0107). The nameof operator (line 40) reads no method and reports nothing
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task MethodGroup_ArgumentOfUserMethodNamedNameof_ReportsAtTheName(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(UserNameofTestCase, dialect);
+
+        Assert.Equal(
+            [(Analyzer, 25, 16, 25, 28)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "used as a method group"));
+        Assert.Equal(
+            [(Analyzer, 26, 16, 26, 24)],
+            diagnostics.Ranges(GSharpDiagnostics.UnmarkedMethodCalledFromGpuCode.Id));
+        Assert.Equal(2, diagnostics.Length);
     }
 
     // Lines 34 and 35 combine with += and -=, line 36 with +; line 37 copies a delegate, which is fine. Lines 46 and 47

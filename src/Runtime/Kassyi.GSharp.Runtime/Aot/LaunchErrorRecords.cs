@@ -28,6 +28,9 @@ using Kassyi.GSharp.Runtime.Interop;
 /// synchronization does not take an owned record (<see cref="DeviceErrorSlot.ThrowIfDeviceError"/>), so the launcher
 /// throws its own error. The record of a launch that no launcher reads (a <c>Ptr</c> launch outside the checked build)
 /// is thrown by the next synchronization, or by the launch that takes its record <see cref="Records"/> epochs later.
+/// The checked build's launchers neither synchronize nor read a record while their stream is being captured
+/// (<see cref="SynchronizeAndThrowIfLaunchError"/>): the synchronization after the graph launch throws the error of a
+/// replay.
 /// </para>
 /// <para>
 /// Generated launchers call these members; code that launches a kernel itself does not need them.
@@ -301,6 +304,33 @@ public static unsafe class LaunchErrorRecords
         {
             ReleaseLaunchEpoch(launchEpoch);
         }
+    }
+
+    /// <summary>
+    /// Waits for the launch with <paramref name="launchEpoch"/> on <paramref name="stream"/> and throws the device
+    /// error it recorded (the checked build's launchers). On a stream that is being captured into a CUDA graph the
+    /// launch has not run: it does nothing, and the synchronization after the graph launch throws the error of a
+    /// replay.
+    /// </summary>
+    /// <param name="stream">The stream of the launch.</param>
+    /// <param name="launchEpoch">
+    /// The epoch that <see cref="NextLaunchEpoch(IntPtr, bool, IntPtr)"/> returned for the launch.
+    /// </param>
+    public static void SynchronizeAndThrowIfLaunchError(IntPtr stream, uint launchEpoch)
+    {
+        // [WHY] An owned epoch was taken while the stream was not capturing (NextLaunchEpoch), so only an epoch the
+        // launcher does not own needs the query: a captured launch, or one that found no free record
+        if (!IsOwned(launchEpoch))
+        {
+            CudaException.ThrowIfError(CudaDriverApi.cuStreamIsCapturing(stream, out var status));
+            if (status != CUstreamCaptureStatus.None)
+            {
+                return;
+            }
+        }
+
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(stream));
+        ThrowIfLaunchError(launchEpoch);
     }
 
     /// <summary>

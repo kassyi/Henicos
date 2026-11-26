@@ -11,9 +11,7 @@ public class WarpFrameLayoutTests
     private const string CasesType = "WarpFrameLayoutCases.Kernels";
 
     private static readonly Compilation s_compilation = RoslynTestUtility.CreateCompilation(
-        File.ReadAllText(RepositoryPaths.Combine(
-            "tests", "Compiler", "Kassyi.GSharp.Tests.Cpu", "Analysis", "Cases", "WarpFrameLayoutCases.cs"))
-    );
+        ReadCase("WarpFrameLayoutCases.cs"));
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
@@ -115,37 +113,10 @@ public class WarpFrameLayoutTests
     [Scenario(TestScenario.SadPath)]
     public void Layout_ImportedShuffleCallee_Fails()
     {
-        const string LibrarySource = """
-            using Kassyi.GSharp.Core;
-
-            namespace ImportedWarpLib;
-
-            public static partial class Helpers
-            {
-                [GpuDeviceFunction]
-                public static int RemotePairSum(int v) => v + Warp.ShuffleXorSync(0xFFFFFFFFu, v, 1);
-            }
-            """;
-
-        const string ConsumerSource = """
-            using Kassyi.GSharp.Core;
-
-            namespace ConsumerApp;
-
-            public static partial class Kernels
-            {
-                [GpuKernel]
-                public static void CallRemoteKernel(int[] data)
-                {
-                    int t = ThreadIndex.X;
-                    data[t] = ImportedWarpLib.Helpers.RemotePairSum(data[t]);
-                }
-            }
-            """;
-
-        var libCompilation = RoslynTestUtility.CreateCompilation(LibrarySource).WithAssemblyName("ImportedWarpLib");
+        var libCompilation = RoslynTestUtility.CreateCompilation(ReadCase("WarpFrameImportedLibraryCases.cs"))
+            .WithAssemblyName("ImportedWarpLib");
         var (_, libOutput, _) = GeneratorTestRunner.RunGenerator(libCompilation, "Cpu");
-        var consumer = RoslynTestUtility.CreateCompilation(ConsumerSource)
+        var consumer = RoslynTestUtility.CreateCompilation(ReadCase("WarpFrameImportedConsumerCases.cs"))
             .WithAssemblyName("ConsumerApp")
             .AddReferences(libOutput.ToMetadataReference());
         var kernel = consumer.GetTypeByMetadataName("ConsumerApp.Kernels")?.GetMembers("CallRemoteKernel")
@@ -229,6 +200,23 @@ public class WarpFrameLayoutTests
         }
     }
 
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Layout_UnannotatedNodeOfAnotherTree_FindsNoSiteAtItsOwnSpan()
+    {
+        var (_, declaration, _) = GetMethod("FullPairSum");
+        var layout = GetLayout("FullPairSum");
+        var call = Invocations(declaration).Single();
+
+        // The same text parsed again: the call has the span of the site, but it is a node the lowering could have
+        // written, with no original span to say which call it stands for
+        var reparsed = CSharpSyntaxTree.ParseText(declaration.SyntaxTree.GetText());
+        var copy = reparsed.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>()
+            .Single(node => node.Span == call.Span);
+
+        Assert.False(layout.TryGetSite(copy, 0, out _));
+    }
+
     // Dk(v) => D(k-1)(D(k-1)(v)): the size doubles with every level and passes int.MaxValue at D30
     [Theory]
     [Scenario(TestScenario.Boundary)]
@@ -246,6 +234,7 @@ public class WarpFrameLayoutTests
     }
 
     // D0 has one shuffle (size 2), Dk = 1 + 2 * D(k-1), the kernel = 1 + D(depth)
+    // Kept as StringBuilder: generates D0..D{depth} up to depth 34 to test int.MaxValue overflow.
     private static string DoublingChainSource(int depth)
     {
         var source = new System.Text.StringBuilder();
@@ -323,6 +312,10 @@ public class WarpFrameLayoutTests
     private static IMethodSymbol Callee(InvocationExpressionSyntax call, SemanticModel model) =>
         model.GetSymbolInfo(call).Symbol as IMethodSymbol
         ?? throw new InvalidOperationException("A call without a method symbol");
+
+    private static string ReadCase(string fileName) =>
+        File.ReadAllText(RepositoryPaths.Combine(
+            "tests", "Compiler", "Kassyi.GSharp.Tests.Cpu", "Analysis", "Cases", fileName));
 
     private static (IMethodSymbol Symbol, MethodDeclarationSyntax Declaration, SemanticModel Model) GetMethod(
         string methodName)

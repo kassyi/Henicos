@@ -43,6 +43,38 @@ public static partial class StackModelKernels
         return v + Warp.ShuffleXorSync(mask: 0xFFFFFFFFu, laneMask: 16, var: v);
     }
 
+    // Warp.ActiveMask() in a branch, after it and in a device function called in a branch: the stack forms write the
+    // body lowered for the stacks, with the reconvergence regions of the state machine
+    [GpuKernel]
+    public static void ActiveMaskKernel(uint[] output)
+    {
+        int tid = ThreadIndex.X;
+        uint mask = 0u;
+        if (tid % 2 == 0 && Warp.ActiveMask() != 0u)
+        {
+            mask = MaskOfOddValues(tid);
+        }
+
+        output[tid] = mask | Warp.ActiveMask();
+    }
+
+    [GpuDeviceFunction]
+    private static uint MaskOfOddValues(int value)
+    {
+        uint mask = 0u;
+        for (int i = 0; i < value; i++)
+        {
+            if (i % 3 == 0)
+            {
+                continue;
+            }
+
+            mask ^= Warp.ActiveMask();
+        }
+
+        return mask;
+    }
+
     [GpuDeviceFunction]
     private static int WaitAndRead(int value, int tid)
     {

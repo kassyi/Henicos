@@ -90,6 +90,7 @@ public static partial class MarshalingAliasingDifferentialKernels
     }
 
     // --- Deep Struct across all 6 array-like container shapes ---
+    // The parameter list is the subject of this test: deep-struct marshaling across six top-level array-like container parameter types.
     [GpuKernel]
     public static void DeepStructSixContainersKernel(
         DiffDeepBag[] arrBags,
@@ -239,6 +240,7 @@ public static partial class MarshalingAliasingDifferentialKernels
     }
 
     // --- Deep Struct internal array aliasing (#707) ---
+    // The parameter list is the subject of this test: alias-group discovery among top-level ref struct, value structs, struct array, and output array.
     [GpuKernel]
     public static void DeepStructInternalAliasKernel(
         ref DiffArrayPair pair,
@@ -268,6 +270,7 @@ public static partial class MarshalingAliasingDifferentialKernels
     }
 
     // --- Cross-level aliasing between top-level array and Deep Struct field ---
+    // The parameter list is the subject of this test: cross-level aliasing between top-level array parameters and deep-struct value/ref parameters.
     [GpuKernel]
     public static void CrossLevelTopAndDeepStructKernel(
         [In] int[] topReadOnly,

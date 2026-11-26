@@ -65,7 +65,7 @@ internal static class GSharpSharedCudaDeviceCode
 public const string Source = @"inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__CountedThree(GSharpArray<int> __gsharp_id_0_counter);
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__CountedThree(GSharpArray<int> __gsharp_id_0_counter){
-__gsharp_array_at(__gsharp_id_0_counter, 0, ""G#: a null array is read at StackLinqRangeKernels.cs(98,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_counter, 0, ""G#: a null array is read at StackLinqRangeKernels.cs(98,22)""),1);
+__gsharp_array_at(__gsharp_id_0_counter, 0, ""G#: a null array is read at StackLinqRangeKernels.cs(121,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_counter, 0, ""G#: a null array is read at StackLinqRangeKernels.cs(121,22)""),1);
 return 3;
 }
 
@@ -94,138 +94,82 @@ public partial class StackLinqRangeKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(964412482u, "StackLinqRangeKernels.cs", 21, 26, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(993460523u, "StackLinqRangeKernels.cs", 22, 24, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(704877398u, "StackLinqRangeKernels.cs", 26, 26, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1641451523u, "StackLinqRangeKernels.cs", 27, 24, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(161351906u, "StackLinqRangeKernels.cs", 31, 26, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1711990347u, "StackLinqRangeKernels.cs", 32, 24, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1670061078u, "StackLinqRangeKernels.cs", 36, 26, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1144281919u, "StackLinqRangeKernels.cs", 37, 24, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1920721098u, "StackLinqRangeKernels.cs", 41, 26, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(419917991u, "StackLinqRangeKernels.cs", 42, 24, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1786998634u, "StackLinqRangeKernels.cs", 46, 26, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1321871195u, "StackLinqRangeKernels.cs", 47, 24, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1262882682u, "StackLinqRangeKernels.cs", 51, 26, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1514868975u, "StackLinqRangeKernels.cs", 52, 24, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(354311914u, "StackLinqRangeKernels.cs", 56, 26, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(493981775u, "StackLinqRangeKernels.cs", 57, 24, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(750202738u, "StackLinqRangeKernels.cs", 61, 26, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1702026731u, "StackLinqRangeKernels.cs", 62, 24, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1121540542u, "StackLinqRangeKernels.cs", 66, 26, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(262104747u, "StackLinqRangeKernels.cs", 67, 24, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(405095010u, "StackLinqRangeKernels.cs", 71, 26, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(244027163u, "StackLinqRangeKernels.cs", 72, 24, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1788569022u, "StackLinqRangeKernels.cs", 76, 26, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1953497983u, "StackLinqRangeKernels.cs", 77, 24, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1562834868u, "StackLinqRangeKernels.cs", 79, 9, "TwoStageRangeKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(906941444u, "StackLinqRangeKernels.cs", 80, 9, "TwoStageRangeKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(482605533u, "StackLinqRangeKernels.cs", 89, 13, "FilteredTakeKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1741391979u, "StackLinqRangeKernels.cs", 89, 25, "FilteredTakeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1068191645u, "StackLinqRangeKernels.cs", 90, 13, "FilteredTakeKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(802834615u, "StackLinqRangeKernels.cs", 90, 25, "FilteredTakeKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(690712025u, "StackLinqRangeKernels.cs", 108, 13, "SelectSkipCountKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1976705061u, "StackLinqRangeKernels.cs", 108, 25, "SelectSkipCountKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1110401708u, "StackLinqRangeKernels.cs", 108, 99, "SelectSkipCountKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1078748565u, "StackLinqRangeKernels.cs", 119, 13, "DividingSelectSkipKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(89239317u, "StackLinqRangeKernels.cs", 119, 25, "DividingSelectSkipKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2120921973u, "StackLinqRangeKernels.cs", 120, 13, "DividingSelectSkipKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1004253633u, "StackLinqRangeKernels.cs", 120, 25, "DividingSelectSkipKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(474669973u, "StackLinqRangeKernels.cs", 120, 62, "DividingSelectSkipKernel", "Attempted to divide by zero."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(476368303u, "StackLinqRangeKernels.cs", 130, 13, "IndexingSelectSkipKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1515104579u, "StackLinqRangeKernels.cs", 130, 25, "IndexingSelectSkipKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(713051150u, "StackLinqRangeKernels.cs", 130, 62, "IndexingSelectSkipKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1713125983u, "StackLinqRangeKernels.cs", 141, 13, "TakeCountKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1807344663u, "StackLinqRangeKernels.cs", 141, 25, "TakeCountKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(808352214u, "StackLinqRangeKernels.cs", 141, 99, "TakeCountKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1692742005u, "StackLinqRangeKernels.cs", 142, 13, "TakeCountKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(585610309u, "StackLinqRangeKernels.cs", 142, 25, "TakeCountKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(133797730u, "StackLinqRangeKernels.cs", 142, 98, "TakeCountKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1874868093u, "StackLinqRangeKernels.cs", 153, 13, "TakeSkipCountKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1276523265u, "StackLinqRangeKernels.cs", 153, 25, "TakeSkipCountKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1217775084u, "StackLinqRangeKernels.cs", 153, 99, "TakeSkipCountKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1574301991u, "StackLinqRangeKernels.cs", 154, 13, "TakeSkipCountKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(801814083u, "StackLinqRangeKernels.cs", 154, 25, "TakeSkipCountKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1112561500u, "StackLinqRangeKernels.cs", 154, 98, "TakeSkipCountKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1950240245u, "StackLinqRangeKernels.cs", 155, 13, "TakeSkipCountKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1437382869u, "StackLinqRangeKernels.cs", 155, 25, "TakeSkipCountKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1303754164u, "StackLinqRangeKernels.cs", 155, 99, "TakeSkipCountKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1223967192u, "StackLinqRangeKernels.cs", 167, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1905735699u, "StackLinqRangeKernels.cs", 167, 30, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1703531916u, "StackLinqRangeKernels.cs", 168, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(312352733u, "StackLinqRangeKernels.cs", 168, 30, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2000421236u, "StackLinqRangeKernels.cs", 169, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1469475115u, "StackLinqRangeKernels.cs", 169, 30, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1473300428u, "StackLinqRangeKernels.cs", 170, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(981348587u, "StackLinqRangeKernels.cs", 170, 30, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(708146408u, "StackLinqRangeKernels.cs", 171, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1181041977u, "StackLinqRangeKernels.cs", 171, 30, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(9899524u, "StackLinqRangeKernels.cs", 172, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1882950055u, "StackLinqRangeKernels.cs", 172, 30, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(432223232u, "StackLinqRangeKernels.cs", 173, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1484793385u, "StackLinqRangeKernels.cs", 173, 30, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(532246092u, "StackLinqRangeKernels.cs", 174, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1716505283u, "StackLinqRangeKernels.cs", 174, 30, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1654759744u, "StackLinqRangeKernels.cs", 175, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(949617657u, "StackLinqRangeKernels.cs", 175, 30, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(529568612u, "StackLinqRangeKernels.cs", 176, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(517222583u, "StackLinqRangeKernels.cs", 176, 30, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1202228728u, "StackLinqRangeKernels.cs", 177, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1615701251u, "StackLinqRangeKernels.cs", 177, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1427600492u, "StackLinqRangeKernels.cs", 178, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(941223877u, "StackLinqRangeKernels.cs", 178, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1748025464u, "StackLinqRangeKernels.cs", 179, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(430419547u, "StackLinqRangeKernels.cs", 179, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(357830500u, "StackLinqRangeKernels.cs", 180, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1210916751u, "StackLinqRangeKernels.cs", 180, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(920305712u, "StackLinqRangeKernels.cs", 181, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(667933805u, "StackLinqRangeKernels.cs", 181, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1472173512u, "StackLinqRangeKernels.cs", 182, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1106801523u, "StackLinqRangeKernels.cs", 182, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2000995380u, "StackLinqRangeKernels.cs", 183, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1931763741u, "StackLinqRangeKernels.cs", 183, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(931072724u, "StackLinqRangeKernels.cs", 184, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(809592631u, "StackLinqRangeKernels.cs", 184, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(539177720u, "StackLinqRangeKernels.cs", 185, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(616646309u, "StackLinqRangeKernels.cs", 185, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(269345792u, "StackLinqRangeKernels.cs", 186, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(29042931u, "StackLinqRangeKernels.cs", 186, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1289003156u, "StackLinqRangeKernels.cs", 187, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1268458933u, "StackLinqRangeKernels.cs", 187, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(823242420u, "StackLinqRangeKernels.cs", 188, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(801766271u, "StackLinqRangeKernels.cs", 188, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(83404080u, "StackLinqRangeKernels.cs", 189, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1918890845u, "StackLinqRangeKernels.cs", 189, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(419205300u, "StackLinqRangeKernels.cs", 190, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(246292605u, "StackLinqRangeKernels.cs", 190, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1927919564u, "StackLinqRangeKernels.cs", 191, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1522747699u, "StackLinqRangeKernels.cs", 191, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2130541196u, "StackLinqRangeKernels.cs", 192, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(662797649u, "StackLinqRangeKernels.cs", 192, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1338771076u, "StackLinqRangeKernels.cs", 193, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(254132139u, "StackLinqRangeKernels.cs", 193, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1677741204u, "StackLinqRangeKernels.cs", 194, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2056425941u, "StackLinqRangeKernels.cs", 194, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(748436162u, "StackLinqRangeKernels.cs", 44, 26, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(612099483u, "StackLinqRangeKernels.cs", 45, 24, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2120211466u, "StackLinqRangeKernels.cs", 49, 26, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1923005827u, "StackLinqRangeKernels.cs", 50, 24, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1643516662u, "StackLinqRangeKernels.cs", 54, 26, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1026471043u, "StackLinqRangeKernels.cs", 55, 24, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1807926202u, "StackLinqRangeKernels.cs", 59, 26, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1792152747u, "StackLinqRangeKernels.cs", 60, 24, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(249011198u, "StackLinqRangeKernels.cs", 64, 26, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(528603u, "StackLinqRangeKernels.cs", 65, 24, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(243533458u, "StackLinqRangeKernels.cs", 69, 26, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(934402879u, "StackLinqRangeKernels.cs", 70, 24, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(697195018u, "StackLinqRangeKernels.cs", 74, 26, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(716061467u, "StackLinqRangeKernels.cs", 75, 24, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1151817074u, "StackLinqRangeKernels.cs", 79, 26, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1026798959u, "StackLinqRangeKernels.cs", 80, 24, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2069817434u, "StackLinqRangeKernels.cs", 84, 26, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1507829395u, "StackLinqRangeKernels.cs", 85, 24, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2022535498u, "StackLinqRangeKernels.cs", 89, 26, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1792771499u, "StackLinqRangeKernels.cs", 90, 24, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(778772678u, "StackLinqRangeKernels.cs", 94, 26, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1019823131u, "StackLinqRangeKernels.cs", 95, 24, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(128723530u, "StackLinqRangeKernels.cs", 99, 26, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(559402699u, "StackLinqRangeKernels.cs", 100, 24, "TwoStageRangeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1640208472u, "StackLinqRangeKernels.cs", 102, 9, "TwoStageRangeKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(490583332u, "StackLinqRangeKernels.cs", 103, 9, "TwoStageRangeKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(439712491u, "StackLinqRangeKernels.cs", 112, 13, "FilteredTakeKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1540176899u, "StackLinqRangeKernels.cs", 112, 25, "FilteredTakeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(957203245u, "StackLinqRangeKernels.cs", 113, 13, "FilteredTakeKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(959913793u, "StackLinqRangeKernels.cs", 113, 25, "FilteredTakeKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(519177389u, "StackLinqRangeKernels.cs", 131, 13, "SelectSkipCountKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1658852021u, "StackLinqRangeKernels.cs", 131, 25, "SelectSkipCountKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(927964796u, "StackLinqRangeKernels.cs", 131, 99, "SelectSkipCountKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1692742005u, "StackLinqRangeKernels.cs", 142, 13, "DividingSelectSkipKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(585610309u, "StackLinqRangeKernels.cs", 142, 25, "DividingSelectSkipKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1320309271u, "StackLinqRangeKernels.cs", 143, 13, "DividingSelectSkipKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(75803483u, "StackLinqRangeKernels.cs", 143, 25, "DividingSelectSkipKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(304965155u, "StackLinqRangeKernels.cs", 143, 62, "DividingSelectSkipKernel", "Attempted to divide by zero."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1874868093u, "StackLinqRangeKernels.cs", 153, 13, "IndexingSelectSkipKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1276523265u, "StackLinqRangeKernels.cs", 153, 25, "IndexingSelectSkipKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(868027064u, "StackLinqRangeKernels.cs", 153, 62, "IndexingSelectSkipKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2122139445u, "StackLinqRangeKernels.cs", 164, 13, "TakeCountKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(902516025u, "StackLinqRangeKernels.cs", 164, 25, "TakeCountKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(344582032u, "StackLinqRangeKernels.cs", 164, 99, "TakeCountKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1107849827u, "StackLinqRangeKernels.cs", 165, 13, "TakeCountKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1796139419u, "StackLinqRangeKernels.cs", 165, 25, "TakeCountKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1912936972u, "StackLinqRangeKernels.cs", 165, 98, "TakeCountKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(700856287u, "StackLinqRangeKernels.cs", 178, 13, "TakeSkipCountKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(476710603u, "StackLinqRangeKernels.cs", 178, 25, "TakeSkipCountKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1534705858u, "StackLinqRangeKernels.cs", 178, 99, "TakeSkipCountKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(432463213u, "StackLinqRangeKernels.cs", 179, 13, "TakeSkipCountKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1882088805u, "StackLinqRangeKernels.cs", 179, 25, "TakeSkipCountKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(872384286u, "StackLinqRangeKernels.cs", 179, 98, "TakeSkipCountKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1169114217u, "StackLinqRangeKernels.cs", 180, 13, "TakeSkipCountKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(245787797u, "StackLinqRangeKernels.cs", 180, 25, "TakeSkipCountKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(424614780u, "StackLinqRangeKernels.cs", 180, 99, "TakeSkipCountKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1232549436u, "StackLinqRangeKernels.cs", 195, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(539585075u, "StackLinqRangeKernels.cs", 195, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1480115957u, "StackLinqRangeKernels.cs", 195, 30, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(340551276u, "StackLinqRangeKernels.cs", 196, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(368818289u, "StackLinqRangeKernels.cs", 196, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(835156811u, "StackLinqRangeKernels.cs", 196, 30, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(174935220u, "StackLinqRangeKernels.cs", 197, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1212491899u, "StackLinqRangeKernels.cs", 197, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(479660165u, "StackLinqRangeKernels.cs", 197, 30, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(459200164u, "StackLinqRangeKernels.cs", 198, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1523378189u, "StackLinqRangeKernels.cs", 198, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1154366775u, "StackLinqRangeKernels.cs", 198, 30, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1430608268u, "StackLinqRangeKernels.cs", 199, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(314014595u, "StackLinqRangeKernels.cs", 199, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1154982109u, "StackLinqRangeKernels.cs", 199, 30, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(28936564u, "StackLinqRangeKernels.cs", 200, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(223841165u, "StackLinqRangeKernels.cs", 200, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1764501195u, "StackLinqRangeKernels.cs", 200, 30, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(990343704u, "StackLinqRangeKernels.cs", 201, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1132017443u, "StackLinqRangeKernels.cs", 201, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(343527465u, "StackLinqRangeKernels.cs", 201, 30, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(73354480u, "StackLinqRangeKernels.cs", 202, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1410112525u, "StackLinqRangeKernels.cs", 202, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1379105651u, "StackLinqRangeKernels.cs", 202, 30, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1505658836u, "StackLinqRangeKernels.cs", 203, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1306706431u, "StackLinqRangeKernels.cs", 203, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(459692013u, "StackLinqRangeKernels.cs", 203, 30, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1942466308u, "StackLinqRangeKernels.cs", 204, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(632907557u, "StackLinqRangeKernels.cs", 204, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1076693123u, "StackLinqRangeKernels.cs", 204, 30, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(26371440u, "StackLinqRangeKernels.cs", 205, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(876565107u, "StackLinqRangeKernels.cs", 205, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(876769128u, "StackLinqRangeKernels.cs", 206, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
@@ -278,23 +222,159 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1427550968u, "StackLinqRan
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1726249455u, "StackLinqRangeKernels.cs", 229, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1545585352u, "StackLinqRangeKernels.cs", 230, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(736097667u, "StackLinqRangeKernels.cs", 230, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1045496188u, "StackLinqRangeKernels.cs", 231, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(478485625u, "StackLinqRangeKernels.cs", 231, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(151193480u, "StackLinqRangeKernels.cs", 232, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1213347291u, "StackLinqRangeKernels.cs", 232, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(772613028u, "StackLinqRangeKernels.cs", 233, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(97710693u, "StackLinqRangeKernels.cs", 233, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(740086456u, "StackLinqRangeKernels.cs", 234, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1981657115u, "StackLinqRangeKernels.cs", 234, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1312326660u, "StackLinqRangeKernels.cs", 235, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1177572705u, "StackLinqRangeKernels.cs", 235, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(359748680u, "StackLinqRangeKernels.cs", 236, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1460864643u, "StackLinqRangeKernels.cs", 236, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(263941580u, "StackLinqRangeKernels.cs", 237, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(502196197u, "StackLinqRangeKernels.cs", 237, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(96074360u, "StackLinqRangeKernels.cs", 238, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(334216563u, "StackLinqRangeKernels.cs", 238, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(701532220u, "StackLinqRangeKernels.cs", 239, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2117226137u, "StackLinqRangeKernels.cs", 239, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1822294852u, "StackLinqRangeKernels.cs", 240, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1042660101u, "StackLinqRangeKernels.cs", 240, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1272661704u, "StackLinqRangeKernels.cs", 241, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(609311619u, "StackLinqRangeKernels.cs", 241, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(6868440u, "StackLinqRangeKernels.cs", 242, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1217674301u, "StackLinqRangeKernels.cs", 242, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1107207892u, "StackLinqRangeKernels.cs", 243, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1960669047u, "StackLinqRangeKernels.cs", 243, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(796335876u, "StackLinqRangeKernels.cs", 244, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1411333693u, "StackLinqRangeKernels.cs", 244, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(681911600u, "StackLinqRangeKernels.cs", 245, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(389153987u, "StackLinqRangeKernels.cs", 245, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1892595088u, "StackLinqRangeKernels.cs", 246, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1344825573u, "StackLinqRangeKernels.cs", 246, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2035512196u, "StackLinqRangeKernels.cs", 247, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1711524783u, "StackLinqRangeKernels.cs", 247, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(359883412u, "StackLinqRangeKernels.cs", 248, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1681022117u, "StackLinqRangeKernels.cs", 248, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1970634360u, "StackLinqRangeKernels.cs", 249, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(207430515u, "StackLinqRangeKernels.cs", 249, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1704426164u, "StackLinqRangeKernels.cs", 250, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2133963515u, "StackLinqRangeKernels.cs", 250, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(297305404u, "StackLinqRangeKernels.cs", 251, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1125383833u, "StackLinqRangeKernels.cs", 251, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1329324484u, "StackLinqRangeKernels.cs", 252, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(122055619u, "StackLinqRangeKernels.cs", 252, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(92685828u, "StackLinqRangeKernels.cs", 253, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1618200805u, "StackLinqRangeKernels.cs", 253, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1400339108u, "StackLinqRangeKernels.cs", 254, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1705111611u, "StackLinqRangeKernels.cs", 254, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(239960236u, "StackLinqRangeKernels.cs", 255, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1443530665u, "StackLinqRangeKernels.cs", 255, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1192229924u, "StackLinqRangeKernels.cs", 256, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1518448835u, "StackLinqRangeKernels.cs", 256, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(837213444u, "StackLinqRangeKernels.cs", 257, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(640343581u, "StackLinqRangeKernels.cs", 257, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1897467620u, "StackLinqRangeKernels.cs", 258, 9, "ThreeStageSweepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1522774459u, "StackLinqRangeKernels.cs", 258, 31, "ThreeStageSweepKernel", "Value cannot be null. (Parameter 'source')"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
 {
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 12)]
+public unsafe partial struct TwoStageRangeParameters
+{
+public const string DebugName_Combination = "global::System.Int32";
+[global::System.Runtime.InteropServices.FieldOffset(0)]
+public global::System.Int32 Combination;
+public const string DebugName_FirstCount = "global::System.Int32";
+[global::System.Runtime.InteropServices.FieldOffset(4)]
+public global::System.Int32 FirstCount;
+public const string DebugName_SecondCount = "global::System.Int32";
+[global::System.Runtime.InteropServices.FieldOffset(8)]
+public global::System.Int32 SecondCount;
 }
-public const string TwoStageRangeKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__TwoStageRangeKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_combo, int __gsharp_id_2_a, int __gsharp_id_3_b, GSharpArray<int> __gsharp_id_4_result, unsigned int __gsharp_epoch){
+public static unsafe void Marshal_TwoStageRangeParameters(ref global::Kassyi.GSharp.Tests.Shared.Runtime.TwoStageRangeParameters host, ref AotContexts.TwoStageRangeParameters native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+{
+native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Runtime.TwoStageRangeParameters, AotContexts.TwoStageRangeParameters>(ref host);
+}
+public static unsafe void Unmarshal_TwoStageRangeParameters(ref global::Kassyi.GSharp.Tests.Shared.Runtime.TwoStageRangeParameters host, ref AotContexts.TwoStageRangeParameters native, global::System.IntPtr hStream = default)
+{
+host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.TwoStageRangeParameters, global::Kassyi.GSharp.Tests.Shared.Runtime.TwoStageRangeParameters>(ref native);
+}
+[global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 8)]
+public unsafe partial struct TakeSkipBounds
+{
+public const string DebugName_TakeCount = "global::System.Int32";
+[global::System.Runtime.InteropServices.FieldOffset(0)]
+public global::System.Int32 TakeCount;
+public const string DebugName_SkipCount = "global::System.Int32";
+[global::System.Runtime.InteropServices.FieldOffset(4)]
+public global::System.Int32 SkipCount;
+}
+public static unsafe void Marshal_TakeSkipBounds(ref global::Kassyi.GSharp.Tests.Shared.Runtime.TakeSkipBounds host, ref AotContexts.TakeSkipBounds native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+{
+native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Runtime.TakeSkipBounds, AotContexts.TakeSkipBounds>(ref host);
+}
+public static unsafe void Unmarshal_TakeSkipBounds(ref global::Kassyi.GSharp.Tests.Shared.Runtime.TakeSkipBounds host, ref AotContexts.TakeSkipBounds native, global::System.IntPtr hStream = default)
+{
+host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.TakeSkipBounds, global::Kassyi.GSharp.Tests.Shared.Runtime.TakeSkipBounds>(ref native);
+}
+[global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 12)]
+public unsafe partial struct ThreeStageRangeParameters
+{
+public const string DebugName_FirstCount = "global::System.Int32";
+[global::System.Runtime.InteropServices.FieldOffset(0)]
+public global::System.Int32 FirstCount;
+public const string DebugName_SecondCount = "global::System.Int32";
+[global::System.Runtime.InteropServices.FieldOffset(4)]
+public global::System.Int32 SecondCount;
+public const string DebugName_ThirdCount = "global::System.Int32";
+[global::System.Runtime.InteropServices.FieldOffset(8)]
+public global::System.Int32 ThirdCount;
+}
+public static unsafe void Marshal_ThreeStageRangeParameters(ref global::Kassyi.GSharp.Tests.Shared.Runtime.ThreeStageRangeParameters host, ref AotContexts.ThreeStageRangeParameters native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+{
+native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Runtime.ThreeStageRangeParameters, AotContexts.ThreeStageRangeParameters>(ref host);
+}
+public static unsafe void Unmarshal_ThreeStageRangeParameters(ref global::Kassyi.GSharp.Tests.Shared.Runtime.ThreeStageRangeParameters host, ref AotContexts.ThreeStageRangeParameters native, global::System.IntPtr hStream = default)
+{
+host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.ThreeStageRangeParameters, global::Kassyi.GSharp.Tests.Shared.Runtime.ThreeStageRangeParameters>(ref native);
+}
+#pragma warning restore CS8500
+}
+public const string TwoStageRangeKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__TwoStageRangeParameters__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__TwoStageRangeParameters__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__TwoStageRangeParameters
+{
+int __gsharp_mb_Combination;
+int __gsharp_mb_FirstCount;
+int __gsharp_mb_SecondCount;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__TwoStageRangeParameters)==12,""Kassyi.GSharp.Tests.Shared.Runtime.TwoStageRangeParameters: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__TwoStageRangeParameters)==4,""Kassyi.GSharp.Tests.Shared.Runtime.TwoStageRangeParameters: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__TwoStageRangeParameters,__gsharp_mb_Combination)==0,""Kassyi.GSharp.Tests.Shared.Runtime.TwoStageRangeParameters.Combination: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__TwoStageRangeParameters,__gsharp_mb_FirstCount)==4,""Kassyi.GSharp.Tests.Shared.Runtime.TwoStageRangeParameters.FirstCount: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__TwoStageRangeParameters,__gsharp_mb_SecondCount)==8,""Kassyi.GSharp.Tests.Shared.Runtime.TwoStageRangeParameters.SecondCount: offset"");
+#endif
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__TwoStageRangeKernel(GSharpArray<int> __gsharp_id_0_data, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__TwoStageRangeParameters __gsharp_id_1_range, GSharpArray<int> __gsharp_id_2_result, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-int __gsharp_id_5_gtid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-int __gsharp_id_6_sequential = (-1);
-int __gsharp_id_7_parallel = (-1);
-if(__gsharp_id_1_combo==0)
+int __gsharp_id_3_combo = __gsharp_id_1_range.__gsharp_mb_Combination;
+int __gsharp_id_4_a = __gsharp_id_1_range.__gsharp_mb_FirstCount;
+int __gsharp_id_5_b = __gsharp_id_1_range.__gsharp_mb_SecondCount;
+int __gsharp_id_6_gtid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+int __gsharp_id_7_sequential = (-1);
+int __gsharp_id_8_parallel = (-1);
+if(__gsharp_id_3_combo==0)
 {
-__gsharp_id_6_sequential=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 964412482u);
-int __gsharp_stage_0_n = __gsharp_id_2_a;
-int __gsharp_stage_1_n = __gsharp_id_3_b;
+__gsharp_id_7_sequential=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 748436162u);
+int __gsharp_stage_0_n = __gsharp_id_4_a;
+int __gsharp_stage_1_n = __gsharp_id_5_b;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -307,10 +387,10 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_id_7_parallel=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 993460523u);
-int __gsharp_stage_0_n = __gsharp_id_2_a;
-int __gsharp_stage_1_n = __gsharp_id_3_b;
+__gsharp_id_8_parallel=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 612099483u);
+int __gsharp_stage_0_n = __gsharp_id_4_a;
+int __gsharp_stage_1_n = __gsharp_id_5_b;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -326,12 +406,12 @@ return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus
 }
 else
 {
-if(__gsharp_id_1_combo==1)
+if(__gsharp_id_3_combo==1)
 {
-__gsharp_id_6_sequential=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 704877398u);
-int __gsharp_stage_0_n = __gsharp_id_2_a;
-int __gsharp_stage_1_n = __gsharp_id_3_b;
+__gsharp_id_7_sequential=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 2120211466u);
+int __gsharp_stage_0_n = __gsharp_id_4_a;
+int __gsharp_stage_1_n = __gsharp_id_5_b;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -344,10 +424,10 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_id_7_parallel=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1641451523u);
-int __gsharp_stage_0_n = __gsharp_id_2_a;
-int __gsharp_stage_1_n = __gsharp_id_3_b;
+__gsharp_id_8_parallel=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1923005827u);
+int __gsharp_stage_0_n = __gsharp_id_4_a;
+int __gsharp_stage_1_n = __gsharp_id_5_b;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -363,12 +443,12 @@ return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus
 }
 else
 {
-if(__gsharp_id_1_combo==2)
+if(__gsharp_id_3_combo==2)
 {
-__gsharp_id_6_sequential=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 161351906u);
-int __gsharp_stage_0_n = __gsharp_id_2_a;
-int __gsharp_stage_1_n = __gsharp_id_3_b;
+__gsharp_id_7_sequential=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1643516662u);
+int __gsharp_stage_0_n = __gsharp_id_4_a;
+int __gsharp_stage_1_n = __gsharp_id_5_b;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -381,10 +461,10 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_id_7_parallel=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1711990347u);
-int __gsharp_stage_0_n = __gsharp_id_2_a;
-int __gsharp_stage_1_n = __gsharp_id_3_b;
+__gsharp_id_8_parallel=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1026471043u);
+int __gsharp_stage_0_n = __gsharp_id_4_a;
+int __gsharp_stage_1_n = __gsharp_id_5_b;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -400,12 +480,12 @@ return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus
 }
 else
 {
-if(__gsharp_id_1_combo==3)
+if(__gsharp_id_3_combo==3)
 {
-__gsharp_id_6_sequential=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1670061078u);
-int __gsharp_stage_0_n = __gsharp_id_2_a;
-int __gsharp_stage_1_n = __gsharp_id_3_b;
+__gsharp_id_7_sequential=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1807926202u);
+int __gsharp_stage_0_n = __gsharp_id_4_a;
+int __gsharp_stage_1_n = __gsharp_id_5_b;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -418,10 +498,10 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_id_7_parallel=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1144281919u);
-int __gsharp_stage_0_n = __gsharp_id_2_a;
-int __gsharp_stage_1_n = __gsharp_id_3_b;
+__gsharp_id_8_parallel=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1792152747u);
+int __gsharp_stage_0_n = __gsharp_id_4_a;
+int __gsharp_stage_1_n = __gsharp_id_5_b;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -437,12 +517,12 @@ return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus
 }
 else
 {
-if(__gsharp_id_1_combo==4)
+if(__gsharp_id_3_combo==4)
 {
-__gsharp_id_6_sequential=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1920721098u);
-int __gsharp_stage_0_n = __gsharp_id_2_a;
-int __gsharp_stage_1_n = __gsharp_id_3_b;
+__gsharp_id_7_sequential=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 249011198u);
+int __gsharp_stage_0_n = __gsharp_id_4_a;
+int __gsharp_stage_1_n = __gsharp_id_5_b;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -455,10 +535,10 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_id_7_parallel=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 419917991u);
-int __gsharp_stage_0_n = __gsharp_id_2_a;
-int __gsharp_stage_1_n = __gsharp_id_3_b;
+__gsharp_id_8_parallel=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 528603u);
+int __gsharp_stage_0_n = __gsharp_id_4_a;
+int __gsharp_stage_1_n = __gsharp_id_5_b;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -474,12 +554,12 @@ return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus
 }
 else
 {
-if(__gsharp_id_1_combo==5)
+if(__gsharp_id_3_combo==5)
 {
-__gsharp_id_6_sequential=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1786998634u);
-int __gsharp_stage_0_n = __gsharp_id_2_a;
-int __gsharp_stage_1_n = __gsharp_id_3_b;
+__gsharp_id_7_sequential=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 243533458u);
+int __gsharp_stage_0_n = __gsharp_id_4_a;
+int __gsharp_stage_1_n = __gsharp_id_5_b;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -492,10 +572,10 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_id_7_parallel=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1321871195u);
-int __gsharp_stage_0_n = __gsharp_id_2_a;
-int __gsharp_stage_1_n = __gsharp_id_3_b;
+__gsharp_id_8_parallel=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 934402879u);
+int __gsharp_stage_0_n = __gsharp_id_4_a;
+int __gsharp_stage_1_n = __gsharp_id_5_b;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -511,12 +591,12 @@ return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus
 }
 else
 {
-if(__gsharp_id_1_combo==6)
+if(__gsharp_id_3_combo==6)
 {
-__gsharp_id_6_sequential=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1262882682u);
-int __gsharp_stage_0_n = __gsharp_id_2_a;
-int __gsharp_stage_1_n = __gsharp_id_3_b;
+__gsharp_id_7_sequential=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 697195018u);
+int __gsharp_stage_0_n = __gsharp_id_4_a;
+int __gsharp_stage_1_n = __gsharp_id_5_b;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -529,10 +609,10 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_id_7_parallel=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1514868975u);
-int __gsharp_stage_0_n = __gsharp_id_2_a;
-int __gsharp_stage_1_n = __gsharp_id_3_b;
+__gsharp_id_8_parallel=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 716061467u);
+int __gsharp_stage_0_n = __gsharp_id_4_a;
+int __gsharp_stage_1_n = __gsharp_id_5_b;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -548,12 +628,12 @@ return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus
 }
 else
 {
-if(__gsharp_id_1_combo==7)
+if(__gsharp_id_3_combo==7)
 {
-__gsharp_id_6_sequential=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 354311914u);
-int __gsharp_stage_0_n = __gsharp_id_2_a;
-int __gsharp_stage_1_n = __gsharp_id_3_b;
+__gsharp_id_7_sequential=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1151817074u);
+int __gsharp_stage_0_n = __gsharp_id_4_a;
+int __gsharp_stage_1_n = __gsharp_id_5_b;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -566,10 +646,10 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_id_7_parallel=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 493981775u);
-int __gsharp_stage_0_n = __gsharp_id_2_a;
-int __gsharp_stage_1_n = __gsharp_id_3_b;
+__gsharp_id_8_parallel=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1026798959u);
+int __gsharp_stage_0_n = __gsharp_id_4_a;
+int __gsharp_stage_1_n = __gsharp_id_5_b;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -585,12 +665,12 @@ return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus
 }
 else
 {
-if(__gsharp_id_1_combo==8)
+if(__gsharp_id_3_combo==8)
 {
-__gsharp_id_6_sequential=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 750202738u);
-int __gsharp_stage_0_n = __gsharp_id_2_a;
-int __gsharp_stage_1_n = __gsharp_id_3_b;
+__gsharp_id_7_sequential=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 2069817434u);
+int __gsharp_stage_0_n = __gsharp_id_4_a;
+int __gsharp_stage_1_n = __gsharp_id_5_b;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -603,10 +683,10 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_id_7_parallel=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1702026731u);
-int __gsharp_stage_0_n = __gsharp_id_2_a;
-int __gsharp_stage_1_n = __gsharp_id_3_b;
+__gsharp_id_8_parallel=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1507829395u);
+int __gsharp_stage_0_n = __gsharp_id_4_a;
+int __gsharp_stage_1_n = __gsharp_id_5_b;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -622,12 +702,12 @@ return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus
 }
 else
 {
-if(__gsharp_id_1_combo==9)
+if(__gsharp_id_3_combo==9)
 {
-__gsharp_id_6_sequential=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1121540542u);
-int __gsharp_stage_0_n = __gsharp_id_2_a;
-int __gsharp_stage_1_n = __gsharp_id_3_b;
+__gsharp_id_7_sequential=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 2022535498u);
+int __gsharp_stage_0_n = __gsharp_id_4_a;
+int __gsharp_stage_1_n = __gsharp_id_5_b;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -640,10 +720,10 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_id_7_parallel=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 262104747u);
-int __gsharp_stage_0_n = __gsharp_id_2_a;
-int __gsharp_stage_1_n = __gsharp_id_3_b;
+__gsharp_id_8_parallel=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1792771499u);
+int __gsharp_stage_0_n = __gsharp_id_4_a;
+int __gsharp_stage_1_n = __gsharp_id_5_b;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -659,12 +739,12 @@ return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus
 }
 else
 {
-if(__gsharp_id_1_combo==10)
+if(__gsharp_id_3_combo==10)
 {
-__gsharp_id_6_sequential=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 405095010u);
-int __gsharp_stage_0_n = __gsharp_id_2_a;
-int __gsharp_stage_1_n = __gsharp_id_3_b;
+__gsharp_id_7_sequential=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 778772678u);
+int __gsharp_stage_0_n = __gsharp_id_4_a;
+int __gsharp_stage_1_n = __gsharp_id_5_b;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -677,10 +757,10 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_id_7_parallel=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 244027163u);
-int __gsharp_stage_0_n = __gsharp_id_2_a;
-int __gsharp_stage_1_n = __gsharp_id_3_b;
+__gsharp_id_8_parallel=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1019823131u);
+int __gsharp_stage_0_n = __gsharp_id_4_a;
+int __gsharp_stage_1_n = __gsharp_id_5_b;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -696,12 +776,12 @@ return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus
 }
 else
 {
-if(__gsharp_id_1_combo==11)
+if(__gsharp_id_3_combo==11)
 {
-__gsharp_id_6_sequential=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1788569022u);
-int __gsharp_stage_0_n = __gsharp_id_2_a;
-int __gsharp_stage_1_n = __gsharp_id_3_b;
+__gsharp_id_7_sequential=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 128723530u);
+int __gsharp_stage_0_n = __gsharp_id_4_a;
+int __gsharp_stage_1_n = __gsharp_id_5_b;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -714,10 +794,10 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_id_7_parallel=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1953497983u);
-int __gsharp_stage_0_n = __gsharp_id_2_a;
-int __gsharp_stage_1_n = __gsharp_id_3_b;
+__gsharp_id_8_parallel=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 559402699u);
+int __gsharp_stage_0_n = __gsharp_id_4_a;
+int __gsharp_stage_1_n = __gsharp_id_5_b;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -742,28 +822,38 @@ return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus
 }
 }
 }
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_mul_i32(__gsharp_id_5_gtid,2), 1562834868u)=__gsharp_id_6_sequential;
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_gtid,2),1), 906941444u)=__gsharp_id_7_parallel;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_mul_i32(__gsharp_id_6_gtid,2), 1640208472u)=__gsharp_id_7_sequential;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_gtid,2),1), 490583332u)=__gsharp_id_8_parallel;
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_TwoStageRangeKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__TwoStageRangeKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+private static bool __gsharp_layout_checked_TwoStageRangeKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerTwoStageRangeKernel() => global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.__gsharp_hfunc_TwoStageRangeKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchTwoStageRangeKernel(global::System.Int32[] data, global::System.Int32 combo, global::System.Int32 a, global::System.Int32 b, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchTwoStageRangeKernel(global::System.Int32[] data, global::Kassyi.GSharp.Tests.Shared.Runtime.TwoStageRangeParameters range, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (!__gsharp_layout_checked_TwoStageRangeKernel)
+{
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Runtime.TwoStageRangeParameters>() != 12) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Runtime.TwoStageRangeParameters", 12, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Runtime.TwoStageRangeParameters>());
+{
+global::Kassyi.GSharp.Tests.Shared.Runtime.TwoStageRangeParameters __gsharp_layout_probe = default;
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Runtime.TwoStageRangeParameters, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Combination))) != 0) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Runtime.TwoStageRangeParameters", "Combination", 0, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Runtime.TwoStageRangeParameters, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Combination))));
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Runtime.TwoStageRangeParameters, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.FirstCount))) != 4) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Runtime.TwoStageRangeParameters", "FirstCount", 4, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Runtime.TwoStageRangeParameters, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.FirstCount))));
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Runtime.TwoStageRangeParameters, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.SecondCount))) != 8) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Runtime.TwoStageRangeParameters", "SecondCount", 8, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Runtime.TwoStageRangeParameters, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.SecondCount))));
+}
+__gsharp_layout_checked_TwoStageRangeKernel = true;
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StackLinqRangeKernels.TwoStageRangeKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StackLinqRangeKernels.TwoStageRangeKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = data;
-global::System.Int32 __gsharp_csharp_arg_1 = combo;
-global::System.Int32 __gsharp_csharp_arg_2 = a;
-global::System.Int32 __gsharp_csharp_arg_3 = b;
-global::System.Int32[] __gsharp_csharp_arg_4 = result;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.TwoStageRangeKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2, __gsharp_csharp_arg_3, __gsharp_csharp_arg_4));
+global::Kassyi.GSharp.Tests.Shared.Runtime.TwoStageRangeParameters __gsharp_csharp_arg_1 = range;
+global::System.Int32[] __gsharp_csharp_arg_2 = result;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.TwoStageRangeKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2));
 return;
 }
 using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
@@ -771,11 +861,11 @@ using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsha
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.__gsharp_hfunc_TwoStageRangeKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "StackLinqRangeKernels.TwoStageRangeKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
-global::System.IntPtr __gsharp_d_4 = global::System.IntPtr.Zero;
+global::System.IntPtr __gsharp_d_2 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[6];
+void** __gsharp_kernel_params = stackalloc void*[4];
 // Marshal array: data
 int __gsharp_size_0 = checked((data?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
@@ -793,37 +883,33 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 __gsharp_proxy_0[0] = __gsharp_d_0;
 }
 __gsharp_kernel_params[0] = __gsharp_proxy_0;
-// Marshal scalar: combo
-__gsharp_kernel_params[1] = &combo;
-// Marshal scalar: a
-__gsharp_kernel_params[2] = &a;
-// Marshal scalar: b
-__gsharp_kernel_params[3] = &b;
+// Marshal scalar struct: range
+__gsharp_kernel_params[1] = &range;
 // Marshal array: result
-int __gsharp_size_4 = checked((result?.Length ?? 0) * sizeof(global::System.Int32));
-global::System.IntPtr* __gsharp_proxy_4 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_4[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(result) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
-((int*)(__gsharp_proxy_4 + 1))[0] = (result?.Length ?? 0);
-((int*)(__gsharp_proxy_4 + 1))[1] = 0;
-if (__gsharp_size_4 > 0)
+int __gsharp_size_2 = checked((result?.Length ?? 0) * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_2 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_2[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(result) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_2 + 1))[0] = (result?.Length ?? 0);
+((int*)(__gsharp_proxy_2 + 1))[1] = 0;
+if (__gsharp_size_2 > 0)
 {
 if (global::System.Object.ReferenceEquals(result, data))
 {
-__gsharp_d_4 = __gsharp_d_0;
+__gsharp_d_2 = __gsharp_d_0;
 }
 else
 {
-global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_4, (global::System.IntPtr)__gsharp_size_4, hStream));
-fixed (global::System.Int32* __gsharp_p_4 = result)
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_2, (global::System.IntPtr)__gsharp_size_2, hStream));
+fixed (global::System.Int32* __gsharp_p_2 = result)
 {
-global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_4, (global::System.IntPtr)__gsharp_p_4, (global::System.IntPtr)__gsharp_size_4, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_2, (global::System.IntPtr)__gsharp_p_2, (global::System.IntPtr)__gsharp_size_2, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-__gsharp_proxy_4[0] = __gsharp_d_4;
+__gsharp_proxy_2[0] = __gsharp_d_2;
 }
-__gsharp_kernel_params[4] = __gsharp_proxy_4;
-__gsharp_kernel_params[5] = &__gsharp_epoch;
+__gsharp_kernel_params[2] = __gsharp_proxy_2;
+__gsharp_kernel_params[3] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -843,11 +929,11 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 }
 }
 // Copy back array: result
-if (__gsharp_size_4 > 0 && __gsharp_d_4 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(result, data))
+if (__gsharp_size_2 > 0 && __gsharp_d_2 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(result, data))
 {
-fixed (global::System.Int32* __gsharp_p_4 = result)
+fixed (global::System.Int32* __gsharp_p_2 = result)
 {
-global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_4, __gsharp_d_4, (global::System.IntPtr)__gsharp_size_4, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_2, __gsharp_d_2, (global::System.IntPtr)__gsharp_size_2, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
@@ -858,7 +944,7 @@ finally
 {
 global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
 if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
-if (__gsharp_d_4 != global::System.IntPtr.Zero && __gsharp_d_4 != __gsharp_d_0) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_4, hStream);
+if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_2, hStream);
 }
 }
 }
@@ -866,7 +952,7 @@ if (__gsharp_d_4 != global::System.IntPtr.Zero && __gsharp_d_4 != __gsharp_d_0) 
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchTwoStageRangeKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data, global::System.Int32 combo, global::System.Int32 a, global::System.Int32 b, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchTwoStageRangeKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data, global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.AotContexts.TwoStageRangeParameters range, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length < 0){
 throw new global::System.ArgumentOutOfRangeException("data", data.Length, "The array length must not be negative.");
@@ -892,26 +978,22 @@ global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfun
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[6];
+void** __gsharp_kernel_params = stackalloc void*[4];
 // Marshal device array: data
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
 __gsharp_proxy_0[0] = data.Data;
 ((int*)(__gsharp_proxy_0 + 1))[0] = data.Length;
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 __gsharp_kernel_params[0] = __gsharp_proxy_0;
-// Marshal scalar: combo
-__gsharp_kernel_params[1] = &combo;
-// Marshal scalar: a
-__gsharp_kernel_params[2] = &a;
-// Marshal scalar: b
-__gsharp_kernel_params[3] = &b;
+// Marshal device struct: range
+__gsharp_kernel_params[1] = &range;
 // Marshal device array: result
-global::System.IntPtr* __gsharp_proxy_4 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_4[0] = result.Data;
-((int*)(__gsharp_proxy_4 + 1))[0] = result.Length;
-((int*)(__gsharp_proxy_4 + 1))[1] = 0;
-__gsharp_kernel_params[4] = __gsharp_proxy_4;
-__gsharp_kernel_params[5] = &__gsharp_epoch;
+global::System.IntPtr* __gsharp_proxy_2 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_2[0] = result.Data;
+((int*)(__gsharp_proxy_2 + 1))[0] = result.Length;
+((int*)(__gsharp_proxy_2 + 1))[1] = 0;
+__gsharp_kernel_params[2] = __gsharp_proxy_2;
+__gsharp_kernel_params[3] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -932,8 +1014,8 @@ public const string FilteredTakeKernel_Source = @"extern ""C"" __global__ void _
 __gsharp_launch_epoch = __gsharp_epoch;
 if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
-__gsharp_array_at(__gsharp_id_2_result, 0, 482605533u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1741391979u);
+__gsharp_array_at(__gsharp_id_2_result, 0, 439712491u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1540176899u);
 int __gsharp_stage_1_n = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__CountedThree(__gsharp_id_1_counter);
 int __gsharp_stage_1_count = 0;
 long long __gsharp_fusion_res = 0;
@@ -954,8 +1036,8 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_array_at(__gsharp_id_2_result, 1, 1068191645u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 802834615u);
+__gsharp_array_at(__gsharp_id_2_result, 1, 957203245u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 959913793u);
 int __gsharp_stage_1_n = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__CountedThree(__gsharp_id_1_counter);
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
@@ -1198,8 +1280,8 @@ public const string SelectSkipCountKernel_Source = @"extern ""C"" __global__ voi
 __gsharp_launch_epoch = __gsharp_epoch;
 if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
-__gsharp_array_at(__gsharp_id_2_result, 0, 690712025u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1976705061u);
+__gsharp_array_at(__gsharp_id_2_result, 0, 519177389u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1658852021u);
 int __gsharp_stage_1_n = 3;
 int __gsharp_stage_1_count = 0;
 long long __gsharp_fusion_res = 0;
@@ -1209,7 +1291,7 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 {
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 auto __gsharp_val_1 = ([&](auto __gsharp_id_3_x) {
-return __gsharp_add_i32(__gsharp_atomicAdd(&__gsharp_array_at(__gsharp_id_1_counter, 0, 1110401708u),1)*0,__gsharp_id_3_x);
+return __gsharp_add_i32(__gsharp_atomicAdd(&__gsharp_array_at(__gsharp_id_1_counter, 0, 927964796u),1)*0,__gsharp_id_3_x);
 }
 )(__gsharp_val_0);
 if (__gsharp_stage_1_count < __gsharp_stage_1_n)
@@ -1445,8 +1527,8 @@ public const string DividingSelectSkipKernel_Source = @"extern ""C"" __global__ 
 __gsharp_launch_epoch = __gsharp_epoch;
 if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
-__gsharp_array_at(__gsharp_id_1_result, 0, 1078748565u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 89239317u);
+__gsharp_array_at(__gsharp_id_1_result, 0, 1692742005u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 585610309u);
 int __gsharp_stage_1_n = 1;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
@@ -1463,8 +1545,8 @@ __gsharp_fusion_res += __gsharp_val_1;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_array_at(__gsharp_id_1_result, 1, 2120921973u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1004253633u);
+__gsharp_array_at(__gsharp_id_1_result, 1, 1320309271u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 75803483u);
 int __gsharp_stage_1_n = 1;
 int __gsharp_stage_1_count = 0;
 long long __gsharp_fusion_res = 0;
@@ -1474,7 +1556,7 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 {
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 auto __gsharp_val_1 = ([&](auto __gsharp_id_3_x) {
-return __gsharp_div_i32(10,__gsharp_id_3_x,474669973u);
+return __gsharp_div_i32(10,__gsharp_id_3_x,304965155u);
 }
 )(__gsharp_val_0);
 if (__gsharp_stage_1_count < __gsharp_stage_1_n)
@@ -1658,8 +1740,8 @@ public const string IndexingSelectSkipKernel_Source = @"extern ""C"" __global__ 
 __gsharp_launch_epoch = __gsharp_epoch;
 if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
-__gsharp_array_at(__gsharp_id_2_result, 0, 476368303u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1515104579u);
+__gsharp_array_at(__gsharp_id_2_result, 0, 1874868093u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1276523265u);
 int __gsharp_stage_1_n = 1;
 int __gsharp_stage_1_count = 0;
 long long __gsharp_fusion_res = 0;
@@ -1669,7 +1751,7 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 {
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 auto __gsharp_val_1 = ([&](auto __gsharp_id_3_x) {
-return __gsharp_array_at(__gsharp_id_1_table, __gsharp_id_3_x, 713051150u);
+return __gsharp_array_at(__gsharp_id_1_table, __gsharp_id_3_x, 868027064u);
 }
 )(__gsharp_val_0);
 if (__gsharp_stage_1_count < __gsharp_stage_1_n)
@@ -1905,8 +1987,8 @@ public const string TakeCountKernel_Source = @"extern ""C"" __global__ void __gs
 __gsharp_launch_epoch = __gsharp_epoch;
 if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
-__gsharp_array_at(__gsharp_id_3_result, 0, 1713125983u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1807344663u);
+__gsharp_array_at(__gsharp_id_3_result, 0, 2122139445u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 902516025u);
 int __gsharp_stage_1_n = __gsharp_id_2_take;
 int __gsharp_stage_1_count = 0;
 long long __gsharp_fusion_res = 0;
@@ -1917,7 +1999,7 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 if (__gsharp_stage_1_count >= __gsharp_stage_1_n) { break; }
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 auto __gsharp_val_1 = ([&](auto __gsharp_id_4_x) {
-return __gsharp_add_i32(__gsharp_atomicAdd(&__gsharp_array_at(__gsharp_id_1_counter, 0, 808352214u),1)*0,__gsharp_id_4_x);
+return __gsharp_add_i32(__gsharp_atomicAdd(&__gsharp_array_at(__gsharp_id_1_counter, 0, 344582032u),1)*0,__gsharp_id_4_x);
 }
 )(__gsharp_val_0);
 __gsharp_stage_1_count++;
@@ -1925,8 +2007,8 @@ __gsharp_fusion_res += __gsharp_val_1;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_array_at(__gsharp_id_3_result, 1, 1692742005u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 585610309u);
+__gsharp_array_at(__gsharp_id_3_result, 1, 1107849827u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1796139419u);
 int __gsharp_stage_1_n = __gsharp_id_2_take;
 int __gsharp_stage_1_count = 0;
 long long __gsharp_fusion_res = 0;
@@ -1937,7 +2019,7 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 if (__gsharp_stage_1_count >= __gsharp_stage_1_n) { break; }
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 if (([&](auto __gsharp_id_5_x) {
-return __gsharp_atomicAdd(&__gsharp_array_at(__gsharp_id_1_counter, 1, 133797730u),1)>0&&__gsharp_id_5_x%2==0;
+return __gsharp_atomicAdd(&__gsharp_array_at(__gsharp_id_1_counter, 1, 1912936972u),1)>0&&__gsharp_id_5_x%2==0;
 }
 )(__gsharp_val_0))
 {
@@ -2174,15 +2256,30 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string TakeSkipCountKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__TakeSkipCountKernel(GSharpArray<int> __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_counter, int __gsharp_id_2_take, int __gsharp_id_3_skip, GSharpArray<int> __gsharp_id_4_result, unsigned int __gsharp_epoch){
+public const string TakeSkipCountKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__TakeSkipBounds__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__TakeSkipBounds__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__TakeSkipBounds
+{
+int __gsharp_mb_TakeCount;
+int __gsharp_mb_SkipCount;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__TakeSkipBounds)==8,""Kassyi.GSharp.Tests.Shared.Runtime.TakeSkipBounds: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__TakeSkipBounds)==4,""Kassyi.GSharp.Tests.Shared.Runtime.TakeSkipBounds: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__TakeSkipBounds,__gsharp_mb_TakeCount)==0,""Kassyi.GSharp.Tests.Shared.Runtime.TakeSkipBounds.TakeCount: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__TakeSkipBounds,__gsharp_mb_SkipCount)==4,""Kassyi.GSharp.Tests.Shared.Runtime.TakeSkipBounds.SkipCount: offset"");
+#endif
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__TakeSkipCountKernel(GSharpArray<int> __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_counter, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__TakeSkipBounds __gsharp_id_2_bounds, GSharpArray<int> __gsharp_id_3_result, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
+int __gsharp_id_4_take = __gsharp_id_2_bounds.__gsharp_mb_TakeCount;
+int __gsharp_id_5_skip = __gsharp_id_2_bounds.__gsharp_mb_SkipCount;
 if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)blockIdx.y|(int)blockIdx.z)==0)
 {
-__gsharp_array_at(__gsharp_id_4_result, 0, 1874868093u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1276523265u);
-int __gsharp_stage_1_n = __gsharp_id_2_take;
+__gsharp_array_at(__gsharp_id_3_result, 0, 700856287u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 476710603u);
+int __gsharp_stage_1_n = __gsharp_id_4_take;
 int __gsharp_stage_1_count = 0;
-int __gsharp_stage_2_n = __gsharp_id_3_skip;
+int __gsharp_stage_2_n = __gsharp_id_5_skip;
 int __gsharp_stage_2_count = 0;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
@@ -2191,8 +2288,8 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 {
 if (__gsharp_stage_1_count >= __gsharp_stage_1_n) { break; }
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-auto __gsharp_val_1 = ([&](auto __gsharp_id_5_x) {
-return __gsharp_add_i32(__gsharp_atomicAdd(&__gsharp_array_at(__gsharp_id_1_counter, 0, 1217775084u),1)*0,__gsharp_id_5_x);
+auto __gsharp_val_1 = ([&](auto __gsharp_id_6_x) {
+return __gsharp_add_i32(__gsharp_atomicAdd(&__gsharp_array_at(__gsharp_id_1_counter, 0, 1534705858u),1)*0,__gsharp_id_6_x);
 }
 )(__gsharp_val_0);
 __gsharp_stage_1_count++;
@@ -2203,11 +2300,11 @@ continue;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_array_at(__gsharp_id_4_result, 1, 1574301991u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 801814083u);
-int __gsharp_stage_1_n = __gsharp_id_2_take;
+__gsharp_array_at(__gsharp_id_3_result, 1, 432463213u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1882088805u);
+int __gsharp_stage_1_n = __gsharp_id_4_take;
 int __gsharp_stage_1_count = 0;
-int __gsharp_stage_2_n = __gsharp_id_3_skip;
+int __gsharp_stage_2_n = __gsharp_id_5_skip;
 int __gsharp_stage_2_count = 0;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
@@ -2216,8 +2313,8 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 {
 if (__gsharp_stage_1_count >= __gsharp_stage_1_n) { break; }
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-if (([&](auto __gsharp_id_6_x) {
-return __gsharp_atomicAdd(&__gsharp_array_at(__gsharp_id_1_counter, 1, 1112561500u),1)>0&&__gsharp_id_6_x%2==0;
+if (([&](auto __gsharp_id_7_x) {
+return __gsharp_atomicAdd(&__gsharp_array_at(__gsharp_id_1_counter, 1, 872384286u),1)>0&&__gsharp_id_7_x%2==0;
 }
 )(__gsharp_val_0))
 {
@@ -2230,9 +2327,9 @@ continue;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_array_at(__gsharp_id_4_result, 2, 1950240245u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1437382869u);
-int __gsharp_stage_1_n = __gsharp_id_2_take;
+__gsharp_array_at(__gsharp_id_3_result, 2, 1169114217u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 245787797u);
+int __gsharp_stage_1_n = __gsharp_id_4_take;
 int __gsharp_stage_1_count = 0;
 bool __gsharp_stage_2_skipping = true;
 long long __gsharp_fusion_res = 0;
@@ -2242,14 +2339,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 {
 if (__gsharp_stage_1_count >= __gsharp_stage_1_n) { break; }
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-auto __gsharp_val_1 = ([&](auto __gsharp_id_7_x) {
-return __gsharp_add_i32(__gsharp_atomicAdd(&__gsharp_array_at(__gsharp_id_1_counter, 2, 1303754164u),1)*0,__gsharp_id_7_x);
+auto __gsharp_val_1 = ([&](auto __gsharp_id_8_x) {
+return __gsharp_add_i32(__gsharp_atomicAdd(&__gsharp_array_at(__gsharp_id_1_counter, 2, 424614780u),1)*0,__gsharp_id_8_x);
 }
 )(__gsharp_val_0);
 __gsharp_stage_1_count++;
 if (__gsharp_stage_2_skipping)
-{if (([&](auto __gsharp_id_8_x) {
-return __gsharp_id_8_x<=__gsharp_id_3_skip;
+{if (([&](auto __gsharp_id_9_x) {
+return __gsharp_id_9_x<=__gsharp_id_5_skip;
 }
 )(__gsharp_val_1))
 {continue;
@@ -2262,23 +2359,33 @@ return __gsharp_sum_i32(__gsharp_fusion_res);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_TakeSkipCountKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__TakeSkipCountKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+private static bool __gsharp_layout_checked_TakeSkipCountKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerTakeSkipCountKernel() => global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.__gsharp_hfunc_TakeSkipCountKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchTakeSkipCountKernel(global::System.Int32[] data, global::System.Int32[] counter, global::System.Int32 take, global::System.Int32 skip, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchTakeSkipCountKernel(global::System.Int32[] data, global::System.Int32[] counter, global::Kassyi.GSharp.Tests.Shared.Runtime.TakeSkipBounds bounds, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (!__gsharp_layout_checked_TakeSkipCountKernel)
+{
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Runtime.TakeSkipBounds>() != 8) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Runtime.TakeSkipBounds", 8, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Runtime.TakeSkipBounds>());
+{
+global::Kassyi.GSharp.Tests.Shared.Runtime.TakeSkipBounds __gsharp_layout_probe = default;
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Runtime.TakeSkipBounds, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.TakeCount))) != 0) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Runtime.TakeSkipBounds", "TakeCount", 0, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Runtime.TakeSkipBounds, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.TakeCount))));
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Runtime.TakeSkipBounds, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.SkipCount))) != 4) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Runtime.TakeSkipBounds", "SkipCount", 4, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Runtime.TakeSkipBounds, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.SkipCount))));
+}
+__gsharp_layout_checked_TakeSkipCountKernel = true;
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StackLinqRangeKernels.TakeSkipCountKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StackLinqRangeKernels.TakeSkipCountKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = data;
 global::System.Int32[] __gsharp_csharp_arg_1 = counter;
-global::System.Int32 __gsharp_csharp_arg_2 = take;
-global::System.Int32 __gsharp_csharp_arg_3 = skip;
-global::System.Int32[] __gsharp_csharp_arg_4 = result;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.TakeSkipCountKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2, __gsharp_csharp_arg_3, __gsharp_csharp_arg_4));
+global::Kassyi.GSharp.Tests.Shared.Runtime.TakeSkipBounds __gsharp_csharp_arg_2 = bounds;
+global::System.Int32[] __gsharp_csharp_arg_3 = result;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.TakeSkipCountKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2, __gsharp_csharp_arg_3));
 return;
 }
 using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
@@ -2287,11 +2394,11 @@ global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Runtim
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "StackLinqRangeKernels.TakeSkipCountKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
-global::System.IntPtr __gsharp_d_4 = global::System.IntPtr.Zero;
+global::System.IntPtr __gsharp_d_3 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[6];
+void** __gsharp_kernel_params = stackalloc void*[5];
 // Marshal array: data
 int __gsharp_size_0 = checked((data?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
@@ -2333,39 +2440,37 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 __gsharp_proxy_1[0] = __gsharp_d_1;
 }
 __gsharp_kernel_params[1] = __gsharp_proxy_1;
-// Marshal scalar: take
-__gsharp_kernel_params[2] = &take;
-// Marshal scalar: skip
-__gsharp_kernel_params[3] = &skip;
+// Marshal scalar struct: bounds
+__gsharp_kernel_params[2] = &bounds;
 // Marshal array: result
-int __gsharp_size_4 = checked((result?.Length ?? 0) * sizeof(global::System.Int32));
-global::System.IntPtr* __gsharp_proxy_4 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_4[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(result) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
-((int*)(__gsharp_proxy_4 + 1))[0] = (result?.Length ?? 0);
-((int*)(__gsharp_proxy_4 + 1))[1] = 0;
-if (__gsharp_size_4 > 0)
+int __gsharp_size_3 = checked((result?.Length ?? 0) * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_3 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_3[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(result) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_3 + 1))[0] = (result?.Length ?? 0);
+((int*)(__gsharp_proxy_3 + 1))[1] = 0;
+if (__gsharp_size_3 > 0)
 {
 if (global::System.Object.ReferenceEquals(result, data))
 {
-__gsharp_d_4 = __gsharp_d_0;
+__gsharp_d_3 = __gsharp_d_0;
 }
 else if (global::System.Object.ReferenceEquals(result, counter))
 {
-__gsharp_d_4 = __gsharp_d_1;
+__gsharp_d_3 = __gsharp_d_1;
 }
 else
 {
-global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_4, (global::System.IntPtr)__gsharp_size_4, hStream));
-fixed (global::System.Int32* __gsharp_p_4 = result)
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_3, (global::System.IntPtr)__gsharp_size_3, hStream));
+fixed (global::System.Int32* __gsharp_p_3 = result)
 {
-global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_4, (global::System.IntPtr)__gsharp_p_4, (global::System.IntPtr)__gsharp_size_4, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_3, (global::System.IntPtr)__gsharp_p_3, (global::System.IntPtr)__gsharp_size_3, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-__gsharp_proxy_4[0] = __gsharp_d_4;
+__gsharp_proxy_3[0] = __gsharp_d_3;
 }
-__gsharp_kernel_params[4] = __gsharp_proxy_4;
-__gsharp_kernel_params[5] = &__gsharp_epoch;
+__gsharp_kernel_params[3] = __gsharp_proxy_3;
+__gsharp_kernel_params[4] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -2394,11 +2499,11 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 }
 }
 // Copy back array: result
-if (__gsharp_size_4 > 0 && __gsharp_d_4 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(result, data) && !global::System.Object.ReferenceEquals(result, counter))
+if (__gsharp_size_3 > 0 && __gsharp_d_3 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(result, data) && !global::System.Object.ReferenceEquals(result, counter))
 {
-fixed (global::System.Int32* __gsharp_p_4 = result)
+fixed (global::System.Int32* __gsharp_p_3 = result)
 {
-global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_4, __gsharp_d_4, (global::System.IntPtr)__gsharp_size_4, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_3, __gsharp_d_3, (global::System.IntPtr)__gsharp_size_3, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
@@ -2410,7 +2515,7 @@ finally
 global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
 if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
 if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_1, hStream);
-if (__gsharp_d_4 != global::System.IntPtr.Zero && __gsharp_d_4 != __gsharp_d_0 && __gsharp_d_4 != __gsharp_d_1) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_4, hStream);
+if (__gsharp_d_3 != global::System.IntPtr.Zero && __gsharp_d_3 != __gsharp_d_0 && __gsharp_d_3 != __gsharp_d_1) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_3, hStream);
 }
 }
 }
@@ -2418,7 +2523,7 @@ if (__gsharp_d_4 != global::System.IntPtr.Zero && __gsharp_d_4 != __gsharp_d_0 &
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchTakeSkipCountKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy counter, global::System.Int32 take, global::System.Int32 skip, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchTakeSkipCountKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy counter, global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.AotContexts.TakeSkipBounds bounds, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length < 0){
 throw new global::System.ArgumentOutOfRangeException("data", data.Length, "The array length must not be negative.");
@@ -2450,7 +2555,7 @@ global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfun
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[6];
+void** __gsharp_kernel_params = stackalloc void*[5];
 // Marshal device array: data
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
 __gsharp_proxy_0[0] = data.Data;
@@ -2463,17 +2568,15 @@ __gsharp_proxy_1[0] = counter.Data;
 ((int*)(__gsharp_proxy_1 + 1))[0] = counter.Length;
 ((int*)(__gsharp_proxy_1 + 1))[1] = 0;
 __gsharp_kernel_params[1] = __gsharp_proxy_1;
-// Marshal scalar: take
-__gsharp_kernel_params[2] = &take;
-// Marshal scalar: skip
-__gsharp_kernel_params[3] = &skip;
+// Marshal device struct: bounds
+__gsharp_kernel_params[2] = &bounds;
 // Marshal device array: result
-global::System.IntPtr* __gsharp_proxy_4 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_4[0] = result.Data;
-((int*)(__gsharp_proxy_4 + 1))[0] = result.Length;
-((int*)(__gsharp_proxy_4 + 1))[1] = 0;
-__gsharp_kernel_params[4] = __gsharp_proxy_4;
-__gsharp_kernel_params[5] = &__gsharp_epoch;
+global::System.IntPtr* __gsharp_proxy_3 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_3[0] = result.Data;
+((int*)(__gsharp_proxy_3 + 1))[0] = result.Length;
+((int*)(__gsharp_proxy_3 + 1))[1] = 0;
+__gsharp_kernel_params[3] = __gsharp_proxy_3;
+__gsharp_kernel_params[4] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -2490,14 +2593,32 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string ThreeStageSweepKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__ThreeStageSweepKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_a, int __gsharp_id_2_b, int __gsharp_id_3_c, GSharpArray<int> __gsharp_id_4_result, unsigned int __gsharp_epoch){
+public const string ThreeStageSweepKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__ThreeStageRangeParameters__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__ThreeStageRangeParameters__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__ThreeStageRangeParameters
+{
+int __gsharp_mb_FirstCount;
+int __gsharp_mb_SecondCount;
+int __gsharp_mb_ThirdCount;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__ThreeStageRangeParameters)==12,""Kassyi.GSharp.Tests.Shared.Runtime.ThreeStageRangeParameters: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__ThreeStageRangeParameters)==4,""Kassyi.GSharp.Tests.Shared.Runtime.ThreeStageRangeParameters: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__ThreeStageRangeParameters,__gsharp_mb_FirstCount)==0,""Kassyi.GSharp.Tests.Shared.Runtime.ThreeStageRangeParameters.FirstCount: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__ThreeStageRangeParameters,__gsharp_mb_SecondCount)==4,""Kassyi.GSharp.Tests.Shared.Runtime.ThreeStageRangeParameters.SecondCount: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__ThreeStageRangeParameters,__gsharp_mb_ThirdCount)==8,""Kassyi.GSharp.Tests.Shared.Runtime.ThreeStageRangeParameters.ThirdCount: offset"");
+#endif
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__ThreeStageSweepKernel(GSharpArray<int> __gsharp_id_0_data, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__ThreeStageRangeParameters __gsharp_id_1_range, GSharpArray<int> __gsharp_id_2_result, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-int __gsharp_id_5_g = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_mul_i32(__gsharp_id_5_g,64)+0, 1223967192u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1905735699u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+int __gsharp_id_3_a = __gsharp_id_1_range.__gsharp_mb_FirstCount;
+int __gsharp_id_4_b = __gsharp_id_1_range.__gsharp_mb_SecondCount;
+int __gsharp_id_5_c = __gsharp_id_1_range.__gsharp_mb_ThirdCount;
+int __gsharp_id_6_g = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_mul_i32(__gsharp_id_6_g,64)+0, 1232549436u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1480115957u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -2511,11 +2632,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),1), 1703531916u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 312352733u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),1), 340551276u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 835156811u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -2529,11 +2650,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),2), 2000421236u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1469475115u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),2), 174935220u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 479660165u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -2547,11 +2668,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),3), 1473300428u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 981348587u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),3), 459200164u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1154366775u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -2565,11 +2686,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),4), 708146408u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1181041977u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),4), 1430608268u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1154982109u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -2583,11 +2704,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),5), 9899524u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1882950055u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),5), 28936564u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1764501195u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -2601,11 +2722,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),6), 432223232u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1484793385u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),6), 990343704u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 343527465u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -2619,11 +2740,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),7), 532246092u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1716505283u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),7), 73354480u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1379105651u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -2637,11 +2758,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),8), 1654759744u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 949617657u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),8), 1505658836u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 459692013u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -2655,11 +2776,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),9), 529568612u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 517222583u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),9), 1942466308u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1076693123u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -2673,521 +2794,17 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),10), 1202228728u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1615701251u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_fusion_res);
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),11), 1427600492u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 941223877u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),12), 1748025464u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 430419547u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_fusion_res);
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),13), 357830500u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1210916751u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),14), 920305712u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 667933805u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_fusion_res);
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),15), 1472173512u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1106801523u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),16), 2000995380u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1931763741u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_fusion_res);
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),17), 931072724u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 809592631u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),18), 539177720u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 616646309u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_fusion_res);
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),19), 269345792u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 29042931u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),20), 1289003156u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1268458933u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_fusion_res);
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),21), 823242420u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 801766271u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),22), 83404080u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1918890845u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_fusion_res);
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),23), 419205300u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 246292605u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),24), 1927919564u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1522747699u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_fusion_res);
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),25), 2130541196u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 662797649u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),26), 1338771076u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 254132139u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_fusion_res);
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),27), 1677741204u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 2056425941u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),28), 1232549436u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 539585075u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_fusion_res);
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),29), 340551276u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 368818289u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),30), 174935220u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1212491899u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_fusion_res);
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),31), 459200164u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1523378189u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),32), 1430608268u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 314014595u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_fusion_res);
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),33), 28936564u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 223841165u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),34), 990343704u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1132017443u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_fusion_res);
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),35), 73354480u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1410112525u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),36), 1505658836u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1306706431u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_fusion_res);
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),37), 1942466308u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 632907557u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
-long long __gsharp_fusion_res = 0;
-int __gsharp_fusion_lo = 0;
-int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
-{
-auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
-__gsharp_fusion_res += __gsharp_val_0;
-}
-return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
-}());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),38), 26371440u)=([&]() -> auto {
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),10), 26371440u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 876565107u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
-__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
-__gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
 {
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
@@ -3195,11 +2812,515 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),39), 876769128u)=([&]() -> auto {
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),11), 876769128u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 185330693u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),12), 371940148u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 773657847u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_fusion_res);
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),13), 1040308244u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1894293261u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),14), 2073444536u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1488523075u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_fusion_res);
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),15), 1689260340u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 180675171u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),16), 75512372u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 274687401u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_fusion_res);
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),17), 1394815060u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1906723299u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),18), 483430900u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 319376813u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_fusion_res);
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),19), 618605396u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 270619267u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),20), 1849755204u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 92210825u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_fusion_res);
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),21), 796914084u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1444089779u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),22), 1553728260u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 250550661u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_fusion_res);
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),23), 333819572u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1283015651u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),24), 1281664020u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 729262681u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_fusion_res);
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),25), 273692784u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1606785705u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),26), 817287528u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1505014559u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_fusion_res);
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),27), 762879812u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 889476801u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),28), 1751989812u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1044001971u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_fusion_res);
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),29), 1645560008u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 2046955113u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),30), 84874096u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 209233303u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_fusion_res);
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),31), 1645813684u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 928976609u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),32), 423722948u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1965048195u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_fusion_res);
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),33), 65669904u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1411358505u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),34), 1427550968u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1726249455u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_fusion_res);
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),35), 1545585352u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 736097667u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),36), 1045496188u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 478485625u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_fusion_res);
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),37), 151193480u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1213347291u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),38), 772613028u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 97710693u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
+long long __gsharp_fusion_res = 0;
+int __gsharp_fusion_lo = 0;
+int __gsharp_fusion_hi = __gsharp_fusion_src.length;
+__gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+__gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_2_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
+for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
+{
+auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
+__gsharp_fusion_res += __gsharp_val_0;
+}
+return __gsharp_sum_i32(__gsharp_fusion_res);
+}());
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),39), 740086456u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1981657115u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -3213,11 +3334,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),40), 371940148u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 773657847u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),40), 1312326660u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1177572705u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -3231,11 +3352,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),41), 1040308244u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1894293261u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),41), 359748680u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1460864643u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -3249,11 +3370,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),42), 2073444536u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1488523075u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),42), 263941580u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 502196197u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -3267,11 +3388,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),43), 1689260340u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 180675171u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),43), 96074360u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 334216563u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -3285,11 +3406,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),44), 75512372u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 274687401u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),44), 701532220u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 2117226137u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -3303,11 +3424,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),45), 1394815060u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1906723299u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),45), 1822294852u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1042660101u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -3321,11 +3442,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),46), 483430900u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 319376813u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),46), 1272661704u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 609311619u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -3339,11 +3460,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),47), 618605396u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 270619267u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),47), 6868440u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1217674301u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -3357,11 +3478,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),48), 1849755204u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 92210825u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),48), 1107207892u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1960669047u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -3375,11 +3496,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),49), 796914084u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1444089779u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),49), 796335876u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1411333693u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -3393,11 +3514,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),50), 1553728260u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 250550661u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),50), 681911600u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 389153987u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -3411,11 +3532,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),51), 333819572u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1283015651u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),51), 1892595088u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1344825573u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -3429,11 +3550,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),52), 1281664020u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 729262681u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),52), 2035512196u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1711524783u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -3447,11 +3568,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),53), 273692784u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1606785705u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),53), 359883412u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1681022117u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -3465,11 +3586,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),54), 817287528u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1505014559u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),54), 1970634360u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 207430515u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -3483,11 +3604,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),55), 762879812u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 889476801u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),55), 1704426164u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 2133963515u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -3501,11 +3622,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),56), 1751989812u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1044001971u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),56), 297305404u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1125383833u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -3519,11 +3640,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),57), 1645560008u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 2046955113u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),57), 1329324484u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 122055619u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -3537,11 +3658,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),58), 84874096u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 209233303u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),58), 92685828u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1618200805u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -3555,11 +3676,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),59), 1645813684u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 928976609u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),59), 1400339108u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1705111611u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -3573,11 +3694,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),60), 423722948u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1965048195u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),60), 239960236u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1443530665u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -3591,11 +3712,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),61), 65669904u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1411358505u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),61), 1192229924u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1518448835u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -3609,11 +3730,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),62), 1427550968u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1726249455u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),62), 837213444u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 640343581u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -3627,11 +3748,11 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
-__gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),63), 1545585352u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 736097667u);
-int __gsharp_stage_0_n = __gsharp_id_1_a;
-int __gsharp_stage_1_n = __gsharp_id_2_b;
-int __gsharp_stage_2_n = __gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_g,64),63), 1897467620u)=([&]() -> auto {
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1522774459u);
+int __gsharp_stage_0_n = __gsharp_id_3_a;
+int __gsharp_stage_1_n = __gsharp_id_4_b;
+int __gsharp_stage_2_n = __gsharp_id_5_c;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -3648,23 +3769,33 @@ return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ThreeStageSweepKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__ThreeStageSweepKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+private static bool __gsharp_layout_checked_ThreeStageSweepKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerThreeStageSweepKernel() => global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.__gsharp_hfunc_ThreeStageSweepKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchThreeStageSweepKernel(global::System.Int32[] data, global::System.Int32 a, global::System.Int32 b, global::System.Int32 c, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchThreeStageSweepKernel(global::System.Int32[] data, global::Kassyi.GSharp.Tests.Shared.Runtime.ThreeStageRangeParameters range, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (!__gsharp_layout_checked_ThreeStageSweepKernel)
+{
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Runtime.ThreeStageRangeParameters>() != 12) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Runtime.ThreeStageRangeParameters", 12, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Runtime.ThreeStageRangeParameters>());
+{
+global::Kassyi.GSharp.Tests.Shared.Runtime.ThreeStageRangeParameters __gsharp_layout_probe = default;
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Runtime.ThreeStageRangeParameters, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.FirstCount))) != 0) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Runtime.ThreeStageRangeParameters", "FirstCount", 0, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Runtime.ThreeStageRangeParameters, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.FirstCount))));
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Runtime.ThreeStageRangeParameters, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.SecondCount))) != 4) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Runtime.ThreeStageRangeParameters", "SecondCount", 4, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Runtime.ThreeStageRangeParameters, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.SecondCount))));
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Runtime.ThreeStageRangeParameters, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.ThirdCount))) != 8) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Runtime.ThreeStageRangeParameters", "ThirdCount", 8, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Runtime.ThreeStageRangeParameters, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.ThirdCount))));
+}
+__gsharp_layout_checked_ThreeStageSweepKernel = true;
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StackLinqRangeKernels.ThreeStageSweepKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StackLinqRangeKernels.ThreeStageSweepKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = data;
-global::System.Int32 __gsharp_csharp_arg_1 = a;
-global::System.Int32 __gsharp_csharp_arg_2 = b;
-global::System.Int32 __gsharp_csharp_arg_3 = c;
-global::System.Int32[] __gsharp_csharp_arg_4 = result;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.ThreeStageSweepKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2, __gsharp_csharp_arg_3, __gsharp_csharp_arg_4));
+global::Kassyi.GSharp.Tests.Shared.Runtime.ThreeStageRangeParameters __gsharp_csharp_arg_1 = range;
+global::System.Int32[] __gsharp_csharp_arg_2 = result;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.ThreeStageSweepKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2));
 return;
 }
 using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
@@ -3672,11 +3803,11 @@ using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsha
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.__gsharp_hfunc_ThreeStageSweepKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "StackLinqRangeKernels.ThreeStageSweepKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
-global::System.IntPtr __gsharp_d_4 = global::System.IntPtr.Zero;
+global::System.IntPtr __gsharp_d_2 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[6];
+void** __gsharp_kernel_params = stackalloc void*[4];
 // Marshal array: data
 int __gsharp_size_0 = checked((data?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
@@ -3694,37 +3825,33 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 __gsharp_proxy_0[0] = __gsharp_d_0;
 }
 __gsharp_kernel_params[0] = __gsharp_proxy_0;
-// Marshal scalar: a
-__gsharp_kernel_params[1] = &a;
-// Marshal scalar: b
-__gsharp_kernel_params[2] = &b;
-// Marshal scalar: c
-__gsharp_kernel_params[3] = &c;
+// Marshal scalar struct: range
+__gsharp_kernel_params[1] = &range;
 // Marshal array: result
-int __gsharp_size_4 = checked((result?.Length ?? 0) * sizeof(global::System.Int32));
-global::System.IntPtr* __gsharp_proxy_4 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_4[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(result) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
-((int*)(__gsharp_proxy_4 + 1))[0] = (result?.Length ?? 0);
-((int*)(__gsharp_proxy_4 + 1))[1] = 0;
-if (__gsharp_size_4 > 0)
+int __gsharp_size_2 = checked((result?.Length ?? 0) * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_2 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_2[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(result) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_2 + 1))[0] = (result?.Length ?? 0);
+((int*)(__gsharp_proxy_2 + 1))[1] = 0;
+if (__gsharp_size_2 > 0)
 {
 if (global::System.Object.ReferenceEquals(result, data))
 {
-__gsharp_d_4 = __gsharp_d_0;
+__gsharp_d_2 = __gsharp_d_0;
 }
 else
 {
-global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_4, (global::System.IntPtr)__gsharp_size_4, hStream));
-fixed (global::System.Int32* __gsharp_p_4 = result)
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_2, (global::System.IntPtr)__gsharp_size_2, hStream));
+fixed (global::System.Int32* __gsharp_p_2 = result)
 {
-global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_4, (global::System.IntPtr)__gsharp_p_4, (global::System.IntPtr)__gsharp_size_4, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_2, (global::System.IntPtr)__gsharp_p_2, (global::System.IntPtr)__gsharp_size_2, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-__gsharp_proxy_4[0] = __gsharp_d_4;
+__gsharp_proxy_2[0] = __gsharp_d_2;
 }
-__gsharp_kernel_params[4] = __gsharp_proxy_4;
-__gsharp_kernel_params[5] = &__gsharp_epoch;
+__gsharp_kernel_params[2] = __gsharp_proxy_2;
+__gsharp_kernel_params[3] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -3744,11 +3871,11 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 }
 }
 // Copy back array: result
-if (__gsharp_size_4 > 0 && __gsharp_d_4 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(result, data))
+if (__gsharp_size_2 > 0 && __gsharp_d_2 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(result, data))
 {
-fixed (global::System.Int32* __gsharp_p_4 = result)
+fixed (global::System.Int32* __gsharp_p_2 = result)
 {
-global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_4, __gsharp_d_4, (global::System.IntPtr)__gsharp_size_4, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_2, __gsharp_d_2, (global::System.IntPtr)__gsharp_size_2, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
@@ -3759,7 +3886,7 @@ finally
 {
 global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
 if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
-if (__gsharp_d_4 != global::System.IntPtr.Zero && __gsharp_d_4 != __gsharp_d_0) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_4, hStream);
+if (__gsharp_d_2 != global::System.IntPtr.Zero && __gsharp_d_2 != __gsharp_d_0) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_2, hStream);
 }
 }
 }
@@ -3767,7 +3894,7 @@ if (__gsharp_d_4 != global::System.IntPtr.Zero && __gsharp_d_4 != __gsharp_d_0) 
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchThreeStageSweepKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data, global::System.Int32 a, global::System.Int32 b, global::System.Int32 c, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchThreeStageSweepKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data, global::Kassyi.GSharp.Tests.Shared.Runtime.StackLinqRangeKernels.AotContexts.ThreeStageRangeParameters range, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length < 0){
 throw new global::System.ArgumentOutOfRangeException("data", data.Length, "The array length must not be negative.");
@@ -3793,26 +3920,22 @@ global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfun
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[6];
+void** __gsharp_kernel_params = stackalloc void*[4];
 // Marshal device array: data
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
 __gsharp_proxy_0[0] = data.Data;
 ((int*)(__gsharp_proxy_0 + 1))[0] = data.Length;
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 __gsharp_kernel_params[0] = __gsharp_proxy_0;
-// Marshal scalar: a
-__gsharp_kernel_params[1] = &a;
-// Marshal scalar: b
-__gsharp_kernel_params[2] = &b;
-// Marshal scalar: c
-__gsharp_kernel_params[3] = &c;
+// Marshal device struct: range
+__gsharp_kernel_params[1] = &range;
 // Marshal device array: result
-global::System.IntPtr* __gsharp_proxy_4 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_4[0] = result.Data;
-((int*)(__gsharp_proxy_4 + 1))[0] = result.Length;
-((int*)(__gsharp_proxy_4 + 1))[1] = 0;
-__gsharp_kernel_params[4] = __gsharp_proxy_4;
-__gsharp_kernel_params[5] = &__gsharp_epoch;
+global::System.IntPtr* __gsharp_proxy_2 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_2[0] = result.Data;
+((int*)(__gsharp_proxy_2 + 1))[0] = result.Length;
+((int*)(__gsharp_proxy_2 + 1))[1] = 0;
+__gsharp_kernel_params[2] = __gsharp_proxy_2;
+__gsharp_kernel_params[3] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim

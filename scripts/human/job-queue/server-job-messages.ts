@@ -2,7 +2,16 @@
 // (the end of a job whose command ended while no scheduler listened).
 
 import { ProtocolVersion } from "./constants.ts";
-import { environmentField, idField, numberField, send, shareField, type Incoming } from "./protocol.ts";
+import {
+  environmentField,
+  idField,
+  numberField,
+  quarantineField,
+  remoteField,
+  send,
+  shareField,
+  type Incoming,
+} from "./protocol.ts";
 import type { Connection, MessageHandler } from "./server-connection.ts";
 import type { ServerJob } from "./server-job.ts";
 import {
@@ -87,17 +96,34 @@ function rebind(
     job.share = "exclusive";
     server.log(`re-bind ${formatJobId(job.id)}: counted as an exclusive turn, as it asks`);
   }
-  if (job.commandPid === 0 && numberField(message, "commandPid") > 0) {
-    job.commandPid = numberField(message, "commandPid");
+  const incomingRemote = message.type === "adopt" ? remoteField(message) : job.remote;
+  const previousRemote = job.remote;
+  const cmdPid = numberField(message, "commandPid");
+  if (cmdPid > 0 && (job.commandPid === 0 || (message.type === "adopt" && previousRemote !== incomingRemote))) {
+    job.commandPid = cmdPid;
     job.spawnedAt = numberField(message, "spawnedAt");
   }
   if (plan.to === "running" && job.phase !== "running") {
     // Its command runs: the grant was not saved before a crash, or a provisional end is taken back
     scheduler.detach(job);
+    if (message.type === "adopt") {
+      job.remote = incomingRemote;
+    }
     job.provisional = null;
     job.grantedAt = job.spawnedAt;
     job.phase = "running";
     scheduler.adopt(job);
+  } else if (message.type === "adopt" && job.phase === "running" && previousRemote !== incomingRemote) {
+    scheduler.detach(job);
+    job.remote = incomingRemote;
+    if (incomingRemote === undefined && previousRemote !== undefined && job.offload === "auto") {
+      job.offload = "never";
+    }
+    if (job.spawnedAt > 0) {
+      job.grantedAt = job.spawnedAt;
+    }
+    scheduler.adopt(job);
+    server.log(`re-bind ${formatJobId(job.id)}: remote ${previousRemote ?? "local"} -> ${incomingRemote ?? "local"}`);
   }
   server.log(`re-bind ${formatJobId(job.id)} (${job.phase}) pid ${job.pid}: ${job.command}`);
   if (job.phase === "waiting") {
@@ -146,6 +172,11 @@ function request(connection: Connection, message: Incoming): void {
       code: "unknown-job",
       message: `--after: no job ${after} (never queued, or ended too long ago)`,
     });
+    return;
+  }
+  const remoteError = scheduler.remoteRefusalReason(created);
+  if (remoteError !== null) {
+    connection.reply({ type: "error", code: "remote-ineligible", message: remoteError });
     return;
   }
   const job = created;
@@ -224,6 +255,67 @@ function downgrade(connection: Connection): void {
   send(socket, server.queuedMessage(job));
 }
 
+/**
+ * fallback-local: a remotely granted job whose transport failed before execution releases its remote slot and
+ * waits again under the same id for a local CPU slot (`offload` becomes "never").
+ */
+function fallbackLocal(connection: Connection, message: Incoming): void {
+  const { server, socket } = connection;
+  const job = connection.job;
+  const requestedId = idField(message, "id");
+  if (job === null || (requestedId !== null && requestedId !== job.id)) {
+    send(socket, {
+      type: "error",
+      code: "not-remote",
+      message: "fallback-local: no matching remote job on this connection",
+    });
+    return;
+  }
+  if (job.offload === "force") {
+    send(socket, {
+      type: "error",
+      code: "remote-ineligible",
+      message: "fallback-local: --remote job cannot fall back to local execution",
+    });
+    return;
+  }
+  if (job.phase === "waiting" && job.remote === undefined && (job.offload === undefined || job.offload === "never")) {
+    job.offload = "never";
+    send(socket, server.queuedMessage(job));
+    return;
+  }
+  if (job.phase !== "running" || job.remote === undefined) {
+    send(socket, {
+      type: "error",
+      code: "not-remote",
+      message: "fallback-local: job is not running on a remote worker",
+    });
+    return;
+  }
+  if (job.cancelPending) {
+    server.finish(job, "cancelled", "cancelled");
+    return;
+  }
+  const prevRemote = job.remote;
+  server.scheduler.detach(job);
+  job.remote = undefined;
+  job.offload = "never";
+  job.phase = "waiting";
+  job.epoch++;
+  job.grantedAt = 0;
+  job.commandPid = 0;
+  job.spawnedAt = 0;
+  job.lastPosition = -1;
+  job.lastStartAt = null;
+  job.lastWaitFor = undefined;
+  job.backfilled = undefined;
+  job.startNow = undefined;
+  job.adopted = undefined;
+  server.scheduler.add(job);
+  server.log(`fallback-local ${formatJobId(job.id)}: detached from remote ${prevRemote}; waiting for local slot`);
+  send(socket, server.queuedMessage(job));
+}
+
 /** done: the command ended; the slot is freed, the outcome recorded, and the receipt given. */
 function done(connection: Connection, message: Incoming): void {
   const { server, socket } = connection;
@@ -235,6 +327,10 @@ function done(connection: Connection, message: Incoming): void {
   job.completed = message.completed === true;
   // Protocol 2 clients send no exit code: their outcome is unknown ('lost')
   job.exitCode = typeof message.exitCode === "number" ? message.exitCode : null;
+  const quarantine = quarantineField(message);
+  if (quarantine !== undefined) {
+    job.quarantine = quarantine;
+  }
   if (!server.stopping && job.phase === "running") {
     // The command has ended: free the slot and record the outcome now (settle saves it at the end of this message),
     // then give the receipt. A stopping scheduler saves nothing and gives none: the client then reports the outcome to
@@ -259,15 +355,22 @@ function report(connection: Connection, message: Incoming): void {
   const record = id === null ? undefined : server.find(id);
   const reporter = { pid: numberField(message, "pid"), queuedAt: numberField(message, "queuedAt") };
   const step = id === null ? "ignore" : planReport(record, server.outcomes.get(id), reporter, endOf(message));
+  const quarantine = quarantineField(message);
   if (step === "ignore") {
     server.log(id === null ? "report ignored" : `report ${formatJobId(id)} ignored`);
   } else if (record === undefined) {
     if (id !== null) {
       server.log(`report ${formatJobId(id)}: ${step.end}`);
+      if (quarantine !== undefined) {
+        server.recordQuarantine(id, quarantine);
+      }
       server.recordOutcome(id, step.end);
     }
   } else {
     // Its old connection may not have closed here yet (the client saw the close first): it ends with the record
+    if (quarantine !== undefined) {
+      record.quarantine = quarantine;
+    }
     const old = record.connection;
     server.finish(record, step.end, "its client reported");
     old?.socket.destroy();
@@ -282,4 +385,5 @@ export const JobMessages: Readonly<Record<string, MessageHandler>> = {
   done,
   report,
   downgrade,
+  "fallback-local": fallbackLocal,
 };

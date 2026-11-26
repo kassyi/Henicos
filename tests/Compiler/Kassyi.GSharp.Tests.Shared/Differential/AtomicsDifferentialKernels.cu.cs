@@ -15,6 +15,32 @@ public struct DiffAtomicPacket
     public float Accumulator;
 }
 
+public struct SameStepAtomicStates
+{
+    public int[] Int32States;
+    public uint[] UInt32States;
+    public ulong[] UInt64States;
+}
+
+public struct SameStepAtomicOldValues
+{
+    public int[] Packed32BitOldValues;
+    public ulong[] UInt64OldValues;
+}
+
+public struct FloatAtomicTargets
+{
+    public float[] SummaryAccumulators;
+    public float[] ExchangeSlot;
+    public DiffAtomicPacket[] Packets;
+}
+
+public struct FloatAtomicOldValues
+{
+    public float[] AddOldValues;
+    public float[] ExchangeOldValues;
+}
+
 /// <summary>
 /// Differential test kernels for <see cref="Gpu"/> atomics, <see cref="Interlocked"/> intrinsics, shared-memory atomics,
 /// struct-field atomics, CAS spinlocks, and cooperative lock-free data structures.
@@ -249,12 +275,15 @@ public static partial class AtomicsDifferentialKernels
     // -------------------------------------------------------------------------
     [GpuKernel]
     public static void IntegerSameStepAtomicsKernel(
-        int[] stateInt,
-        uint[] stateUInt,
-        ulong[] stateULong,
-        int[] oldValuesOut,
-        ulong[] oldULongOut)
+        SameStepAtomicStates states,
+        SameStepAtomicOldValues oldValues)
     {
+        var stateInt = states.Int32States;
+        var stateUInt = states.UInt32States;
+        var stateULong = states.UInt64States;
+        var oldValuesOut = oldValues.Packed32BitOldValues;
+        var oldULongOut = oldValues.UInt64OldValues;
+
         int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         int bucket = tid & 3;
 
@@ -704,13 +733,17 @@ public static partial class AtomicsDifferentialKernels
     // -------------------------------------------------------------------------
     [GpuKernel]
     public static void FloatExactPowersOfTwoAtomicKernel(
-        float[] summaryFloats,
-        float[] exchSlot,
-        float[] oldAddMultisetOut,
-        float[] oldExchOut,
-        DiffAtomicPacket[] packets,
-        int dynLen)
+        FloatAtomicTargets targets,
+        FloatAtomicOldValues oldValues,
+        int sharedBufferLength)
     {
+        var summaryFloats = targets.SummaryAccumulators;
+        var exchSlot = targets.ExchangeSlot;
+        var packets = targets.Packets;
+        var oldAddMultisetOut = oldValues.AddOldValues;
+        var oldExchOut = oldValues.ExchangeOldValues;
+        int dynLen = sharedBufferLength;
+
         int localTid = ThreadIndex.X;
         int gid = BlockIndex.X * BlockDimension.X + localTid;
 

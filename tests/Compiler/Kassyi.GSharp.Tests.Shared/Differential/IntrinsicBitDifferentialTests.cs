@@ -43,13 +43,19 @@ public class IntrinsicBitDifferentialTests
             .In("len", Cycled(shape.Rows, s_bitLengths), readOnly: true)
             .Out<uint>("output", shape.Rows, IntrinsicDifferentialKernels.Bits32Columns, OutputPolicy.Exact),
         Launch = static (b, s) => IntrinsicDifferentialKernels.LaunchBits32Kernel(
-            b.Get<uint>("a"),
-            b.Get<uint>("b"),
-            b.Get<uint>("c"),
-            b.Get<int>("pos"),
-            b.Get<int>("len"),
-            b.Get<uint>("output"),
-            s.Rows,
+            operands: new UInt32BitOperands
+            {
+                FirstValues = b.Get<uint>("a"),
+                SecondValues = b.Get<uint>("b"),
+                ThirdValues = b.Get<uint>("c"),
+            },
+            slices: new BitFieldSlices
+            {
+                Positions = b.Get<int>("pos"),
+                Lengths = b.Get<int>("len"),
+            },
+            results: b.Get<uint>("output"),
+            rows: s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         Reference = static (b, s) =>
@@ -95,12 +101,18 @@ public class IntrinsicBitDifferentialTests
             .In("len", Cycled(shape.Rows, s_bitLengths), readOnly: true)
             .Out<ulong>("output", shape.Rows, IntrinsicDifferentialKernels.Bits64Columns, OutputPolicy.Exact),
         Launch = static (b, s) => IntrinsicDifferentialKernels.LaunchBits64Kernel(
-            b.Get<ulong>("a"),
-            b.Get<ulong>("b"),
-            b.Get<int>("pos"),
-            b.Get<int>("len"),
-            b.Get<ulong>("output"),
-            s.Rows,
+            operands: new UInt64BitOperands
+            {
+                FirstValues = b.Get<ulong>("a"),
+                SecondValues = b.Get<ulong>("b"),
+            },
+            slices: new BitFieldSlices
+            {
+                Positions = b.Get<int>("pos"),
+                Lengths = b.Get<int>("len"),
+            },
+            results: b.Get<ulong>("output"),
+            rows: s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         Reference = static (b, s) =>
@@ -135,12 +147,15 @@ public class IntrinsicBitDifferentialTests
                 .In("borrowIn", Cycled(shape.Rows, s_borrowIns), readOnly: true)
                 .Out<ulong>("output", shape.Rows, IntrinsicDifferentialKernels.CarryColumns, OutputPolicy.Exact),
             Launch = static (b, s) => IntrinsicDifferentialKernels.LaunchCarryChainKernel(
-                b.Get<uint>("a"),
-                b.Get<uint>("b"),
-                b.Get<ulong>("carryIn"),
-                b.Get<long>("borrowIn"),
-                b.Get<ulong>("output"),
-                s.Rows,
+                operands: new CarryChainOperands
+                {
+                    FirstValues = b.Get<uint>("a"),
+                    SecondValues = b.Get<uint>("b"),
+                    CarryIns = b.Get<ulong>("carryIn"),
+                    BorrowIns = b.Get<long>("borrowIn"),
+                },
+                results: b.Get<ulong>("output"),
+                rows: s.Rows,
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX),
             Reference = static (b, s) =>
@@ -164,48 +179,38 @@ public class IntrinsicBitDifferentialTests
             },
         };
 
-    internal static readonly DifferentialCase s_copyAsyncAndSleep =
-        new(KernelName(nameof(IntrinsicDifferentialKernels.CopyAsyncAndSleepKernel)))
+    internal static readonly DifferentialCase s_copyAsyncAndSleep = DiffCases.Create(
+        IntrinsicDifferentialKernels.LaunchCopyAsyncAndSleepKernel,
+        inputs: static (rng, shape) => new DiffBuffers()
+            .In("input", DiffValues.Int32(rng, shape.Rows), readOnly: true)
+            .Out<int>("output", shape.Rows, OutputPolicy.Exact),
+        shape: LaunchShapes.Linear(64, 32),
+        inputName: "input",
+        outputName: "output",
+        // Each block of 32 comes back reversed in two halves: thread t of the block reads element 15 - t of the
+        // first group, or 47 - t of the second
+        reference: static (b, s) =>
         {
-            Shape = LaunchShapes.Linear(64, 32),
-            Inputs = static (rng, shape) => new DiffBuffers()
-                .In("input", DiffValues.Int32(rng, shape.Rows), readOnly: true)
-                .Out<int>("output", shape.Rows, OutputPolicy.Exact),
-            Launch = static (b, s) => IntrinsicDifferentialKernels.LaunchCopyAsyncAndSleepKernel(
-                b.Get<int>("input"),
-                b.Get<int>("output"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX),
-            // Each block of 32 comes back reversed in two halves: thread t of the block reads element 15 - t of the
-            // first group, or 47 - t of the second
-            Reference = static (b, s) =>
+            var input = b.Get<int>("input");
+            var output = b.Get<int>("output");
+            for (int i = 0; i < s.Rows; i++)
             {
-                var input = b.Get<int>("input");
-                var output = b.Get<int>("output");
-                for (int i = 0; i < s.Rows; i++)
-                {
-                    int blockStart = i - i % 32;
-                    int tid = i % 32;
-                    output[i] = input[blockStart + (tid < 16 ? 15 - tid : 47 - tid)];
-                }
-            },
-        };
+                int blockStart = i - i % 32;
+                int tid = i % 32;
+                output[i] = input[blockStart + (tid < 16 ? 15 - tid : 47 - tid)];
+            }
+        });
 
-    internal static readonly DifferentialCase s_malloc =
-        new(KernelName(nameof(IntrinsicDifferentialKernels.MallocKernel)))
-    {
-        Shape = LaunchShapes.Linear(Rows, 32),
-        Inputs = static (_, shape) => new DiffBuffers()
+    internal static readonly DifferentialCase s_malloc = DiffCases.Create(
+        IntrinsicDifferentialKernels.LaunchMallocKernel,
+        inputs: static (_, shape) => new DiffBuffers()
             .In("sizes", Cycled(shape.Rows, s_mallocSizes), readOnly: true)
             .Out<int>("output", shape.Rows, OutputPolicy.Exact),
-        Launch = static (b, s) => IntrinsicDifferentialKernels.LaunchMallocKernel(
-            b.Get<int>("sizes"),
-            b.Get<int>("output"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
+        shape: LaunchShapes.Linear(Rows, 32),
+        inputName: "sizes",
+        outputName: "output",
         // The sum of the bytes (byte)(i + k) for k below the size
-        Reference = static (b, s) =>
+        reference: static (b, s) =>
         {
             var sizes = b.Get<int>("sizes");
             var output = b.Get<int>("output");
@@ -219,8 +224,7 @@ public class IntrinsicBitDifferentialTests
 
                 output[i] = sum;
             }
-        },
-    };
+        });
 
     // Each column agrees with the PTX definition, written bit by bit, on boundary values, bit positions and lengths
     // outside 0-31 and 0-255, and random values.

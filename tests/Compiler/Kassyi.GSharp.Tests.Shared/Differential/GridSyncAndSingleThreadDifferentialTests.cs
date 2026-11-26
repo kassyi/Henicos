@@ -35,11 +35,14 @@ public class GridSyncAndSingleThreadDifferentialTests
                     .Out<int>("output", totalThreads, GridSyncAndSingleThreadDifferentialKernels.MultiPhaseReduceColumns, OutputPolicy.Exact);
             },
             Launch = static (b, s) => GridSyncAndSingleThreadDifferentialKernels.LaunchCooperativeMultiPhaseReduceNormalizeKernel(
-                b.Get<int>("input"),
-                b.Get<int>("blockSums"),
-                b.Get<int>("gridStats"),
-                b.Get<int>("output"),
-                dynBlockCap: s.ThreadsPerBlock,
+                input: b.Get<int>("input"),
+                workspace: new MultiPhaseReductionWorkspace
+                {
+                    BlockSums = b.Get<int>("blockSums"),
+                    GridStats = b.Get<int>("gridStats"),
+                },
+                output: b.Get<int>("output"),
+                sharedBlockCapacity: s.ThreadsPerBlock,
                 gridDimX: s.GridX,
                 gridDimY: s.GridY,
                 gridDimZ: s.GridZ,
@@ -164,14 +167,9 @@ public class GridSyncAndSingleThreadDifferentialTests
         };
 
     internal static readonly DifferentialCase s_cooperativeSyncGridBodyControlFlowAndDeviceFn =
-        new($"{nameof(GridSyncAndSingleThreadDifferentialKernels)}.{nameof(GridSyncAndSingleThreadDifferentialKernels.CooperativeSyncGridBodyControlFlowAndDeviceFnKernel)}")
-        {
-            Shapes =
-            [
-                LaunchShapes.Grid1D(2u, 32u),
-                LaunchShapes.Grid1D(4u, 32u),
-            ],
-            Inputs = static (rng, s) =>
+        DiffCases.Create(
+            GridSyncAndSingleThreadDifferentialKernels.LaunchCooperativeSyncGridBodyControlFlowAndDeviceFnKernel,
+            inputs: static (rng, s) =>
             {
                 int total = s.ThreadCount;
                 return new DiffBuffers()
@@ -180,15 +178,16 @@ public class GridSyncAndSingleThreadDifferentialTests
                     .In("scratch", new int[total], OutputPolicy.Exact)
                     .Out<int>("output", total, OutputPolicy.Exact);
             },
-            Launch = static (b, s) => GridSyncAndSingleThreadDifferentialKernels.LaunchCooperativeSyncGridBodyControlFlowAndDeviceFnKernel(
-                b.Get<int>("input"),
-                b.Get<int>("phaseBuf"),
-                b.Get<int>("scratch"),
-                b.Get<int>("output"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = static (b, s) =>
+            shapes:
+            [
+                LaunchShapes.Grid1D(2u, 32u),
+                LaunchShapes.Grid1D(4u, 32u),
+            ],
+            firstName: "input",
+            secondName: "phaseBuf",
+            thirdName: "scratch",
+            fourthName: "output",
+            reference: static (b, s) =>
             {
                 var input = b.Get<int>("input");
                 var phaseBuf = b.Get<int>("phaseBuf");
@@ -245,8 +244,7 @@ public class GridSyncAndSingleThreadDifferentialTests
                     int prev = (gid + total - 1) % total;
                     output[gid] = scratch[gid] + scratch[prev];
                 }
-            },
-        };
+            });
 
     internal static readonly DifferentialCase s_singleThreadMultiDimAndReturn =
         new($"{nameof(GridSyncAndSingleThreadDifferentialKernels)}.{nameof(GridSyncAndSingleThreadDifferentialKernels.SingleThreadMultiDimAndReturnKernel)}")
@@ -300,25 +298,21 @@ public class GridSyncAndSingleThreadDifferentialTests
         };
 
     internal static readonly DifferentialCase s_singleThreadCooperativeBarrier =
-        new($"{nameof(GridSyncAndSingleThreadDifferentialKernels)}.{nameof(GridSyncAndSingleThreadDifferentialKernels.SingleThreadCooperativeBarrierKernel)}")
-        {
-            Shapes =
+        DiffCases.Create(
+            GridSyncAndSingleThreadDifferentialKernels.LaunchSingleThreadCooperativeBarrierKernel,
+            inputs: static (rng, s) => new DiffBuffers()
+                .In("input", DiffValues.Int32(rng, s.ThreadCount), OutputPolicy.Exact, readOnly: true)
+                .In("globalState", [-1, -1, -1], OutputPolicy.Exact)
+                .Out<int>("output", s.ThreadCount, OutputPolicy.Exact),
+            shapes:
             [
                 LaunchShapes.Grid1D(2u, 32u),
                 LaunchShapes.Grid1D(4u, 32u),
             ],
-            Inputs = static (rng, s) => new DiffBuffers()
-                .In("input", DiffValues.Int32(rng, s.ThreadCount), OutputPolicy.Exact, readOnly: true)
-                .In("globalState", [-1, -1, -1], OutputPolicy.Exact)
-                .Out<int>("output", s.ThreadCount, OutputPolicy.Exact),
-            Launch = static (b, s) => GridSyncAndSingleThreadDifferentialKernels.LaunchSingleThreadCooperativeBarrierKernel(
-                b.Get<int>("input"),
-                b.Get<int>("globalState"),
-                b.Get<int>("output"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = static (b, s) =>
+            firstInputName: "input",
+            secondInputName: "globalState",
+            outputName: "output",
+            reference: static (b, s) =>
             {
                 var input = b.Get<int>("input");
                 var globalState = b.Get<int>("globalState");
@@ -354,8 +348,7 @@ public class GridSyncAndSingleThreadDifferentialTests
                         output[gid] = globalState[2] + bSum + localTid;
                     }
                 }
-            },
-        };
+            });
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]

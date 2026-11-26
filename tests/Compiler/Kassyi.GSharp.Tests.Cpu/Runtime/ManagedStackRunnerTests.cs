@@ -407,6 +407,7 @@ public class ManagedStackRunnerTests
     }
 
     [SkippableFact]
+    [Platform(TestPlatform.Windows)]
     [Scenario(TestScenario.Boundary)]
     public void Run_OnAnStaThread_GivesTheResultOfAnMtaThread()
     {
@@ -732,6 +733,149 @@ public class ManagedStackRunnerTests
         {
             ManagedGpuContext.IsActive = false;
         }
+    }
+
+    // Warp.ActiveMask() and the reconvergence regions, called as the stack form of a method that reaches it calls them:
+    // every lane enters the region of the branch, lanes 0 and 1 take it and ask for the mask there, every lane waits
+    // where the branch ends and asks again after it
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void RunWarp_ActiveMaskInsideAndAfterABranch_ReturnsTheLanesOfTheBranchThenEveryLane()
+    {
+        var inside = new uint[4];
+        var after = new uint[4];
+
+        RunWarp(1, 4, "Test.ActiveMaskRegion", tid =>
+        {
+            ManagedGpuContext.__gsharp_stack_warp_begin(3);
+            ManagedGpuContext.__gsharp_stack_warp_region_enter(0, 0);
+            if (tid < 2)
+            {
+                inside[tid] = ManagedGpuContext.__gsharp_stack_warp_active_mask(0, 0, "Test(1,1)");
+            }
+
+            ManagedGpuContext.__gsharp_stack_warp_reconverge(0, 0, "Test(2,2)");
+            after[tid] = ManagedGpuContext.__gsharp_stack_warp_active_mask(0, 1, "Test(3,3)");
+        });
+
+        Assert.Equal([0x3u, 0x3u, 0u, 0u], inside);
+        Assert.Equal([0xFu, 0xFu, 0xFu, 0xFu], after);
+    }
+
+    // In block 0, lane 1 ends inside a region it never leaves. In block 1, lane 0 waits where that region ends while
+    // lane 1 waits at the block barrier: the regions of block 0 must not reach block 1 (the pooled OS thread of lane 1
+    // and the block state are the same), or lane 0 would wait for lane 1 there and the block would stall
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void RunWarp_LaneEndedInsideARegionInTheBlockBefore_RegionsStartAgainInEachBlock()
+    {
+        var output = new int[4];
+
+        RunWarp(2, 2, "Test.StaleRegions", tid =>
+        {
+            ManagedGpuContext.__gsharp_stack_warp_begin(2);
+            int block = ManagedGpuContext.BlockIdxX;
+            int lane = ManagedGpuContext.ThreadIdxX;
+            if (block == 0)
+            {
+                if (lane == 1)
+                {
+                    ManagedGpuContext.__gsharp_stack_warp_region_enter(0, 0);
+                }
+
+                output[tid] = 1;
+                return;
+            }
+
+            if (lane == 0)
+            {
+                ManagedGpuContext.__gsharp_stack_warp_region_enter(0, 0);
+                ManagedGpuContext.__gsharp_stack_warp_reconverge(0, 0, "Test(1,1)");
+            }
+            else
+            {
+                ManagedGpuContext.__gsharp_stack_block_barrier();
+            }
+
+            output[tid] = 2;
+        });
+
+        Assert.Equal([1, 1, 2, 2], output);
+    }
+
+    // A region of a frame outside the counts that begin cleared (a negative frame or branch, a frame past the counts, a
+    // region before begin) is an internal error, never a path of its own
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(2, 2, 0)]
+    [InlineData(2, -1, 0)]
+    [InlineData(2, 0, -1)]
+    [InlineData(0, 0, 0)]
+    public void StackWarpRegion_FrameOutsideTheClearedCounts_ThrowsAnInternalError(int size, int frame, int site)
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            RunWarp(1, 2, "Test.RegionOutside", _ =>
+            {
+                if (size > 0)
+                {
+                    ManagedGpuContext.__gsharp_stack_warp_begin(size);
+                }
+
+                ManagedGpuContext.__gsharp_stack_warp_region_enter(frame, site);
+            }));
+
+        Assert.Contains("internal error", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("outside the", ex.Message, StringComparison.Ordinal);
+    }
+
+    // The count of Warp.ActiveMask() is checked as the count of any collective
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void StackWarpActiveMask_CountOutsideTheClearedCounts_ThrowsAnInternalError()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            RunWarp(1, 2, "Test.ActiveMaskOutside", _ =>
+            {
+                ManagedGpuContext.__gsharp_stack_warp_begin(2);
+                ManagedGpuContext.__gsharp_stack_warp_active_mask(0, 1, "Test(1,1)");
+            }));
+
+        Assert.Contains("internal error", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("outside the", ex.Message, StringComparison.Ordinal);
+    }
+
+    // A launch without the warp rendezvous does not reset the regions of its blocks: a region or Warp.ActiveMask()
+    // there is an internal error
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("enter")]
+    [InlineData("leave")]
+    [InlineData("reconverge")]
+    [InlineData("activeMask")]
+    public void StackWarpRegion_LaunchWithoutTheWarpRendezvous_ThrowsAnInternalError(string call)
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            ManagedStackRunner.Run(1, 1, 1, 2, 1, 1, 0, "Test.RegionNoWarpFlag", _ =>
+            {
+                switch (call)
+                {
+                    case "enter":
+                        ManagedGpuContext.__gsharp_stack_warp_region_enter(0, 0);
+                        break;
+                    case "leave":
+                        ManagedGpuContext.__gsharp_stack_warp_region_leave(0, 0);
+                        break;
+                    case "reconverge":
+                        ManagedGpuContext.__gsharp_stack_warp_reconverge(0, 0, "Test(1,1)");
+                        break;
+                    default:
+                        ManagedGpuContext.__gsharp_stack_warp_active_mask(0, 0, "Test(1,1)");
+                        break;
+                }
+            }));
+
+        Assert.Contains("internal error", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("kernel that reaches one", ex.Message, StringComparison.Ordinal);
     }
 
     [Fact]

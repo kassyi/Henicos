@@ -6,6 +6,7 @@ using Kassyi.GSharp.Compiler.Ir.Building;
 using Kassyi.GSharp.Compiler.Ir.Classifying;
 using Kassyi.GSharp.Compiler.Ir.Expressions;
 using Kassyi.GSharp.Compiler.Ir.Statements;
+using Kassyi.GSharp.Compiler.Semantics;
 using Kassyi.GSharp.Compiler.Transpiler.Helpers.Numeric;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;

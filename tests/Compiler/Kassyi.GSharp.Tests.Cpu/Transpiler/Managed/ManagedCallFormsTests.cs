@@ -1,6 +1,7 @@
 #nullable enable
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Kassyi.GSharp.Compiler.Semantics;
 using Kassyi.GSharp.Compiler.Transpiler;
 using Kassyi.GSharp.Tests.Shared;
 

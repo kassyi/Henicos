@@ -1,4 +1,5 @@
 #nullable enable
+using Kassyi.GSharp.Compiler.Analysis;
 using Kassyi.GSharp.Compiler.Dialects;
 using Kassyi.GSharp.Compiler.Ir;
 using Kassyi.GSharp.Compiler.Ir.Building;
@@ -7,6 +8,7 @@ using Kassyi.GSharp.Compiler.Ir.Decisions;
 using Kassyi.GSharp.Compiler.Ir.Expressions;
 using Kassyi.GSharp.Compiler.Ir.Sequencing;
 using Kassyi.GSharp.Compiler.Ir.Statements;
+using Kassyi.GSharp.Compiler.Marshaling;
 using Kassyi.GSharp.Compiler.Transpiler;
 using static Kassyi.GSharp.Tests.Shared.Transpiler.Ir.IrSequenceTestCases;
 
@@ -420,6 +422,27 @@ public class IrSequenceFormsTests
         Assert.Empty(SyntaxPathTemporaries(compilation, IrTestCases.FindMethod(compilation, FormsType, name)).Firsts);
     }
 
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Sequence_NullForgivingReceiver_DoesNotThrowOnEitherPath()
+    {
+        // (a!)[Touch(m)]: the null-forgiving operator and the parentheses evaluate a and add no trap, so the write of
+        // Touch(m) to memory does not interfere with the array on either path
+        var compilation = IrTestCases.Compile(Forms);
+        var symbol = IrTestCases.FindMethod(compilation, FormsType, "NullForgivingElement");
+        var (decided, sequenced) = Run("NullForgivingElement");
+        var declaration = (MethodDeclarationSyntax)symbol.DeclaringSyntaxReferences[0].GetSyntax();
+        var receiver = declaration.DescendantNodes().OfType<ElementAccessExpressionSyntax>()
+            .Single(static element => element.Expression is ParenthesizedExpressionSyntax).Expression;
+
+        Assert.False(ExpressionTraps.MayTrap(receiver, compilation.GetSemanticModel(declaration.SyntaxTree)));
+        var element = IrNodeChildren.DescendantsAndSelf(decided.Body).OfType<IrElementReference>()
+            .Single(static element => element.Index is IrCall);
+        Assert.False(IrTraps.MayTrap(element.Receiver, IrTrapReading.Decided));
+        Assert.Empty(SequencesOf(sequenced.Body));
+        Assert.Empty(SyntaxPathTemporaries(compilation, symbol).Firsts);
+    }
+
     [Theory]
     [InlineData("ImplicitWidening")]
     [InlineData("NestedWidening")]
@@ -456,9 +479,7 @@ public class IrSequenceFormsTests
     private static IrSequenceTemporaries SyntaxPathTemporaries(Compilation compilation, IMethodSymbol symbol)
     {
         var declaration = (MethodDeclarationSyntax)symbol.DeclaringSyntaxReferences[0].GetSyntax();
-        return IrSequenceTemporaries.Of(MethodTranspiler.GenerateCudaSource(declaration,
-            compilation.GetSemanticModel(declaration.SyntaxTree), null, isDevice: true, new GSharpCudaDialect(),
-            out _));
+        return IrSequenceTemporaries.OfSyntaxPath(declaration, compilation.GetSemanticModel(declaration.SyntaxTree));
     }
 
     private static void AssertDeclaration(IrLocalDeclaration declaration, SpecialType type, IrDeclaredTypeForm form,

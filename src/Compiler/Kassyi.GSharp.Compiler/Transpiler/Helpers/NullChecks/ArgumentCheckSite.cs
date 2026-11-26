@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Backends.Cpp;
+
 namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.NullChecks;
 
 /// <summary>
@@ -31,7 +33,7 @@ internal static class ArgumentCheckSite
         foreach (var site in sites)
         {
             writer.Append(", ");
-            ArrayNullCheck.AppendSite(writer, site);
+            NullCheckSiteWriter.AppendSite(writer, site);
         }
     }
 

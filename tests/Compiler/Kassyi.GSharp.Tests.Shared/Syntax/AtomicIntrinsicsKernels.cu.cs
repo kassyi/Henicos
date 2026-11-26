@@ -2,6 +2,30 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
+public struct Int32AtomicSlots
+{
+    public int[] Targets;
+    public int[] OldValues;
+}
+
+public struct UInt32AtomicSlots
+{
+    public uint[] Targets;
+    public uint[] OldValues;
+}
+
+public struct UInt64AtomicSlots
+{
+    public ulong[] Targets;
+    public ulong[] OldValues;
+}
+
+public struct SingleAtomicSlots
+{
+    public float[] Targets;
+    public float[] OldValues;
+}
+
 public static partial class AtomicIntrinsicsKernels
 {
     // Assumes a single block of 32 threads: each thread owns one bit.
@@ -62,9 +86,20 @@ public static partial class AtomicIntrinsicsKernels
     // old[slot * BlockDimension.X + tid]. Thread t adds one unit, or passes t + 1, 16 - t, bit t or t shifted into the top
     // bits, so that the checks of AtomicIntrinsicsScenarios hold for any order of the operations and fail for a wrong one.
     [GpuKernel]
-    public static void AtomicOldValueKernel(int[] ints, int[] intOld, uint[] uints, uint[] uintOld, ulong[] ulongs,
-        ulong[] ulongOld, float[] floats, float[] floatOld)
+    public static void AtomicOldValueKernel(
+        Int32AtomicSlots signed32,
+        UInt32AtomicSlots unsigned32,
+        UInt64AtomicSlots unsigned64,
+        SingleAtomicSlots single)
     {
+        int[] ints = signed32.Targets;
+        int[] intOld = signed32.OldValues;
+        uint[] uints = unsigned32.Targets;
+        uint[] uintOld = unsigned32.OldValues;
+        ulong[] ulongs = unsigned64.Targets;
+        ulong[] ulongOld = unsigned64.OldValues;
+        float[] floats = single.Targets;
+        float[] floatOld = single.OldValues;
         int tid = ThreadIndex.X;
         int n = BlockDimension.X;
 

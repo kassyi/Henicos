@@ -21,10 +21,15 @@ internal static class NativeStackEligibility
         None = 0,
         BlockBarrier = 1,
         WarpCollective = 2,
-        ActiveMask = 4,
-        GridSync = 8,
-        CaseWithoutLabel = 16,
-        WarpOperatorMacro = 32
+        GridSync = 4,
+        CaseWithoutLabel = 8,
+        WarpOperatorMacro = 16,
+        // A using declaration in a method that reaches Warp.ActiveMask()
+        UsingDeclarationWithActiveMask = 32,
+        // A method that reaches Warp.ActiveMask() whose body the stack lowering fails on
+        StackBodyLowering = 64,
+        // A suspending device function that reaches a warp collective is passed as a method group
+        WarpMethodGroup = 128
     }
 
     public static bool CanRunOnStack(MethodDeclarationSyntax declaration, SemanticModel semanticModel) =>
@@ -78,7 +83,7 @@ internal static class NativeStackEligibility
 
         var visited = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
         var queue = new Queue<IMethodSymbol>();
-        EnqueueSuspendingCallees(declaration, compilation, visited, queue);
+        EnqueueSuspendingCallees(declaration, semanticModel, visited, queue);
 
         while (queue.Count > 0)
         {
@@ -90,14 +95,15 @@ internal static class NativeStackEligibility
 
             // Recursive suspending functions (#926, GSH0061) do not get a stack overload; keep them on the
             // diagnostic / state-machine path rather than emitting a broken or no-op barrier call.
-            if (!SuspensionAnalysis.RequiresStateMachine(callee, compilation))
+            if (!SuspensionAnalysis.RequiresStateMachine(callee, compilation) ||
+                HasSuspendingCycle(callee, compilation))
             {
                 return NativeStackObstacle.RecursiveSuspendingCall;
             }
 
             var calleeModel = compilation.GetCachedSemanticModel(calleeDeclaration.SyntaxTree);
             facts |= GetFacts(callee, calleeDeclaration, calleeModel);
-            EnqueueSuspendingCallees(calleeDeclaration, compilation, visited, queue);
+            EnqueueSuspendingCallees(calleeDeclaration, calleeModel, visited, queue);
         }
 
         if ((facts & BodyFacts.GridSync) != 0)
@@ -110,15 +116,30 @@ internal static class NativeStackEligibility
             return NativeStackObstacle.WarpOperatorMacro;
         }
 
+        if ((facts & BodyFacts.UsingDeclarationWithActiveMask) != 0)
+        {
+            return NativeStackObstacle.UsingDeclarationWithActiveMask;
+        }
+
+        if ((facts & BodyFacts.StackBodyLowering) != 0)
+        {
+            return NativeStackObstacle.StackBodyLowering;
+        }
+
         if ((facts & (BodyFacts.BlockBarrier | BodyFacts.WarpCollective)) != 0 &&
             (facts & BodyFacts.CaseWithoutLabel) != 0)
         {
             return NativeStackObstacle.CaseValueWithoutLabel;
         }
 
+        if ((facts & BodyFacts.WarpMethodGroup) != 0)
+        {
+            return NativeStackObstacle.WarpMethodGroup;
+        }
+
         if ((facts & BodyFacts.WarpCollective) != 0)
         {
-            return ClassifyWarpFrame(method, compilation, (facts & BodyFacts.ActiveMask) != 0);
+            return ClassifyWarpFrame(method, compilation);
         }
 
         return (facts & BodyFacts.BlockBarrier) != 0 ? NativeStackObstacle.None : NativeStackObstacle.NoBlockBarrier;
@@ -127,14 +148,8 @@ internal static class NativeStackEligibility
     // [WHY] A method that reaches a warp collective runs on stacks only when every collective and every call that
     // reaches one has its place in the visit counts of the kernel, which each GPU thread keeps on its own stack; the
     // stack form is written from that placement and treats a missing place as a compiler bug
-    private static NativeStackObstacle ClassifyWarpFrame(IMethodSymbol? method, Compilation compilation,
-        bool hasActiveMask)
+    private static NativeStackObstacle ClassifyWarpFrame(IMethodSymbol? method, Compilation compilation)
     {
-        if (hasActiveMask)
-        {
-            return NativeStackObstacle.WarpActiveMask;
-        }
-
         if (method is null || !WarpFrameLayout.TryGet(method, compilation, out var layout))
         {
             return NativeStackObstacle.WarpLayout;
@@ -174,16 +189,70 @@ internal static class NativeStackEligibility
 
     private static void EnqueueSuspendingCallees(
         MethodDeclarationSyntax declaration,
-        Compilation compilation,
+        SemanticModel semanticModel,
         HashSet<IMethodSymbol> visited,
         Queue<IMethodSymbol> queue)
     {
-        foreach (var callee in SuspensionAnalysis.GetSuspendingCallees(declaration, compilation))
+        if (declaration.GetBodyNode() is not { } body)
+        {
+            return;
+        }
+
+        foreach (var (callee, _) in
+                 SuspensionAnalysis.GetReferencedSuspendingFunctions(body, semanticModel.Compilation, semanticModel))
         {
             if (visited.Add(callee))
             {
                 queue.Enqueue(callee);
             }
+        }
+    }
+
+    private static bool HasSuspendingCycle(IMethodSymbol start, Compilation compilation) =>
+        HasSuspendingCycle(
+            start,
+            compilation,
+            new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default),
+            new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default));
+
+    private static bool HasSuspendingCycle(
+        IMethodSymbol method,
+        Compilation compilation,
+        HashSet<IMethodSymbol> visiting,
+        HashSet<IMethodSymbol> acyclic)
+    {
+        if (acyclic.Contains(method))
+        {
+            return false;
+        }
+
+        if (!visiting.Add(method))
+        {
+            return true;
+        }
+
+        try
+        {
+            if (SuspensionAnalysis.TryGetDeviceFunctionBody(method, compilation, out var declaration) &&
+                declaration.GetBodyNode() is { } body)
+            {
+                var model = compilation.GetCachedSemanticModel(declaration.SyntaxTree);
+                foreach (var (callee, _) in
+                         SuspensionAnalysis.GetReferencedSuspendingFunctions(body, compilation, model))
+                {
+                    if (HasSuspendingCycle(callee, compilation, visiting, acyclic))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            acyclic.Add(method);
+            return false;
+        }
+        finally
+        {
+            visiting.Remove(method);
         }
     }
 
@@ -193,7 +262,7 @@ internal static class NativeStackEligibility
     {
         if (method is null)
         {
-            return ScanBody(declaration, semanticModel);
+            return ScanBody(declaration, semanticModel) & ~BodyFacts.UsingDeclarationWithActiveMask;
         }
 
         var bodies = s_bodies.For(semanticModel.Compilation);
@@ -202,9 +271,74 @@ internal static class NativeStackEligibility
             return cached;
         }
 
+        // [WHY] Only a method that reaches Warp.ActiveMask() gets the reconvergence regions, whose gotos a using
+        // declaration would put inside a try (NativeStackObstacle.UsingDeclarationWithActiveMask)
         var facts = ScanBody(declaration, semanticModel);
+        if (!SuspensionAnalysis.ReachesActiveMask(method, semanticModel.Compilation))
+        {
+            facts &= ~BodyFacts.UsingDeclarationWithActiveMask;
+        }
+        else if (!CanLowerForStack(method, declaration, semanticModel))
+        {
+            facts |= BodyFacts.StackBodyLowering;
+        }
+
         bodies.TryAdd(method, facts);
         return facts;
+    }
+
+    // [WHY] The native stack form of a method that reaches Warp.ActiveMask() writes the body that
+    // AstLoweringPipeline.LowerForStack makes; when that lowering fails, the method keeps its state machine, as the
+    // managed stack model keeps it (ManagedStackForms), instead of a stack form that fails the native build. The
+    // body is lowered once (StackBodies): the stack form writes the same one, and the reason of a failure is stated
+    // in the kernel's text (StackBodyFailure)
+    private static bool CanLowerForStack(IMethodSymbol method, MethodDeclarationSyntax declaration,
+        SemanticModel semanticModel) =>
+        !declaration.HasBody() || GetStackBody(method, declaration, semanticModel).Failure is null;
+
+    private static StackBodies.Result GetStackBody(IMethodSymbol method, MethodDeclarationSyntax declaration,
+        SemanticModel semanticModel) =>
+        StackBodies.Get(declaration, semanticModel, method.OriginalDefinition,
+            isDeviceFunction: !method.HasAttribute(KnownAttributes.GpuKernel));
+
+    /// <summary>
+    /// Why <paramref name="kernel"/> keeps its state machine with <see cref="NativeStackObstacle.StackBodyLowering"/>:
+    /// the method of its closure (the kernel or a device function it reaches through calls that suspend) whose stack
+    /// body could not be lowered, and the failure; <see langword="null"/> when none failed.
+    /// </summary>
+    public static string? StackBodyFailure(IMethodSymbol kernel, MethodDeclarationSyntax declaration,
+        SemanticModel semanticModel)
+    {
+        var compilation = semanticModel.Compilation;
+        var visited = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
+        var queue = new Queue<(IMethodSymbol Method, MethodDeclarationSyntax Declaration)>();
+        queue.Enqueue((kernel, declaration));
+        visited.Add(kernel);
+        while (queue.Count > 0)
+        {
+            var (method, methodDeclaration) = queue.Dequeue();
+            var model = compilation.GetCachedSemanticModel(methodDeclaration.SyntaxTree);
+            if (methodDeclaration.HasBody() && SuspensionAnalysis.ReachesActiveMask(method, compilation) &&
+                GetStackBody(method, methodDeclaration, model).Reason is { } reason)
+            {
+                return MessageText.Name(method) + ": " + reason;
+            }
+
+            if (methodDeclaration.GetBodyNode() is { } body)
+            {
+                foreach (var (callee, _) in
+                         SuspensionAnalysis.GetReferencedSuspendingFunctions(body, compilation, model))
+                {
+                    if (visited.Add(callee) &&
+                        SuspensionAnalysis.TryGetDeviceFunctionBody(callee, compilation, out var calleeDeclaration))
+                    {
+                        queue.Enqueue((callee, calleeDeclaration));
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     private static BodyFacts ScanBody(MethodDeclarationSyntax declaration, SemanticModel semanticModel)
@@ -216,6 +350,12 @@ internal static class NativeStackEligibility
                 IsWarpOperatorMacro((ExpressionSyntax)node, semanticModel))
             {
                 facts |= BodyFacts.WarpOperatorMacro;
+                continue;
+            }
+
+            if (StackBodyObstacles.IsUsingDeclaration(node))
+            {
+                facts |= BodyFacts.UsingDeclarationWithActiveMask;
                 continue;
             }
 
@@ -241,12 +381,31 @@ internal static class NativeStackEligibility
             {
                 SyncIntrinsicKind.GridBarrier => BodyFacts.GridSync,
                 SyncIntrinsicKind.BlockBarrier => BodyFacts.BlockBarrier,
-                _ when intrinsic.Shuffle == WarpShuffleKind.ActiveMask =>
-                    BodyFacts.WarpCollective | BodyFacts.ActiveMask,
                 _ => BodyFacts.WarpCollective
             };
         }
 
-        return facts;
+        return facts | ScanWarpMethodGroups(declaration, semanticModel);
+    }
+
+    // A suspending function that reaches a warp collective, named as a method group (#2272)
+    private static BodyFacts ScanWarpMethodGroups(MethodDeclarationSyntax declaration, SemanticModel semanticModel)
+    {
+        if (declaration.GetBodyNode() is not { } body)
+        {
+            return BodyFacts.None;
+        }
+
+        var compilation = semanticModel.Compilation;
+        foreach (var (referenced, isMethodGroup) in
+                 SuspensionAnalysis.GetReferencedSuspendingFunctions(body, compilation, semanticModel))
+        {
+            if (isMethodGroup && SuspensionAnalysis.ReachesWarpShuffle(referenced, compilation))
+            {
+                return BodyFacts.WarpMethodGroup;
+            }
+        }
+
+        return BodyFacts.None;
     }
 }

@@ -40,8 +40,9 @@ internal readonly struct MethodEmissionPlan
         public LoweredStateMachine Value =>
             _lowered ??= AstLoweringPipeline.Lower(declaration, semanticModel, owner, isDeviceFunction);
 
+        // Shared with the native stack eligibility, which lowers the same body first (StackBodies)
         public StackLoweredBody StackBody =>
-            _stackBody ??= AstLoweringPipeline.LowerForStack(declaration, semanticModel, owner, isDeviceFunction);
+            _stackBody ??= StackBodies.Get(declaration, semanticModel, owner, isDeviceFunction).GetBody();
     }
 
     public MethodDeclarationSyntax Declaration { get; }

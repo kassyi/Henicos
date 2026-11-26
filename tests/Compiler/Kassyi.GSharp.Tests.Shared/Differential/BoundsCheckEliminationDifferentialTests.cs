@@ -36,12 +36,15 @@ public class BoundsCheckEliminationDifferentialTests
                 .Out<int>("dst", rows, ["bce_val"], OutputPolicy.Exact);
         },
         Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchBoundsCheckEliminationValidKernel(
-            b.Get<int>("backing"),
-            b.Get<int>("indices"),
-            b.Get<int>("dst"),
-            CanaryStart,
-            CanaryLen,
-            s.Rows,
+            inputs: new SpanSliceIndexInputs
+            {
+                Backing = b.Get<int>("backing"),
+                Indices = b.Get<int>("indices"),
+                SliceStart = CanaryStart,
+                SliceLength = CanaryLen,
+            },
+            results: b.Get<int>("dst"),
+            rows: s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,
@@ -74,12 +77,15 @@ public class BoundsCheckEliminationDifferentialTests
                 .Out<int>("dst", rows, ["bce_val"], OutputPolicy.Exact);
         },
         Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchBoundsCheckEliminationOffByOneKernel(
-            b.Get<int>("backing"),
-            b.Get<int>("indices"),
-            b.Get<int>("dst"),
-            CanaryStart,
-            CanaryLen,
-            s.Rows,
+            inputs: new SpanSliceIndexInputs
+            {
+                Backing = b.Get<int>("backing"),
+                Indices = b.Get<int>("indices"),
+                SliceStart = CanaryStart,
+                SliceLength = CanaryLen,
+            },
+            results: b.Get<int>("dst"),
+            rows: s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,
@@ -114,14 +120,17 @@ public class BoundsCheckEliminationDifferentialTests
                 .Out<int>("dst", rows, ["bce_val"], OutputPolicy.Exact);
         },
         Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchBoundsCheckEliminationWrongSpanKernel(
-            b.Get<int>("backing"),
-            b.Get<int>("otherBacking"),
-            b.Get<int>("indices"),
-            b.Get<int>("dst"),
-            CanaryStart,
-            CanaryLen,
-            CanaryLen + 4,
-            s.Rows,
+            inputs: new WrongSpanBoundsCheckInputs
+            {
+                Backing = b.Get<int>("backing"),
+                OtherBacking = b.Get<int>("otherBacking"),
+                Indices = b.Get<int>("indices"),
+                SliceStart = CanaryStart,
+                SliceLength = CanaryLen,
+                OtherLength = CanaryLen + 4,
+            },
+            results: b.Get<int>("dst"),
+            rows: s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,
@@ -154,12 +163,15 @@ public class BoundsCheckEliminationDifferentialTests
                 .Out<int>("dst", rows, ["bce_val"], OutputPolicy.Exact);
         },
         Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchBoundsCheckEliminationPostIncrementKernel(
-            b.Get<int>("backing"),
-            b.Get<int>("indices"),
-            b.Get<int>("dst"),
-            CanaryStart,
-            CanaryLen,
-            s.Rows,
+            inputs: new SpanSliceIndexInputs
+            {
+                Backing = b.Get<int>("backing"),
+                Indices = b.Get<int>("indices"),
+                SliceStart = CanaryStart,
+                SliceLength = CanaryLen,
+            },
+            results: b.Get<int>("dst"),
+            rows: s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,
@@ -192,12 +204,15 @@ public class BoundsCheckEliminationDifferentialTests
                 .Out<int>("dst", rows, ["bce_val"], OutputPolicy.Exact);
         },
         Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchBoundsCheckEliminationUpperOnlyKernel(
-            b.Get<int>("backing"),
-            b.Get<int>("indices"),
-            b.Get<int>("dst"),
-            CanaryStart,
-            CanaryLen,
-            s.Rows,
+            inputs: new SpanSliceIndexInputs
+            {
+                Backing = b.Get<int>("backing"),
+                Indices = b.Get<int>("indices"),
+                SliceStart = CanaryStart,
+                SliceLength = CanaryLen,
+            },
+            results: b.Get<int>("dst"),
+            rows: s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,

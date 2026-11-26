@@ -8,8 +8,9 @@ internal static class OperatorMacroContext
 {
     /// <summary>
     /// Finds the variable that a call of <paramref name="targetMethod"/> passes as its context: the one parameter or local
-    /// of the type of the first parameter that is in scope at <paramref name="assignment"/>. Without a single one,
-    /// <paramref name="failure"/> is the message argument of GSH0003.
+    /// of the type of the first parameter that is in scope at <paramref name="site"/> (the assignment or the
+    /// declarator whose value calls the operator macro). Without a single one, <paramref name="failure"/> is the message
+    /// argument of GSH0003.
     /// </summary>
     /// <remarks>
     /// [WHY] The operator has no place for the context, so it is found by type, as Scala resolves a <c>using</c> parameter
@@ -18,7 +19,7 @@ internal static class OperatorMacroContext
     /// argument in an attribute, which would add public API.
     /// </remarks>
     internal static bool TryFindContextVariable(
-        AssignmentExpressionSyntax assignment,
+        SyntaxNode site,
         IMethodSymbol targetMethod,
         SemanticModel semanticModel,
         [NotNullWhen(true)] out ISymbol? variable,
@@ -31,7 +32,7 @@ internal static class OperatorMacroContext
 
         // A lowered node is looked up at the node of the compilation it came from, where the semantic model has its
         // scope: for a closed copy of a generic declaration that is the copy, not the user's source (GetReportLocation)
-        if (semanticModel.GetCompilationNode(assignment) is { } original &&
+        if (semanticModel.GetCompilationNode(site) is { } original &&
             original.SyntaxTree == semanticModel.SyntaxTree)
         {
             var position = original.SpanStart;
@@ -78,17 +79,17 @@ internal static class OperatorMacroContext
         return names.ToString();
     }
 
-    // A reference to variable in the lowered body that holds assignment (__gsharp_sm_ctx-><name> when hoisted), or null
+    // A reference to variable in the lowered body that holds site (__gsharp_sm_ctx-><name> when hoisted), or null
     // when the body is the user's own tree or does not refer to it
-    internal static ExpressionSyntax? FindLoweredReference(AssignmentExpressionSyntax assignment, ISymbol variable,
+    internal static ExpressionSyntax? FindLoweredReference(SyntaxNode site, ISymbol variable,
         SemanticModel semanticModel)
     {
-        if (assignment.SyntaxTree == semanticModel.SyntaxTree)
+        if (site.SyntaxTree == semanticModel.SyntaxTree)
         {
             return null;
         }
 
-        var reference = assignment.SyntaxTree.GetRoot()
+        var reference = site.SyntaxTree.GetRoot()
             .DescendantNodes()
             .AsStackEnumerable()
             .OfType<IdentifierNameSyntax>()
@@ -110,7 +111,7 @@ internal static class OperatorMacroContext
         // passes it implicitly to operator macros and never spells its name (#944).
         if (variable is IParameterSymbol { RefKind: RefKind.None, Type.IsRefLikeType: false } parameter &&
             parameter.TryGetDeclaringSyntax<ParameterSyntax>(out var paramSyntax) &&
-            assignment.SyntaxTree.GetRoot().HasAnnotations(LoweringAnnotations.SplitStateMachineAnnotationKind))
+            site.SyntaxTree.GetRoot().HasAnnotations(LoweringAnnotations.SplitStateMachineAnnotationKind))
         {
             return ContextHoister.CreateContextAccess(paramSyntax.Identifier, paramSyntax);
         }

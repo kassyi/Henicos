@@ -10,44 +10,58 @@ internal static class StructOrdering
     /// Recursively registers referenced struct symbols and their field types to ensure necessary forward definitions
     /// are emitted.
     /// </summary>
-    public static void RegisterUsedStructIfApplicable(ITypeSymbol? typeSymbol, ref TranspileContext context)
+    public static void RegisterUsedStructIfApplicable(ITypeSymbol? typeSymbol, ref TranspileContext context) =>
+        RegisterUsedStructIfApplicable(
+            typeSymbol,
+            context.Emitter.CurrentStructType,
+            context.Query.SemanticModel.Compilation,
+            context.Query.UsedStructs);
+
+    /// <inheritdoc cref="RegisterUsedStructIfApplicable(ITypeSymbol?, ref TranspileContext)"/>
+    public static void RegisterUsedStructIfApplicable(
+        ITypeSymbol? typeSymbol,
+        INamedTypeSymbol? currentStructType,
+        Compilation compilation,
+        HashSet<INamedTypeSymbol> usedStructs)
     {
-        typeSymbol = StructTypeSubstitution.SubstituteTypeParameters(typeSymbol, context.Emitter.CurrentStructType,
-            context.Query.SemanticModel.Compilation);
+        typeSymbol = StructTypeSubstitution.SubstituteTypeParameters(typeSymbol, currentStructType, compilation);
         if (!TryGetUserStruct(typeSymbol, out var namedStruct))
         {
             return;
         }
 
-        if (GrowingGenericStructs.IsLargerConstruction(namedStruct, context.Query.UsedStructs) ||
-            !context.Query.UsedStructs.Add(namedStruct))
+        if (GrowingGenericStructs.IsLargerConstruction(namedStruct, usedStructs) ||
+            !usedStructs.Add(namedStruct))
         {
             return;
         }
 
         foreach (var typeArgument in namedStruct.TypeArguments)
         {
-            RegisterUsedStructIfApplicable(typeArgument, ref context);
+            RegisterUsedStructIfApplicable(typeArgument, currentStructType, compilation, usedStructs);
         }
 
         foreach (var member in StructAbiMembers.Get(namedStruct))
         {
-            RegisterUsedStructIfApplicable(member.Type, ref context);
+            RegisterUsedStructIfApplicable(member.Type, currentStructType, compilation, usedStructs);
         }
 
-        RegisterConversionTypes(namedStruct, ref context);
+        RegisterConversionTypes(namedStruct, currentStructType, compilation, usedStructs);
 
         // A struct that only a constructor or accessor body of this struct names (#1158)
-        foreach (var bodyType in StructBodyDependencies.Get(namedStruct, context.Query.SemanticModel.Compilation))
+        foreach (var bodyType in StructBodyDependencies.Get(namedStruct, compilation))
         {
-            RegisterUsedStructIfApplicable(bodyType, ref context);
+            RegisterUsedStructIfApplicable(bodyType, currentStructType, compilation, usedStructs);
         }
     }
 
     // The other type of a conversion that is emitted from its body (a ref struct's included) is named there
-    private static void RegisterConversionTypes(INamedTypeSymbol namedStruct, ref TranspileContext context)
+    private static void RegisterConversionTypes(
+        INamedTypeSymbol namedStruct,
+        INamedTypeSymbol? currentStructType,
+        Compilation compilation,
+        HashSet<INamedTypeSymbol> usedStructs)
     {
-        var compilation = context.Query.SemanticModel.Compilation;
         foreach (var member in namedStruct.GetMembers())
         {
             if (member is not IMethodSymbol conversion ||
@@ -57,10 +71,10 @@ internal static class StructOrdering
                 continue;
             }
 
-            RegisterUsedStructIfApplicable(conversion.ReturnType, ref context);
+            RegisterUsedStructIfApplicable(conversion.ReturnType, currentStructType, compilation, usedStructs);
             foreach (var parameter in conversion.Parameters)
             {
-                RegisterUsedStructIfApplicable(parameter.Type, ref context);
+                RegisterUsedStructIfApplicable(parameter.Type, currentStructType, compilation, usedStructs);
             }
         }
     }

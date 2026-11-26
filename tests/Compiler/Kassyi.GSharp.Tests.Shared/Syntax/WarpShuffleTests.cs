@@ -32,11 +32,9 @@ public class WarpShuffleTests : TranspilerTestBase
         int[] output = new int[totalThreads];
 
         WarpShuffleKernels.LaunchWarpShuffleExtremaKernel(
-            mask,
-            input,
-            delta,
-            width,
-            output,
+            input: input,
+            output: output,
+            options: new WarpShuffleExtremaOptions { Mask = mask, Delta = delta, Width = width },
             blockDimX: (uint)totalThreads
         );
 

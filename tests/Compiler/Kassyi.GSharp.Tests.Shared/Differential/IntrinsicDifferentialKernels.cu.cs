@@ -2,6 +2,48 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
+public struct Integer32IntrinsicOperands
+{
+    [GpuReadOnly] public uint[] FirstValues;
+    [GpuReadOnly] public uint[] SecondValues;
+    [GpuReadOnly] public uint[] Selectors;
+}
+
+public struct Integer64IntrinsicOperands
+{
+    [GpuReadOnly] public uint[] FirstUInt32Values;
+    [GpuReadOnly] public uint[] SecondUInt32Values;
+    [GpuReadOnly] public ulong[] FirstUInt64Values;
+    [GpuReadOnly] public ulong[] SecondUInt64Values;
+}
+
+public struct BitFieldSlices
+{
+    [GpuReadOnly] public int[] Positions;
+    [GpuReadOnly] public int[] Lengths;
+}
+
+public struct UInt32BitOperands
+{
+    [GpuReadOnly] public uint[] FirstValues;
+    [GpuReadOnly] public uint[] SecondValues;
+    [GpuReadOnly] public uint[] ThirdValues;
+}
+
+public struct UInt64BitOperands
+{
+    [GpuReadOnly] public ulong[] FirstValues;
+    [GpuReadOnly] public ulong[] SecondValues;
+}
+
+public struct CarryChainOperands
+{
+    [GpuReadOnly] public uint[] FirstValues;
+    [GpuReadOnly] public uint[] SecondValues;
+    [GpuReadOnly] public ulong[] CarryIns;
+    [GpuReadOnly] public long[] BorrowIns;
+}
+
 /// <summary>
 /// Differential kernels for the <c>Gpu</c> intrinsics of <c>ptx_intrinsics.yml</c> that the CPU dialect implements in
 /// its prelude and the managed path in <c>ManagedIntrinsics</c> (#717), and for <c>Gpu.SmId</c> and the clocks (#469).
@@ -78,13 +120,18 @@ public static partial class IntrinsicDifferentialKernels
     ];
 
     [GpuKernel]
-    public static void Integer32IntrinsicsKernel(uint[] a, uint[] b, uint[] s, uint[] output, int n)
+    public static void Integer32IntrinsicsKernel(Integer32IntrinsicOperands operands, uint[] results, int rows)
     {
         int i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (i >= n)
+        if (i >= rows)
         {
             return;
         }
+
+        var a = operands.FirstValues;
+        var b = operands.SecondValues;
+        var s = operands.Selectors;
+        var output = results;
 
         int o = i * 5;
         output[o] = Gpu.CountLeadingZeros(a[i]);
@@ -95,13 +142,19 @@ public static partial class IntrinsicDifferentialKernels
     }
 
     [GpuKernel]
-    public static void Integer64IntrinsicsKernel(uint[] a, uint[] b, ulong[] c, ulong[] d, ulong[] output, int n)
+    public static void Integer64IntrinsicsKernel(Integer64IntrinsicOperands operands, ulong[] results, int rows)
     {
         int i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (i >= n)
+        if (i >= rows)
         {
             return;
         }
+
+        var a = operands.FirstUInt32Values;
+        var b = operands.SecondUInt32Values;
+        var c = operands.FirstUInt64Values;
+        var d = operands.SecondUInt64Values;
+        var output = results;
 
         int o = i * 8;
         output[o] = Gpu.MultiplyWide(a[i], b[i]);
@@ -175,13 +228,20 @@ public static partial class IntrinsicDifferentialKernels
     }
 
     [GpuKernel]
-    public static void Bits32Kernel(uint[] a, uint[] b, uint[] c, int[] pos, int[] len, uint[] output, int n)
+    public static void Bits32Kernel(UInt32BitOperands operands, BitFieldSlices slices, uint[] results, int rows)
     {
         int i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (i >= n)
+        if (i >= rows)
         {
             return;
         }
+
+        var a = operands.FirstValues;
+        var b = operands.SecondValues;
+        var c = operands.ThirdValues;
+        var pos = slices.Positions;
+        var len = slices.Lengths;
+        var output = results;
 
         int o = i * 15;
         output[o] = Gpu.PopCount(a[i]);
@@ -202,13 +262,19 @@ public static partial class IntrinsicDifferentialKernels
     }
 
     [GpuKernel]
-    public static void Bits64Kernel(ulong[] a, ulong[] b, int[] pos, int[] len, ulong[] output, int n)
+    public static void Bits64Kernel(UInt64BitOperands operands, BitFieldSlices slices, ulong[] results, int rows)
     {
         int i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (i >= n)
+        if (i >= rows)
         {
             return;
         }
+
+        var a = operands.FirstValues;
+        var b = operands.SecondValues;
+        var pos = slices.Positions;
+        var len = slices.Lengths;
+        var output = results;
 
         int o = i * 6;
         output[o] = Gpu.PopCount(a[i]);
@@ -220,13 +286,19 @@ public static partial class IntrinsicDifferentialKernels
     }
 
     [GpuKernel]
-    public static void CarryChainKernel(uint[] a, uint[] b, ulong[] carryIn, long[] borrowIn, ulong[] output, int n)
+    public static void CarryChainKernel(CarryChainOperands operands, ulong[] results, int rows)
     {
         int i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (i >= n)
+        if (i >= rows)
         {
             return;
         }
+
+        var a = operands.FirstValues;
+        var b = operands.SecondValues;
+        var carryIn = operands.CarryIns;
+        var borrowIn = operands.BorrowIns;
+        var output = results;
 
         int o = i * 4;
         ulong carry = carryIn[i];

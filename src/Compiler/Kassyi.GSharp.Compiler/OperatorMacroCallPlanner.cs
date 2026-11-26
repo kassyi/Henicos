@@ -19,7 +19,7 @@ internal static class OperatorMacroCallPlanner
     /// argument of GSH0003) when the context variable cannot be found.
     /// </summary>
     public static bool TryPrepareCall(ExpressionSyntax? result, OperatorMacro macro,
-        AssignmentExpressionSyntax assignment, SemanticModel model, out MacroCall call, out string? failure)
+        SyntaxNode site, SemanticModel model, out MacroCall call, out string? failure)
     {
         call = default;
         failure = null;
@@ -29,7 +29,7 @@ internal static class OperatorMacroCallPlanner
         }
 
         ISymbol? contextVariable = null;
-        if (macro.HasContext && !TryFindContextVariable(assignment, target, model, out contextVariable, out failure))
+        if (macro.HasContext && !TryFindContextVariable(site, target, model, out contextVariable, out failure))
         {
             return false;
         }
@@ -106,7 +106,7 @@ internal static class OperatorMacroCallPlanner
     /// operands and calls, an operand passed by reference as its location, any other as its value.
     /// </summary>
     internal static ExpressionEffects[] GetOperandEffects(in MacroCall call, OperatorMacro macro,
-        AssignmentExpressionSyntax assignment, SemanticModel model)
+        SyntaxNode site, SemanticModel model)
     {
         var effects = new ExpressionEffects[MacroCall.OperandRoles.Length];
         foreach (var role in MacroCall.OperandRoles)
@@ -116,7 +116,7 @@ internal static class OperatorMacroCallPlanner
                 continue;
             }
 
-            effects[(int)role] = macro.TryGetNested(operand, out var inner) ? GetNestedEffects(inner, assignment, model)
+            effects[(int)role] = macro.TryGetNested(operand, out var inner) ? GetNestedEffects(inner, site, model)
                 : IsPassedByReference(parameter) ? ExpressionEffects.OfLocation(operand, model)
                 : ExpressionEffects.Of(operand, model);
         }
@@ -149,11 +149,11 @@ internal static class OperatorMacroCallPlanner
 
     // What computing <inner> reads and writes: its operands, and the calls of its target and of the operator macros
     // nested in it (ExpressionEffects.OfCall, with the context variable passed by reference)
-    private static ExpressionEffects GetNestedEffects(OperatorMacro inner, AssignmentExpressionSyntax assignment,
+    private static ExpressionEffects GetNestedEffects(OperatorMacro inner, SyntaxNode site,
         SemanticModel model) =>
-        AddCallEffects(inner, assignment, model, ExpressionEffects.Of(inner.OperatorCall, model));
+        AddCallEffects(inner, site, model, ExpressionEffects.Of(inner.OperatorCall, model));
 
-    private static ExpressionEffects AddCallEffects(OperatorMacro macro, AssignmentExpressionSyntax assignment,
+    private static ExpressionEffects AddCallEffects(OperatorMacro macro, SyntaxNode site,
         SemanticModel model, ExpressionEffects effects)
     {
         if (macro.TargetMethod is { } target)
@@ -161,7 +161,7 @@ internal static class OperatorMacroCallPlanner
             ISymbol? contextVariable = null;
             if (macro.HasContext)
             {
-                TryFindContextVariable(assignment, target, model, out contextVariable, out _);
+                TryFindContextVariable(site, target, model, out contextVariable, out _);
             }
 
             effects = effects.Union(ExpressionEffects.OfCall(target, contextVariable, model));
@@ -179,7 +179,7 @@ internal static class OperatorMacroCallPlanner
 
         foreach (var nested in macro.Nested)
         {
-            effects = AddCallEffects(nested.Inner, assignment, model, effects);
+            effects = AddCallEffects(nested.Inner, site, model, effects);
         }
 
         return effects;

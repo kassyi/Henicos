@@ -44,16 +44,9 @@ public class AtomicsSharedMemoryDifferentialTests
         };
 
     internal static readonly DifferentialCase s_integerSharedMemoryTwoStageAtomicsUInt32 =
-        new(
-            $"{nameof(AtomicsDifferentialKernels)}." +
-            $"{nameof(AtomicsDifferentialKernels.IntegerSharedMemoryTwoStageAtomicsUInt32Kernel)}")
-        {
-            Shapes =
-            [
-                LaunchShape.ForRows(64, blockX: 32),
-                LaunchShape.ForRows(128, blockX: 64),
-            ],
-            Inputs = static (rng, s) =>
+        DiffCases.Create(
+            AtomicsDifferentialKernels.LaunchIntegerSharedMemoryTwoStageAtomicsUInt32Kernel,
+            inputs: static (rng, s) =>
             {
                 int rows = s.ThreadCount;
                 var inUInt = new uint[rows];
@@ -71,27 +64,20 @@ public class AtomicsSharedMemoryDifferentialTests
                         OutputPolicy.Exact)
                     .In("globalSummary", [0u], OutputPolicy.Exact);
             },
-            Launch = static (b, s) => AtomicsDifferentialKernels.LaunchIntegerSharedMemoryTwoStageAtomicsUInt32Kernel(
-                b.Get<uint>("input"),
-                b.Get<uint>("threadOutput"),
-                b.Get<uint>("globalSummary"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = AtomicsDifferentialTestHelpers.SimulateSharedMemoryTwoStageUInt32,
-        };
-
-    internal static readonly DifferentialCase s_integerSharedMemoryTwoStageAtomicsUInt64 =
-        new(
-            $"{nameof(AtomicsDifferentialKernels)}." +
-            $"{nameof(AtomicsDifferentialKernels.IntegerSharedMemoryTwoStageAtomicsUInt64Kernel)}")
-        {
-            Shapes =
+            shapes:
             [
                 LaunchShape.ForRows(64, blockX: 32),
                 LaunchShape.ForRows(128, blockX: 64),
             ],
-            Inputs = static (rng, s) =>
+            firstInputName: "input",
+            secondInputName: "threadOutput",
+            outputName: "globalSummary",
+            reference: AtomicsDifferentialTestHelpers.SimulateSharedMemoryTwoStageUInt32);
+
+    internal static readonly DifferentialCase s_integerSharedMemoryTwoStageAtomicsUInt64 =
+        DiffCases.Create<ulong, ulong, ulong>(
+            AtomicsDifferentialKernels.LaunchIntegerSharedMemoryTwoStageAtomicsUInt64Kernel,
+            inputs: static (rng, s) =>
             {
                 int rows = s.ThreadCount;
                 var inULong = new ulong[rows];
@@ -109,15 +95,15 @@ public class AtomicsSharedMemoryDifferentialTests
                         OutputPolicy.Exact)
                     .In("globalSummary", [0UL], OutputPolicy.Exact);
             },
-            Launch = static (b, s) => AtomicsDifferentialKernels.LaunchIntegerSharedMemoryTwoStageAtomicsUInt64Kernel(
-                b.Get<ulong>("input"),
-                b.Get<ulong>("threadOutput"),
-                b.Get<ulong>("globalSummary"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = AtomicsDifferentialTestHelpers.SimulateSharedMemoryTwoStageUInt64,
-        };
+            shapes:
+            [
+                LaunchShape.ForRows(64, blockX: 32),
+                LaunchShape.ForRows(128, blockX: 64),
+            ],
+            firstInputName: "input",
+            secondInputName: "threadOutput",
+            outputName: "globalSummary",
+            reference: AtomicsDifferentialTestHelpers.SimulateSharedMemoryTwoStageUInt64);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]

@@ -96,10 +96,11 @@ internal static class ManagedStackFormCollector
             changed = false;
             foreach (var device in devices)
             {
-                if (deviceSources.ContainsKey(device) && CallsFunctionWithoutForm(device, compilation, deviceSources))
+                if (deviceSources.ContainsKey(device) &&
+                    CallsFunctionWithoutForm(device, compilation, deviceSources, out var failure))
                 {
                     deviceSources.Remove(device);
-                    failures.Add(GetDisplayName(device) + ": calls a function without a stack form");
+                    failures.Add(failure);
                     changed = true;
                 }
             }
@@ -119,9 +120,9 @@ internal static class ManagedStackFormCollector
         foreach (var kernel in kernels)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (CallsFunctionWithoutForm(kernel, compilation, deviceSources))
+            if (CallsFunctionWithoutForm(kernel, compilation, deviceSources, out var failure))
             {
-                failures.Add(GetDisplayName(kernel) + ": calls a function without a stack form");
+                failures.Add(failure);
                 continue;
             }
 
@@ -216,17 +217,32 @@ internal static class ManagedStackFormCollector
     }
 
     private static bool CallsFunctionWithoutForm(IMethodSymbol method, Compilation compilation,
-        Dictionary<IMethodSymbol, string> deviceSources)
+        Dictionary<IMethodSymbol, string> deviceSources, [NotNullWhen(true)] out string? failure)
     {
         if (!method.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var declaration) ||
             declaration.GetBodyNode() is not { } body)
         {
+            failure = null;
             return false;
         }
 
-        return SuspensionAnalysis.GetSuspendingCallees(body, compilation)
-            .AsStackEnumerable()
-            .Any(deviceSources, static (callee, sources) => !sources.ContainsKey(GetDefinition(callee)));
+        var semanticModel = compilation.GetCachedSemanticModel(declaration.SyntaxTree);
+        foreach (var (callee, isMethodGroup) in
+                 SuspensionAnalysis.GetReferencedSuspendingFunctions(body, compilation, semanticModel))
+        {
+            var definition = GetDefinition(callee);
+            if (!deviceSources.ContainsKey(definition))
+            {
+                failure = isMethodGroup
+                    ? GetDisplayName(method) + ": passes " + GetDisplayName(definition) +
+                      ", which has no stack form, as a method group"
+                    : GetDisplayName(method) + ": calls a function without a stack form";
+                return true;
+            }
+        }
+
+        failure = null;
+        return false;
     }
 
     // <type>.<method>, for the build output

@@ -207,10 +207,12 @@ internal static class ManagedCSharpTranspiler
     }
 
     /// <summary>
-    /// Emits the stack form of a kernel or a device function that reaches a block barrier: a static method with the
-    /// user's parameters, named <c>__gsharp_stackmodel_&lt;path&gt;</c>, whose body is the user's body after the
-    /// managed rewrites (<see cref="ManagedExecutionRewriter"/>). The body is not lowered: each GPU thread runs it on a
-    /// stack of its own and waits inside the barrier.
+    /// Emits the stack form of a kernel or a device function that reaches a block barrier or a warp collective: a
+    /// static method with the user's parameters, named <c>__gsharp_stackmodel_&lt;path&gt;</c>, whose body is the
+    /// user's body after the managed rewrites (<see cref="ManagedExecutionRewriter"/>). The body is not flattened into
+    /// states: each GPU thread runs it on a stack of its own and waits inside the barrier or the collective. A method
+    /// that reaches <c>Warp.ActiveMask()</c> writes the body of <see cref="MethodEmissionPlan.StackBody"/> instead of
+    /// the user's, which holds the reconvergence regions of the state machine.
     /// </summary>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="plan"/> has no symbol or no body.
@@ -239,6 +241,10 @@ internal static class ManagedCSharpTranspiler
             ? ManagedStackWarpLayout.Create(methodSymbol, declaration, semanticModel.Compilation, isKernel)
             : null;
         var rewriter = new ManagedExecutionRewriter(semanticModel, bodyKind, accessors) { WarpLayout = warpLayout };
+        var stackBody = bodyKind == ManagedBodyKind.StackBody &&
+                        SuspensionAnalysis.ReachesActiveMask(methodSymbol, semanticModel.Compilation)
+            ? GetStackBody(in plan, methodSymbol)
+            : null;
 
         // <modifiers> static <return type> <prefix><path><type parameters>(<parameters>) <constraints> <body>
         // The signature is the user's, with every name written in full (the generated file has none of the user's using
@@ -254,7 +260,9 @@ internal static class ManagedCSharpTranspiler
             .WithParameterList(WithWarpFrameParameter(
                 GetManagedVersionParameters(declaration.ParameterList, semanticModel), warpLayout, isKernel))
             .WithConstraintClauses(GetManagedVersionConstraints(declaration.ConstraintClauses, semanticModel));
-        method = WriteBody(method, declaration, rewriter, semanticModel);
+        method = stackBody is null
+            ? WriteBody(method, declaration, rewriter, semanticModel)
+            : WriteStackBody(method, stackBody, rewriter, isKernel);
         if (warpLayout is not null && isKernel)
         {
             method = WithWarpBegin(method, warpLayout.Size, methodSymbol.ReturnsVoid);
@@ -269,6 +277,30 @@ internal static class ManagedCSharpTranspiler
         accessors.WriteTo(writer);
         ManagedWarningRestore.Append(writer, ManagedWarningRestore.Create(plan.Declaration));
         return writer.ToString();
+    }
+
+    // [WHY] The lanes of a method that reaches Warp.ActiveMask() wait for each other where a thread-dependent branch
+    // ends, at the places where the state machine puts its regions: the lowering for the stacks runs the passes of the
+    // state machine up to the regions (AstLoweringPipeline.LowerForStack), so both models meet in the same places
+    private static BlockSyntax GetStackBody(in MethodEmissionPlan plan, IMethodSymbol methodSymbol) =>
+        plan.StackBody?.Body ?? throw new InvalidOperationException(
+            $"G#: internal error: '{methodSymbol.Name}' reaches Warp.ActiveMask() but has no body lowered for the " +
+            "stack model (please report this G# bug).");
+
+    // The lowered body rewritten for managed execution. It is already without Stryker's switches (the lowering removes
+    // them), and a device function's is written without the statements that no path reaches, as its state machine is
+    // (RewriteAndNormalizeBody)
+    private static MethodDeclarationSyntax WriteStackBody(MethodDeclarationSyntax method, BlockSyntax stackBody,
+        ManagedExecutionRewriter rewriter, bool isKernel)
+    {
+        var rewritten = rewriter.Visit(stackBody) as BlockSyntax
+                        ?? throw new InvalidOperationException("Managed execution rewriting removed the stack body.");
+        if (!isKernel && UnreachableStatementRemover.Instance.Visit(rewritten) is BlockSyntax reachable)
+        {
+            rewritten = reachable;
+        }
+
+        return method.WithExpressionBody(null).WithSemicolonToken(default).WithBody(rewritten);
     }
 
     // The body of the copy: the user's body or expression body rewritten for managed execution, without Stryker's
