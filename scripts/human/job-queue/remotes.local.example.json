@@ -1,0 +1,58 @@
+{
+  "remotes": {
+    "ubuntu": {
+      "host": "jobrunner@ubuntu-server.lan",
+      "workspace": "~/henicos",
+      "slots": 1,
+      "cpus": 4,
+      "memoryMb": 6144,
+      "mode": "prefer-remote",
+      "maxJobMinutes": 30,
+      "sshOptions": [
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "StrictHostKeyChecking=yes",
+        "-o",
+        "ForwardAgent=no",
+        "-o",
+        "ForwardX11=no",
+        "-o",
+        "ClearAllForwardings=yes",
+        "-o",
+        "PermitLocalCommand=no",
+        "-o",
+        "ConnectTimeout=5",
+        "-o",
+        "ServerAliveInterval=5",
+        "-o",
+        "ServerAliveCountMax=3"
+      ],
+      "keepBuildServersWarm": true,
+      "probe": {
+        "argv": [
+          "ssh",
+          "-o",
+          "BatchMode=yes",
+          "-o",
+          "StrictHostKeyChecking=yes",
+          "-o",
+          "ForwardAgent=no",
+          "-o",
+          "ForwardX11=no",
+          "-o",
+          "ClearAllForwardings=yes",
+          "-o",
+          "PermitLocalCommand=no",
+          "-o",
+          "ConnectTimeout=3",
+          "--",
+          "jobrunner@ubuntu-server.lan",
+          "awk '/MemAvailable:/{printf \"%d\\n\", $2/1024}' /proc/meminfo"
+        ],
+        "min": 1536,
+        "timeoutMs": 5000
+      }
+    }
+  }
+}

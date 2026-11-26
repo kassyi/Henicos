@@ -4,6 +4,27 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
+public struct PowerOfTwoCheckOperands
+{
+    [GpuReadOnly] public int[] Int32Values;
+    [GpuReadOnly] public uint[] UInt32Values;
+    [GpuReadOnly] public long[] Int64Values;
+    [GpuReadOnly] public ulong[] UInt64Values;
+}
+
+public struct UnsignedPowerOfTwoOperands
+{
+    [GpuReadOnly] public uint[] UInt32Values;
+    [GpuReadOnly] public ulong[] UInt64Values;
+}
+
+public struct UnsignedPowerOfTwoResults
+{
+    public uint[] UInt32Results;
+    public ulong[] UInt64Results;
+    public ulong[] NUIntResults;
+}
+
 /// <summary>
 /// Differential kernels for signed <see cref="BitOperations.TrailingZeroCount(int)"/>, all
 /// <see cref="BitOperations.IsPow2(int)"/> overloads, and unsigned <see cref="BitOperations.RoundUpToPowerOf2(uint)"/>.
@@ -36,13 +57,7 @@ public static partial class BitOperationsPowerOfTwoDifferentialKernels
     }
 
     [GpuKernel]
-    public static void IsPow2AllOverloadsKernel(
-        int[] iVals,
-        uint[] uVals,
-        long[] lVals,
-        ulong[] ulVals,
-        bool[] dst,
-        int rows)
+    public static void IsPow2AllOverloadsKernel(PowerOfTwoCheckOperands operands, bool[] results, int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
         if (t >= rows)
@@ -51,21 +66,18 @@ public static partial class BitOperationsPowerOfTwoDifferentialKernels
         }
 
         int baseIdx = t * 6;
-        dst[baseIdx + 0] = BitOperations.IsPow2(iVals[t]);
-        dst[baseIdx + 1] = BitOperations.IsPow2(uVals[t]);
-        dst[baseIdx + 2] = BitOperations.IsPow2(lVals[t]);
-        dst[baseIdx + 3] = BitOperations.IsPow2((nint)lVals[t]);
-        dst[baseIdx + 4] = BitOperations.IsPow2(ulVals[t]);
-        dst[baseIdx + 5] = BitOperations.IsPow2((nuint)ulVals[t]);
+        results[baseIdx + 0] = BitOperations.IsPow2(operands.Int32Values[t]);
+        results[baseIdx + 1] = BitOperations.IsPow2(operands.UInt32Values[t]);
+        results[baseIdx + 2] = BitOperations.IsPow2(operands.Int64Values[t]);
+        results[baseIdx + 3] = BitOperations.IsPow2((nint)operands.Int64Values[t]);
+        results[baseIdx + 4] = BitOperations.IsPow2(operands.UInt64Values[t]);
+        results[baseIdx + 5] = BitOperations.IsPow2((nuint)operands.UInt64Values[t]);
     }
 
     [GpuKernel]
     public static void RoundUpToPowerOf2UnsignedKernel(
-        uint[] uVals,
-        ulong[] ulVals,
-        uint[] uOut,
-        ulong[] ulOut,
-        ulong[] nuOut,
+        UnsignedPowerOfTwoOperands operands,
+        UnsignedPowerOfTwoResults results,
         int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
@@ -74,8 +86,8 @@ public static partial class BitOperationsPowerOfTwoDifferentialKernels
             return;
         }
 
-        uOut[t] = BitOperations.RoundUpToPowerOf2(uVals[t]);
-        ulOut[t] = BitOperations.RoundUpToPowerOf2(ulVals[t]);
-        nuOut[t] = BitOperations.RoundUpToPowerOf2((nuint)ulVals[t]);
+        results.UInt32Results[t] = BitOperations.RoundUpToPowerOf2(operands.UInt32Values[t]);
+        results.UInt64Results[t] = BitOperations.RoundUpToPowerOf2(operands.UInt64Values[t]);
+        results.NUIntResults[t] = BitOperations.RoundUpToPowerOf2((nuint)operands.UInt64Values[t]);
     }
 }

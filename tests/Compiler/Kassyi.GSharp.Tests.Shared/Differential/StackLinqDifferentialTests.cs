@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
@@ -79,134 +80,85 @@ public class StackLinqDifferentialTests
         [double.NaN, double.NaN, 1.0, -3.0],
     ];
 
-    internal static readonly DifferentialCase s_int32Matrix = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.Int32StackLinqMatrixKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_int32Matrix = DiffCases.Create(
+        StackLinqDifferentialKernels.LaunchInt32StackLinqMatrixKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("xs", BuildInt32Slices(rng, rows), OutputPolicy.Exact)
             .Out<long>("r", rows, StackLinqDifferentialKernels.Int32StackLinqColumns, OutputPolicy.Exact),
-        Launch = static (b, s) => StackLinqDifferentialKernels.LaunchInt32StackLinqMatrixKernel(
-            b.Get<int>("xs"),
-            b.Get<long>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(64),
+        inputName: "xs",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_int32Average = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.Int32AverageKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_int32Average = DiffCases.Create<int, double>(
+        StackLinqDifferentialKernels.LaunchInt32AverageKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("xs", BuildInt32Slices(rng, rows), OutputPolicy.Exact)
             .Out<double>("r", rows, StackLinqDifferentialKernels.Int32AverageColumns, OutputPolicy.Bitwise),
-        Launch = static (b, s) => StackLinqDifferentialKernels.LaunchInt32AverageKernel(
-            b.Get<int>("xs"),
-            b.Get<double>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(64),
+        inputName: "xs",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_singleFusedAverage = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.SingleFusedAverageKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_singleFusedAverage = DiffCases.Create<float, double>(
+        StackLinqDifferentialKernels.LaunchSingleFusedAverageKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("xs", BuildSingleSlices(rng, rows), OutputPolicy.Bitwise)
             .Out<double>("r", rows, StackLinqDifferentialKernels.SingleFusedAverageColumns, OutputPolicy.Bitwise),
-        Launch = static (b, s) => StackLinqDifferentialKernels.LaunchSingleFusedAverageKernel(
-            b.Get<float>("xs"),
-            b.Get<double>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(64),
+        inputName: "xs",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_singleUnfusedAverage = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.SingleUnfusedAverageKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_singleUnfusedAverage = DiffCases.Create<float, double>(
+        StackLinqDifferentialKernels.LaunchSingleUnfusedAverageKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("xs", BuildSingleSlices(rng, rows), OutputPolicy.Bitwise)
             .Out<double>("r", rows, StackLinqDifferentialKernels.SingleUnfusedAverageColumns, OutputPolicy.Bitwise),
-        Launch = static (b, s) => StackLinqDifferentialKernels.LaunchSingleUnfusedAverageKernel(
-            b.Get<float>("xs"),
-            b.Get<double>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(64),
+        inputName: "xs",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_floatingExtremaAndZeroContains = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.FloatingExtremaAndZeroContainsKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_floatingExtremaAndZeroContains = DiffCases.Create<float, double, double>(
+        StackLinqDifferentialKernels.LaunchFloatingExtremaAndZeroContainsKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("fs", BuildSingleSlices(rng, rows), OutputPolicy.Bitwise)
             .In("ds", BuildDoubleSlices(rng, rows), OutputPolicy.Bitwise)
             .Out<double>("r", rows, StackLinqDifferentialKernels.FloatingExtremaAndZeroContainsColumns, OutputPolicy.Bitwise),
-        Launch = static (b, s) => StackLinqDifferentialKernels.LaunchFloatingExtremaAndZeroContainsKernel(
-            b.Get<float>("fs"),
-            b.Get<double>("ds"),
-            b.Get<double>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(64),
+        firstInputName: "fs",
+        secondInputName: "ds",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_containsNaN = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.ContainsNaNKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_containsNaN = DiffCases.Create<float, double, long>(
+        StackLinqDifferentialKernels.LaunchContainsNaNKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("fs", BuildSingleSlices(rng, rows), OutputPolicy.Bitwise)
             .In("ds", BuildDoubleSlices(rng, rows), OutputPolicy.Bitwise)
             .Out<long>("r", rows, StackLinqDifferentialKernels.ContainsNaNColumns, OutputPolicy.Exact),
-        Launch = static (b, s) => StackLinqDifferentialKernels.LaunchContainsNaNKernel(
-            b.Get<float>("fs"),
-            b.Get<double>("ds"),
-            b.Get<long>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(64),
+        firstInputName: "fs",
+        secondInputName: "ds",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_containsEvaluationOrder = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.ContainsEvaluationOrderKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_containsEvaluationOrder = DiffCases.Create(
+        StackLinqDifferentialKernels.LaunchContainsEvaluationOrderKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("xs", BuildInt32Slices(rng, rows), OutputPolicy.Exact)
             .Out<long>("r", rows, StackLinqDifferentialKernels.ContainsEvaluationOrderColumns, OutputPolicy.Exact),
-        Launch = static (b, s) => StackLinqDifferentialKernels.LaunchContainsEvaluationOrderKernel(
-            b.Get<int>("xs"),
-            b.Get<long>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(64),
+        inputName: "xs",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_unfusedSelectEvaluation = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.UnfusedSelectEvaluationKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_unfusedSelectEvaluation = DiffCases.Create(
+        StackLinqDifferentialKernels.LaunchUnfusedSelectEvaluationKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("xs", BuildInt32Slices(rng, rows), OutputPolicy.Exact)
             .Out<long>("r", rows, StackLinqDifferentialKernels.UnfusedSelectEvaluationColumns, OutputPolicy.Exact),
-        Launch = static (b, s) => StackLinqDifferentialKernels.LaunchUnfusedSelectEvaluationKernel(
-            b.Get<int>("xs"),
-            b.Get<long>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(64),
+        inputName: "xs",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_narrowAndInt64 = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.NarrowAndInt64StackLinqKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(64),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_narrowAndInt64 = DiffCases.Create<byte, short, long, long>(
+        StackLinqDifferentialKernels.LaunchNarrowAndInt64StackLinqKernel,
+        inputs: static (rng, rows) =>
         {
             var (bs, ss, ls) = BuildNarrowAndInt64Slices(rng, rows);
             return new DiffBuffers()
@@ -215,30 +167,21 @@ public class StackLinqDifferentialTests
                 .In("ls", ls, OutputPolicy.Exact)
                 .Out<long>("r", rows, StackLinqDifferentialKernels.NarrowAndInt64StackLinqColumns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => StackLinqDifferentialKernels.LaunchNarrowAndInt64StackLinqKernel(
-            b.Get<byte>("bs"),
-            b.Get<short>("ss"),
-            b.Get<long>("ls"),
-            b.Get<long>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(64),
+        firstInputName: "bs",
+        secondInputName: "ss",
+        thirdInputName: "ls",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_floatSequentialSum = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.FloatSequentialSumKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_floatSequentialSum = DiffCases.Create(
+        StackLinqDifferentialKernels.LaunchFloatSequentialSumKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("xs", BuildSingleSlices(rng, rows), OutputPolicy.Bitwise)
             .Out<float>("r", rows, StackLinqDifferentialKernels.FloatSequentialSumColumns, OutputPolicy.Bitwise),
-        Launch = static (b, s) => StackLinqDifferentialKernels.LaunchFloatSequentialSumKernel(
-            b.Get<float>("xs"),
-            b.Get<float>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
-        Reference = static (b, _) =>
+        shapes: LaunchShapes.OneDimensionalMatrix(64),
+        inputName: "xs",
+        outputName: "r",
+        reference: static (b, _) =>
         {
             var xs = b.Get<float>("xs");
             var r = b.Get<float>("r");
@@ -252,22 +195,17 @@ public class StackLinqDifferentialTests
                 r[o + 1] = sum;
                 r[o + 2] = sum;
             }
-        },
-    };
+        });
 
-    internal static readonly DifferentialCase s_doubleSequentialSum = new($"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.DoubleSequentialSumKernel)}")
-    {
-        Shape = LaunchShape.ForRows(64, blockX: 32),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_doubleSequentialSum = DiffCases.Create<double, double>(
+        StackLinqDifferentialKernels.LaunchDoubleSequentialSumKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("xs", BuildDoubleSlices(rng, rows), OutputPolicy.Bitwise)
             .Out<double>("r", rows, StackLinqDifferentialKernels.DoubleSequentialSumColumns, OutputPolicy.Bitwise),
-        Launch = static (b, s) => StackLinqDifferentialKernels.LaunchDoubleSequentialSumKernel(
-            b.Get<double>("xs"),
-            b.Get<double>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
-        Reference = static (b, _) =>
+        shape: LaunchShape.ForRows(64, blockX: 32),
+        inputName: "xs",
+        outputName: "r",
+        reference: static (b, _) =>
         {
             var xs = b.Get<double>("xs");
             var r = b.Get<double>("r");
@@ -284,111 +222,77 @@ public class StackLinqDifferentialTests
                 r[o + 2] = sum;
                 r[o + 3] = selSum;
             }
-        },
-    };
+        });
 
     private static DifferentialCase CreateSingleElementCase(
-        string kernelName,
+        Int32ToInt64Launch launch,
         string column,
-        Action<int[], long[], uint, uint> launch) =>
-        new($"{nameof(StackLinqDifferentialKernels)}.{kernelName}")
-        {
-            Shape = LaunchShape.ForRows(64, blockX: 32),
-            Inputs = (rng, rows) => new DiffBuffers()
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        DiffCases.Create(
+            launch,
+            inputs: (rng, rows) => new DiffBuffers()
                 .In("xs", BuildInt32Slices(rng, rows), OutputPolicy.Exact)
                 .Out<long>("r", rows, [column], OutputPolicy.Exact),
-            Launch = (b, s) => launch(b.Get<int>("xs"), b.Get<long>("r"), s.GridX, s.BlockX),
-            OracleIsLaunch = true,
-        };
+            shape: LaunchShape.ForRows(64, blockX: 32),
+            inputName: "xs",
+            outputName: "r",
+            launchExpression: launchExpression);
 
     internal static readonly DifferentialCase s_fusedFirst = CreateSingleElementCase(
-        nameof(StackLinqDifferentialKernels.StackLinqFusedFirstKernel),
-        "FusedFirst",
-        static (xs, r, gx, bx) =>
-            StackLinqDifferentialKernels.LaunchStackLinqFusedFirstKernel(xs, r, gridDimX: gx, blockDimX: bx));
+        StackLinqDifferentialKernels.LaunchStackLinqFusedFirstKernel,
+        "FusedFirst");
 
     internal static readonly DifferentialCase s_fusedFirstPred = CreateSingleElementCase(
-        nameof(StackLinqDifferentialKernels.StackLinqFusedFirstPredicateKernel),
-        "FusedFirstPred",
-        static (xs, r, gx, bx) =>
-            StackLinqDifferentialKernels.LaunchStackLinqFusedFirstPredicateKernel(xs, r, gridDimX: gx, blockDimX: bx));
+        StackLinqDifferentialKernels.LaunchStackLinqFusedFirstPredicateKernel,
+        "FusedFirstPred");
 
     internal static readonly DifferentialCase s_fusedLast = CreateSingleElementCase(
-        nameof(StackLinqDifferentialKernels.StackLinqFusedLastKernel),
-        "FusedLast",
-        static (xs, r, gx, bx) =>
-            StackLinqDifferentialKernels.LaunchStackLinqFusedLastKernel(xs, r, gridDimX: gx, blockDimX: bx));
+        StackLinqDifferentialKernels.LaunchStackLinqFusedLastKernel,
+        "FusedLast");
 
     internal static readonly DifferentialCase s_fusedLastPred = CreateSingleElementCase(
-        nameof(StackLinqDifferentialKernels.StackLinqFusedLastPredicateKernel),
-        "FusedLastPred",
-        static (xs, r, gx, bx) =>
-            StackLinqDifferentialKernels.LaunchStackLinqFusedLastPredicateKernel(xs, r, gridDimX: gx, blockDimX: bx));
+        StackLinqDifferentialKernels.LaunchStackLinqFusedLastPredicateKernel,
+        "FusedLastPred");
 
     internal static readonly DifferentialCase s_singleOneElem = CreateSingleElementCase(
-        nameof(StackLinqDifferentialKernels.StackLinqSingleOneElementKernel),
-        "SingleOneElem",
-        static (xs, r, gx, bx) =>
-            StackLinqDifferentialKernels.LaunchStackLinqSingleOneElementKernel(xs, r, gridDimX: gx, blockDimX: bx));
+        StackLinqDifferentialKernels.LaunchStackLinqSingleOneElementKernel,
+        "SingleOneElem");
 
     internal static readonly DifferentialCase s_singlePredUnique = CreateSingleElementCase(
-        nameof(StackLinqDifferentialKernels.StackLinqSinglePredicateUniqueKernel),
-        "SinglePredUnique",
-        static (xs, r, gx, bx) =>
-            StackLinqDifferentialKernels.LaunchStackLinqSinglePredicateUniqueKernel(
-                xs, r, gridDimX: gx, blockDimX: bx));
+        StackLinqDifferentialKernels.LaunchStackLinqSinglePredicateUniqueKernel,
+        "SinglePredUnique");
 
     internal static readonly DifferentialCase s_singleOrDefaultEmpty = CreateSingleElementCase(
-        nameof(StackLinqDifferentialKernels.StackLinqSingleOrDefaultEmptyKernel),
-        "SingleOrDefaultEmpty",
-        static (xs, r, gx, bx) =>
-            StackLinqDifferentialKernels.LaunchStackLinqSingleOrDefaultEmptyKernel(xs, r, gridDimX: gx, blockDimX: bx));
+        StackLinqDifferentialKernels.LaunchStackLinqSingleOrDefaultEmptyKernel,
+        "SingleOrDefaultEmpty");
 
     internal static readonly DifferentialCase s_singleOrDefaultOneElem = CreateSingleElementCase(
-        nameof(StackLinqDifferentialKernels.StackLinqSingleOrDefaultOneElementKernel),
-        "SingleOrDefaultOneElem",
-        static (xs, r, gx, bx) =>
-            StackLinqDifferentialKernels.LaunchStackLinqSingleOrDefaultOneElementKernel(
-                xs, r, gridDimX: gx, blockDimX: bx));
+        StackLinqDifferentialKernels.LaunchStackLinqSingleOrDefaultOneElementKernel,
+        "SingleOrDefaultOneElem");
 
     internal static readonly DifferentialCase s_singleOrDefaultPredNone = CreateSingleElementCase(
-        nameof(StackLinqDifferentialKernels.StackLinqSingleOrDefaultPredicateNoneKernel),
-        "SingleOrDefaultPredNone",
-        static (xs, r, gx, bx) =>
-            StackLinqDifferentialKernels.LaunchStackLinqSingleOrDefaultPredicateNoneKernel(
-                xs, r, gridDimX: gx, blockDimX: bx));
+        StackLinqDifferentialKernels.LaunchStackLinqSingleOrDefaultPredicateNoneKernel,
+        "SingleOrDefaultPredNone");
 
     internal static readonly DifferentialCase s_elementAt0 = CreateSingleElementCase(
-        nameof(StackLinqDifferentialKernels.StackLinqElementAtZeroKernel),
-        "ElementAt0",
-        static (xs, r, gx, bx) =>
-            StackLinqDifferentialKernels.LaunchStackLinqElementAtZeroKernel(xs, r, gridDimX: gx, blockDimX: bx));
+        StackLinqDifferentialKernels.LaunchStackLinqElementAtZeroKernel,
+        "ElementAt0");
 
     internal static readonly DifferentialCase s_elementAt2 = CreateSingleElementCase(
-        nameof(StackLinqDifferentialKernels.StackLinqElementAtTwoKernel),
-        "ElementAt2",
-        static (xs, r, gx, bx) =>
-            StackLinqDifferentialKernels.LaunchStackLinqElementAtTwoKernel(xs, r, gridDimX: gx, blockDimX: bx));
+        StackLinqDifferentialKernels.LaunchStackLinqElementAtTwoKernel,
+        "ElementAt2");
 
     internal static readonly DifferentialCase s_takeWhileSideEffects = CreateSingleElementCase(
-        nameof(StackLinqDifferentialKernels.StackLinqTakeWhileSideEffectCountKernel),
-        "TakeWhileSideEffectCount",
-        static (xs, r, gx, bx) =>
-            StackLinqDifferentialKernels.LaunchStackLinqTakeWhileSideEffectCountKernel(
-                xs, r, gridDimX: gx, blockDimX: bx));
+        StackLinqDifferentialKernels.LaunchStackLinqTakeWhileSideEffectCountKernel,
+        "TakeWhileSideEffectCount");
 
     internal static readonly DifferentialCase s_skipWhileSideEffects = CreateSingleElementCase(
-        nameof(StackLinqDifferentialKernels.StackLinqSkipWhileSideEffectCountKernel),
-        "SkipWhileSideEffectCount",
-        static (xs, r, gx, bx) =>
-            StackLinqDifferentialKernels.LaunchStackLinqSkipWhileSideEffectCountKernel(
-                xs, r, gridDimX: gx, blockDimX: bx));
+        StackLinqDifferentialKernels.LaunchStackLinqSkipWhileSideEffectCountKernel,
+        "SkipWhileSideEffectCount");
 
-    internal static readonly DifferentialCase s_parallelSum = new(
-        $"{nameof(StackLinqDifferentialKernels)}.{nameof(StackLinqDifferentialKernels.ParallelSumStackLinqKernel)}")
-    {
-        Shape = LaunchShapes.Grid1D(gridX: 1, blockX: 64, rows: 64),
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_parallelSum = DiffCases.Create(
+        StackLinqDifferentialKernels.LaunchParallelSumStackLinqKernel,
+        inputs: static (rng, shape) =>
         {
             var xs = DiffValues.Int32(rng, shape.Rows);
             for (int i = 0; i < xs.Length; i++)
@@ -400,13 +304,10 @@ public class StackLinqDifferentialTests
                 .In("xs", xs, OutputPolicy.Exact)
                 .Out<int>("r", shape.Rows, ["BlockParallelSum", "WhereSelectParallelSum"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => StackLinqDifferentialKernels.LaunchParallelSumStackLinqKernel(
-            b.Get<int>("xs"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
-        Reference = static (b, s) =>
+        shape: LaunchShapes.Grid1D(gridX: 1, blockX: 64, rows: 64),
+        inputName: "xs",
+        outputName: "r",
+        reference: static (b, s) =>
         {
             var xs = b.Get<int>("xs");
             var r = b.Get<int>("r");
@@ -426,8 +327,7 @@ public class StackLinqDifferentialTests
                 r[t * 2] = blockSum;
                 r[t * 2 + 1] = filteredSum;
             }
-        },
-    };
+        });
 
     [SkippableFact]
     public void StackLinq_Int32Matrix_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_int32Matrix);

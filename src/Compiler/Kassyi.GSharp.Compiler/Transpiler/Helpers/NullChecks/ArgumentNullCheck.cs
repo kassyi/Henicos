@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Backends.Cpp;
+
 namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.NullChecks;
 
 /// <summary>
@@ -69,7 +71,7 @@ internal static class ArgumentNullCheck
     /// <summary>Plans the error site of an argument check from a report location.</summary>
     internal static NullCheckSite PlanArgumentSite(Location location, Compilation compilation,
         ErrorSiteTable? table, string? currentMemberName) =>
-        ArrayNullCheck.PlanSite(location, null, ArgumentSiteMessage, ArgumentTrapKind, compilation, table,
+        NullCheckSiteWriter.PlanSite(location, null, ArgumentSiteMessage, ArgumentTrapKind, compilation, table,
             currentMemberName);
 
     /// <summary>
@@ -92,7 +94,7 @@ internal static class ArgumentNullCheck
         if (check.Kind == ArgumentCheckKind.Array)
         {
             writer.Append(", ");
-            ArrayNullCheck.AppendSite(writer, check.ArraySite);
+            NullCheckSiteWriter.AppendSite(writer, check.ArraySite);
             return;
         }
 
@@ -108,7 +110,7 @@ internal static class ArgumentNullCheck
             }
 
             writer.Append(", ");
-            ArrayNullCheck.AppendSite(writer, fieldCheck.Site);
+            NullCheckSiteWriter.AppendSite(writer, fieldCheck.Site);
             writer.Append("); }");
         }
     }

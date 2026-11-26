@@ -2,6 +2,8 @@
 using Kassyi.GSharp.Compiler.Ir;
 using Kassyi.GSharp.Compiler.Ir.Expressions;
 using Kassyi.GSharp.Compiler.Ir.Sequencing;
+using Kassyi.GSharp.Compiler.Marshaling;
+using Kassyi.GSharp.Compiler.Transpiler;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 
@@ -46,6 +48,26 @@ internal sealed record IrSequenceTemporaries(
                     : IrSequenceDeclarationForm.Named))
             .ToImmutableArray();
         return new IrSequenceTemporaries(firsts, declarations, 0);
+    }
+
+    /// <summary>
+    /// The temporaries the syntax path declares in its native C++ (the dialect the decisions of the IR are made for)
+    /// for <paramref name="declaration"/>, a device function: those of the function itself, without the struct
+    /// definitions and constructors written in front of it, which are members of their own.
+    /// </summary>
+    public static IrSequenceTemporaries OfSyntaxPath(MethodDeclarationSyntax declaration, SemanticModel model)
+    {
+        var structs = new StructSourceCollector();
+        var text = MethodTranspiler.GenerateCudaSource(MethodEmissionPlan.Create(declaration, model, isKernel: false),
+            null, HostDialects.Cpu, out _, structs);
+        foreach (var part in structs.Definitions.Concat(structs.Disposes))
+        {
+#pragma warning disable RS0030 // C++ text: the struct parts written in front of the function are not its own
+            text = text.Replace(part.Text, string.Empty);
+#pragma warning restore RS0030
+        }
+
+        return Of(text);
     }
 
     /// <summary>The temporaries that the C++ text <paramref name="text"/> declares.</summary>

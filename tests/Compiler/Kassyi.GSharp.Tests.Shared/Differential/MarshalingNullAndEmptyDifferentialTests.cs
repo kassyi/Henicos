@@ -32,19 +32,17 @@ public partial class MarshalingNullAndEmptyDifferentialTests
 #pragma warning restore CS8604
     };
 
-    internal static readonly DifferentialCase s_nonNullableArrayEmpty = new(
-        KernelName(nameof(MarshalingAliasingDifferentialKernels.NonNullableArrayKernel), "Empty"))
-    {
-        Shape = LaunchShapes.SingleThread(),
-        Seeds = [0],
-        Inputs = static (_, _) => new DiffBuffers()
+    internal static readonly DifferentialCase s_nonNullableArrayEmpty = DiffCases.Create(
+        MarshalingAliasingDifferentialKernels.LaunchNonNullableArrayKernel,
+        inputs: static (_, _) => new DiffBuffers()
             .In("input", Array.Empty<int>(), OutputPolicy.Exact)
             // The kernel writes no element of an [Out] array that the launch does not copy in
             .Out<int>("output", 1, OutputPolicy.Ignore),
-        OracleIsLaunch = true,
-        Launch = static (b, s) => MarshalingAliasingDifferentialKernels.LaunchNonNullableArrayKernel(
-            b.Get<int>("input"), b.Get<int>("output"), gridDimX: s.GridX, blockDimX: s.BlockX),
-    };
+        shape: LaunchShapes.SingleThread(),
+        inputName: "input",
+        outputName: "output",
+        suffix: ".Empty",
+        seeds: [0]);
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
@@ -209,7 +207,7 @@ public partial class MarshalingNullAndEmptyDifferentialTests
         Shape = LaunchShapes.SingleThread(),
         Seeds = [0],
         // Every path throws (#1409); CUDA, the only path of Tests.Cuda, also reports the place of bag.Data
-        // (MarshalingAliasingDifferentialKernels.cu.cs line 502, column 25), which the managed exception lacks
+        // (MarshalingAliasingDifferentialKernels.cu.cs line 505, column 25), which the managed exception lacks
         ExceptionPolicy = GetStructFieldNullDereferenceExceptionPolicy(),
         Inputs = static (_, _) => new DiffBuffers()
             .InDeepScalar(

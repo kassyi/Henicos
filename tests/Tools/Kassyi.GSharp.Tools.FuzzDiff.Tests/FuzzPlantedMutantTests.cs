@@ -11,6 +11,7 @@ namespace Kassyi.GSharp.Tools.FuzzDiff.Tests;
 /// </summary>
 public class FuzzPlantedMutantTests
 {
+    // Kept as source text: injected via extraMemberSource into RenderKernelCompilationUnit for mutant tests.
     private const string MutatedDeviceFunctionSource =
         """
         [GpuDeviceFunction]

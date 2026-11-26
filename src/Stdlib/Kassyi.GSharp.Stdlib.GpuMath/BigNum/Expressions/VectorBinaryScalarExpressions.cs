@@ -49,7 +49,7 @@ internal abstract class VectorBinaryScalarExpressionBase(
     private VectorEvaluation Apply(GpuWorkspace workspace, int evalCount, GpuBigUIntArrayView targetValues,
         VectorEvaluation vecResult)
     {
-        var scalarResult = scalar.Evaluate(workspace);
+        var scalarResult = VectorEffects.EvaluateScalar(scalar, workspace);
         try
         {
             // A target that shares words with an input is written from the cache after the launch (#864)

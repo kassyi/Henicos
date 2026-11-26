@@ -15,6 +15,11 @@ import {
 } from "./constants.ts";
 import { SchedulerLauncher } from "./client-connect.ts";
 import type { RunOptions } from "./client.ts";
+import type { QuarantineSummary } from "./protocol.ts";
+import type { RemoteCommandPlan } from "./remote/command-translator.ts";
+import type { ResolvedRemoteRules } from "./remote/rules.ts";
+import { executeRemotePlan, type RemoteRunResult } from "./remote/runner.ts";
+import type { RemoteSpec } from "./remote/spec.ts";
 import type { ShareMode } from "./resources.ts";
 import { CommandShell, type ShellResult } from "./shell.ts";
 import { ProcessTable, prefix } from "./system.ts";
@@ -95,13 +100,13 @@ function runGpuLocked(
  * signal: Windows' taskkill /F ends it with 1, Unix a signal); any other end after a cancel is the cancel's.
  */
 export function commandEnd(
-  result: ShellResult,
+  result: ShellResult & { timedOut?: boolean },
   cancelRequested: boolean,
 ): { exitCode: number; completed: boolean; cancelled: boolean } {
   const cancelled = cancelRequested && !(result.code === 0 && !result.signaled);
   return {
     exitCode: cancelled ? CancelledExitCode : result.code,
-    completed: !result.signaled && !cancelled,
+    completed: !result.signaled && !cancelled && result.timedOut !== true,
     cancelled,
   };
 }
@@ -120,9 +125,19 @@ export interface RunHost {
     exitCode: number,
     cancelled: boolean,
     reporter: { pid: number; queuedAt: number },
+    quarantine?: QuarantineSummary,
   ): Promise<void>;
   /** Runs the command in the caller's shell (CommandShell.run). */
   runCommand(command: string, env: NodeJS.ProcessEnv, onChild: (child: ChildProcess) => void): Promise<ShellResult>;
+  /** Syncs the worktree and runs the translated command on a configured remote Linux worker over SSH. */
+  runRemoteCommand?(
+    remote: RemoteSpec,
+    plan: RemoteCommandPlan,
+    onChild: (child: ChildProcess) => void,
+    remoteRules?: ResolvedRemoteRules,
+    signal?: AbortSignal,
+    jobId?: number,
+  ): Promise<RemoteRunResult>;
   /**
    * Runs the command under gpu-lock.js for a GPU turn (`turn`: the run's job id, 0 when unknown), on one seat of the
    * lock for `mode` "shared", else on all of them.
@@ -160,12 +175,24 @@ export class ProcessRunHost implements RunHost {
     exitCode: number,
     cancelled: boolean,
     reporter: { pid: number; queuedAt: number },
+    quarantine?: QuarantineSummary,
   ): Promise<void> {
-    return this.launcher.reportEnd(id, completed, exitCode, cancelled, reporter);
+    return this.launcher.reportEnd(id, completed, exitCode, cancelled, reporter, quarantine);
   }
 
   runCommand(command: string, env: NodeJS.ProcessEnv, onChild: (child: ChildProcess) => void): Promise<ShellResult> {
     return CommandShell.resolve(this.options.shell).run(command, env, onChild);
+  }
+
+  runRemoteCommand(
+    remote: RemoteSpec,
+    plan: RemoteCommandPlan,
+    onChild: (child: ChildProcess) => void,
+    remoteRules?: ResolvedRemoteRules,
+    signal?: AbortSignal,
+    jobId?: number,
+  ): Promise<RemoteRunResult> {
+    return executeRemotePlan(remote, plan, onChild, undefined, remoteRules, signal, jobId);
   }
 
   runUnderGpuLock(

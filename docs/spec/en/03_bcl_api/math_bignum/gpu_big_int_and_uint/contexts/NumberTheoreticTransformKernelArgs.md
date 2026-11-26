@@ -29,6 +29,7 @@ public struct NumberTheoreticTransform
     public bool ApplyTwiddleAfter;
     public int MaxBlocks;
     public int CurrentL;
+    public int ColumnStride;
 }
 ```
 
@@ -47,6 +48,7 @@ public struct NumberTheoreticTransform
 | `ApplyTwiddleAfter` | Indicates whether twiddle multiplication is applied after transform. |
 | `MaxBlocks` | The maximum number of GPU blocks to dispatch. |
 | `CurrentL` | The current transform stage length $L$. |
+| `ColumnStride` | 0 when the rows are contiguous: element $e$ of row $r$ is at $r \cdot L + e$. Otherwise the rows are the columns of a row-major matrix with this many columns: element $e$ of row $r$ is at $r + e \cdot$ `ColumnStride`. |
 
 ## NttGridContext Struct
 

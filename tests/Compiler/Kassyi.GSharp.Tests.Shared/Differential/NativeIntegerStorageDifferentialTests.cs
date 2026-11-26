@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Tests.Infrastructure;
 using Xunit;
@@ -35,54 +36,43 @@ public class NativeIntegerStorageDifferentialTests
     }
 
     private static DifferentialCase Unary(
-        string kernel, int outputPerRow, Action<long[], long[], int, uint, uint> launch) =>
-        new($"{nameof(NativeIntegerStorageKernels)}.{kernel}Kernel")
-        {
-            Shapes = s_shapes,
-            Inputs = (rng, shape) => new DiffBuffers()
+        Int64RowsLaunch launch,
+        int outputPerRow,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        DiffCases.Create(
+            launch,
+            inputs: (_, shape) => new DiffBuffers()
                 .In("a", Values(shape.Rows, 0), readOnly: true)
                 .Out<long>("dst", shape.Rows * outputPerRow, OutputPolicy.Exact),
-            Launch = (b, s) => launch(b.Get<long>("a"), b.Get<long>("dst"), s.Rows, s.GridX, s.BlockX),
-            OracleIsLaunch = true,
-        };
+            shapes: s_shapes,
+            launchExpression: launchExpression);
 
-    private static DifferentialCase Binary(string kernel, Action<long[], long[], long[], int, uint, uint> launch) =>
-        new($"{nameof(NativeIntegerStorageKernels)}.{kernel}Kernel")
-        {
-            Shapes = s_shapes,
-            Inputs = (rng, shape) => new DiffBuffers()
+    private static DifferentialCase Binary(
+        Int64PairRowsLaunch launch,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        DiffCases.Create(
+            launch,
+            inputs: (_, shape) => new DiffBuffers()
                 .In("a", Values(shape.Rows, 0), readOnly: true)
                 .In("b", Values(shape.Rows, 5), readOnly: true)
                 .Out<long>("dst", shape.Rows * 2, OutputPolicy.Exact),
-            Launch = (b, s) =>
-                launch(b.Get<long>("a"), b.Get<long>("b"), b.Get<long>("dst"), s.Rows, s.GridX, s.BlockX),
-            OracleIsLaunch = true,
-        };
+            shapes: s_shapes,
+            launchExpression: launchExpression);
 
     internal static readonly DifferentialCase s_negativeConstant = Unary(
-        "NativeIntegerNegativeConstant", 1,
-        static (a, d, n, g, x) =>
-            NativeIntegerStorageKernels.LaunchNativeIntegerNegativeConstantKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerStorageKernels.LaunchNativeIntegerNegativeConstantKernel, 1);
 
     internal static readonly DifferentialCase s_wideConstant = Unary(
-        "NativeIntegerWideConstant", 1,
-        static (a, d, n, g, x) =>
-            NativeIntegerStorageKernels.LaunchNativeIntegerWideConstantKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerStorageKernels.LaunchNativeIntegerWideConstantKernel, 1);
 
     internal static readonly DifferentialCase s_index = Unary(
-        "NativeIntegerIndex", 1,
-        static (a, d, n, g, x) =>
-            NativeIntegerStorageKernels.LaunchNativeIntegerIndexKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerStorageKernels.LaunchNativeIntegerIndexKernel, 1);
 
     internal static readonly DifferentialCase s_structField = Binary(
-        "NativeIntegerStructField",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerStorageKernels.LaunchNativeIntegerStructFieldKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerStorageKernels.LaunchNativeIntegerStructFieldKernel);
 
     internal static readonly DifferentialCase s_spanElement = Binary(
-        "NativeIntegerSpanElement",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerStorageKernels.LaunchNativeIntegerSpanElementKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerStorageKernels.LaunchNativeIntegerSpanElementKernel);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]

@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Kassyi.GSharp.Compiler.Lowering;
+using Kassyi.GSharp.Compiler.Semantics;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 

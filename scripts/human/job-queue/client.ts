@@ -18,6 +18,7 @@ import { QueuedRun } from "./client-queued-run.ts";
 import { ProcessRunHost, type RunHost } from "./client-run-host.ts";
 import type { BaseClientContext, PluginHost } from "./plugin-host.ts";
 import { type Placement } from "./protocol.ts";
+import type { RemoteSpec } from "./remote/spec.ts";
 import { CommandShell } from "./shell.ts";
 import { ProcessTable, prefix, resolveWorktree } from "./system.ts";
 
@@ -39,6 +40,12 @@ export interface RunOptions extends Endpoint {
   role?: string;
   /** Memory budget (MB) from config.pools.defaultTestMemoryMb for classified tests without an explicit memoryMb. */
   defaultTestMemoryMb?: number;
+  /** --local: disable transparent remote CPU offload for this run. */
+  local?: boolean;
+  /** --remote: require execution on a configured remote CPU worker (refuse if ineligible). */
+  remote?: boolean;
+  /** Configured remote CPU workers from job-queue.config.json. */
+  remotes?: RemoteSpec[];
 }
 
 /** Ends the process with a usage error. */
@@ -80,6 +87,9 @@ export async function run(options: RunOptions, plugins: PluginHost): Promise<voi
     // Waiting for another job while holding slots or the GPU lock can deadlock: that job may wait for them. (The --gpu
     // wrapper resolves --after before it takes the lock and does not pass it to the client it starts inside.)
     usageError("--after cannot be used inside a queued job or the GPU lock; queue the chain from outside.");
+  }
+  if (options.remote === true && (process.env[JobVariable] || inGpuLock)) {
+    usageError("--remote cannot be used inside a queued job or the GPU lock; queue the remote job from outside.");
   }
   if (process.env[JobVariable] && (inGpuLock || !options.gpu)) {
     // Inside a queued job: its slot covers this command, with the same node limit.

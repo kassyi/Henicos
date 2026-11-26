@@ -74,11 +74,9 @@ public class BitOperationsPowerOfTwoDifferentialTests
     private static string KernelName(string memberName) =>
         DiffKernelNames.Of(typeof(BitOperationsPowerOfTwoDifferentialKernels), memberName);
 
-    internal static readonly DifferentialCase s_trailingZeroCountSigned =
-        new(KernelName(nameof(BitOperationsPowerOfTwoDifferentialKernels.TrailingZeroCountSignedKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_trailingZeroCountSigned = DiffCases.CreateRows<int, long, int>(
+        BitOperationsPowerOfTwoDifferentialKernels.LaunchTrailingZeroCountSignedKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             var iVals = DiffValues.Values(rng, rows, s_tzcInt32Boundaries, static r => r.NextInt32());
@@ -89,15 +87,9 @@ public class BitOperationsPowerOfTwoDifferentialTests
                 .Out<int>("dst", rows, BitOperationsPowerOfTwoDifferentialKernels.TrailingZeroCountColumns,
                     OutputPolicy.Exact);
         },
-        Launch = static (b, s) => BitOperationsPowerOfTwoDifferentialKernels.LaunchTrailingZeroCountSignedKernel(
-            b.Get<int>("iVals"),
-            b.Get<long>("lVals"),
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        firstInputName: "iVals",
+        secondInputName: "lVals");
 
     internal static readonly DifferentialCase s_isPow2AllOverloads =
         new(KernelName(nameof(BitOperationsPowerOfTwoDifferentialKernels.IsPow2AllOverloadsKernel)))
@@ -120,12 +112,15 @@ public class BitOperationsPowerOfTwoDifferentialTests
                     OutputPolicy.Exact);
         },
         Launch = static (b, s) => BitOperationsPowerOfTwoDifferentialKernels.LaunchIsPow2AllOverloadsKernel(
-            b.Get<int>("iVals"),
-            b.Get<uint>("uVals"),
-            b.Get<long>("lVals"),
-            b.Get<ulong>("ulVals"),
-            b.Get<bool>("dst"),
-            s.Rows,
+            operands: new PowerOfTwoCheckOperands
+            {
+                Int32Values = b.Get<int>("iVals"),
+                UInt32Values = b.Get<uint>("uVals"),
+                Int64Values = b.Get<long>("lVals"),
+                UInt64Values = b.Get<ulong>("ulVals"),
+            },
+            results: b.Get<bool>("dst"),
+            rows: s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,
@@ -148,12 +143,18 @@ public class BitOperationsPowerOfTwoDifferentialTests
                 .Out<ulong>("nuOut", rows, ["round_up_nuint"], OutputPolicy.Exact);
         },
         Launch = static (b, s) => BitOperationsPowerOfTwoDifferentialKernels.LaunchRoundUpToPowerOf2UnsignedKernel(
-            b.Get<uint>("uVals"),
-            b.Get<ulong>("ulVals"),
-            b.Get<uint>("uOut"),
-            b.Get<ulong>("ulOut"),
-            b.Get<ulong>("nuOut"),
-            s.Rows,
+            operands: new UnsignedPowerOfTwoOperands
+            {
+                UInt32Values = b.Get<uint>("uVals"),
+                UInt64Values = b.Get<ulong>("ulVals"),
+            },
+            results: new UnsignedPowerOfTwoResults
+            {
+                UInt32Results = b.Get<uint>("uOut"),
+                UInt64Results = b.Get<ulong>("ulOut"),
+                NUIntResults = b.Get<ulong>("nuOut"),
+            },
+            rows: s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,

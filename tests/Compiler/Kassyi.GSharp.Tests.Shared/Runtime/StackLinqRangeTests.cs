@@ -55,8 +55,12 @@ public class StackLinqRangeTests : TranspilerTestBase
             foreach (var b in s_arguments)
             {
                 var result = new int[GridDimX * BlockDimX * 2];
-                Run(managed, () => StackLinqRangeKernels.LaunchTwoStageRangeKernel(s_data, combo, a, b, result,
-                    gridDimX: GridDimX, blockDimX: BlockDimX));
+                Run(managed, () => StackLinqRangeKernels.LaunchTwoStageRangeKernel(
+                    data: s_data,
+                    range: new TwoStageRangeParameters { Combination = combo, FirstCount = a, SecondCount = b },
+                    result: result,
+                    gridDimX: GridDimX,
+                    blockDimX: BlockDimX));
 
                 var (first, second) = s_combos[combo];
                 var expected = HostStackLinqSum(combo, a, b);
@@ -212,7 +216,12 @@ public class StackLinqRangeTests : TranspilerTestBase
 
             var (a, b, c) = (Argument(), Argument(), Argument());
             var result = new int[Threads * Chains * 2];
-            Run(managed, () => StackLinqRangeKernels.LaunchThreeStageSweepKernel(data, a, b, c, result, gridDimX: 1, blockDimX: Threads));
+            Run(managed, () => StackLinqRangeKernels.LaunchThreeStageSweepKernel(
+                data: data,
+                range: new ThreeStageRangeParameters { FirstCount = a, SecondCount = b, ThirdCount = c },
+                result: result,
+                gridDimX: 1,
+                blockDimX: Threads));
             for (var chain = 0; chain < Chains; chain++)
             {
                 var expected = ThreeStageHostSum(chain, data, a, b, c);
@@ -328,7 +337,13 @@ public class StackLinqRangeTests : TranspilerTestBase
         int[] counter = [0, 0, 0];
         int[] result = [0, 0, 0];
 
-        Run(managed, () => StackLinqRangeKernels.LaunchTakeSkipCountKernel(s_data, counter, take, skip, result, gridDimX: GridDimX, blockDimX: BlockDimX));
+        Run(managed, () => StackLinqRangeKernels.LaunchTakeSkipCountKernel(
+            data: s_data,
+            counter: counter,
+            bounds: new TakeSkipBounds { TakeCount = take, SkipCount = skip },
+            result: result,
+            gridDimX: GridDimX,
+            blockDimX: BlockDimX));
 
         // The expected counts come from the same chains on the host (StackLinq, C#)
         int[] hostCounter = [0, 0, 0];

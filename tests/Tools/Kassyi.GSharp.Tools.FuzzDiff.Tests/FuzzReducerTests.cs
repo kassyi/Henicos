@@ -78,6 +78,7 @@ public class FuzzReducerTests
     [Scenario(TestScenario.SadPath)]
     public void FuzzReducer_FailureSignaturePreservation_RejectsCandidateThatSwitchesBug()
     {
+        // Kept as source text: FuzzReducer.Reduce takes raw source text to test signature preservation.
         const string DualBugSource =
             """
             #nullable enable
@@ -154,6 +155,7 @@ public class FuzzReducerTests
     [Scenario(TestScenario.Boundary)]
     public void FuzzReducer_HoistLocalsToDefault_SkipsStructsWithConversionOperatorsWhile1103Open()
     {
+        // Kept as source text: FuzzReducer.HoistLocalsToDefault transforms raw C# source text directly.
         const string StructKernelSource =
             """
             #nullable enable
@@ -211,6 +213,7 @@ public class FuzzReducerTests
         Assert.DoesNotContain("default(FuzzStructL3)", hoisted, StringComparison.Ordinal);
     }
 
+    // Kept as a text builder: FuzzReducer.Reduce takes source text and needs a ~100-statement kernel.
     private static string BuildSynthetic100StatementMultiFunctionKernel()
     {
         using var writer = new SourceWriter();

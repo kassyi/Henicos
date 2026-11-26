@@ -55,8 +55,8 @@
 
 - name: GpuBigIntExprDirectAssignment
   id: GSH0005
-  title: "GpuBigIntExpr must be assigned via .Value"
-  messageFormat: "Direct assignment or local declaration of GpuBigIntExpr is not supported. Use 'gpuResult.Value = expr' to evaluate the expression directly into the target buffer."
+  title: "GpuBigIntExpr is discarded without being evaluated"
+  messageFormat: "The GpuBigIntExpr '{0}' is neither evaluated nor disposed. Evaluate it with Evaluate(), CompileToGraph(), or '.Value = ...', or hold it in a 'using' declaration."
   category: GSharpTranspiler
   defaultSeverity: Error
   isEnabledByDefault: true

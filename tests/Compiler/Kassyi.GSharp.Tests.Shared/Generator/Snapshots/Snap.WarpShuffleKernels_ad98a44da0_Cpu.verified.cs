@@ -31,21 +31,44 @@ public partial class WarpShuffleKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2079829541u, "WarpShuffleKernels.cs", 16, 19, "WarpReductionKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1221740407u, "WarpShuffleKernels.cs", 27, 13, "WarpReductionKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1680616221u, "WarpShuffleKernels.cs", 37, 19, "WarpShuffleBoundaryKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(454009674u, "WarpShuffleKernels.cs", 40, 9, "WarpShuffleBoundaryKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(342018179u, "WarpShuffleKernels.cs", 43, 9, "WarpShuffleBoundaryKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(654479005u, "WarpShuffleKernels.cs", 46, 9, "WarpShuffleBoundaryKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1855652693u, "WarpShuffleKernels.cs", 56, 19, "WarpDivergenceKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1244206552u, "WarpShuffleKernels.cs", 69, 9, "WarpDivergenceKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1510451764u, "WarpShuffleKernels.cs", 76, 9, "WarpShuffleExtremaKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(414876770u, "WarpShuffleKernels.cs", 76, 50, "WarpShuffleExtremaKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1934091993u, "WarpShuffleKernels.cs", 23, 19, "WarpReductionKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1337535863u, "WarpShuffleKernels.cs", 34, 13, "WarpReductionKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(16446065u, "WarpShuffleKernels.cs", 44, 19, "WarpShuffleBoundaryKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(434078924u, "WarpShuffleKernels.cs", 47, 9, "WarpShuffleBoundaryKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(667246535u, "WarpShuffleKernels.cs", 50, 9, "WarpShuffleBoundaryKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1587876225u, "WarpShuffleKernels.cs", 53, 9, "WarpShuffleBoundaryKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1154957041u, "WarpShuffleKernels.cs", 63, 19, "WarpDivergenceKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1510451764u, "WarpShuffleKernels.cs", 76, 9, "WarpDivergenceKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1570429418u, "WarpShuffleKernels.cs", 86, 9, "WarpShuffleExtremaKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(552796154u, "WarpShuffleKernels.cs", 86, 50, "WarpShuffleExtremaKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
 {
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 12)]
+public unsafe partial struct WarpShuffleExtremaOptions
+{
+public const string DebugName_Mask = "global::System.UInt32";
+[global::System.Runtime.InteropServices.FieldOffset(0)]
+public global::System.UInt32 Mask;
+public const string DebugName_Delta = "global::System.UInt32";
+[global::System.Runtime.InteropServices.FieldOffset(4)]
+public global::System.UInt32 Delta;
+public const string DebugName_Width = "global::System.Int32";
+[global::System.Runtime.InteropServices.FieldOffset(8)]
+public global::System.Int32 Width;
+}
+public static unsafe void Marshal_WarpShuffleExtremaOptions(ref global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions host, ref AotContexts.WarpShuffleExtremaOptions native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+{
+native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions, AotContexts.WarpShuffleExtremaOptions>(ref host);
+}
+public static unsafe void Unmarshal_WarpShuffleExtremaOptions(ref global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions host, ref AotContexts.WarpShuffleExtremaOptions native, global::System.IntPtr hStream = default)
+{
+host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.WarpShuffleExtremaOptions, global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions>(ref native);
+}
+#pragma warning restore CS8500
 }
 public const string WarpReductionKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpReductionKernel {
 int __gsharp_state = 0;
@@ -86,56 +109,56 @@ __gsharp_switch_1_state_0:
 __gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_3_lane=__gsharp_ctx->__gsharp_id_2_tid%32;
 __gsharp_ctx->__gsharp_id_4_warpId=__gsharp_ctx->__gsharp_id_2_tid/32;
-__gsharp_ctx->__gsharp_id_5_val=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_input, __gsharp_ctx->__gsharp_id_2_tid, 2079829541u);
+__gsharp_ctx->__gsharp_id_5_val=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_input, __gsharp_ctx->__gsharp_id_2_tid, 1934091993u);
 __gsharp_ctx->__gsharp_id_6_mask=0xffffffff;
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,__gsharp_ctx->__gsharp_id_6_mask,__gsharp_ctx->__gsharp_id_5_val,""Warp.ShuffleDownSync"",""WarpShuffleKernels.cs(19,16)"");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,__gsharp_ctx->__gsharp_id_6_mask,__gsharp_ctx->__gsharp_id_5_val,""Warp.ShuffleDownSync"",""WarpShuffleKernels.cs(26,16)"");
 __gsharp_state=1;
 return;
 }
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_ctx->__gsharp_warp_temp_0=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,0,__gsharp_ctx->__gsharp_id_6_mask,__gsharp_ctx->__gsharp_id_5_val,16,32,""WarpShuffleKernels.cs(19,16)"");
+__gsharp_ctx->__gsharp_warp_temp_0=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,0,__gsharp_ctx->__gsharp_id_6_mask,__gsharp_ctx->__gsharp_id_5_val,16,32,""WarpShuffleKernels.cs(26,16)"");
 __gsharp_ctx->__gsharp_id_5_val=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_5_val,__gsharp_ctx->__gsharp_warp_temp_0);
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,1,__gsharp_ctx->__gsharp_id_6_mask,__gsharp_ctx->__gsharp_id_5_val,""Warp.ShuffleDownSync"",""WarpShuffleKernels.cs(20,16)"");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,1,__gsharp_ctx->__gsharp_id_6_mask,__gsharp_ctx->__gsharp_id_5_val,""Warp.ShuffleDownSync"",""WarpShuffleKernels.cs(27,16)"");
 __gsharp_state=2;
 return;
 }
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_ctx->__gsharp_warp_temp_1=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,1,__gsharp_ctx->__gsharp_id_6_mask,__gsharp_ctx->__gsharp_id_5_val,8,32,""WarpShuffleKernels.cs(20,16)"");
+__gsharp_ctx->__gsharp_warp_temp_1=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,1,__gsharp_ctx->__gsharp_id_6_mask,__gsharp_ctx->__gsharp_id_5_val,8,32,""WarpShuffleKernels.cs(27,16)"");
 __gsharp_ctx->__gsharp_id_5_val=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_5_val,__gsharp_ctx->__gsharp_warp_temp_1);
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,2,__gsharp_ctx->__gsharp_id_6_mask,__gsharp_ctx->__gsharp_id_5_val,""Warp.ShuffleDownSync"",""WarpShuffleKernels.cs(21,16)"");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,2,__gsharp_ctx->__gsharp_id_6_mask,__gsharp_ctx->__gsharp_id_5_val,""Warp.ShuffleDownSync"",""WarpShuffleKernels.cs(28,16)"");
 __gsharp_state=3;
 return;
 }
 case 3:
 __gsharp_switch_1_state_3:
 {
-__gsharp_ctx->__gsharp_warp_temp_2=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,2,__gsharp_ctx->__gsharp_id_6_mask,__gsharp_ctx->__gsharp_id_5_val,4,32,""WarpShuffleKernels.cs(21,16)"");
+__gsharp_ctx->__gsharp_warp_temp_2=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,2,__gsharp_ctx->__gsharp_id_6_mask,__gsharp_ctx->__gsharp_id_5_val,4,32,""WarpShuffleKernels.cs(28,16)"");
 __gsharp_ctx->__gsharp_id_5_val=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_5_val,__gsharp_ctx->__gsharp_warp_temp_2);
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,3,__gsharp_ctx->__gsharp_id_6_mask,__gsharp_ctx->__gsharp_id_5_val,""Warp.ShuffleDownSync"",""WarpShuffleKernels.cs(22,16)"");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,3,__gsharp_ctx->__gsharp_id_6_mask,__gsharp_ctx->__gsharp_id_5_val,""Warp.ShuffleDownSync"",""WarpShuffleKernels.cs(29,16)"");
 __gsharp_state=4;
 return;
 }
 case 4:
 __gsharp_switch_1_state_4:
 {
-__gsharp_ctx->__gsharp_warp_temp_3=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,3,__gsharp_ctx->__gsharp_id_6_mask,__gsharp_ctx->__gsharp_id_5_val,2,32,""WarpShuffleKernels.cs(22,16)"");
+__gsharp_ctx->__gsharp_warp_temp_3=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,3,__gsharp_ctx->__gsharp_id_6_mask,__gsharp_ctx->__gsharp_id_5_val,2,32,""WarpShuffleKernels.cs(29,16)"");
 __gsharp_ctx->__gsharp_id_5_val=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_5_val,__gsharp_ctx->__gsharp_warp_temp_3);
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,4,__gsharp_ctx->__gsharp_id_6_mask,__gsharp_ctx->__gsharp_id_5_val,""Warp.ShuffleDownSync"",""WarpShuffleKernels.cs(23,16)"");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,4,__gsharp_ctx->__gsharp_id_6_mask,__gsharp_ctx->__gsharp_id_5_val,""Warp.ShuffleDownSync"",""WarpShuffleKernels.cs(30,16)"");
 __gsharp_state=5;
 return;
 }
 case 5:
 __gsharp_switch_1_state_5:
 {
-auto __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,4,__gsharp_ctx->__gsharp_id_6_mask,__gsharp_ctx->__gsharp_id_5_val,1,32,""WarpShuffleKernels.cs(23,16)"");
+auto __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,4,__gsharp_ctx->__gsharp_id_6_mask,__gsharp_ctx->__gsharp_id_5_val,1,32,""WarpShuffleKernels.cs(30,16)"");
 __gsharp_ctx->__gsharp_id_5_val=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_5_val,__gsharp_warp_temp_4);
 if(__gsharp_ctx->__gsharp_id_3_lane==0)
 {
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_ctx->__gsharp_id_4_warpId, 1221740407u)=__gsharp_ctx->__gsharp_id_5_val;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_ctx->__gsharp_id_4_warpId, 1337535863u)=__gsharp_ctx->__gsharp_id_5_val;
 }
 __gsharp_state=-1;
 return;
@@ -273,50 +296,50 @@ __gsharp_ctx.lane = __gsharp_ctx.tid % 32;
 __gsharp_ctx.warpId = __gsharp_ctx.tid / 32;
 __gsharp_ctx.val = __gsharp_ctx.input[__gsharp_ctx.tid];
 __gsharp_ctx.mask = 0xffffffff;
-__gsharp_warp_publish(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.val, "Warp.ShuffleDownSync", "WarpShuffleKernels.cs(19,16)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.val, "Warp.ShuffleDownSync", "WarpShuffleKernels.cs(26,16)");
 __gsharp_ctx.__gsharp_state = 1;
 return;
 }
 
 case 1:
 {
-__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.val, 16, 32, "WarpShuffleKernels.cs(19,16)");
+__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.val, 16, 32, "WarpShuffleKernels.cs(26,16)");
 __gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_0;
-__gsharp_warp_publish(0, ref __gsharp_ctx, 1, __gsharp_ctx.mask, __gsharp_ctx.val, "Warp.ShuffleDownSync", "WarpShuffleKernels.cs(20,16)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 1, __gsharp_ctx.mask, __gsharp_ctx.val, "Warp.ShuffleDownSync", "WarpShuffleKernels.cs(27,16)");
 __gsharp_ctx.__gsharp_state = 2;
 return;
 }
 
 case 2:
 {
-__gsharp_ctx.__gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 1, __gsharp_ctx.mask, __gsharp_ctx.val, 8, 32, "WarpShuffleKernels.cs(20,16)");
+__gsharp_ctx.__gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 1, __gsharp_ctx.mask, __gsharp_ctx.val, 8, 32, "WarpShuffleKernels.cs(27,16)");
 __gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_1;
-__gsharp_warp_publish(0, ref __gsharp_ctx, 2, __gsharp_ctx.mask, __gsharp_ctx.val, "Warp.ShuffleDownSync", "WarpShuffleKernels.cs(21,16)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 2, __gsharp_ctx.mask, __gsharp_ctx.val, "Warp.ShuffleDownSync", "WarpShuffleKernels.cs(28,16)");
 __gsharp_ctx.__gsharp_state = 3;
 return;
 }
 
 case 3:
 {
-__gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 2, __gsharp_ctx.mask, __gsharp_ctx.val, 4, 32, "WarpShuffleKernels.cs(21,16)");
+__gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 2, __gsharp_ctx.mask, __gsharp_ctx.val, 4, 32, "WarpShuffleKernels.cs(28,16)");
 __gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_2;
-__gsharp_warp_publish(0, ref __gsharp_ctx, 3, __gsharp_ctx.mask, __gsharp_ctx.val, "Warp.ShuffleDownSync", "WarpShuffleKernels.cs(22,16)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 3, __gsharp_ctx.mask, __gsharp_ctx.val, "Warp.ShuffleDownSync", "WarpShuffleKernels.cs(29,16)");
 __gsharp_ctx.__gsharp_state = 4;
 return;
 }
 
 case 4:
 {
-__gsharp_ctx.__gsharp_warp_temp_3 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 3, __gsharp_ctx.mask, __gsharp_ctx.val, 2, 32, "WarpShuffleKernels.cs(22,16)");
+__gsharp_ctx.__gsharp_warp_temp_3 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 3, __gsharp_ctx.mask, __gsharp_ctx.val, 2, 32, "WarpShuffleKernels.cs(29,16)");
 __gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_3;
-__gsharp_warp_publish(0, ref __gsharp_ctx, 4, __gsharp_ctx.mask, __gsharp_ctx.val, "Warp.ShuffleDownSync", "WarpShuffleKernels.cs(23,16)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 4, __gsharp_ctx.mask, __gsharp_ctx.val, "Warp.ShuffleDownSync", "WarpShuffleKernels.cs(30,16)");
 __gsharp_ctx.__gsharp_state = 5;
 return;
 }
 
 case 5:
 {
-int __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 4, __gsharp_ctx.mask, __gsharp_ctx.val, 1, 32, "WarpShuffleKernels.cs(23,16)");
+int __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 4, __gsharp_ctx.mask, __gsharp_ctx.val, 1, 32, "WarpShuffleKernels.cs(30,16)");
 __gsharp_ctx.val += __gsharp_warp_temp_4;
 if (__gsharp_ctx.lane == 0)
 {
@@ -566,34 +589,34 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_4_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_5_mask=0xffffffff;
-__gsharp_ctx->__gsharp_id_6_val=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_input, __gsharp_ctx->__gsharp_id_4_tid, 1680616221u);
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,__gsharp_ctx->__gsharp_id_5_mask,__gsharp_ctx->__gsharp_id_6_val,""Warp.ShuffleDownSync"",""WarpShuffleKernels.cs(40,32)"");
+__gsharp_ctx->__gsharp_id_6_val=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_input, __gsharp_ctx->__gsharp_id_4_tid, 16446065u);
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,__gsharp_ctx->__gsharp_id_5_mask,__gsharp_ctx->__gsharp_id_6_val,""Warp.ShuffleDownSync"",""WarpShuffleKernels.cs(47,32)"");
 __gsharp_state=1;
 return;
 }
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_ctx->__gsharp_warp_temp_0=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,0,__gsharp_ctx->__gsharp_id_5_mask,__gsharp_ctx->__gsharp_id_6_val,0,32,""WarpShuffleKernels.cs(40,32)"");
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_outputBoundary0, __gsharp_ctx->__gsharp_id_4_tid, 454009674u)=__gsharp_ctx->__gsharp_warp_temp_0;
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,1,__gsharp_ctx->__gsharp_id_5_mask,__gsharp_ctx->__gsharp_id_6_val,""Warp.ShuffleDownSync"",""WarpShuffleKernels.cs(43,33)"");
+__gsharp_ctx->__gsharp_warp_temp_0=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,0,__gsharp_ctx->__gsharp_id_5_mask,__gsharp_ctx->__gsharp_id_6_val,0,32,""WarpShuffleKernels.cs(47,32)"");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_outputBoundary0, __gsharp_ctx->__gsharp_id_4_tid, 434078924u)=__gsharp_ctx->__gsharp_warp_temp_0;
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,1,__gsharp_ctx->__gsharp_id_5_mask,__gsharp_ctx->__gsharp_id_6_val,""Warp.ShuffleDownSync"",""WarpShuffleKernels.cs(50,33)"");
 __gsharp_state=2;
 return;
 }
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_ctx->__gsharp_warp_temp_1=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,1,__gsharp_ctx->__gsharp_id_5_mask,__gsharp_ctx->__gsharp_id_6_val,31,32,""WarpShuffleKernels.cs(43,33)"");
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_outputBoundary31, __gsharp_ctx->__gsharp_id_4_tid, 342018179u)=__gsharp_ctx->__gsharp_warp_temp_1;
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,2,__gsharp_ctx->__gsharp_id_5_mask,__gsharp_ctx->__gsharp_id_6_val,""Warp.ShuffleDownSync"",""WarpShuffleKernels.cs(46,33)"");
+__gsharp_ctx->__gsharp_warp_temp_1=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,1,__gsharp_ctx->__gsharp_id_5_mask,__gsharp_ctx->__gsharp_id_6_val,31,32,""WarpShuffleKernels.cs(50,33)"");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_outputBoundary31, __gsharp_ctx->__gsharp_id_4_tid, 667246535u)=__gsharp_ctx->__gsharp_warp_temp_1;
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,2,__gsharp_ctx->__gsharp_id_5_mask,__gsharp_ctx->__gsharp_id_6_val,""Warp.ShuffleDownSync"",""WarpShuffleKernels.cs(53,33)"");
 __gsharp_state=3;
 return;
 }
 case 3:
 __gsharp_switch_1_state_3:
 {
-auto __gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,2,__gsharp_ctx->__gsharp_id_5_mask,__gsharp_ctx->__gsharp_id_6_val,32,32,""WarpShuffleKernels.cs(46,33)"");
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_3_outputBoundary32, __gsharp_ctx->__gsharp_id_4_tid, 654479005u)=__gsharp_warp_temp_2;
+auto __gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,2,__gsharp_ctx->__gsharp_id_5_mask,__gsharp_ctx->__gsharp_id_6_val,32,32,""WarpShuffleKernels.cs(53,33)"");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_3_outputBoundary32, __gsharp_ctx->__gsharp_id_4_tid, 1587876225u)=__gsharp_warp_temp_2;
 __gsharp_state=-1;
 return;
 }
@@ -728,34 +751,34 @@ case 0:
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.mask = 0xffffffff;
 __gsharp_ctx.val = __gsharp_ctx.input[__gsharp_ctx.tid];
-__gsharp_warp_publish(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.val, "Warp.ShuffleDownSync", "WarpShuffleKernels.cs(40,32)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.val, "Warp.ShuffleDownSync", "WarpShuffleKernels.cs(47,32)");
 __gsharp_ctx.__gsharp_state = 1;
 return;
 }
 
 case 1:
 {
-__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.val, 0, 32, "WarpShuffleKernels.cs(40,32)");
+__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.val, 0, 32, "WarpShuffleKernels.cs(47,32)");
 // Delta = 0: returns thread's own value
 __gsharp_ctx.outputBoundary0[__gsharp_ctx.tid] = __gsharp_ctx.__gsharp_warp_temp_0;
-__gsharp_warp_publish(0, ref __gsharp_ctx, 1, __gsharp_ctx.mask, __gsharp_ctx.val, "Warp.ShuffleDownSync", "WarpShuffleKernels.cs(43,33)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 1, __gsharp_ctx.mask, __gsharp_ctx.val, "Warp.ShuffleDownSync", "WarpShuffleKernels.cs(50,33)");
 __gsharp_ctx.__gsharp_state = 2;
 return;
 }
 
 case 2:
 {
-__gsharp_ctx.__gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 1, __gsharp_ctx.mask, __gsharp_ctx.val, 31, 32, "WarpShuffleKernels.cs(43,33)");
+__gsharp_ctx.__gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 1, __gsharp_ctx.mask, __gsharp_ctx.val, 31, 32, "WarpShuffleKernels.cs(50,33)");
 // Delta = 31: max warp offset
 __gsharp_ctx.outputBoundary31[__gsharp_ctx.tid] = __gsharp_ctx.__gsharp_warp_temp_1;
-__gsharp_warp_publish(0, ref __gsharp_ctx, 2, __gsharp_ctx.mask, __gsharp_ctx.val, "Warp.ShuffleDownSync", "WarpShuffleKernels.cs(46,33)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 2, __gsharp_ctx.mask, __gsharp_ctx.val, "Warp.ShuffleDownSync", "WarpShuffleKernels.cs(53,33)");
 __gsharp_ctx.__gsharp_state = 3;
 return;
 }
 
 case 3:
 {
-int __gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 2, __gsharp_ctx.mask, __gsharp_ctx.val, 32, 32, "WarpShuffleKernels.cs(46,33)");
+int __gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 2, __gsharp_ctx.mask, __gsharp_ctx.val, 32, 32, "WarpShuffleKernels.cs(53,33)");
 // Delta = 32: out-of-bound warp offset
 __gsharp_ctx.outputBoundary32[__gsharp_ctx.tid] = __gsharp_warp_temp_2;
 __gsharp_ctx.__gsharp_state = -1;
@@ -1012,20 +1035,20 @@ __gsharp_switch_1_state_0:
 __gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_3_lane=__gsharp_ctx->__gsharp_id_2_tid%32;
 __gsharp_ctx->__gsharp_id_4_mask=0xffffffff;
-__gsharp_ctx->__gsharp_id_5_val=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_input, __gsharp_ctx->__gsharp_id_2_tid, 1855652693u);
+__gsharp_ctx->__gsharp_id_5_val=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_input, __gsharp_ctx->__gsharp_id_2_tid, 1154957041u);
 if(!(__gsharp_ctx->__gsharp_id_3_lane<16))
 {
 goto __gsharp_switch_1_state_2;
 }
 __gsharp_ctx->__gsharp_id_4_mask=0x0000FFFF;
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,__gsharp_ctx->__gsharp_id_4_mask,__gsharp_ctx->__gsharp_id_5_val,""Warp.ShuffleDownSync"",""WarpShuffleKernels.cs(61,19)"");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,__gsharp_ctx->__gsharp_id_4_mask,__gsharp_ctx->__gsharp_id_5_val,""Warp.ShuffleDownSync"",""WarpShuffleKernels.cs(68,19)"");
 __gsharp_state=1;
 return;
 }
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_ctx->__gsharp_warp_temp_0=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,0,__gsharp_ctx->__gsharp_id_4_mask,__gsharp_ctx->__gsharp_id_5_val,1,16,""WarpShuffleKernels.cs(61,19)"");
+__gsharp_ctx->__gsharp_warp_temp_0=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,0,__gsharp_ctx->__gsharp_id_4_mask,__gsharp_ctx->__gsharp_id_5_val,1,16,""WarpShuffleKernels.cs(68,19)"");
 __gsharp_ctx->__gsharp_id_5_val=__gsharp_ctx->__gsharp_warp_temp_0;
 goto __gsharp_switch_1_state_4;
 goto __gsharp_switch_1_state_2;
@@ -1034,21 +1057,21 @@ case 2:
 __gsharp_switch_1_state_2:
 {
 __gsharp_ctx->__gsharp_id_4_mask=0xFFFF0000;
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,1,__gsharp_ctx->__gsharp_id_4_mask,__gsharp_ctx->__gsharp_id_5_val,""Warp.ShuffleDownSync"",""WarpShuffleKernels.cs(66,19)"");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,1,__gsharp_ctx->__gsharp_id_4_mask,__gsharp_ctx->__gsharp_id_5_val,""Warp.ShuffleDownSync"",""WarpShuffleKernels.cs(73,19)"");
 __gsharp_state=3;
 return;
 }
 case 3:
 __gsharp_switch_1_state_3:
 {
-auto __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,1,__gsharp_ctx->__gsharp_id_4_mask,__gsharp_ctx->__gsharp_id_5_val,2,16,""WarpShuffleKernels.cs(66,19)"");
+auto __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,1,__gsharp_ctx->__gsharp_id_4_mask,__gsharp_ctx->__gsharp_id_5_val,2,16,""WarpShuffleKernels.cs(73,19)"");
 __gsharp_ctx->__gsharp_id_5_val=__gsharp_warp_temp_1;
 goto __gsharp_switch_1_state_4;
 }
 case 4:
 __gsharp_switch_1_state_4:
 {
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_ctx->__gsharp_id_2_tid, 1244206552u)=__gsharp_ctx->__gsharp_id_5_val;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_ctx->__gsharp_id_2_tid, 1510451764u)=__gsharp_ctx->__gsharp_id_5_val;
 __gsharp_state=-1;
 return;
 }
@@ -1183,14 +1206,14 @@ __gsharp_ctx.val = __gsharp_ctx.input[__gsharp_ctx.tid];
 if (!(__gsharp_ctx.lane < 16))
 goto case 2;
 __gsharp_ctx.mask = 0x0000FFFF;
-__gsharp_warp_publish(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.val, "Warp.ShuffleDownSync", "WarpShuffleKernels.cs(61,19)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.val, "Warp.ShuffleDownSync", "WarpShuffleKernels.cs(68,19)");
 __gsharp_ctx.__gsharp_state = 1;
 return;
 }
 
 case 1:
 {
-__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.val, 1, 16, "WarpShuffleKernels.cs(61,19)");
+__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.val, 1, 16, "WarpShuffleKernels.cs(68,19)");
 __gsharp_ctx.val = __gsharp_ctx.__gsharp_warp_temp_0;
 goto case 4;
 goto case 2;
@@ -1199,14 +1222,14 @@ goto case 2;
 case 2:
 {
 __gsharp_ctx.mask = 0xFFFF0000;
-__gsharp_warp_publish(0, ref __gsharp_ctx, 1, __gsharp_ctx.mask, __gsharp_ctx.val, "Warp.ShuffleDownSync", "WarpShuffleKernels.cs(66,19)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 1, __gsharp_ctx.mask, __gsharp_ctx.val, "Warp.ShuffleDownSync", "WarpShuffleKernels.cs(73,19)");
 __gsharp_ctx.__gsharp_state = 3;
 return;
 }
 
 case 3:
 {
-int __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 1, __gsharp_ctx.mask, __gsharp_ctx.val, 2, 16, "WarpShuffleKernels.cs(66,19)");
+int __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 1, __gsharp_ctx.mask, __gsharp_ctx.val, 2, 16, "WarpShuffleKernels.cs(73,19)");
 __gsharp_ctx.val = __gsharp_warp_temp_1;
 goto case 4;
 }
@@ -1419,7 +1442,22 @@ __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sh
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 #pragma warning restore CS8500
-public const string WarpShuffleExtremaKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpShuffleExtremaKernel {
+public const string WarpShuffleExtremaKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleExtremaOptions__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleExtremaOptions__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleExtremaOptions
+{
+unsigned int __gsharp_mb_Mask;
+unsigned int __gsharp_mb_Delta;
+int __gsharp_mb_Width;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleExtremaOptions)==12,""Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleExtremaOptions)==4,""Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleExtremaOptions,__gsharp_mb_Mask)==0,""Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions.Mask: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleExtremaOptions,__gsharp_mb_Delta)==4,""Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions.Delta: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleExtremaOptions,__gsharp_mb_Width)==8,""Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions.Width: offset"");
+#endif
+struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpShuffleExtremaKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpShuffleExtremaKernel* __gsharp_all_contexts = nullptr;
 __gsharp_warp_record __gsharp_warp_records[2] = {};
@@ -1429,42 +1467,44 @@ bool __gsharp_warp_waiting = false;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 uint32_t __gsharp_warp_visits[1] = {};
-unsigned int __gsharp_id_0_mask;
-GSharpArray<int> __gsharp_id_1_input;
-unsigned int __gsharp_id_2_delta;
-int __gsharp_id_3_width;
-GSharpArray<int> __gsharp_id_4_output;
-int __gsharp_id_5_tid;
+GSharpArray<int> __gsharp_id_0_input;
+GSharpArray<int> __gsharp_id_1_output;
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleExtremaOptions __gsharp_id_2_options;
+unsigned int __gsharp_id_3_mask;
+unsigned int __gsharp_id_4_delta;
+int __gsharp_id_5_width;
+int __gsharp_id_6_tid;
 int __gsharp_arg_temp_0;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpShuffleExtremaKernel(unsigned int __gsharp_in___gsharp_id_0_mask, GSharpArray<int> __gsharp_in___gsharp_id_1_input, unsigned int __gsharp_in___gsharp_id_2_delta, int __gsharp_in___gsharp_id_3_width, GSharpArray<int> __gsharp_in___gsharp_id_4_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpShuffleExtremaKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpShuffleExtremaKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_input, GSharpArray<int> __gsharp_in___gsharp_id_1_output, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleExtremaOptions __gsharp_in___gsharp_id_2_options, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpShuffleExtremaKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
 if(__gsharp_state==0){
-__gsharp_ctx->__gsharp_id_0_mask=__gsharp_in___gsharp_id_0_mask;
-__gsharp_ctx->__gsharp_id_1_input=__gsharp_in___gsharp_id_1_input;
-__gsharp_ctx->__gsharp_id_2_delta=__gsharp_in___gsharp_id_2_delta;
-__gsharp_ctx->__gsharp_id_3_width=__gsharp_in___gsharp_id_3_width;
-__gsharp_ctx->__gsharp_id_4_output=__gsharp_in___gsharp_id_4_output;
+__gsharp_ctx->__gsharp_id_0_input=__gsharp_in___gsharp_id_0_input;
+__gsharp_ctx->__gsharp_id_1_output=__gsharp_in___gsharp_id_1_output;
+__gsharp_ctx->__gsharp_id_2_options=__gsharp_in___gsharp_id_2_options;
 }
 switch(__gsharp_state)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_5_tid=(int)threadIdx.x;
-__gsharp_ctx->__gsharp_arg_temp_0=__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_input, __gsharp_ctx->__gsharp_id_5_tid, 414876770u);
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,__gsharp_ctx->__gsharp_id_0_mask,__gsharp_ctx->__gsharp_arg_temp_0,""Warp.ShuffleDownSync"",""WarpShuffleKernels.cs(76,23)"");
+__gsharp_ctx->__gsharp_id_3_mask=__gsharp_ctx->__gsharp_id_2_options.__gsharp_mb_Mask;
+__gsharp_ctx->__gsharp_id_4_delta=__gsharp_ctx->__gsharp_id_2_options.__gsharp_mb_Delta;
+__gsharp_ctx->__gsharp_id_5_width=__gsharp_ctx->__gsharp_id_2_options.__gsharp_mb_Width;
+__gsharp_ctx->__gsharp_id_6_tid=(int)threadIdx.x;
+__gsharp_ctx->__gsharp_arg_temp_0=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_input, __gsharp_ctx->__gsharp_id_6_tid, 552796154u);
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,__gsharp_ctx->__gsharp_id_3_mask,__gsharp_ctx->__gsharp_arg_temp_0,""Warp.ShuffleDownSync"",""WarpShuffleKernels.cs(86,23)"");
 __gsharp_state=1;
 return;
 }
 case 1:
 __gsharp_switch_1_state_1:
 {
-auto __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,0,__gsharp_ctx->__gsharp_id_0_mask,__gsharp_ctx->__gsharp_arg_temp_0,__gsharp_ctx->__gsharp_id_2_delta,__gsharp_ctx->__gsharp_id_3_width,""WarpShuffleKernels.cs(76,23)"");
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_4_output, __gsharp_ctx->__gsharp_id_5_tid, 1510451764u)=__gsharp_warp_temp_1;
+auto __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,0,__gsharp_ctx->__gsharp_id_3_mask,__gsharp_ctx->__gsharp_arg_temp_0,__gsharp_ctx->__gsharp_id_4_delta,__gsharp_ctx->__gsharp_id_5_width,""WarpShuffleKernels.cs(86,23)"");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_ctx->__gsharp_id_6_tid, 1570429418u)=__gsharp_warp_temp_1;
 __gsharp_state=-1;
 return;
 }
@@ -1473,8 +1513,9 @@ return;
 #undef __gsharp_yielded_for_grid_sync
 #undef __gsharp_yielded_for_block_barrier
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpShuffleExtremaKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, unsigned int __gsharp_id_0_mask, GSharpArray<int> __gsharp_id_1_input, unsigned int __gsharp_id_2_delta, int __gsharp_id_3_width, GSharpArray<int> __gsharp_id_4_output)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpShuffleExtremaKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output, const __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleExtremaOptions* __gsharp_arg_2)
 {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleExtremaOptions __gsharp_id_2_options = *__gsharp_arg_2;
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 #pragma omp parallel for schedule(dynamic)
@@ -1514,7 +1555,7 @@ __gsharp_stepped = true;
 try
 {
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
-__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpShuffleExtremaKernel(__gsharp_id_0_mask, __gsharp_id_1_input, __gsharp_id_2_delta, __gsharp_id_3_width, __gsharp_id_4_output, &__gsharp_contexts[__gsharp_ctx_tid]);
+__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpShuffleExtremaKernel(__gsharp_id_0_input, __gsharp_id_1_output, __gsharp_id_2_options, &__gsharp_contexts[__gsharp_ctx_tid]);
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
 __gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in WarpShuffleKernels.WarpShuffleExtremaKernel, which is not [GpuKernel(Cooperative = true)]"");
@@ -1565,11 +1606,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpShuffleExtremaKernel : global::Kassyi.GSharp.Core.IManagedWarpFrame {
 public int __gsharp_state;
 public uint __gsharp_warp_path;
-public uint mask;
 public int[] input;
+public int[] output;
+public global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions options;
+public uint mask;
 public uint delta;
 public int width;
-public int[] output;
 public int tid;
 public int __gsharp_arg_temp_0;
 public uint[] __gsharp_warp_visits = new uint[1];
@@ -1582,29 +1624,30 @@ return next;
 }
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpShuffleExtremaKernel(uint __gsharp_in_mask, int[] __gsharp_in_input, uint __gsharp_in_delta, int __gsharp_in_width, int[] __gsharp_in_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpShuffleExtremaKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpShuffleExtremaKernel(int[] __gsharp_in_input, int[] __gsharp_in_output, global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions __gsharp_in_options, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpShuffleExtremaKernel __gsharp_ctx) {
 if (__gsharp_ctx.__gsharp_state == 0) {
-__gsharp_ctx.mask = __gsharp_in_mask;
 __gsharp_ctx.input = __gsharp_in_input;
-__gsharp_ctx.delta = __gsharp_in_delta;
-__gsharp_ctx.width = __gsharp_in_width;
 __gsharp_ctx.output = __gsharp_in_output;
+__gsharp_ctx.options = __gsharp_in_options;
 }
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
+__gsharp_ctx.mask = __gsharp_ctx.options.Mask;
+__gsharp_ctx.delta = __gsharp_ctx.options.Delta;
+__gsharp_ctx.width = __gsharp_ctx.options.Width;
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.__gsharp_arg_temp_0 = __gsharp_ctx.input[__gsharp_ctx.tid];
-__gsharp_warp_publish(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.__gsharp_arg_temp_0, "Warp.ShuffleDownSync", "WarpShuffleKernels.cs(76,23)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.__gsharp_arg_temp_0, "Warp.ShuffleDownSync", "WarpShuffleKernels.cs(86,23)");
 __gsharp_ctx.__gsharp_state = 1;
 return;
 }
 
 case 1:
 {
-int __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.__gsharp_arg_temp_0, __gsharp_ctx.delta, __gsharp_ctx.width, "WarpShuffleKernels.cs(76,23)");
+int __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.__gsharp_arg_temp_0, __gsharp_ctx.delta, __gsharp_ctx.width, "WarpShuffleKernels.cs(86,23)");
 __gsharp_ctx.output[__gsharp_ctx.tid] = __gsharp_warp_temp_1;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -1613,12 +1656,13 @@ return;
 }
 }
 
+private static bool __gsharp_layout_checked_WarpShuffleExtremaKernel;
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
-private unsafe delegate void __gsharp_delegate_WarpShuffleExtremaKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::System.UInt32 mask, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy input, global::System.UInt32 delta, global::System.Int32 width, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output);
+private unsafe delegate void __gsharp_delegate_WarpShuffleExtremaKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy input, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions* options);
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchWarpShuffleExtremaKernel(global::System.UInt32 mask, global::System.Int32[] input, global::System.UInt32 delta, global::System.Int32 width, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchWarpShuffleExtremaKernel(global::System.Int32[] input, global::System.Int32[] output, global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions options, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WarpShuffleKernels.WarpShuffleExtremaKernel");
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "WarpShuffleKernels.WarpShuffleExtremaKernel");
@@ -1696,7 +1740,7 @@ try
 {
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
-__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpShuffleExtremaKernel(mask, input, delta, width, output, __gsharp_contexts[__gsharp_linear_tid]);
+__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpShuffleExtremaKernel(input, output, options, __gsharp_contexts[__gsharp_linear_tid]);
 if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative("WarpShuffleKernels.WarpShuffleExtremaKernel");
@@ -1759,15 +1803,26 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 __gsharp_first_failure?.Throw();
 return;
 }
+if (!__gsharp_layout_checked_WarpShuffleExtremaKernel)
+{
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions>() != 12) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions", 12, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions>());
+{
+global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions __gsharp_layout_probe = default;
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.UInt32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Mask))) != 0) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions", "Mask", 0, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.UInt32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Mask))));
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.UInt32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Delta))) != 4) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions", "Delta", 4, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.UInt32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Delta))));
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Width))) != 8) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions", "Width", 8, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleExtremaOptions, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Width))));
+}
+__gsharp_layout_checked_WarpShuffleExtremaKernel = true;
+}
 __gsharp_delegate_WarpShuffleExtremaKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_WarpShuffleExtremaKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpShuffleExtremaKernel", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
 }
-fixed (global::System.Int32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(input))
-fixed (global::System.Int32* __gsharp_p_4 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(output))
+fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(input))
+fixed (global::System.Int32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(output))
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, mask, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (input?.Length ?? 0) }, delta, width, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_4, Length = (output?.Length ?? 0) });
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (input?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (output?.Length ?? 0) }, &options);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }
@@ -1775,7 +1830,7 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchWarpShuffleExtremaKernelPtr(global::System.UInt32 mask, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy input, global::System.UInt32 delta, global::System.Int32 width, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchWarpShuffleExtremaKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy input, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleKernels.AotContexts.WarpShuffleExtremaOptions options, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (input.Length < 0){
 throw new global::System.ArgumentOutOfRangeException("input", input.Length, "The array length must not be negative.");
@@ -1802,12 +1857,12 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 {
 throw new global::System.NotSupportedException("LaunchWarpShuffleExtremaKernelPtr runs only on the native CPU path: the managed CPU path (KernelExecution.Managed, or a build without the native library) does not run pointer launchers yet. Build the native library, or call LaunchWarpShuffleExtremaKernel, which runs on both paths.");
 }
-delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::System.UInt32, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::System.UInt32, global::System.Int32, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::System.UInt32, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::System.UInt32, global::System.Int32, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpShuffleExtremaKernel", __gsharp_dll_path);
+delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleKernels.AotContexts.WarpShuffleExtremaOptions*, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleKernels.AotContexts.WarpShuffleExtremaOptions*, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__WarpShuffleKernels__WarpShuffleExtremaKernel", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
 }
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, mask, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = input.Data, Length = input.Length }, delta, width, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = output.Data, Length = output.Length });
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = input.Data, Length = input.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = output.Data, Length = output.Length }, &options);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 #pragma warning restore CS8500

@@ -3,13 +3,14 @@ using Kassyi.GSharp.Compiler.Ir;
 using Kassyi.GSharp.Compiler.Ir.Decisions;
 using Kassyi.GSharp.Compiler.Ir.Expressions;
 using Kassyi.GSharp.Compiler.Ir.Sequencing;
+using Kassyi.GSharp.Compiler.Semantics;
 using Kassyi.GSharp.Compiler.Transpiler;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 
 /// <summary>
 /// Which methods the sequences of the IR are compared on with the temporaries of the syntax path: the forms the
-/// sequence pass covers, without calls and creations whose arguments the syntax path orders and without the forms
+/// sequence pass covers, without the calls and creations whose arguments the pass leaves in place and without the forms
 /// other rules write. Each exclusion has a reason, counted by the comparison.
 /// </summary>
 internal static class IrSequenceAgreementScope
@@ -48,16 +49,20 @@ internal static class IrSequenceAgreementScope
         IrAssignment { Target: IrPropertyReference } or IrCompoundAssignment { Target: IrPropertyReference } or
             IrIncrement { Target: IrPropertyReference } => "property target",
         IrPropertyReference { Decided.Form: IrMemberForm.Other } => "other member form",
-        IrStructCreation => "struct creation",
-        IrCall call when OperandCount(call) >= 2 => "call with two operands or more",
+        IrExpression expression when IrSequenceSupport.SkipsArgumentsOf(expression) => "params arguments",
         IrCall call when call.Decided.Target is not (CallTargetKind.DeviceFunction or
             CallTargetKind.DialectIntrinsic or CallTargetKind.BclIntrinsicMap) => "call written by another rule",
+        // The syntax walk writes the variable of a by-value receiver of a reduced extension call (IrEffectDifferences)
+        IrCall
+        {
+            Method.Parameters: [{ RefKind: RefKind.None }, ..],
+            Arguments: [{ Kind: IrArgumentKind.ExtensionReceiver }, ..]
+        } =>
+            IrClassificationEquivalence.KnownPrefix + "a by-value extension receiver is not written",
         IrConversion { Decided.Form: IrConversionForm.Unsupported } => "unsupported conversion",
         IrExpression expression when TargetPartsDiffer(expression) => "target part the syntax path finds otherwise",
         _ => null
     };
-
-    private static int OperandCount(IrCall call) => (call.Receiver is null ? 0 : 1) + call.Arguments.Length;
 
     // A static field or a property on the way of a target whose parts a helper spells twice: the syntax path takes
     // the parts from the spelling (a type name, a member name), the IR from the meaning

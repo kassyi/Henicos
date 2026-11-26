@@ -4,6 +4,7 @@ using System.IO;
 using Kassyi.GSharp.Compiler.Ir;
 using Kassyi.GSharp.Compiler.Ir.Classifying;
 using Kassyi.GSharp.Compiler.Ir.Expressions;
+using Kassyi.GSharp.Compiler.Semantics;
 using Kassyi.GSharp.Compiler.Transpiler.Helpers.Numeric;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;

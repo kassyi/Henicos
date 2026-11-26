@@ -416,6 +416,11 @@ internal sealed partial class ManagedExecutionRewriter(
             // A block barrier the same way: global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested
             GSharpInternalNames.StateMachine.YieldedForBlockBarrier =>
                 ManagedNames.CreateMemberAccess(ManagedNames.BlockBarrierRequestedName).WithTriviaFrom(node),
+            // The reconvergence regions of a stack form that reaches Warp.ActiveMask() (ReconvergenceInserter):
+            // global::Kassyi.GSharp.Core.ManagedGpuContext.<name>
+            GSharpInternalNames.StackWarp.RegionEnter or GSharpInternalNames.StackWarp.RegionLeave
+                or GSharpInternalNames.StackWarp.Reconverge when bodyKind == ManagedBodyKind.StackBody =>
+                ManagedNames.CreateMemberAccess(node.Identifier.Text).WithTriviaFrom(node),
             // __gsharp_ctx.<name> or __gsharp_ctx-><name>
             GSharpInternalNames.StateMachine.State =>
                 SyntaxFactory.MemberAccessExpression(

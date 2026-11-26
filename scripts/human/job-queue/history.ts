@@ -29,10 +29,10 @@ export class RunHistory {
   readonly accuracy: AccuracyLog;
   private readonly _fallback: FallbackIndex;
 
-  constructor(file: string, log: (text: string) => void) {
+  constructor(file: string, log: (text: string) => void, accuracyFile?: string) {
     this.file = file;
     this.log = log;
-    this.accuracy = new AccuracyLog(path.join(path.dirname(file), "accuracy.json"), log);
+    this.accuracy = new AccuracyLog(accuracyFile ?? path.join(path.dirname(file), "accuracy.json"), log);
     this._fallback = new FallbackIndex(this.commands);
     try {
       // Keep only well-formed entries, so that a damaged file costs its records, never the scheduler

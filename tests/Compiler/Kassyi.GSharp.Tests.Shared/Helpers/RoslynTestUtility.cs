@@ -189,6 +189,14 @@ public static class RoslynTestUtility
     /// </summary>
     public static CSharpCompilation CompilerSourceCompilation => s_compilerSources.Value;
 
+    /// <summary>
+    /// Creates a compilation of every source file compiled into <c>Kassyi.GSharp.Compiler</c>, including linked
+    /// <c>src/Shared</c> files, embedded StackLinq sources, and generated <c>obj/</c> sources, compiled with
+    /// <c>GSHARP_COMPILER</c> defined and without prebuilt <c>Kassyi.*</c>/<c>Henicos.*</c> metadata references.
+    /// Uncached, so a caller that keeps only a summary lets the compilation (hundreds of MB) be collected.
+    /// </summary>
+    public static CSharpCompilation CreateCompilerFullSourceCompilation() => CompilerFullSourceCompilation.Build();
+
     /// <summary>Retrieves the semantic model and method symbol for a given method in a dynamically resolved test kernel file.</summary>
     public static (SemanticModel Model, IMethodSymbol MethodSymbol) GetMethodContext<TTarget>(
         string methodName,

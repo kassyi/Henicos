@@ -3,6 +3,22 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
+public struct NoSpillBinaryInputs
+{
+    [GpuReadOnly]
+    public uint[] RotateValues;
+    [GpuReadOnly]
+    public int[] LeftAddends;
+    [GpuReadOnly]
+    public int[] RightAddends;
+}
+
+public struct NoSpillBinaryResults
+{
+    public uint[] Rotated;
+    public int[] Sums;
+}
+
 // A record struct is built by a factory function, whose arguments C++ evaluates in an unspecified order (#608)
 public record struct EoPair(int X, int Y);
 
@@ -384,8 +400,13 @@ public static partial class EvaluationOrderKernels
 
     // Neither operand has a side effect: the operators stay as written
     [GpuKernel]
-    public static void NoSpillBinaryKernel(uint[] input, int[] a, int[] b, uint[] rotated, int[] sums)
+    public static void NoSpillBinaryKernel(NoSpillBinaryInputs inputs, NoSpillBinaryResults results)
     {
+        uint[] input = inputs.RotateValues;
+        int[] a = inputs.LeftAddends;
+        int[] b = inputs.RightAddends;
+        uint[] rotated = results.Rotated;
+        int[] sums = results.Sums;
         int tid = ThreadIndex.X;
         uint x = input[tid];
         rotated[tid] = RotR(x, 2) ^ RotR(x, 13);

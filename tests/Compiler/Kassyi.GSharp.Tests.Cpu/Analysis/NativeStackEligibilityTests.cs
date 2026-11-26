@@ -8,9 +8,7 @@ namespace Kassyi.GSharp.Tests.Shared.Analysis;
 public class NativeStackEligibilityTests
 {
     private static readonly Compilation s_compilation = RoslynTestUtility.CreateCompilation(
-        File.ReadAllText(RepositoryPaths.Combine(
-            "tests", "Compiler", "Kassyi.GSharp.Tests.Cpu", "Analysis", "Cases", "NativeStackEligibilityCases.cs"))
-    );
+        ReadCase("NativeStackEligibilityCases.cs"));
 
     [Theory]
     [Scenario(TestScenario.HappyPath)]
@@ -20,7 +18,7 @@ public class NativeStackEligibilityTests
     [InlineData("NativeStackEligibilityCases.Kernels", "NoBarrierKernel", NativeStackObstacle.NoBlockBarrier)]
     [InlineData("NativeStackEligibilityCases.Kernels", "WarpShuffleAndBarrierKernel", NativeStackObstacle.None)]
     [InlineData("NativeStackEligibilityCases.Kernels",
-        "WarpActiveMaskAndBarrierKernel", NativeStackObstacle.WarpActiveMask)]
+        "WarpActiveMaskAndBarrierKernel", NativeStackObstacle.None)]
     [InlineData("NativeStackEligibilityCases.Kernels", "GridSyncAndBarrierKernel", NativeStackObstacle.GridSync)]
     [InlineData("NativeStackEligibilityCases.Kernels", "CooperativeBarrierKernel", NativeStackObstacle.Cooperative)]
     [InlineData("NativeStackEligibilityCases.Kernels", "SuspendingDeviceFunctionKernel", NativeStackObstacle.None)]
@@ -31,9 +29,14 @@ public class NativeStackEligibilityTests
     [InlineData("NativeStackEligibilityCases.Kernels",
         "ShuffleCallingShuffleKernel", NativeStackObstacle.WarpLayout)]
     [InlineData("NativeStackEligibilityCases.Kernels",
-        "ActiveMaskDeviceFunctionKernel", NativeStackObstacle.WarpActiveMask)]
+        "ActiveMaskDeviceFunctionKernel", NativeStackObstacle.None)]
     [InlineData("NativeStackEligibilityCases.Kernels",
         "FloatSwitchShuffleKernel", NativeStackObstacle.CaseValueWithoutLabel)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "UsingDeclarationActiveMaskKernel", NativeStackObstacle.UsingDeclarationWithActiveMask)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "UsingDeclarationInActiveMaskCalleeKernel", NativeStackObstacle.UsingDeclarationWithActiveMask)]
+    [InlineData("NativeStackEligibilityCases.Kernels", "UsingDeclarationShuffleKernel", NativeStackObstacle.None)]
     [InlineData("NativeStackOperatorMacroCases.Kernels",
         "MacroAfterBarrierKernel", NativeStackObstacle.WarpOperatorMacro)]
     [InlineData("NativeStackOperatorMacroCases.Kernels",
@@ -52,6 +55,22 @@ public class NativeStackEligibilityTests
         "UserLookalikeBarrierKernel", NativeStackObstacle.NoBlockBarrier)]
     [InlineData("NativeStackEligibilityCases.Kernels",
         "ConditionalOmittedCallKernel", NativeStackObstacle.NoBlockBarrier)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "MethodGroupGridSyncKernel", NativeStackObstacle.GridSync)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "MethodGroupRecursiveKernel", NativeStackObstacle.RecursiveSuspendingCall)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "MethodGroupWarpKernel", NativeStackObstacle.WarpMethodGroup)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "MethodGroupActiveMaskKernel", NativeStackObstacle.WarpMethodGroup)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "MethodGroupUsingActiveMaskKernel", NativeStackObstacle.UsingDeclarationWithActiveMask)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "MethodGroupNameofKernel", NativeStackObstacle.None)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "MethodGroupSelfCycleKernel", NativeStackObstacle.RecursiveSuspendingCall)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "MethodGroupMutualCycleKernel", NativeStackObstacle.RecursiveSuspendingCall)]
     internal void Classify_KernelBody_ReturnsExpectedObstacle(
         string typeName,
         string methodName,
@@ -63,6 +82,22 @@ public class NativeStackEligibilityTests
     }
 
     // The visit counts of a kernel with size - 1 collectives of its own and no calls take size slots
+    // The reason of a failed stack lowering goes into the kernel's C++ text as one comment line: a line break or a
+    // backslash (which would continue the comment) becomes a space
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void StackBodyFailureComment_ReasonWithLineBreaksAndBackslash_IsOneCommentLine()
+    {
+        var comment = Kassyi.GSharp.Compiler.NativeStackTranslator.StackBodyFailureComment(
+            "Kernels.K: InvalidOperationException: a\r\nb\\");
+
+        Assert.StartsWith("// G#: runs on the state machine", comment, StringComparison.Ordinal);
+        Assert.EndsWith("Kernels.K: InvalidOperationException: a  b " + Environment.NewLine, comment,
+            StringComparison.Ordinal);
+        Assert.Equal(comment.Length - Environment.NewLine.Length,
+            comment.IndexOfAny(['\r', '\n']));
+    }
+
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(WarpFrameLayout.MaxSize, NativeStackObstacle.None)]
@@ -71,6 +106,7 @@ public class NativeStackEligibilityTests
     {
         const string Shuffle = "        v = Warp.ShuffleXorSync(0xFFFFFFFFu, v, 1);\n";
         var shuffles = string.Concat(Enumerable.Repeat(Shuffle, size - 1));
+        // Kept as interpolated template: repeats the shuffle statement (size - 1) times up to MaxSize + 1.
         var source = $$"""
             using Kassyi.GSharp.Core;
 
@@ -116,42 +152,12 @@ public class NativeStackEligibilityTests
     [Scenario(TestScenario.Boundary)]
     public void Classify_ImportedSuspendingDeviceFunction_ReturnsImportedSuspendingCall()
     {
-        const string LibrarySource = """
-            using Kassyi.GSharp.Core;
-
-            namespace ImportedStackLib;
-
-            public static partial class Helpers
-            {
-                [GpuDeviceFunction]
-                public static void RemoteBarrier(int[] data)
-                {
-                    Gpu.SyncThreads();
-                    data[0] = 1;
-                }
-            }
-            """;
-
-        const string ConsumerSource = """
-            using Kassyi.GSharp.Core;
-
-            namespace ConsumerApp;
-
-            public static partial class Kernels
-            {
-                [GpuKernel]
-                public static void CallRemoteKernel(int[] data)
-                {
-                    ImportedStackLib.Helpers.RemoteBarrier(data);
-                }
-            }
-            """;
-
-        var libCompilation = RoslynTestUtility.CreateCompilation(LibrarySource).WithAssemblyName("ImportedStackLib");
+        var libCompilation = RoslynTestUtility.CreateCompilation(ReadCase("NativeStackImportedLibraryCases.cs"))
+            .WithAssemblyName("ImportedStackLib");
         var (_, libOutput, _) = GeneratorTestRunner.RunGenerator(libCompilation, "Cpu");
         var libReference = libOutput.ToMetadataReference();
 
-        var consumerCompilation = RoslynTestUtility.CreateCompilation(ConsumerSource)
+        var consumerCompilation = RoslynTestUtility.CreateCompilation(ReadCase("NativeStackImportedCallRemoteCases.cs"))
             .WithAssemblyName("ConsumerApp")
             .AddReferences(libReference);
 
@@ -165,48 +171,12 @@ public class NativeStackEligibilityTests
     [Scenario(TestScenario.Boundary)]
     public void Classify_TransitiveImportedSuspendingDeviceFunction_ReturnsImportedSuspendingCall()
     {
-        const string LibrarySource = """
-            using Kassyi.GSharp.Core;
-
-            namespace ImportedStackLib;
-
-            public static partial class Helpers
-            {
-                [GpuDeviceFunction]
-                public static void RemoteBarrier(int[] data)
-                {
-                    Gpu.SyncThreads();
-                    data[0] = 1;
-                }
-            }
-            """;
-
-        const string ConsumerSource = """
-            using Kassyi.GSharp.Core;
-
-            namespace ConsumerApp;
-
-            public static partial class Kernels
-            {
-                [GpuDeviceFunction]
-                public static void LocalWrapper(int[] data)
-                {
-                    ImportedStackLib.Helpers.RemoteBarrier(data);
-                }
-
-                [GpuKernel]
-                public static void CallLocalWrapperKernel(int[] data)
-                {
-                    LocalWrapper(data);
-                }
-            }
-            """;
-
-        var libCompilation = RoslynTestUtility.CreateCompilation(LibrarySource).WithAssemblyName("ImportedStackLib");
+        var libCompilation = RoslynTestUtility.CreateCompilation(ReadCase("NativeStackImportedLibraryCases.cs"))
+            .WithAssemblyName("ImportedStackLib");
         var (_, libOutput, _) = GeneratorTestRunner.RunGenerator(libCompilation, "Cpu");
         var libReference = libOutput.ToMetadataReference();
 
-        var consumerCompilation = RoslynTestUtility.CreateCompilation(ConsumerSource)
+        var consumerCompilation = RoslynTestUtility.CreateCompilation(ReadCase("NativeStackImportedCallWrapperCases.cs"))
             .WithAssemblyName("ConsumerApp")
             .AddReferences(libReference);
 
@@ -215,7 +185,17 @@ public class NativeStackEligibilityTests
         Assert.Equal(
             NativeStackObstacle.ImportedSuspendingCall,
             NativeStackEligibility.Classify(symbol, declaration, model));
+
+        var (groupSymbol, groupDeclaration, groupModel) =
+            GetKernel(consumerCompilation, "ConsumerApp.Kernels", "PassRemoteMethodGroupKernel");
+        Assert.Equal(
+            NativeStackObstacle.ImportedSuspendingCall,
+            NativeStackEligibility.Classify(groupSymbol, groupDeclaration, groupModel));
     }
+
+    private static string ReadCase(string fileName) =>
+        File.ReadAllText(RepositoryPaths.Combine(
+            "tests", "Compiler", "Kassyi.GSharp.Tests.Cpu", "Analysis", "Cases", fileName));
 
     private static (IMethodSymbol Symbol, MethodDeclarationSyntax Declaration, SemanticModel Model) GetKernel(
         Compilation compilation,

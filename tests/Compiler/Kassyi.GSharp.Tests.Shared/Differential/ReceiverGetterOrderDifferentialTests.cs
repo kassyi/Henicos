@@ -12,47 +12,27 @@ public class ReceiverGetterOrderDifferentialTests
 {
     private const int Rows = 64;
 
-    internal static readonly DifferentialCase s_receiverGetter = new(
-        KernelName(nameof(ReceiverGetterOrderDifferentialKernels.ReceiverGetterKernel)))
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: 32),
-        Inputs = static (rng, rows) => CreateBuffers(rng, rows, ReceiverGetterOrderDifferentialKernels.ReceiverColumns),
-        Launch = static (b, s) => ReceiverGetterOrderDifferentialKernels.LaunchReceiverGetterKernel(
-            b.Get<int>("data"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+    internal static readonly DifferentialCase s_receiverGetter = DiffCases.Create(
+        ReceiverGetterOrderDifferentialKernels.LaunchReceiverGetterKernel,
+        inputs: static (rng, rows) => CreateBuffers(rng, rows, ReceiverGetterOrderDifferentialKernels.ReceiverColumns),
+        shape: LaunchShape.ForRows(Rows, blockX: 32),
+        inputName: "data",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_implicitThisGetter = new(
-        KernelName(nameof(ReceiverGetterOrderDifferentialKernels.ImplicitThisGetterKernel)))
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: 32),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_implicitThisGetter = DiffCases.Create(
+        ReceiverGetterOrderDifferentialKernels.LaunchImplicitThisGetterKernel,
+        inputs: static (rng, rows) =>
             CreateBuffers(rng, rows, ReceiverGetterOrderDifferentialKernels.ImplicitThisColumns),
-        Launch = static (b, s) => ReceiverGetterOrderDifferentialKernels.LaunchImplicitThisGetterKernel(
-            b.Get<int>("data"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShape.ForRows(Rows, blockX: 32),
+        inputName: "data",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_accessorCall = new(
-        KernelName(nameof(ReceiverGetterOrderDifferentialKernels.AccessorCallKernel)))
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: 32),
-        Inputs = static (rng, rows) => CreateBuffers(rng, rows, ReceiverGetterOrderDifferentialKernels.AccessorColumns),
-        Launch = static (b, s) => ReceiverGetterOrderDifferentialKernels.LaunchAccessorCallKernel(
-            b.Get<int>("data"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
-
-    private static string KernelName(string kernel) => $"{nameof(ReceiverGetterOrderDifferentialKernels)}.{kernel}";
+    internal static readonly DifferentialCase s_accessorCall = DiffCases.Create(
+        ReceiverGetterOrderDifferentialKernels.LaunchAccessorCallKernel,
+        inputs: static (rng, rows) => CreateBuffers(rng, rows, ReceiverGetterOrderDifferentialKernels.AccessorColumns),
+        shape: LaunchShape.ForRows(Rows, blockX: 32),
+        inputName: "data",
+        outputName: "r");
 
     private static DiffBuffers CreateBuffers(DiffRandom rng, LaunchShape rows, string[] columns) =>
         new DiffBuffers()

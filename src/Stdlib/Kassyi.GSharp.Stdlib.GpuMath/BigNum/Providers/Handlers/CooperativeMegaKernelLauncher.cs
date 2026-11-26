@@ -12,6 +12,7 @@ internal static class CooperativeMegaKernelLauncher
 {
     private const string InverseSqrtKernelName = "GpuBigIntSqrtKernels.InverseSqrtNewtonRaphsonMegaKernel";
     private const string ReciprocalKernelName = "GpuBigIntDivRemKernels.ReciprocalNewtonRaphsonMegaKernel";
+    internal const string ModPowKernelName = "GpuBigIntDivRemKernels.ModPowNttMegaKernel";
 
     private static readonly AsyncLocal<OverrideState?> s_candidateBlockSizesOverride = new();
 
@@ -37,16 +38,13 @@ internal static class CooperativeMegaKernelLauncher
     {
         var n = targetOperand.NumWords;
         var marginBits = marginWords * 32;
-        var maxOutWords = 4 * n + 3 * marginWords;
+        var maxOutWords = InverseSqrtMegaProductWords(n, marginWords);
 
-        PrepareLaunchShape(
+        var shape = PrepareLaunchShape(
             workspace,
             maxOutWords,
             static () => GpuBigIntSqrtKernels.ResolveInverseSqrtNewtonRaphsonMegaKernel(),
-            InverseSqrtKernelName,
-            out var blockDim,
-            out var gridDim,
-            out var sharedMemBytes);
+            InverseSqrtKernelName);
 
         // 3 * 2^(2B): bits 2B and 2B + 1.
         using var constant3 = CreateBitRunConstant(workspace, 3 * n + 2 * marginWords,
@@ -59,20 +57,22 @@ internal static class CooperativeMegaKernelLauncher
         using var nextXShifted = new GpuBigUInt(workspace, 4 * n + 3 * marginWords);
 
         // The kernel resolves carries in chunks of one launch block, so the block size also sizes the block carries.
-        using var buffers = new NttWorkspaceBuffers(workspace, maxOutWords, maxOutWords, (int)blockDim, handler);
+        using var buffers = new NttWorkspaceBuffers(
+            workspace, maxOutWords, maxOutWords, (int)shape.BlockDim, handler);
         using var carryBuffer = workspace.RentTemp(2); // long array for carry
 
         KernelAdvancedMathHandler.ThrowIfBlockCarriesTooSmall(buffers.BlockCarries.NumWords, maxOutWords,
-            (int)blockDim);
+            (int)shape.BlockDim);
 
         var ctx = BuildSqrtContext(targetOperand, resultBuffer, constant3, n, marginWords, actualBits, marginBits,
             iterations, buffers, xSquared, axSquared, diff, nextXUnshifted, nextXShifted, carryBuffer);
         ctx.CorrectionStatus = workspace.CorrectionStatusProxy;
         ctx.Dimensions.SkipsFloorCorrection = !correctsToFloor;
 
-        GpuBigIntSqrtKernels.LaunchInverseSqrtNewtonRaphsonMegaKernelPtr(
-            ctx,
-            gridDimX: gridDim, blockDimX: blockDim, sharedMemBytes: sharedMemBytes, hStream: workspace.Stream);
+        LaunchInverseSqrtMegaKernel(
+            workspace,
+            in ctx,
+            gridDimX: shape.GridDim, blockDimX: shape.BlockDim, sharedMemBytes: shape.SharedMemBytes);
         workspace.CorrectionStatus?.MarkPending();
     }
 
@@ -88,14 +88,11 @@ internal static class CooperativeMegaKernelLauncher
         var resultWords = (targetBits + 31) / 32;
         var maxOutWords = n + 2 * resultWords;
 
-        PrepareLaunchShape(
+        var shape = PrepareLaunchShape(
             workspace,
             maxOutWords,
             static () => GpuBigIntDivRemKernels.ResolveReciprocalNewtonRaphsonMegaKernel(),
-            ReciprocalKernelName,
-            out var blockDim,
-            out var gridDim,
-            out var sharedMemBytes);
+            ReciprocalKernelName);
 
         // 2^(targetBits + 1), at least as wide as the product so subtraction reads no word past the end.
         using var constant = CreateBitRunConstant(workspace, n + 2 * resultWords, lowestBit: targetBits + 1,
@@ -106,20 +103,21 @@ internal static class CooperativeMegaKernelLauncher
         using var nextIter = new GpuBigUInt(workspace, n + 2 * resultWords);
 
         // The kernel resolves carries in chunks of one launch block, so the block size also sizes the block carries.
-        using var buffers = new NttWorkspaceBuffers(workspace, maxOutWords, maxOutWords, (int)blockDim, handler);
+        using var buffers = new NttWorkspaceBuffers(
+            workspace, maxOutWords, maxOutWords, (int)shape.BlockDim, handler);
         using var carryBuffer = workspace.RentTemp(2);
 
         KernelAdvancedMathHandler.ThrowIfBlockCarriesTooSmall(buffers.BlockCarries.NumWords, maxOutWords,
-            (int)blockDim);
+            (int)shape.BlockDim);
 
         var ctx = BuildReciprocalContext(targetOperand, resultBuffer, constant, n, targetBits, iterations, buffers,
             currentProduct, diff, nextIter, carryBuffer);
         ctx.CorrectionStatus = workspace.CorrectionStatusProxy;
 
-        GpuBigIntDivRemKernels.LaunchReciprocalNewtonRaphsonMegaKernelPtr(
-            ctx,
-            gridDimX: gridDim, blockDimX: blockDim, sharedMemBytes: sharedMemBytes,
-            hStream: workspace.Stream);
+        LaunchReciprocalMegaKernel(
+            workspace,
+            in ctx,
+            gridDimX: shape.GridDim, blockDimX: shape.BlockDim, sharedMemBytes: shape.SharedMemBytes);
         workspace.CorrectionStatus?.MarkPending();
     }
 
@@ -157,19 +155,18 @@ internal static class CooperativeMegaKernelLauncher
         return constant;
     }
 
+    // The most threads a block can have on any CUDA device, and so the largest block size the launcher can choose.
+    internal const int MaxThreadsPerBlock = 1024;
+
     internal static uint ComputeMegaKernelSharedMemoryBytes(int transformLength)
     {
-        var n2 = 1;
-        while (n2 * n2 < transformLength)
-        {
-            n2 *= 2;
-        }
+        var grid = GpuBigIntNttKernels.CreateNttGridContext(transformLength);
+        var maxL = Math.Max(grid.N1, grid.N2);
 
-        var n1 = transformLength / n2;
-        var maxL = transformLength <= 512 ? transformLength : Math.Max(n1, n2);
-        var sharedMemBytesNtt = (uint)((maxL + (maxL >> 5)) * 4 + 256);
-        const uint SharedMemBytesTranspose = 4224 + 256; // 33 * 32 * 4 + static shared memory
-        return Math.Max(sharedMemBytesNtt, SharedMemBytesTranspose);
+        // ExecuteNttSharedRow holds rowsPerBatch rows: at most 2 * blockDim points (one thread per butterfly), or one
+        // longer row. Sized for the largest block, so that the size does not depend on the block size chosen after it.
+        var rowWords = Math.Max(2 * MaxThreadsPerBlock, maxL);
+        return (uint)((rowWords + (rowWords >> 5)) * 4 + 256);
     }
 
     internal static uint ComputeClampedGridDim(int transformLength, uint blockDim, int deviceSmCount)
@@ -187,8 +184,10 @@ internal static class CooperativeMegaKernelLauncher
         CooperativeLaunchOccupancy.TryGetCachedBlockSize(hfunc, deviceOrdinal, sharedMemBytes, out blockSize);
 
     /// <summary>
-    /// Looks up the block size that <see cref="ResolveCooperativeBlockDim"/> chose for the mega-kernel of a product of
-    /// <paramref name="requiredLen"/> words under the current <see cref="CandidateBlockSizesOverride"/>.
+    /// Looks up the largest fitting block size that <see cref="ResolveCooperativeBlockDim"/> chose for the mega-kernel
+    /// of a product of <paramref name="requiredLen"/> words under the current
+    /// <see cref="CandidateBlockSizesOverride"/>. When the override lists several candidates,
+    /// <see cref="ChooseBlockDim"/> may still launch a smaller one.
     /// </summary>
     internal static bool TryGetCachedOverrideBlockSize(
         GpuWorkspace workspace,
@@ -249,6 +248,13 @@ internal static class CooperativeMegaKernelLauncher
         (hfunc, CudaModuleCache.CurrentContextId, workspace.DeviceOrdinal, sharedMemBytes, CudaModuleCache.Generation);
 
     /// <summary>
+    /// The widest product of the inverse square root mega-kernel, in words, for an operand of
+    /// <paramref name="numberOfWords"/> words and <paramref name="marginWords"/> margin words.
+    /// </summary>
+    internal static int InverseSqrtMegaProductWords(int numberOfWords, int marginWords) =>
+        4 * numberOfWords + 3 * marginWords;
+
+    /// <summary>
     /// The transform length for a product of <paramref name="requiredLen"/> words: the power of two that holds its
     /// <c>2 * requiredLen</c> 16-bit coefficients (used by cooperative 2-prime MegaKernels).
     /// </summary>
@@ -274,19 +280,54 @@ internal static class CooperativeMegaKernelLauncher
         return m;
     }
 
-    private static void PrepareLaunchShape(
+    /// <summary>
+    /// The block size of a cooperative mega-kernel for a transform of <paramref name="transformLength"/> points: the
+    /// smallest candidate, at most <paramref name="largestFitting"/>, with which every block still transforms its rows
+    /// in one batch (<c>transformLength &lt;= 2 * deviceSmCount * candidate</c>), or <paramref name="largestFitting"/>.
+    /// </summary>
+    internal static uint ChooseBlockDim(int transformLength, int deviceSmCount, uint largestFitting,
+        ReadOnlySpan<int> candidates)
+    {
+        var chosen = largestFitting;
+        foreach (var candidate in candidates)
+        {
+            if (candidate < chosen && transformLength <= 2L * deviceSmCount * candidate)
+            {
+                chosen = (uint)candidate;
+            }
+        }
+
+        return chosen;
+    }
+
+    /// <summary>
+    /// Cooperative launch dimensions of a mega-kernel: threads per block, grid blocks, and dynamic shared memory
+    /// bytes.
+    /// </summary>
+    internal readonly record struct LaunchShape(uint BlockDim, uint GridDim, uint SharedMemBytes);
+
+    /// <summary>
+    /// Computes the dynamic shared memory size, block size (via <see cref="ChooseBlockDim"/>), and clamped grid size
+    /// for launching a mega-kernel on a product of <paramref name="requiredLen"/> words.
+    /// </summary>
+    internal static LaunchShape PrepareLaunchShape(
         GpuWorkspace workspace,
         int requiredLen,
         Func<IntPtr> resolveFunction,
         string kernelName,
-        out uint blockDim,
-        out uint gridDim,
-        out uint sharedMemBytes)
+        int? smCount = null)
     {
+        var effectiveSmCount = smCount ?? workspace.DeviceSmCount;
         var transformLength = TransformLengthFor(requiredLen);
-        sharedMemBytes = ComputeMegaKernelSharedMemoryBytes(transformLength);
-        blockDim = ResolveCooperativeBlockDim(workspace, resolveFunction, kernelName, sharedMemBytes);
-        gridDim = ComputeClampedGridDim(transformLength, blockDim, workspace.DeviceSmCount);
+        var sharedMemBytes = ComputeMegaKernelSharedMemoryBytes(transformLength);
+        var largestFitting = ResolveCooperativeBlockDim(workspace, resolveFunction, kernelName, sharedMemBytes);
+        var overrideCandidates = CandidateBlockSizesOverride;
+        ReadOnlySpan<int> candidates = overrideCandidates is null
+            ? CooperativeBlockSize.DefaultCandidates
+            : overrideCandidates;
+        var blockDim = ChooseBlockDim(transformLength, effectiveSmCount, largestFitting, candidates);
+        var gridDim = ComputeClampedGridDim(transformLength, blockDim, effectiveSmCount);
+        return new LaunchShape(blockDim, gridDim, sharedMemBytes);
     }
 
     private static GpuBigIntSqrtKernels.AotContexts.NewtonRaphson BuildSqrtContext(
@@ -453,6 +494,37 @@ internal static class CooperativeMegaKernelLauncher
             UncarriedHigh.Dispose();
             BlockCarries.Dispose();
         }
+    }
+
+    // CUDA warps execute 32 threads in lockstep (at most 32 warps per 1024-thread block).
+    internal const int WarpSize = 32;
+
+    private static void LaunchInverseSqrtMegaKernel(
+        GpuWorkspace workspace,
+        in GpuBigIntSqrtKernels.AotContexts.NewtonRaphson ctx,
+        uint gridDimX,
+        uint blockDimX,
+        uint sharedMemBytes)
+    {
+        workspace.RecordInverseSqrtMegaLaunchShape(blockDimX, gridDimX, sharedMemBytes);
+        GpuBigIntSqrtKernels.LaunchInverseSqrtNewtonRaphsonMegaKernelPtr(
+            ctx,
+            gridDimX: gridDimX, blockDimX: blockDimX, sharedMemBytes: sharedMemBytes,
+            hStream: workspace.Stream);
+    }
+
+    private static void LaunchReciprocalMegaKernel(
+        GpuWorkspace workspace,
+        in GpuBigIntDivRemKernels.AotContexts.NewtonRaphson ctx,
+        uint gridDimX,
+        uint blockDimX,
+        uint sharedMemBytes)
+    {
+        workspace.RecordReciprocalMegaLaunchShape(blockDimX, gridDimX, sharedMemBytes);
+        GpuBigIntDivRemKernels.LaunchReciprocalNewtonRaphsonMegaKernelPtr(
+            ctx,
+            gridDimX: gridDimX, blockDimX: blockDimX, sharedMemBytes: sharedMemBytes,
+            hStream: workspace.Stream);
     }
 
     private sealed class OverrideState(int[] candidates)

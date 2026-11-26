@@ -113,13 +113,18 @@ public static partial class BoundsAndMemoryDifferentialKernels
     /// <c>int.MaxValue</c>) for both element reads and element writes.
     /// </summary>
     [GpuKernel]
-    public static void ArrayIndexBoundsKernel(int[] src, int[] readIndices, int[] writeIndices, int[] dst, int rows)
+    public static void ArrayIndexBoundsKernel(ArrayIndexBoundsInputs inputs, int[] results, int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
         if (t >= rows)
         {
             return;
         }
+
+        var src = inputs.Source;
+        var readIndices = inputs.ReadIndices;
+        var writeIndices = inputs.WriteIndices;
+        var dst = results;
 
         int readIdx = readIndices[t];
         int writeIdx = writeIndices[t];
@@ -134,11 +139,8 @@ public static partial class BoundsAndMemoryDifferentialKernels
     /// </summary>
     [GpuKernel]
     public static void SpanCanaryIndexBoundsKernel(
-        int[] backing,
-        int[] indices,
-        int[] dst,
-        int sliceStart,
-        int sliceLen,
+        SpanSliceIndexInputs inputs,
+        int[] results,
         int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
@@ -146,6 +148,12 @@ public static partial class BoundsAndMemoryDifferentialKernels
         {
             return;
         }
+
+        var backing = inputs.Backing;
+        var indices = inputs.Indices;
+        int sliceStart = inputs.SliceStart;
+        int sliceLen = inputs.SliceLength;
+        var dst = results;
 
         Span<int> span = backing.AsSpan().Slice(sliceStart, sliceLen);
         ReadOnlySpan<int> roSpan = backing.AsSpan().Slice(sliceStart, sliceLen);
@@ -160,11 +168,8 @@ public static partial class BoundsAndMemoryDifferentialKernels
     /// </summary>
     [GpuKernel]
     public static void SpanSliceStartKernel(
-        int[] backing,
-        int[] starts,
-        int[] dst,
-        int sliceStart,
-        int sliceLen,
+        SpanSliceStartInputs inputs,
+        int[] results,
         int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
@@ -172,6 +177,12 @@ public static partial class BoundsAndMemoryDifferentialKernels
         {
             return;
         }
+
+        var backing = inputs.Backing;
+        var starts = inputs.Starts;
+        int sliceStart = inputs.SliceStart;
+        int sliceLen = inputs.SliceLength;
+        var dst = results;
 
         Span<int> span = backing.AsSpan().Slice(sliceStart, sliceLen);
         Span<int> sub = span.Slice(starts[t]);
@@ -183,12 +194,8 @@ public static partial class BoundsAndMemoryDifferentialKernels
     /// </summary>
     [GpuKernel]
     public static void SpanSliceStartCountKernel(
-        int[] backing,
-        int[] starts,
-        int[] counts,
-        int[] dst,
-        int sliceStart,
-        int sliceLen,
+        SpanSliceRangeInputs inputs,
+        int[] results,
         int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
@@ -196,6 +203,13 @@ public static partial class BoundsAndMemoryDifferentialKernels
         {
             return;
         }
+
+        var backing = inputs.Backing;
+        var starts = inputs.Starts;
+        var counts = inputs.Counts;
+        int sliceStart = inputs.SliceStart;
+        int sliceLen = inputs.SliceLength;
+        var dst = results;
 
         Span<int> span = backing.AsSpan().Slice(sliceStart, sliceLen);
         Span<int> sub = span.Slice(starts[t], counts[t]);
@@ -227,20 +241,22 @@ public static partial class BoundsAndMemoryDifferentialKernels
     /// </summary>
     [GpuKernel]
     public static void MemoryBoundsKernel(
-        Memory<int> mem,
-        ReadOnlyMemory<int> roMem,
-        int[] indices,
-        int[] dst,
-        int rows)
+        Memory<int> memory,
+        ReadOnlyMemory<int> readOnlyMemory,
+        MemoryBoundsIndexInputs indexInputs,
+        int[] results)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
-        if (t >= rows)
+        if (t >= indexInputs.Rows)
         {
             return;
         }
 
+        var indices = indexInputs.Indices;
+        var dst = results;
+
         int idx = indices[t];
-        dst[t] = mem.Span[idx] + roMem.Span[idx];
+        dst[t] = memory.Span[idx] + readOnlyMemory.Span[idx];
     }
 
     /// <summary>
@@ -411,11 +427,8 @@ public static partial class BoundsAndMemoryDifferentialKernels
     /// </summary>
     [GpuKernel]
     public static void BoundsCheckEliminationValidKernel(
-        int[] backing,
-        int[] indices,
-        int[] dst,
-        int sliceStart,
-        int sliceLen,
+        SpanSliceIndexInputs inputs,
+        int[] results,
         int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
@@ -423,6 +436,12 @@ public static partial class BoundsAndMemoryDifferentialKernels
         {
             return;
         }
+
+        var backing = inputs.Backing;
+        var indices = inputs.Indices;
+        int sliceStart = inputs.SliceStart;
+        int sliceLen = inputs.SliceLength;
+        var dst = results;
 
         Span<int> s = backing.AsSpan().Slice(sliceStart, sliceLen);
         int i = indices[t];
@@ -437,11 +456,8 @@ public static partial class BoundsAndMemoryDifferentialKernels
     /// </summary>
     [GpuKernel]
     public static void BoundsCheckEliminationOffByOneKernel(
-        int[] backing,
-        int[] indices,
-        int[] dst,
-        int sliceStart,
-        int sliceLen,
+        SpanSliceIndexInputs inputs,
+        int[] results,
         int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
@@ -449,6 +465,12 @@ public static partial class BoundsAndMemoryDifferentialKernels
         {
             return;
         }
+
+        var backing = inputs.Backing;
+        var indices = inputs.Indices;
+        int sliceStart = inputs.SliceStart;
+        int sliceLen = inputs.SliceLength;
+        var dst = results;
 
         Span<int> s = backing.AsSpan().Slice(sliceStart, sliceLen);
         int i = indices[t];
@@ -463,13 +485,8 @@ public static partial class BoundsAndMemoryDifferentialKernels
     /// </summary>
     [GpuKernel]
     public static void BoundsCheckEliminationWrongSpanKernel(
-        int[] backing,
-        int[] otherBacking,
-        int[] indices,
-        int[] dst,
-        int sliceStart,
-        int sliceLen,
-        int otherLen,
+        WrongSpanBoundsCheckInputs inputs,
+        int[] results,
         int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
@@ -477,6 +494,14 @@ public static partial class BoundsAndMemoryDifferentialKernels
         {
             return;
         }
+
+        var backing = inputs.Backing;
+        var otherBacking = inputs.OtherBacking;
+        var indices = inputs.Indices;
+        int sliceStart = inputs.SliceStart;
+        int sliceLen = inputs.SliceLength;
+        int otherLen = inputs.OtherLength;
+        var dst = results;
 
         Span<int> s = backing.AsSpan().Slice(sliceStart, sliceLen);
         Span<int> other = otherBacking.AsSpan().Slice(sliceStart, otherLen);
@@ -492,11 +517,8 @@ public static partial class BoundsAndMemoryDifferentialKernels
     /// </summary>
     [GpuKernel]
     public static void BoundsCheckEliminationPostIncrementKernel(
-        int[] backing,
-        int[] indices,
-        int[] dst,
-        int sliceStart,
-        int sliceLen,
+        SpanSliceIndexInputs inputs,
+        int[] results,
         int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
@@ -504,6 +526,12 @@ public static partial class BoundsAndMemoryDifferentialKernels
         {
             return;
         }
+
+        var backing = inputs.Backing;
+        var indices = inputs.Indices;
+        int sliceStart = inputs.SliceStart;
+        int sliceLen = inputs.SliceLength;
+        var dst = results;
 
         Span<int> s = backing.AsSpan().Slice(sliceStart, sliceLen);
         int i = indices[t];
@@ -519,11 +547,8 @@ public static partial class BoundsAndMemoryDifferentialKernels
     /// </summary>
     [GpuKernel]
     public static void BoundsCheckEliminationUpperOnlyKernel(
-        int[] backing,
-        int[] indices,
-        int[] dst,
-        int sliceStart,
-        int sliceLen,
+        SpanSliceIndexInputs inputs,
+        int[] results,
         int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
@@ -531,6 +556,12 @@ public static partial class BoundsAndMemoryDifferentialKernels
         {
             return;
         }
+
+        var backing = inputs.Backing;
+        var indices = inputs.Indices;
+        int sliceStart = inputs.SliceStart;
+        int sliceLen = inputs.SliceLength;
+        var dst = results;
 
         Span<int> s = backing.AsSpan().Slice(sliceStart, sliceLen);
         int i = indices[t];
@@ -707,4 +738,52 @@ public struct DiffNonNullableHolder
 
     /// <summary>A value added to each element.</summary>
     public int Offset;
+}
+
+public struct ArrayIndexBoundsInputs
+{
+    [GpuReadOnly] public int[] Source;
+    [GpuReadOnly] public int[] ReadIndices;
+    [GpuReadOnly] public int[] WriteIndices;
+}
+
+public struct SpanSliceIndexInputs
+{
+    [GpuReadOnly] public int[] Backing;
+    [GpuReadOnly] public int[] Indices;
+    public int SliceStart;
+    public int SliceLength;
+}
+
+public struct SpanSliceStartInputs
+{
+    [GpuReadOnly] public int[] Backing;
+    [GpuReadOnly] public int[] Starts;
+    public int SliceStart;
+    public int SliceLength;
+}
+
+public struct SpanSliceRangeInputs
+{
+    [GpuReadOnly] public int[] Backing;
+    [GpuReadOnly] public int[] Starts;
+    [GpuReadOnly] public int[] Counts;
+    public int SliceStart;
+    public int SliceLength;
+}
+
+public struct WrongSpanBoundsCheckInputs
+{
+    [GpuReadOnly] public int[] Backing;
+    [GpuReadOnly] public int[] OtherBacking;
+    [GpuReadOnly] public int[] Indices;
+    public int SliceStart;
+    public int SliceLength;
+    public int OtherLength;
+}
+
+public struct MemoryBoundsIndexInputs
+{
+    [GpuReadOnly] public int[] Indices;
+    public int Rows;
 }

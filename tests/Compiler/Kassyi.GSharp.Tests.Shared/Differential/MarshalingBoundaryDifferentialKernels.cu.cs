@@ -281,6 +281,7 @@ public static partial class MarshalingBoundaryDifferentialKernels
     ];
 
     // bool across value, in, ref, out, bool[], return bool, and struct fields
+    // The parameter list is the subject of this test: bool marshaling across value, in, ref, out, array, return, and struct field positions.
     [GpuKernel]
     public static bool BoolAllPositionsKernel(
         bool v,
@@ -324,6 +325,7 @@ public static partial class MarshalingBoundaryDifferentialKernels
     }
 
     // char across value, in, ref, out, char[], return char, and struct fields
+    // The parameter list is the subject of this test: char marshaling across value, in, ref, out, array, return, and struct field positions.
     [GpuKernel]
     public static char CharAllPositionsKernel(
         char v,
@@ -521,6 +523,7 @@ public static partial class MarshalingBoundaryDifferentialKernels
     }
 
     // LayoutKind.Explicit (non-overlapping with gaps & Size=24, plus identical bit union)
+    // The parameter list is the subject of this test: explicit-layout and union structs across value, ref, array, and return positions.
     [GpuKernel]
     public static DiffFloatUintUnion ExplicitLayoutAndUnionPositionsKernel(
         DiffExplicitGapped gVal,
@@ -604,6 +607,7 @@ public static partial class MarshalingBoundaryDifferentialKernels
     public static long WeightAutoMixed(DiffAutoMixed m) =>
         (m.B1 * 3L) + (m.L * 5L) + (m.Flag ? 11L : 0L) + (m.S * 17L) + ((long)m.C * 23L);
 
+    // The parameter list is the subject of this test: LayoutKind.Auto marshaling across value, in, ref, out, array, return, and nested struct positions.
     [GpuKernel]
     public static DiffAutoMixed AutoLayoutAllPositionsKernel(
         DiffAutoMixed val,
@@ -665,6 +669,7 @@ public static partial class MarshalingBoundaryDifferentialKernels
     }
 
     // [InlineArray(3)] (bool, char, DiffVec2Padded) + fixed buffer FixedBufferPacket across 4 positions
+    // The parameter list is the subject of this test: InlineArray and fixed buffer marshaling across value, ref, array, and return positions.
     [GpuKernel]
     public static unsafe DiffInlineVec2Padded3 InlineArrayAndFixedBufferPositionsKernel(
         DiffInlineVec2Padded3 valVecs,
@@ -776,6 +781,7 @@ public static partial class MarshalingBoundaryDifferentialKernels
     public static float SumTorture(DiffVecAlignTorture t) =>
         t.B0 + t.V3.X + t.V3.Y + t.V3.Z + t.B1 + t.V2.X + t.V2.Y + t.B2 + t.V4.X + t.V4.Y + t.V4.Z + t.V4.W;
 
+    // The parameter list is the subject of this test: Vector2/3/4 alignment and external assembly struct marshaling across value, ref, and array positions.
     [GpuKernel]
     public static OuterPacket VectorAlignmentAndExternalStructsKernel(
         DiffVecAlignTorture tortVal,
@@ -854,6 +860,7 @@ public static partial class MarshalingBoundaryDifferentialKernels
     }
 
     // Multiple ref/in/out scalars + raw pointer (valid & null) + empty Span slice + [GpuConstexpr] + [GpuReadOnly]
+    // The parameter list is the subject of this test: multiple top-level in/ref/out scalars, raw pointers, constexpr, and readonly array positions.
     [GpuKernel]
     public static unsafe void MultiRefScalarAndRawPointerKernel(
         in int inScalar,

@@ -38,12 +38,10 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
     /// </remarks>
     public GpuBigIntView Result => _handles is { } handles ? handles.Result : default;
 
-    internal GpuBigIntExecutableGraph(GpuWorkspace workspace, IntPtr graph, IntPtr graphExec, GpuBigInt result,
-        bool ownsResult, SignSource sign, CapturedResources captured, IGpuBigIntExpression node,
-        bool ownsExpression)
+    internal GpuBigIntExecutableGraph(CapturedStreamGraph capturedGraph, GpuBigInt result, bool ownsResult,
+        SignSource sign, IGpuBigIntExpression node, bool ownsExpression)
     {
-        _handles = new GraphHandles(workspace, graph, graphExec, result, ownsResult, sign, captured, node,
-            ownsExpression);
+        _handles = new GraphHandles(capturedGraph, result, ownsResult, sign, node, ownsExpression);
     }
 
     /// <summary>
@@ -54,7 +52,7 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
     {
         var handles = GetLiveHandles();
         handles.ThrowIfOperandFreed();
-        handles.Workspace.Provider.LaunchGraph(handles.GraphExec, handles.Workspace.Stream);
+        handles.CapturedGraph.Launch();
         handles.Workspace.Provider.SynchronizeStream(handles.Workspace.Stream);
         handles.ReadSign();
     }
@@ -82,7 +80,7 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
             return ValueTask.FromCanceled(cancellationToken);
         }
 
-        handles.Workspace.Provider.LaunchGraph(handles.GraphExec, handles.Workspace.Stream);
+        handles.CapturedGraph.Launch();
         return handles.HasDeviceSign
             ? CompleteAsync(handles, cancellationToken)
             : handles.Workspace.Provider.SynchronizeStreamAsync(handles.Workspace.Stream, cancellationToken);
@@ -119,36 +117,30 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
     /// </summary>
     private sealed class GraphHandles
     {
-        private readonly IntPtr _graph;
         private readonly GpuBigInt _result;
         // The device word of a sign the graph writes, or the default value (a host sign)
         private readonly GpuBigIntMemoryHandle _signWord;
-        private readonly CapturedResources _captured;
         private int _negative;
         private readonly IGpuBigIntExpression _node;
         private readonly bool _ownsExpression;
         private int _ownsResult;
         private int _destroyed;
 
-        public GraphHandles(GpuWorkspace workspace, IntPtr graph, IntPtr graphExec, GpuBigInt result, bool ownsResult,
-            SignSource sign, CapturedResources captured, IGpuBigIntExpression node,
-            bool ownsExpression)
+        public GraphHandles(CapturedStreamGraph capturedGraph, GpuBigInt result, bool ownsResult, SignSource sign,
+            IGpuBigIntExpression node, bool ownsExpression)
         {
             _signWord = sign.IsDevice ? sign.Word.Handle : default;
             _negative = result.IsNegative ? 1 : 0;
-            Workspace = workspace;
-            _graph = graph;
-            GraphExec = graphExec;
+            CapturedGraph = capturedGraph;
             _result = result;
             _ownsResult = ownsResult ? 1 : 0;
-            _captured = captured;
             _node = node;
             _ownsExpression = ownsExpression;
         }
 
-        public GpuWorkspace Workspace { get; }
+        public CapturedStreamGraph CapturedGraph { get; }
 
-        public IntPtr GraphExec { get; }
+        public GpuWorkspace Workspace => CapturedGraph.Workspace;
 
         // The magnitude with the sign of the last launch
         public GpuBigIntView Result => new(_result.Value, Volatile.Read(ref _negative) != 0);
@@ -190,7 +182,7 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
         // The graph records raw pointers: a launch after an operand was freed would use memory of another owner
         public void ThrowIfOperandFreed()
         {
-            foreach (var operand in _captured.Operands)
+            foreach (var operand in CapturedGraph.Operands)
             {
                 if (!operand.IsAlive)
                 {
@@ -213,7 +205,7 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
             {
                 try
                 {
-                    Workspace.Provider.DestroyGraph(_graph, GraphExec);
+                    CapturedGraph.Dispose();
                 }
                 finally
                 {
@@ -228,7 +220,6 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
                         manager.Free(_signWord);
                     }
 
-                    manager.ReturnDeferred(_captured.Buffers);
                     GraphOwnership.Release(_node);
                     if (_ownsExpression && _node is IDisposable disposable)
                     {

@@ -59,7 +59,7 @@ function checkRealConfigIntegration(assert, createEngine) {
     'node scripts/human/test-stability.js -- --dry-run',
     'node scripts/human/fuzz-differential.js --help',
     'node --max-old-space-size=4096 scripts/human/test-stability.js',
-    './scripts/human/long-checks.js',
+    './scripts/human/test-sanitized.js',
     'node scripts/human/test-memory.js',
     'node scripts/human/test-sanitized.js',
     'node scripts/human/mutate.js',
@@ -83,6 +83,8 @@ function checkRealConfigIntegration(assert, createEngine) {
     'node scripts/human/gpu-lock.js --lock-path tmp/lock -- "dotnet test X"',
     'node scripts/agent/gpu-lock.js --help',
     'node scripts/human/long-checks.js --dry-run',
+    'node scripts/human/long-checks.js',
+    'just long-checks',
     "git commit -m \"$(cat <<'EOF'\nfix: run dotnet test (and just test) first\nEOF\n)\"",
     'node scripts/human/test-memory.js --help',
     'node scripts/human/test-sanitized.js --help',
@@ -191,11 +193,11 @@ function checkRealConfigIntegration(assert, createEngine) {
   }
 
   // checkDetailedReasons for henicos nodeScripts
-  assert.deepStrictEqual(checkDetailed('node scripts/human/long-checks.js', 'bash'), [
-    { tool: 'node-script', verb: 'long-checks.js', text: 'long-checks.js' },
+  assert.deepStrictEqual(checkDetailed('node scripts/human/test-sanitized.js', 'bash'), [
+    { tool: 'node-script', verb: 'test-sanitized.js', text: 'test-sanitized.js' },
   ]);
-  assert.deepStrictEqual(checkDetailed('./scripts/human/long-checks.js', 'bash'), [
-    { tool: 'node-script', verb: 'long-checks.js', text: 'long-checks.js' },
+  assert.deepStrictEqual(checkDetailed('./scripts/human/test-sanitized.js', 'bash'), [
+    { tool: 'node-script', verb: 'test-sanitized.js', text: 'test-sanitized.js' },
   ]);
 
   const answer = (tool, command, extra = {}) =>

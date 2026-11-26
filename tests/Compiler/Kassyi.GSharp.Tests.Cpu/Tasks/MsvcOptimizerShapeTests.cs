@@ -25,6 +25,7 @@ public sealed class MsvcOptimizerShapeTests
     }
 
     [SkippableFact]
+    [Platform(TestPlatform.Windows)]
     public unsafe void MsvcToolchain_OptimizerShapes_KeepTheirCppValues()
     {
         Skip.IfNot(OperatingSystem.IsWindows(), "MSVC builds the native module on Windows only.");

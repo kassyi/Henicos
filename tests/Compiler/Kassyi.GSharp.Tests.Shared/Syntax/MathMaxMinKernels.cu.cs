@@ -3,6 +3,22 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
+public struct MixedOperandInputs
+{
+    [GpuReadOnly]
+    public float[] Singles;
+    [GpuReadOnly]
+    public double[] Doubles;
+    [GpuReadOnly]
+    public int[] Int32Values;
+}
+
+public struct MixedOperandResults
+{
+    public float[] Singles;
+    public double[] Doubles;
+}
+
 /// <summary>
 /// Kernels for <see cref="MathMaxMinScenarios"/>: each thread applies every floating-point <c>Max</c> / <c>Min</c> /
 /// <c>MaxNumber</c> / <c>MinNumber</c> / <c>Clamp</c> form to its own inputs, so one launch covers one input row per
@@ -53,8 +69,13 @@ public static partial class MathMaxMinKernels
     }
 
     [GpuKernel]
-    public static void MixedOperandMaxKernel(float[] single, double[] wide, int[] whole, float[] singleResult, double[] wideResult)
+    public static void MixedOperandMaxKernel(MixedOperandInputs inputs, MixedOperandResults results)
     {
+        float[] single = inputs.Singles;
+        double[] wide = inputs.Doubles;
+        int[] whole = inputs.Int32Values;
+        float[] singleResult = results.Singles;
+        double[] wideResult = results.Doubles;
         // Implicit conversions of the operands pick the overload, as in C#
         singleResult[0] = Math.Max(single[0], whole[0]);
         singleResult[1] = Math.Min(single[0], 2);

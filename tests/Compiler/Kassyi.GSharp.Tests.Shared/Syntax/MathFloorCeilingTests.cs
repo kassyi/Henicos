@@ -28,7 +28,19 @@ public class MathFloorCeilingTests : TranspilerTestBase
         float[] floatCeiling = new float[n];
 
         MathFloorCeilingKernels.LaunchFloorCeilingKernel(
-            doubleInputs, doubleFloor, doubleCeiling, floatInputs, floatFloor, floatCeiling, blockDimX: (uint)n);
+            doubleBuffers: new DoubleFloorCeilingBuffers
+            {
+                Inputs = doubleInputs,
+                FloorResults = doubleFloor,
+                CeilingResults = doubleCeiling,
+            },
+            singleBuffers: new SingleFloorCeilingBuffers
+            {
+                Inputs = floatInputs,
+                FloorResults = floatFloor,
+                CeilingResults = floatCeiling,
+            },
+            blockDimX: (uint)n);
 
         for (int i = 0; i < n; i++)
         {
@@ -60,7 +72,19 @@ public class MathFloorCeilingTests : TranspilerTestBase
         float[] floatResults = new float[n];
 
         MathFloorCeilingKernels.LaunchPowKernel(
-            bases, exponents, doubleResults, floatBases, floatExponents, floatResults, blockDimX: (uint)n);
+            doubleBuffers: new DoublePowBuffers
+            {
+                Bases = bases,
+                Exponents = exponents,
+                Results = doubleResults,
+            },
+            singleBuffers: new SinglePowBuffers
+            {
+                Bases = floatBases,
+                Exponents = floatExponents,
+                Results = floatResults,
+            },
+            blockDimX: (uint)n);
 
         for (int i = 0; i < n; i++)
         {

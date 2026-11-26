@@ -241,6 +241,7 @@ public static partial class MarshalingOverlapDifferentialKernels
     }
 
     // --- Two T[] arguments that are one array, a slice of it, and a struct that puts the launch in table mode ---
+    // The parameter list is the subject of this test: overlap table-mode marshaling across two top-level arrays, a Span slice, and a struct.
     [GpuKernel]
     public static void TwoArraysSliceAndStructKernel(
         int[] first,

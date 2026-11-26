@@ -35,6 +35,21 @@ namespace Kassyi.GSharp.Tests.Shared.Differential
         public int Twice => X * 2;
     }
 
+    public struct VoidExtensionStatementTargets
+    {
+        public int[] ChainValues;
+        public ConditionalPoint[] HolderPoints;
+        public ConditionalPoint[] UnrollPoints;
+    }
+
+    public struct VoidExtensionBodyTargets
+    {
+        public ConditionalPoint[] DeviceFunctionPoints;
+        public ConditionalPoint[] ManagedVersionPoints;
+        public ConditionalPoint[] LocalFunctionPoints;
+        public ConditionalPoint[] SingleThreadLambdaPoints;
+    }
+
     /// <summary>
     /// Differential kernels for the null-conditional access <c>?.</c> and <c>?[]</c> on an array and on a
     /// <c>Nullable&lt;T&gt;</c> of a struct: the length and an element of a null and of a non-null receiver, as a
@@ -489,9 +504,17 @@ namespace Kassyi.GSharp.Tests.Shared.Differential
         // Extension methods that return void, called as statements: at the end of a chain (h?.Data?.M(),
         // hp?.Pts?[t].M()) and as the body of a Gpu.ForUnroll lambda, which is inlined as a statement
         [GpuKernel]
-        public static void VoidExtensionStatementKernel(int[] a, int[] ws, ConditionalPoint[] ps1,
-            ConditionalPoint[] ps2, int[] dst)
+        public static void VoidExtensionStatementKernel(
+            int[] inputValues,
+            VoidExtensionStatementTargets targets,
+            int[] results)
         {
+            var a = inputValues;
+            var ws = targets.ChainValues;
+            var ps1 = targets.HolderPoints;
+            var ps2 = targets.UnrollPoints;
+            var dst = results;
+
             int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
             int sel = a[t] & 3;
             ConditionalHolder? h = sel == 0 ? null : new ConditionalHolder { Data = sel == 1 ? null : ws };
@@ -521,9 +544,18 @@ namespace Kassyi.GSharp.Tests.Shared.Differential
         // version), of a void local function and of a void lambda (Gpu.SingleThread, whose body thread 0 runs); the
         // barrier makes the managed path run the copy
         [GpuKernel]
-        public static void VoidExtensionBodyKernel(int[] a, ConditionalPoint[] ps1, ConditionalPoint[] ps2,
-            ConditionalPoint[] ps3, ConditionalPoint[] ps4, int[] dst)
+        public static void VoidExtensionBodyKernel(
+            int[] inputValues,
+            VoidExtensionBodyTargets targets,
+            int[] results)
         {
+            var a = inputValues;
+            var ps1 = targets.DeviceFunctionPoints;
+            var ps2 = targets.ManagedVersionPoints;
+            var ps3 = targets.LocalFunctionPoints;
+            var ps4 = targets.SingleThreadLambdaPoints;
+            var dst = results;
+
             int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
             Gpu.SyncThreads();
             IncrementElement((a[t] & 1) == 0 ? null : ps1, t);

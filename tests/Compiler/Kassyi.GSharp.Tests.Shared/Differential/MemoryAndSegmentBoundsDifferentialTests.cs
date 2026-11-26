@@ -98,30 +98,23 @@ public class MemoryAndSegmentBoundsDifferentialTests
         {
             var backing = b.Get<int>("backing");
             BoundsAndMemoryDifferentialKernels.LaunchMemoryBoundsKernel(
-                new Memory<int>(backing, CanaryStart, CanaryLen),
-                new ReadOnlyMemory<int>(backing, CanaryStart, CanaryLen),
-                b.Get<int>("indices"),
-                b.Get<int>("dst"),
-                s.Rows,
+                memory: new Memory<int>(backing, CanaryStart, CanaryLen),
+                readOnlyMemory: new ReadOnlyMemory<int>(backing, CanaryStart, CanaryLen),
+                indexInputs: new MemoryBoundsIndexInputs
+                {
+                    Indices = b.Get<int>("indices"),
+                    Rows = s.Rows,
+                },
+                results: b.Get<int>("dst"),
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX);
         },
         OracleIsLaunch = true,
     };
 
-    internal static readonly DifferentialCase s_sharedMemoryBounds = new(
-        KernelName(nameof(BoundsAndMemoryDifferentialKernels.SharedMemoryBoundsKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1, 2, 3, 4],
-        SkippedPaths = new Dictionary<DiffPath, string>
-        {
-            [DiffPath.Native] = "#718 (shared memory out-of-bounds access terminates process on native)",
-        },
-        ExpectedException = static (rng, _) => rng.Seed == 0
-            ? null
-            : ExceptionPolicy.For<IndexOutOfRangeException>(DiffPath.Managed),
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_sharedMemoryBounds = DiffCases.Create(
+        BoundsAndMemoryDifferentialKernels.LaunchSharedMemoryBoundsKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             var indices = new int[rows];
@@ -150,13 +143,17 @@ public class MemoryAndSegmentBoundsDifferentialTests
                 .In("indices", indices, readOnly: true)
                 .Out<int>("dst", rows, ["smem_val"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchSharedMemoryBoundsKernel(
-            b.Get<int>("indices"),
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        Reference = static (b, s) =>
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        seeds: [0, 1, 2, 3, 4],
+        inputName: "indices",
+        skippedPaths: new Dictionary<DiffPath, string>
+        {
+            [DiffPath.Native] = "#718 (shared memory out-of-bounds access terminates process on native)",
+        },
+        expectedException: static (rng, _) => rng.Seed == 0
+            ? null
+            : ExceptionPolicy.For<IndexOutOfRangeException>(DiffPath.Managed),
+        reference: static (b, s) =>
         {
             var indices = b.Get<int>("indices");
             var dst = b.Get<int>("dst");
@@ -164,16 +161,11 @@ public class MemoryAndSegmentBoundsDifferentialTests
             {
                 dst[t] = (indices[t] + 1) * 10;
             }
-        },
-    };
+        });
 
-    internal static readonly DifferentialCase s_inlineArrayBounds = new(
-        KernelName(nameof(BoundsAndMemoryDifferentialKernels.InlineArrayBoundsKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1, 2, 3, 4],
-        OracleExceptions = OracleExceptionMode.MatchOracle,
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_inlineArrayBounds = DiffCases.Create(
+        BoundsAndMemoryDifferentialKernels.LaunchInlineArrayBoundsKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             var indices = new int[rows];
@@ -202,14 +194,10 @@ public class MemoryAndSegmentBoundsDifferentialTests
                 .In("indices", indices, readOnly: true)
                 .Out<int>("dst", rows, ["inline_val"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchInlineArrayBoundsKernel(
-            b.Get<int>("indices"),
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        seeds: [0, 1, 2, 3, 4],
+        inputName: "indices",
+        oracleExceptions: OracleExceptionMode.MatchOracle);
 
     [SkippableFact]
     public void BoundsCheck_ArraySegment_MatchesTheOracleOnEveryPath() =>

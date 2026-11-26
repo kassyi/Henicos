@@ -37,12 +37,15 @@ public class NullableDifferentialTests
                 .Out<int>("r", rows, NullableDifferentialKernels.CoalesceAndSideEffectsColumns, OutputPolicy.Exact);
         },
         Launch = static (b, s) => NullableDifferentialKernels.LaunchNullableCoalesceAndSideEffects(
-            b.Get<int>("hasA"),
-            b.Get<int>("valsA"),
-            b.Get<int>("hasB"),
-            b.Get<int>("valsB"),
-            b.Get<int>("fallbacks"),
-            b.Get<int>("r"),
+            operands: new NullableCoalesceOperands
+            {
+                FirstPresence = b.Get<int>("hasA"),
+                FirstValues = b.Get<int>("valsA"),
+                SecondPresence = b.Get<int>("hasB"),
+                SecondValues = b.Get<int>("valsB"),
+                Fallbacks = b.Get<int>("fallbacks"),
+            },
+            results: b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,
@@ -72,21 +75,22 @@ public class NullableDifferentialTests
                 .Out<int>("r", rows, NullableDifferentialKernels.DeviceFunctionsAndKleeneColumns, OutputPolicy.Exact);
         },
         Launch = static (b, s) => NullableDifferentialKernels.LaunchNullableDeviceFunctionsAndKleeneLogic(
-            b.Get<int>("hasA"),
-            b.Get<int>("valsA"),
-            b.Get<int>("hasB"),
-            b.Get<int>("valsB"),
-            b.Get<int>("r"),
+            operands: new NullablePairOperands
+            {
+                FirstPresence = b.Get<int>("hasA"),
+                FirstValues = b.Get<int>("valsA"),
+                SecondPresence = b.Get<int>("hasB"),
+                SecondValues = b.Get<int>("valsB"),
+            },
+            results: b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,
     };
 
-    internal static readonly DifferentialCase s_floatCoalesceWithNaN = new(
-        $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.NullableFloatCoalesceWithNaN)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_floatCoalesceWithNaN = DiffCases.Create<int, float, float, float>(
+        NullableDifferentialKernels.LaunchNullableFloatCoalesceWithNaN,
+        inputs: static (rng, rows) =>
         {
             var valsA = DiffValues.Single(rng, rows);
             var fallbacks = DiffValues.Single(rng, rows);
@@ -102,15 +106,11 @@ public class NullableDifferentialTests
                 .In("fallbacks", fallbacks)
                 .Out<float>("r", rows, NullableDifferentialKernels.FloatCoalesceWithNaNColumns, OutputPolicy.Bitwise);
         },
-        Launch = static (b, s) => NullableDifferentialKernels.LaunchNullableFloatCoalesceWithNaN(
-            b.Get<int>("hasA"),
-            b.Get<float>("valsA"),
-            b.Get<float>("fallbacks"),
-            b.Get<float>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(Rows),
+        firstInputName: "hasA",
+        secondInputName: "valsA",
+        thirdInputName: "fallbacks",
+        outputName: "r");
 
     internal static readonly DifferentialCase s_coalesceWiderWithNarrower = new(
         $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.CoalesceWiderNullableWithNarrowerNullable)}")
@@ -138,12 +138,15 @@ public class NullableDifferentialTests
                 .Out<int>("r", rows, NullableDifferentialKernels.CoalesceWiderWithNarrowerColumns, OutputPolicy.Exact);
         },
         Launch = static (b, s) => NullableDifferentialKernels.LaunchCoalesceWiderNullableWithNarrowerNullable(
-            b.Get<int>("hasA"),
-            b.Get<int>("valsA"),
-            b.Get<int>("hasB"),
-            b.Get<short>("valsB"),
-            b.Get<ushort>("uValsB"),
-            b.Get<int>("r"),
+            operands: new WiderWithNarrowerNullableOperands
+            {
+                WidePresence = b.Get<int>("hasA"),
+                WideValues = b.Get<int>("valsA"),
+                NarrowPresence = b.Get<int>("hasB"),
+                NarrowSignedValues = b.Get<short>("valsB"),
+                NarrowUnsignedValues = b.Get<ushort>("uValsB"),
+            },
+            results: b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,
@@ -152,31 +155,19 @@ public class NullableDifferentialTests
     // The reproductions of #998 run 64 rows across one-dimensional launch shapes
     private const int ReproRows = 64;
 
-    internal static readonly DifferentialCase s_emptyStackSpanNullComparison = new(
-        $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.EmptyStackSpanNullComparisonReproKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(ReproRows),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_emptyStackSpanNullComparison = DiffCases.Create(
+        NullableDifferentialKernels.LaunchEmptyStackSpanNullComparisonReproKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("a", DiffValues.Int32(rng, rows))
             .Out<int>("dst", rows, ["stackalloc_zero_eq_null", "stackalloc_zero_ne_null", "collection_empty_eq_null", "combined_null_flags"], OutputPolicy.Bitwise),
-        Launch = static (b, s) => NullableDifferentialKernels.LaunchEmptyStackSpanNullComparisonReproKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows,
-            gridDimX: s.GridX, blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(ReproRows));
 
-    internal static readonly DifferentialCase s_nullableArrayLikeDefaultValueNullCheck = new(
-        $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.NullableArrayLikeDefaultValueNullCheckReproKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(ReproRows),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_nullableArrayLikeDefaultValueNullCheck = DiffCases.Create(
+        NullableDifferentialKernels.LaunchNullableArrayLikeDefaultValueNullCheckReproKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("a", DiffValues.Int32(rng, rows))
             .Out<int>("dst", rows, ["mem_is_null", "mem_is_not_null", "mem_eq_ne_hasvalue", "seg_is_null_hasvalue"], OutputPolicy.Bitwise),
-        Launch = static (b, s) => NullableDifferentialKernels.LaunchNullableArrayLikeDefaultValueNullCheckReproKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows,
-            gridDimX: s.GridX, blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(ReproRows));
 
     internal static readonly DifferentialCase s_narrowNullableCoalesceVarPromotion = new(
         $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.NarrowNullableCoalesceVarPromotionReproKernel)}")
@@ -188,22 +179,25 @@ public class NullableDifferentialTests
             .In("usa", DiffValues.UInt16(rng, rows))
             .Out<int>("dst", rows, ["byte_nullable_coalesce_inc", "ushort_nullable_coalesce_inc", "byte_nullable_ushort_coalesce_inc"], OutputPolicy.Bitwise),
         Launch = static (b, s) => NullableDifferentialKernels.LaunchNarrowNullableCoalesceVarPromotionReproKernel(
-            b.Get<int>("conds"), b.Get<byte>("ba"), b.Get<ushort>("usa"), b.Get<int>("dst"), s.Rows,
-            gridDimX: s.GridX, blockDimX: s.BlockX),
+            operands: new NarrowCoalescePromotionOperands
+            {
+                Conditions = b.Get<int>("conds"),
+                ByteValues = b.Get<byte>("ba"),
+                UInt16Values = b.Get<ushort>("usa"),
+            },
+            results: b.Get<int>("dst"),
+            rowCount: s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
         OracleIsLaunch = true,
     };
 
-    internal static readonly DifferentialCase s_nullableMemoryParamAndLocal = new(
-        $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.NullableMemoryParamAndLocalReproKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(ReproRows),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_nullableMemoryParamAndLocal = DiffCases.Create(
+        NullableDifferentialKernels.LaunchNullableMemoryParamAndLocalReproKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .Out<int>("dst", rows, ["null_mem", "non_null_mem"], OutputPolicy.Exact),
-        Launch = static (b, s) => NullableDifferentialKernels.LaunchNullableMemoryParamAndLocalReproKernel(
-            b.Get<int>("dst"), s.Rows,
-            gridDimX: s.GridX, blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(ReproRows),
+        bufferName: "dst");
 
     internal static readonly DifferentialCase s_nullableMemoryKernelParamToLocal_Null = new(
         $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.NullableMemoryKernelParamToLocalReproKernel)}_Null")
@@ -230,11 +224,9 @@ public class NullableDifferentialTests
         OracleIsLaunch = true,
     };
 
-    internal static readonly DifferentialCase s_liftedDoubleToNullableIntCast = new(
-        $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.LiftedDoubleToNullableIntCastReproKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(ReproRows),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_liftedDoubleToNullableIntCast = DiffCases.CreateRows<double, int, int>(
+        NullableDifferentialKernels.LaunchLiftedDoubleToNullableIntCastReproKernel,
+        inputs: static (rng, rows) =>
         {
             var src = new double[rows];
             var conds = new int[rows];
@@ -256,17 +248,14 @@ public class NullableDifferentialTests
                 .In("conds", conds)
                 .Out<int>("dst", rows, ["is_null", "val"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => NullableDifferentialKernels.LaunchLiftedDoubleToNullableIntCastReproKernel(
-            b.Get<double>("src"), b.Get<int>("conds"), b.Get<int>("dst"), s.Rows,
-            gridDimX: s.GridX, blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(ReproRows),
+        firstInputName: "src",
+        secondInputName: "conds",
+        outputName: "dst");
 
-    internal static readonly DifferentialCase s_coalesceAssignmentValue = new(
-        $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.CoalesceAssignmentValueKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(ReproRows),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_coalesceAssignmentValue = DiffCases.CreateRows<int, int, long>(
+        NullableDifferentialKernels.LaunchCoalesceAssignmentValueKernel,
+        inputs: static (rng, rows) =>
         {
             var conds = new int[rows];
             for (int k = 0; k < rows; k++)
@@ -286,17 +275,14 @@ public class NullableDifferentialTests
                      "value_before_write"],
                     OutputPolicy.Exact);
         },
-        Launch = static (b, s) => NullableDifferentialKernels.LaunchCoalesceAssignmentValueKernel(
-            b.Get<int>("conds"), b.Get<int>("vals"), b.Get<long>("dst"), s.Rows,
-            gridDimX: s.GridX, blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(ReproRows),
+        firstInputName: "conds",
+        secondInputName: "vals",
+        outputName: "dst");
 
-    internal static readonly DifferentialCase s_nullLiteralCastToArray = new(
-        $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.NullLiteralCastToArrayKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(ReproRows),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_nullLiteralCastToArray = DiffCases.Create(
+        NullableDifferentialKernels.LaunchNullLiteralCastToArrayKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("a", DiffValues.Int32(rng, rows))
             .Out<int>(
                 "dst",
@@ -304,17 +290,11 @@ public class NullableDifferentialTests
                 ["cast_is_null", "picked_is_null", "parenthesized_is_null", "coalesce_keeps_array", "default_is_null",
                  "default_expression_is_null"],
                 OutputPolicy.Exact),
-        Launch = static (b, s) => NullableDifferentialKernels.LaunchNullLiteralCastToArrayKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows,
-            gridDimX: s.GridX, blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(ReproRows));
 
-    internal static readonly DifferentialCase s_emptyArrayIsNotNull = new(
-        $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.EmptyArrayIsNotNullKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(ReproRows),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_emptyArrayIsNotNull = DiffCases.Create(
+        NullableDifferentialKernels.LaunchEmptyArrayIsNotNullKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("empty", Array.Empty<int>())
             .In("other", DiffValues.Int32(rng, rows))
             .Out<int>(
@@ -323,11 +303,10 @@ public class NullableDifferentialTests
                 ["empty_is_null", "empty_is_null_pattern", "coalesce_length", "empty_length", "slice_length",
                  "slice_is_null"],
                 OutputPolicy.Exact),
-        Launch = static (b, s) => NullableDifferentialKernels.LaunchEmptyArrayIsNotNullKernel(
-            b.Get<int>("empty"), b.Get<int>("other"), b.Get<int>("dst"), s.Rows,
-            gridDimX: s.GridX, blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(ReproRows),
+        firstInputName: "empty",
+        secondInputName: "other",
+        outputName: "dst");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]

@@ -31,7 +31,9 @@ public class TranspilerInfrastructureTests
         int[] output3Arg = [0, 0];
 
         TranspilerInfrastructureKernels.LaunchOverloadTestKernel(
-            inputA, inputB, inputC, output2Arg, output3Arg, blockDimX: 2);
+            inputs: new OverloadTestInputs { First = inputA, Second = inputB, Third = inputC },
+            outputs: new OverloadTestOutputs { TwoArgProducts = output2Arg, ThreeArgMultiplyAdds = output3Arg },
+            blockDimX: 2);
 
         // thread 0: 2-arg MultiplyAdd(3, 5) = 15; 3-arg MultiplyAdd(3, 5, 7) = 22
         Assert.Equal(15, output2Arg[0]);
