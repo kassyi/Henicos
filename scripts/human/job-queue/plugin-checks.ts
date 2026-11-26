@@ -21,7 +21,7 @@ import {
 import { connect, request } from "./client-connect.ts";
 import { loadConfig } from "./config.ts";
 import type { ConfigFileModule } from "./lib/types.ts";
-import { PluginApiVersion, type QueuePlugin, type ShareMode } from "./plugin-api.ts";
+import { PluginApiVersion, type OffloadCheckRequest, type QueuePlugin, type ShareMode } from "./plugin-api.ts";
 import { PluginHost, runPluginChecks, type BaseClientContext } from "./plugin-host.ts";
 import { ProcessTable } from "./system.ts";
 import { delay, firstTestPort, removeDirectory } from "./self-test-support.ts";
@@ -326,6 +326,20 @@ async function checkHostCheckOffload(assert: AssertModule): Promise<void> {
   assert.strictEqual(invalidRes?.offload, "local");
   assert.ok(invalidRes?.reason?.includes("invalid value"));
   assert.strictEqual(warnings.length, 4);
+
+  // The plugin is told the limit, and its signal aborts when the host stops waiting (not before)
+  let seenRequest: OffloadCheckRequest | undefined;
+  let abortedEarly = true;
+  const lostRes = await hostOf((_command, request) => {
+    seenRequest = request;
+    abortedEarly = request.signal?.aborted ?? true;
+    return new Promise<never>(() => {});
+  }).checkOffload("c", req, ctx);
+  assert.strictEqual(lostRes?.offload, "local");
+  assert.strictEqual(seenRequest?.timeoutMs, 50);
+  assert.strictEqual(abortedEarly, false);
+  assert.strictEqual(seenRequest?.signal?.aborted, true, "a lost race aborts the plugin's signal");
+  assert.strictEqual(seenRequest?.remoteForced, false);
 }
 
 /**

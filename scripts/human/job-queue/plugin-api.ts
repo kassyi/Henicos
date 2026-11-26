@@ -50,6 +50,10 @@ export interface OffloadAnswer {
 export interface OffloadCheckRequest {
   readonly remoteForced: boolean;
   readonly places: Readonly<Record<string, PathPlace>>;
+  /** How long the host waits for this answer; a plugin that runs several steps shares it out. */
+  readonly timeoutMs?: number;
+  /** Aborted when the host stopped waiting: whatever the plugin started for the answer must stop. */
+  readonly signal?: AbortSignal;
 }
 
 /** Read-only client context passed to client/view hooks. */

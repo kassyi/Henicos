@@ -369,14 +369,24 @@ export class PluginHost {
         continue;
       }
       let timer: ReturnType<typeof setTimeout> | undefined;
+      // Aborted when the race is lost, so that a list job the plugin started does not outlive the answer
+      const abort = new AbortController();
       try {
         const limit = new Promise<never>((_, reject) => {
-          timer = setTimeout(
-            () => reject(new Error(`timed out after ${this.checkOffloadTimeoutMs} ms`)),
-            this.checkOffloadTimeoutMs,
-          );
+          timer = setTimeout(() => {
+            abort.abort();
+            reject(new Error(`timed out after ${this.checkOffloadTimeoutMs} ms`));
+          }, this.checkOffloadTimeoutMs);
         });
-        const res = await Promise.race([plugin.checkOffload(command, request, this.contextFor(i, context)), limit]);
+        const pluginRequest: OffloadCheckRequest = {
+          ...request,
+          timeoutMs: this.checkOffloadTimeoutMs,
+          signal: abort.signal,
+        };
+        const res = await Promise.race([
+          plugin.checkOffload(command, pluginRequest, this.contextFor(i, context)),
+          limit,
+        ]);
         if (res === undefined) {
           continue;
         }
