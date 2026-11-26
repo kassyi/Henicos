@@ -142,13 +142,13 @@ internal static class EvaluationOrder
     /// </remarks>
     public static CallSequence BeginCall(ref TranspileContext context, SeparatedSyntaxList<ArgumentSyntax> arguments,
         IMethodSymbol? callee, ExpressionSyntax? receiver, bool spillAll, bool isCall = true) =>
-        BeginCallCore(ref context, extensionReceiver: null, receiverParameter: null, arguments, callee, spillAll, isCall, instanceReceiver: receiver);
+        BeginCallCore(ref context, default, arguments, callee, spillAll, isCall, instanceReceiver: receiver);
 
     /// <summary>
     /// Starts a call in reduced extension form (<c>receiver.M(arguments)</c>) that C++ emits as a static call
     /// (<c>M(receiver, arguments)</c>): when the receiver and arguments (or two arguments) interfere, writes the lambda
     /// and the temporaries in the C# evaluation order (receiver first, then arguments left-to-right) and <c>return </c>.
-    /// The caller then writes the call, emitting the receiver with <see cref="CallSequence.AppendReceiver"/> and each
+    /// The caller then writes the call, emitting the receiver with <see cref="CallSequence.AppendReceiver(ExpressionSyntax, bool, ref TranspileContext)"/> and each
     /// argument with <see cref="CallSequence.AppendArgument"/>.
     /// </summary>
     public static CallSequence BeginExtensionCall(
@@ -156,15 +156,42 @@ internal static class EvaluationOrder
         ExpressionSyntax? receiver,
         IParameterSymbol? receiverParameter,
         SeparatedSyntaxList<ArgumentSyntax> arguments,
+        IMethodSymbol? callee)
+    {
+        if (receiver == null)
+        {
+            return BeginCall(ref context, arguments, callee, receiver: null, spillAll: false);
+        }
+
+        var byReference = receiverParameter is { RefKind: not RefKind.None };
+        var plan = new ReceiverPlan(
+            byReference ? ReceiverForm.Address : ReceiverForm.Value,
+            receiver,
+            default,
+            CopyType: null,
+            ReadOnlyCallee: receiverParameter?.RefKind is not RefKind.Ref,
+            IsExtensionReceiver: true,
+            ValueType: receiverParameter?.Type);
+        return BeginReceiverCall(ref context, in plan, arguments, callee);
+    }
+
+    /// <summary>
+    /// Starts a call whose receiver is planned by <see cref="ReceiverPlanner"/> and emitted as the first argument of a
+    /// free C++ function (<c>M(receiver, arguments)</c>).
+    /// </summary>
+    public static CallSequence BeginReceiverCall(
+        ref TranspileContext context,
+        scoped in ReceiverPlan receiver,
+        SeparatedSyntaxList<ArgumentSyntax> arguments,
         IMethodSymbol? callee) =>
-        receiver == null
-            ? BeginCall(ref context, arguments, callee, receiver: null, spillAll: false)
-            : BeginCallCore(ref context, extensionReceiver: receiver, receiverParameter, arguments, callee, spillAll: false, isCall: true, instanceReceiver: null);
+        receiver.HasSequencedOperand
+            ? BeginCallCore(ref context, in receiver, arguments, callee, spillAll: false, isCall: true,
+                instanceReceiver: null)
+            : BeginCall(ref context, arguments, callee, receiver: null, spillAll: false);
 
     private static CallSequence BeginCallCore(
         ref TranspileContext context,
-        ExpressionSyntax? extensionReceiver,
-        IParameterSymbol? receiverParameter,
+        scoped in ReceiverPlan receiverPlan,
         SeparatedSyntaxList<ArgumentSyntax> arguments,
         IMethodSymbol? callee,
         bool spillAll,
@@ -172,7 +199,8 @@ internal static class EvaluationOrder
         ExpressionSyntax? instanceReceiver)
     {
         var count = arguments.Count;
-        var total = extensionReceiver != null ? count + 1 : count;
+        var hasReceiver = receiverPlan.HasSequencedOperand;
+        var total = hasReceiver ? count + 1 : count;
         if (total < 2 && !spillAll)
         {
             return default;
@@ -183,7 +211,7 @@ internal static class EvaluationOrder
         try
         {
             var effectsSpan = effects.AsSpan(0, total);
-            CollectCallEffects(extensionReceiver, receiverParameter, arguments, callee, model, effectsSpan, out var byReference);
+            CollectCallEffects(in receiverPlan, arguments, callee, model, effectsSpan);
             if (!TryDetermineLastSpill(effectsSpan, instanceReceiver, spillAll, model, out var last))
             {
                 return default;
@@ -191,7 +219,7 @@ internal static class EvaluationOrder
 
             var temps = RentTemps(count);
             var lambda = context.Emitter.Writer.ImmediatelyInvokedLambda(GetReturnType(callee));
-            var receiverTemp = DeclareSequencedOperands(ref context, extensionReceiver, receiverParameter, byReference,
+            var receiverTemp = DeclareSequencedOperands(ref context, in receiverPlan,
                 arguments, callee, effectsSpan, last, spillAll, isCall, temps.AsSpan(0, count));
 
             context.Emitter.Writer.Append("return ");
@@ -204,22 +232,32 @@ internal static class EvaluationOrder
     }
 
     private static void CollectCallEffects(
-        ExpressionSyntax? extensionReceiver,
-        IParameterSymbol? receiverParameter,
+        in ReceiverPlan receiverPlan,
         SeparatedSyntaxList<ArgumentSyntax> arguments,
         IMethodSymbol? callee,
         SemanticModel model,
-        Span<ExpressionEffects> effects,
-        out bool receiverByReference)
+        Span<ExpressionEffects> effects)
     {
         var offset = 0;
-        receiverByReference = false;
-        if (extensionReceiver != null)
+        if (receiverPlan.HasSequencedOperand)
         {
-            receiverByReference = receiverParameter is { RefKind: not RefKind.None };
-            effects[0] = receiverByReference && !NeedsConversion(extensionReceiver, model)
-                ? ExpressionEffects.OfLocation(extensionReceiver, model)
-                : ExpressionEffects.Of(extensionReceiver, model);
+            if (receiverPlan.Form == ReceiverForm.Address && receiverPlan.Expression is { } addrExpr)
+            {
+                effects[0] = !NeedsConversion(addrExpr, model) &&
+                             RefSyntaxHelper.NeedsAddressOf(addrExpr, model)
+                    ? ExpressionEffects.OfLocation(addrExpr, model)
+                    : ExpressionEffects.Of(addrExpr, model);
+            }
+            else if (receiverPlan.Expression is { } valueExpr)
+            {
+                effects[0] = ExpressionEffects.Of(valueExpr, model);
+            }
+            else
+            {
+                // A copied implicit this reads memory (this) before evaluating any arguments.
+                effects[0] = new ExpressionEffects(new VariableSet { Memory = true }, default);
+            }
+
             offset = 1;
         }
 
@@ -263,9 +301,7 @@ internal static class EvaluationOrder
 
     private static int DeclareSequencedOperands(
         ref TranspileContext context,
-        ExpressionSyntax? extensionReceiver,
-        IParameterSymbol? receiverParameter,
-        bool receiverByReference,
+        in ReceiverPlan receiverPlan,
         SeparatedSyntaxList<ArgumentSyntax> arguments,
         IMethodSymbol? callee,
         ReadOnlySpan<ExpressionEffects> effects,
@@ -275,12 +311,13 @@ internal static class EvaluationOrder
         Span<int> temps)
     {
         var receiverTemp = -1;
-        if (extensionReceiver is not null && !effects[0].IsEmpty)
+        var hasReceiver = receiverPlan.HasSequencedOperand;
+        if (hasReceiver && !effects[0].IsEmpty)
         {
-            receiverTemp = DeclareReceiver(ref context, extensionReceiver, receiverParameter, receiverByReference);
+            receiverTemp = DeclareReceiver(ref context, in receiverPlan);
         }
 
-        var offset = extensionReceiver is null ? 0 : 1;
+        var offset = hasReceiver ? 1 : 0;
         var maxArgIndex = last - offset;
         for (var i = 0; i <= maxArgIndex && i < arguments.Count; i++)
         {
@@ -293,32 +330,128 @@ internal static class EvaluationOrder
         return receiverTemp;
     }
 
-    private static int DeclareReceiver(
-        ref TranspileContext context,
-        ExpressionSyntax receiver,
-        IParameterSymbol? receiverParameter,
-        bool byReference)
+    private static int DeclareReceiver(ref TranspileContext context, in ReceiverPlan receiverPlan)
     {
         var writer = context.Emitter.Writer;
         var model = context.Query.SemanticModel;
-        if ((byReference && !NeedsConversion(receiver, model)) || StackArrayLocals.IsStackArrayReference(receiver, model))
+
+        switch (receiverPlan.Form)
         {
-            writer.Append("auto&&");
+            case ReceiverForm.Address:
+                if (receiverPlan.Expression is { } addrExpr &&
+                    ((NeedsConversion(addrExpr, model) && !StackArrayLocals.IsStackArrayReference(addrExpr, model)) ||
+                     !RefSyntaxHelper.NeedsAddressOf(addrExpr, model)))
+                {
+                    writer.Append("auto");
+                }
+                else
+                {
+                    writer.Append("auto&&");
+                }
+
+                var addrTemp = AppendDeclaredName(ref context);
+                if (receiverPlan.Expression != null)
+                {
+                    context.Visitor.Visit(receiverPlan.Expression);
+                }
+
+                writer.AppendLine(";");
+                return addrTemp;
+
+            case ReceiverForm.Copy:
+                writer.Append("auto");
+                var copyTemp = AppendDeclaredName(ref context);
+                if (receiverPlan.CopyType is { } copyType)
+                {
+                    context.Emitter.Dialect.AppendType(ref context, copyType);
+                    using (writer.Parentheses())
+                    {
+                        AppendCopySource(in receiverPlan, ref context);
+                    }
+                }
+                else
+                {
+                    AppendCopySource(in receiverPlan, ref context);
+                }
+
+                writer.AppendLine(";");
+                return copyTemp;
+
+            case ReceiverForm.Temporary:
+                writer.Append(
+                    receiverPlan.IsExtensionReceiver &&
+                    receiverPlan.Expression is { } extExpr &&
+                    !NeedsConversion(extExpr, model) &&
+                    !RefSyntaxHelper.NeedsTemporaryValueCopy(extExpr, model)
+                        ? "auto&&"
+                        : "auto");
+                var temp = AppendDeclaredName(ref context);
+                if (receiverPlan.Expression != null)
+                {
+                    context.Visitor.Visit(receiverPlan.Expression);
+                }
+
+                writer.AppendLine(";");
+                return temp;
+
+            case ReceiverForm.Value:
+            default:
+                if (receiverPlan.Expression is { } valExpr &&
+                    StackArrayLocals.IsStackArrayReference(valExpr, model))
+                {
+                    writer.Append("auto&&");
+                }
+                else if (receiverPlan.ValueType == null ||
+                         receiverPlan.ValueType is IPointerTypeSymbol ||
+                         !TypeMapping.HasDirectCppType(receiverPlan.ValueType))
+                {
+                    writer.Append("auto");
+                }
+                else
+                {
+                    context.Emitter.Dialect.AppendType(ref context, receiverPlan.ValueType);
+                }
+
+                var valueTemp = AppendDeclaredName(ref context);
+                if (receiverPlan.Expression != null)
+                {
+                    context.Visitor.Visit(receiverPlan.Expression);
+                }
+
+                writer.AppendLine(";");
+                return valueTemp;
         }
-        else if (receiverParameter == null || receiverParameter.Type is IPointerTypeSymbol ||
-                 !TypeMapping.HasDirectCppType(receiverParameter.Type))
+    }
+
+    private static void AppendCopySource(in ReceiverPlan receiverPlan, ref TranspileContext context)
+    {
+        if (receiverPlan.IsSelf)
         {
-            writer.Append("auto");
+            Rules.ExpressionRules.ThisExpressionTranspilerRule.AppendSelf(ref context);
         }
-        else
+        else if (receiverPlan.Expression != null)
         {
-            context.Emitter.Dialect.AppendType(ref context, receiverParameter.Type);
+            context.Visitor.Visit(receiverPlan.Expression);
+        }
+    }
+
+    // __gsharp_temp_mutable_address(T&&) requires a C++ prvalue: MSVC without /permissive- deduces T=S& for a member
+    // access on a prvalue (MakeHolder(10).Rw), and operator[] returns S& for element accesses (MakeBuf(10)[0]).
+    // Direct prvalues like Make(7) stay unwrapped so __gsharp_temp_mutable_address(Make(7)) is preserved.
+    private static bool NeedsMutableAddressCopy(ExpressionSyntax expression, SemanticModel model)
+    {
+        if (RefSyntaxHelper.NeedsTemporaryValueCopy(expression, model))
+        {
+            return true;
         }
 
-        var temp = AppendDeclaredName(ref context);
-        context.Visitor.Visit(receiver);
-        writer.AppendLine(";");
-        return temp;
+        var current = expression.UnwrapParentheses();
+        while (current is CheckedExpressionSyntax checkedExpression)
+        {
+            current = checkedExpression.Expression.UnwrapParentheses();
+        }
+
+        return current is MemberAccessExpressionSyntax or ElementAccessExpressionSyntax;
     }
 
     // Whether an argument up to last interferes with the receiver, which the lambda would evaluate after it
@@ -382,7 +515,7 @@ internal static class EvaluationOrder
     private static bool IsPassedAsLocation(ArgumentSyntax argument, IParameterSymbol? parameter, SemanticModel model) =>
         IsByReference(argument, parameter) &&
         !NeedsConversion(argument.Expression, model) &&
-        !RefSyntaxHelper.IsAutoPropertyOrMemberOfAutoProperty(argument.Expression, model);
+        !RefSyntaxHelper.NeedsTemporaryValueCopy(argument.Expression, model);
 
     private static bool NeedsConversion(ExpressionSyntax expression, SemanticModel model)
     {
@@ -484,22 +617,137 @@ internal static class EvaluationOrder
         /// </summary>
         public void AppendReceiver(ExpressionSyntax receiver, bool byReference, ref TranspileContext context)
         {
+            var plan = new ReceiverPlan(
+                byReference ? ReceiverForm.Address : ReceiverForm.Value,
+                receiver,
+                default,
+                CopyType: null,
+                ReadOnlyCallee: !byReference,
+                IsExtensionReceiver: true);
+            AppendReceiver(in plan, ref context);
+        }
+
+        /// <summary>
+        /// Writes the receiver described by <paramref name="receiver"/> as the first argument of the static C++
+        /// function for a struct instance device call or a reduced extension call.
+        /// </summary>
+        public void AppendReceiver(in ReceiverPlan receiver, ref TranspileContext context)
+        {
             if (_temps != null && _receiverTemp >= 0)
             {
-                context.Emitter.Writer.AppendIf(
-                    byReference && RefSyntaxHelper.NeedsAddressOf(receiver, context.Query.SemanticModel),
-                    "&");
+                var emitAddress = receiver.Form != ReceiverForm.Value &&
+                                  (receiver.Form is ReceiverForm.Copy or ReceiverForm.Temporary ||
+                                   receiver.Expression == null ||
+                                   RefSyntaxHelper.NeedsAddressOf(receiver.Expression, context.Query.SemanticModel));
+                context.Emitter.Writer.AppendIf(emitAddress, "&");
                 AppendTempName(context.Emitter.Writer, _receiverTemp);
                 return;
             }
 
-            if (byReference)
+            switch (receiver.Form)
             {
-                RefSyntaxHelper.TranspileAsByRefArgument(ref context, receiver);
-                return;
-            }
+                case ReceiverForm.Address:
+                    if (receiver.Expression != null)
+                    {
+                        RefSyntaxHelper.TranspileAsByRefArgument(ref context, receiver.Expression);
+                    }
 
-            context.Visitor.Visit(receiver);
+                    break;
+
+                case ReceiverForm.Copy:
+                    context.Emitter.Writer.Append(GSharpInternalNames.Prelude.TempMutableAddress);
+                    using (context.Emitter.Writer.Parentheses())
+                    {
+                        if (receiver.CopyType is { } copyType)
+                        {
+                            context.Emitter.Dialect.AppendType(ref context, copyType);
+                            using (context.Emitter.Writer.Parentheses())
+                            {
+                                AppendCopySource(in receiver, ref context);
+                            }
+                        }
+                        else
+                        {
+                            AppendCopySource(in receiver, ref context);
+                        }
+                    }
+
+                    break;
+
+                case ReceiverForm.Temporary:
+                    if (receiver.ReadOnlyCallee)
+                    {
+                        if (receiver.Expression is { } readOnlyTempExpr)
+                        {
+                            // [WHY] Non-variable [InlineArray] elements (and member chains on them) classify as
+                            // CppLocation.Storage in ClassifyElementAccess so ordinary in-arguments keep their shape;
+                            // for a ReceiverForm.Temporary receiver, force __gsharp_temp_address<T>(static_cast<T>(...))
+                            // when NeedsTemporaryValueCopy is true so the callee cannot alias underlying storage.
+                            var model = context.Query.SemanticModel;
+                            if (RefSyntaxHelper.NeedsAddressOf(readOnlyTempExpr, model) &&
+                                RefSyntaxHelper.NeedsTemporaryValueCopy(readOnlyTempExpr, model))
+                            {
+                                RefSyntaxHelper.AppendTempAddress(ref context, readOnlyTempExpr, model,
+                                    forceValueCopy: true);
+                            }
+                            else
+                            {
+                                RefSyntaxHelper.TranspileAsByRefArgument(ref context, readOnlyTempExpr);
+                            }
+                        }
+
+                        break;
+                    }
+
+                    context.Emitter.Writer.Append(GSharpInternalNames.Prelude.TempMutableAddress);
+                    using (context.Emitter.Writer.Parentheses())
+                    {
+                        if (receiver.Expression is { } tempExpr)
+                        {
+                            var needsCopy = receiver.CopyType != null &&
+                                            NeedsMutableAddressCopy(tempExpr, context.Query.SemanticModel);
+                            if (needsCopy && receiver.CopyType is { } tempCopyType)
+                            {
+                                context.Emitter.Dialect.AppendType(ref context, tempCopyType);
+                                using (context.Emitter.Writer.Parentheses())
+                                {
+                                    context.Visitor.Visit(tempExpr);
+                                }
+                            }
+                            else
+                            {
+                                context.Visitor.Visit(tempExpr);
+                            }
+                        }
+                    }
+
+                    break;
+
+                case ReceiverForm.Self:
+                    switch (receiver.SelfForm)
+                    {
+                        case SelfForm.ReceiverParameter:
+                            context.Emitter.Writer.Append(GSharpInternalNames.Lowering.ReceiverParameter);
+                            break;
+                        case SelfForm.ConstructorSelf:
+                            context.Emitter.Writer.Append($"&{GSharpInternalNames.Lowering.ConstructorSelf}");
+                            break;
+                        default:
+                            context.Emitter.Writer.Append("this");
+                            break;
+                    }
+
+                    break;
+
+                case ReceiverForm.Value:
+                default:
+                    if (receiver.Expression != null)
+                    {
+                        context.Visitor.Visit(receiver.Expression);
+                    }
+
+                    break;
+            }
         }
 
         /// <summary>

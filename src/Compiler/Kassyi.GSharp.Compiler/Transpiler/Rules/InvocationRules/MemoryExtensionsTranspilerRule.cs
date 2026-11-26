@@ -297,6 +297,7 @@ public sealed class MemoryExtensionsTranspilerRule : IInvocationTranspilerRule
         expression is AnonymousFunctionExpressionSyntax ||
         (expression is IdentifierNameSyntax or MemberAccessExpressionSyntax &&
          model.GetSymbol(expression) is IMethodSymbol target &&
+         target.IsStatic &&
          CppNameResolver.IsEmittedDeviceFunction(target, dialect));
 
     // Comparer<T>.Default, which .NET sorts with the default order (GenericArraySortHelper)
