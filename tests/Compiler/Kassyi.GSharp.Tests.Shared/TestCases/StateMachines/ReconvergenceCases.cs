@@ -1364,4 +1364,62 @@ public static class ReconvergenceCases
         Mark(87);
         result[t + 160] = Warp.ActiveMask();
     }
+
+    [GpuKernel]
+    public static void ForLoopLeftAfterContinueKernel(uint[] r, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        for (int i = 0; i < u + 3; i++)
+        {
+            Mark(88);
+            r[t + 32 * n] = Warp.ActiveMask();
+            n++;
+            if ((t & 4) == 0)
+            {
+                if ((t & 3) != 0 && i < 2)
+                {
+                    continue;
+                }
+
+                Mark(89);
+                r[t + 96] = Warp.ActiveMask();
+            }
+
+            break;
+        }
+
+        Mark(93);
+        r[t + 128] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void TrailingForLoopLeftAfterContinueKernel(uint[] r, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        for (int i = 0; i < u + 3 - (t & 8); i++)
+        {
+            Mark(94);
+            r[t + 32 * n] = Warp.ActiveMask();
+            n++;
+            if ((t & 16) != 0 && i == 0)
+            {
+                break;
+            }
+
+            if ((t & 4) == 0)
+            {
+                if ((t & 3) != 0 && i < 2)
+                {
+                    continue;
+                }
+
+                Mark(95);
+                r[t + 96] = Warp.ActiveMask();
+            }
+
+            break;
+        }
+    }
 }

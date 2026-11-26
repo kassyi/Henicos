@@ -117,6 +117,71 @@ public class ReconvergenceInserterTests : StateMachineTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
+    public Task Lower_LoopLeftAfterContinue_EmitsBodyLeaveAndLoopTokenGate() =>
+        VerifyPipelineLowerFromTestCase("ReconvergenceLoopLeftAfterContinue.cs");
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_ForLoopLeftAfterContinue_EmitsRegionLeaveOnConditionExit()
+    {
+        var (_, stackLowered) = LowerFromTestCase("ForLoopLeftAfterContinueKernel", isDeviceFunction: false);
+
+        var enterSites = ExtractRegionSites(stackLowered.Body, GSharpInternalNames.StackWarp.RegionEnter, siteIndex: 1);
+        Assert.True(enterSites.Length >= 2, $"Expected join and loop token enters, got [{string.Join(", ", enterSites)}].");
+        var loopTokenSite = enterSites[1];
+
+        var forStatement = Assert.Single(stackLowered.Body.DescendantNodes().OfType<ForStatementSyntax>());
+        var enclosingBlock = Assert.IsType<BlockSyntax>(forStatement.Parent);
+        var forIndex = enclosingBlock.Statements.IndexOf(forStatement);
+        Assert.True(forIndex + 1 < enclosingBlock.Statements.Count, "Expected RegionLeave after the for loop.");
+        var afterFor = Assert.IsType<ExpressionStatementSyntax>(enclosingBlock.Statements[forIndex + 1]);
+        var call = Assert.IsType<InvocationExpressionSyntax>(afterFor.Expression);
+        Assert.True(
+            Calls(call, GSharpInternalNames.StackWarp.RegionLeave),
+            $"Expected {GSharpInternalNames.StackWarp.RegionLeave}({loopTokenSite}) on condition-false exit, got {call}.");
+        Assert.Equal(loopTokenSite, ExtractRegionSite(call, siteIndex: 1));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_TrailingForLoopLeftAfterContinue_EmitsJoinLabelPastConditionLeave()
+    {
+        var (lowered, stackLowered) = LowerFromTestCase("TrailingForLoopLeftAfterContinueKernel", isDeviceFunction: false);
+        AssertHasBalancedRegionSites(stackLowered, lowered);
+
+        var enterSites = ExtractRegionSites(stackLowered.Body, GSharpInternalNames.StackWarp.RegionEnter, siteIndex: 1);
+        Assert.NotEmpty(enterSites);
+        var loopTokenSite = enterSites[0];
+        var joinLabelName = $"{GSharpInternalNames.Lowering.ReconvergeJoinLabelPrefix}{loopTokenSite}";
+
+        var forStatement = Assert.Single(stackLowered.Body.DescendantNodes().OfType<ForStatementSyntax>());
+        var enclosingBlock = Assert.IsType<BlockSyntax>(forStatement.Parent);
+        var forIndex = enclosingBlock.Statements.IndexOf(forStatement);
+        Assert.True(forIndex + 2 < enclosingBlock.Statements.Count,
+            "Expected RegionLeave and ReconvergeJoin label after the trailing for loop.");
+
+        var leaveStmt = Assert.IsType<ExpressionStatementSyntax>(enclosingBlock.Statements[forIndex + 1]);
+        var leaveCall = Assert.IsType<InvocationExpressionSyntax>(leaveStmt.Expression);
+        Assert.True(
+            Calls(leaveCall, GSharpInternalNames.StackWarp.RegionLeave),
+            $"Expected {GSharpInternalNames.StackWarp.RegionLeave}({loopTokenSite}) on condition-false exit, got {leaveCall}.");
+        Assert.Equal(loopTokenSite, ExtractRegionSite(leaveCall, siteIndex: 1));
+
+        var joinLabeled = Assert.IsType<LabeledStatementSyntax>(enclosingBlock.Statements[forIndex + 2]);
+        Assert.Equal(joinLabelName, joinLabeled.Identifier.ValueText);
+
+        Assert.DoesNotContain(forStatement.DescendantNodes().OfType<BreakStatementSyntax>(), static _ => true);
+        var breakGotos = forStatement
+            .DescendantNodes()
+            .OfType<GotoStatementSyntax>()
+            .Where(g => g.Expression is IdentifierNameSyntax { Identifier.ValueText: var target } &&
+                        target == joinLabelName)
+            .ToArray();
+        Assert.Equal(2, breakGotos.Length);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
     public void Insert_GotoLoopWithSwitchVarPatternExit_ClosesBeforeGate()
     {
         var (_, tree, model) = RoslynTestUtility.GetTestCaseContext(Path.Combine("StateMachines", TestCase));
@@ -206,7 +271,7 @@ public class ReconvergenceInserterTests : StateMachineTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Insert_GotoLoopWithContinueBeforeGateInFor_EmitsNoGateBeforeBreakBlock()
+    public void Insert_GotoLoopWithContinueBeforeGateInFor_EmitsTheLoopGateBeforeBreakBlock()
     {
         var (lowered, stackLowered) = LowerFromTestCase("GotoLoopWithContinueBeforeGateInForKernel", isDeviceFunction: false);
 
@@ -215,9 +280,10 @@ public class ReconvergenceInserterTests : StateMachineTestBase
         var afterReconvergence = GetCallsAfterReconvergencePass(lowered);
         Assert.Contains("Mark(43)", afterReconvergence);
 
-        AssertHasNoGateStackReconvergeBefore(stackLowered.Body, "Mark(42)");
+        // The for loop closes at its own gate after the continue; the goto loop has no gate there
+        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(42)");
         AssertHasPrecedingStackReconverge(stackLowered.Body, "Mark(43)");
-        Assert.DoesNotContain(
+        Assert.Contains(
             stackLowered.Body.DescendantNodes().OfType<GotoStatementSyntax>(),
             static g => g.Expression is IdentifierNameSyntax { Identifier.ValueText: var label } &&
                         label.StartsWith(GSharpInternalNames.Lowering.ReconvergeJoinLabelPrefix, StringComparison.Ordinal));
@@ -267,8 +333,9 @@ public class ReconvergenceInserterTests : StateMachineTestBase
             .TakeWhile(static s => s is ExpressionStatementSyntax { Expression: InvocationExpressionSyntax c } &&
                                    Calls(c, GSharpInternalNames.StackWarp.RegionLeave))
             .Count();
-        // Leaves C, F and B_L1 when closing the inner L1 at the gate: its backward goto is the statement before Mark(47).
-        Assert.Equal(3, mark47LeavesBeforeReconverge);
+        // Leaves the regions above the token of the inner L1, which closes at the gate: its backward goto is the
+        // statement before Mark(47); the loop regions are already closed by the loop's own gate.
+        Assert.Equal(2, mark47LeavesBeforeReconverge);
 
         var joinGoto = stackLowered.Body
             .DescendantNodes()
