@@ -191,9 +191,9 @@ const HenicosLocalOnlyEnv = [
 // read their own families, so a caller variable of these families changes what a remote run would build or test.
 const HenicosLocalOnlyEnvPrefixes = ["GSharp", "DOTNET_", "COMPlus_", "VSTEST_", "MSBUILD", "NUGET_"] as const;
 
-// Set on every run of a machine (MSBUILDDISABLENODEREUSE=1 avoids file locks on Windows; DOTNET_ROOT is set by
-// actions/setup-dotnet and SDK installs, and the worker resolves its own) or queue infrastructure: neither forwarded
-// nor a reason to run locally.
+// Set on every run of a machine (MSBUILDDISABLENODEREUSE=1 avoids file locks on Windows; DOTNET_ROOT and
+// DOTNET_INSTALL_DIR are set by actions/setup-dotnet and SDK installs, DOTNET_MULTILEVEL_LOOKUP by the GitHub runner
+// images, and the worker resolves its own SDK) or queue infrastructure: neither forwarded nor a reason to run locally.
 const HenicosIgnoredEnv = [
   "MSBUILDDISABLENODEREUSE",
   "DOTNET_CLI_UI_LANGUAGE",
@@ -201,6 +201,8 @@ const HenicosIgnoredEnv = [
   "DOTNET_NOLOGO",
   "DOTNET_SKIP_FIRST_TIME_EXPERIENCE",
   "DOTNET_ROOT",
+  "DOTNET_INSTALL_DIR",
+  "DOTNET_MULTILEVEL_LOOKUP",
 ] as const;
 const HenicosIgnoredEnvPrefixes = ["GSHARP_JOB_QUEUE_", "GSHARP_GPU_"] as const;
 
