@@ -1,6 +1,7 @@
 #nullable enable
 using Kassyi.GSharp.Compiler;
 using Kassyi.GSharp.Compiler.Analysis.Checks;
+using Kassyi.GSharp.Compiler.Semantics;
 using Kassyi.GSharp.Compiler.Transpiler.Helpers.Numeric;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Microsoft.CodeAnalysis;

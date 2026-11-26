@@ -4,6 +4,7 @@ using Kassyi.GSharp.Compiler.Ir;
 using Kassyi.GSharp.Compiler.Ir.Decisions;
 using Kassyi.GSharp.Compiler.Ir.Expressions;
 using Kassyi.GSharp.Compiler.Marshaling;
+using Kassyi.GSharp.Compiler.Semantics;
 using Kassyi.GSharp.Compiler.Transpiler;
 using Kassyi.GSharp.Compiler.Transpiler.Helpers.NullChecks;
 using Kassyi.GSharp.Compiler.Transpiler.Helpers.Numeric;

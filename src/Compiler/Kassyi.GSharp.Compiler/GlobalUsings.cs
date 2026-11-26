@@ -19,6 +19,7 @@ global using Kassyi.GSharp.Compiler.Dialects;
 global using Kassyi.GSharp.Compiler.Extensions;
 global using Kassyi.GSharp.Compiler.Helpers;
 global using Kassyi.GSharp.Compiler.Marshaling;
+global using Kassyi.GSharp.Compiler.Semantics;
 global using Kassyi.GSharp.Compiler.Transpiler;
 global using Kassyi.GSharp.Compiler.Transpiler.Helpers;
 global using Kassyi.GSharp.Compiler.Transpiler.Helpers.Calls;

@@ -1,6 +1,6 @@
 using Microsoft.CodeAnalysis.Operations;
 
-namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.Numeric;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>
 /// The C function that gives the C# result of the <see langword="float"/> and <see langword="double"/> remainder

@@ -9,6 +9,7 @@ using Kassyi.GSharp.Compiler.Ir.Linear;
 using Kassyi.GSharp.Compiler.Ir.Splitting;
 using Kassyi.GSharp.Compiler.Ir.Statements;
 using Kassyi.GSharp.Compiler.Lowering;
+using Kassyi.GSharp.Compiler.Semantics;
 using Kassyi.GSharp.Compiler.Transpiler;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;

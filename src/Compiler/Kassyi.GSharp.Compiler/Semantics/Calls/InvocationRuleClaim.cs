@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Transpiler;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>
 /// Whether an invocation is claimed by a rule in <c>TranspilerRuleRegistry.InvocationRules</c> before standard call
