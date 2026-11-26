@@ -40,7 +40,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var array = CreateArray(left, leftWords);
         using var scalar = CreateScalar(scalarValue, rightWords);
         using var expr = array.AsVectorizedEnumerable().SelectMultiply(scalar);
-        var actual = ToHostArray(expr.Evaluate(_context));
+        var actual = ToHostArray(expr.Evaluate(Context));
 
         // Each element is the exact product: the carry out of the left operand's top word reaches word i + leftWords.
         // mutant: GpuBigIntVectorKernels.Mul.cu.cs, the low pass's carry out `= g | (p & carryIn)` -> `= 0u`
@@ -67,8 +67,8 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var rightArray = CreateArray(right, rightWords);
         using var expr = leftArray.AsVectorizedEnumerable().ZipMultiply(rightArray.AsVectorizedEnumerable());
         using var swapped = rightArray.AsVectorizedEnumerable().ZipMultiply(leftArray.AsVectorizedEnumerable());
-        var actual = ToHostArray(expr.Evaluate(_context));
-        var actualSwapped = ToHostArray(swapped.Evaluate(_context));
+        var actual = ToHostArray(expr.Evaluate(Context));
+        var actualSwapped = ToHostArray(swapped.Evaluate(Context));
 
         for (int e = 0; e < left.Length; e++)
         {
@@ -110,7 +110,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var leftArray = CreateArray([left, -left], leftWords);
         using var rightArray = CreateArray([right, right], rightWords);
         using var expr = leftArray.AsVectorizedEnumerable().ZipMultiply(rightArray.AsVectorizedEnumerable());
-        var actual = ToHostArray(expr.Evaluate(_context));
+        var actual = ToHostArray(expr.Evaluate(Context));
 
         // The product of the largest operands is exact, with the sign of the left operand.
         // mutant: GpuBigIntVectorKernels.Mul.cu.cs, the carry-in dropped (`(uint)sum + carryIn` -> `(uint)sum`)
@@ -138,7 +138,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var leftArray = CreateArray([leftValue, -leftValue], leftWords);
         using var rightArray = CreateArray([rightValue, rightValue], 1);
         using var expr = leftArray.AsVectorizedEnumerable().ZipMultiply(rightArray.AsVectorizedEnumerable());
-        var actual = ToHostArray(expr.Evaluate(_context));
+        var actual = ToHostArray(expr.Evaluate(Context));
 
         // The product is exact; the carry crosses the run of 0xFFFFFFFF words.
         // mutant: GpuBigIntVectorKernels.Mul.cu.cs, `p = (uint)sum == 0xFFFFFFFFu ? 1u : 0u` -> `p = 0u`
@@ -169,8 +169,8 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         var right = RandomFullWidthElements(random, 3, rightWords);
         right[2] = (BigInteger.One << (32 * rightWords)) - 1;
 
-        using var leftArray = new GpuBigFloatArray(_context, left.Length, leftWords);
-        using var rightArray = new GpuBigFloatArray(_context, right.Length, rightWords);
+        using var leftArray = new GpuBigFloatArray(Context, left.Length, leftWords);
+        using var rightArray = new GpuBigFloatArray(Context, right.Length, rightWords);
         for (int e = 0; e < left.Length; e++)
         {
             using var leftFloat = CreateFloat(left[e], leftWords, exponent: 3);
@@ -180,7 +180,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         }
 
         using var expr = leftArray.AsVectorizedEnumerable().ZipMultiply(rightArray.AsVectorizedEnumerable());
-        var result = expr.Evaluate(_context);
+        var result = expr.Evaluate(Context);
         Assert.Equal(leftWords + rightWords, result.WordsPerElement);
 
         for (int e = 0; e < left.Length; e++)
@@ -208,10 +208,10 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var array = CreateArray([BigInteger.One], 2);
         using var scalar = CreateScalar(BigInteger.One, 2);
         using var expr = array.AsVectorizedEnumerable().SelectMultiply(scalar);
-        using var shortTarget = new GpuBigUIntArray(_context, 1, expr.WordsPerElement - 1);
+        using var shortTarget = new GpuBigUIntArray(Context, 1, expr.WordsPerElement - 1);
 
         Assert.Equal(4, expr.WordsPerElement);
-        Assert.Throws<ArgumentException>(() => expr.Evaluate(_context, targetResult: shortTarget));
+        Assert.Throws<ArgumentException>(() => expr.Evaluate(Context, targetResult: shortTarget));
     }
 
     /// <summary>The words <c>[0xFFFFFFFF, 1, ..., 1, 0xFFFFFFFF]</c>, low word first.</summary>
@@ -234,7 +234,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         var bytes = BigInteger.Abs(value).ToByteArray(isUnsigned: true, isBigEndian: false);
         var words = new uint[numWords];
         Buffer.BlockCopy(bytes, 0, words, 0, Math.Min(bytes.Length, words.Length * 4));
-        return new GpuBigFloat(new GpuBigUInt(_context, words), exponent, isNegative);
+        return new GpuBigFloat(new GpuBigUInt(Context, words), exponent, isNegative);
     }
 
     /// <summary>A value of exactly <paramref name="numWords"/> words: random words with the top bit set.</summary>

@@ -5,10 +5,10 @@ public partial class GpuBigIntVectorLinqExtensionsTests
 {
     private uint[] ToHostBoolArray(IGpuBoolVectorExpression expr)
     {
-        var array = expr.Evaluate(_context);
+        var array = expr.Evaluate(Context);
         var hostResult = new uint[array.Length];
         // The result is a view of the node's buffer; disposing the expression returns it
-        _context.Provider.CopyDeviceToHost(hostResult, array.DevicePointer, array.Length);
+        Context.Provider.CopyDeviceToHost(hostResult, array.DevicePointer, array.Length);
         return hostResult;
     }
 
@@ -147,11 +147,11 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var array = CreateArray(new BigInteger[] { 10, 50, 100, 200 });
         var threshold = CreateScalar(150);
         var expr = array.AsVectorizedEnumerable().IsGreaterThan(threshold).Any();
-        Assert.True(expr.Evaluate(_context)); // 200 > 150
+        Assert.True(expr.Evaluate(Context)); // 200 > 150
         
         var threshold2 = CreateScalar(300);
         var expr2 = array.AsVectorizedEnumerable().IsGreaterThan(threshold2).Any();
-        Assert.False(expr2.Evaluate(_context));
+        Assert.False(expr2.Evaluate(Context));
     }
 
     [Fact]
@@ -161,11 +161,11 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var array = CreateArray(new BigInteger[] { 10, 50, 100, 200 });
         var threshold = CreateScalar(0);
         var expr = array.AsVectorizedEnumerable().IsGreaterThan(threshold).All();
-        Assert.True(expr.Evaluate(_context)); // All > 0
+        Assert.True(expr.Evaluate(Context)); // All > 0
         
         var threshold2 = CreateScalar(20);
         var expr2 = array.AsVectorizedEnumerable().IsGreaterThan(threshold2).All();
-        Assert.False(expr2.Evaluate(_context)); // 10 is not > 20
+        Assert.False(expr2.Evaluate(Context)); // 10 is not > 20
     }
 
     /// <summary>
@@ -195,7 +195,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
 
     private GpuBigIntArray CreateSignedArray(SignedElement[] values, int numWords)
     {
-        var array = new GpuBigIntArray(_context, values.Length, numWords);
+        var array = new GpuBigIntArray(Context, values.Length, numWords);
         var valuesHost = new uint[values.Length * numWords];
         var signsHost = new uint[values.Length];
         for (var i = 0; i < values.Length; i++)
@@ -204,8 +204,8 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             signsHost[i] = values[i].Negative ? 1u : 0u;
         }
 
-        _context.Provider.CopyHostToDevice(array.Values.DevicePointer, valuesHost, valuesHost.Length);
-        _context.Provider.CopyHostToDevice(array.Signs.DevicePointer, signsHost, signsHost.Length);
+        Context.Provider.CopyHostToDevice(array.Values.DevicePointer, valuesHost, valuesHost.Length);
+        Context.Provider.CopyHostToDevice(array.Signs.DevicePointer, signsHost, signsHost.Length);
         return array;
     }
 
@@ -255,11 +255,11 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     {
         using (expr)
         {
-            var array = expr.Evaluate(_context);
+            var array = expr.Evaluate(Context);
             var host = new uint[array.Length];
             if (host.Length > 0)
             {
-                _context.Provider.CopyDeviceToHost(host, array.DevicePointer, array.Length);
+                Context.Provider.CopyDeviceToHost(host, array.DevicePointer, array.Length);
             }
 
             return host;
@@ -379,10 +379,10 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         // A grid of 0 blocks is an invalid launch; an empty comparison launches nothing and returns 0 flags.
         // mutant: VectorCompareExpressions.cs VectorCompareLaunch.Launch `if (length == 0) { return; }` -> removed
         // input: this test (CudaException: invalid value)
-        using var left = new GpuBigIntArray(_context, 0, 8);
-        using var right = new GpuBigIntArray(_context, 0, 4);
-        using var scalarMagnitude = new GpuBigUInt(_context, [5u]);
-        var scalar = new GpuBigInt(scalarMagnitude, isNegative: false);
+        using var left = new GpuBigIntArray(Context, 0, 8);
+        using var right = new GpuBigIntArray(Context, 0, 4);
+        using var scalarMagnitude = new GpuBigUInt(Context, [5u]);
+        using var scalar = new GpuBigInt(scalarMagnitude.AsBorrowed(), isNegative: false);
 
         Assert.Empty(EvaluateBools(left.AsVectorizedEnumerable().IsLessThan(right.AsVectorizedEnumerable())));
         Assert.Empty(EvaluateBools(left.AsVectorizedEnumerable().IsEqualTo(scalar)));
@@ -423,8 +423,8 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var array = CreateSignedArray(elements, 8);
         foreach (var scalarValue in scalars)
         {
-            using var scalarMagnitude = new GpuBigUInt(_context, ToWords(scalarValue.Magnitude, 8));
-            var scalar = new GpuBigInt(scalarMagnitude, scalarValue.Negative);
+            using var scalarMagnitude = new GpuBigUInt(Context, ToWords(scalarValue.Magnitude, 8));
+            using var scalar = new GpuBigInt(scalarMagnitude.AsBorrowed(), scalarValue.Negative);
 
             var actual = EvaluateBools(Compare(array.AsVectorizedEnumerable(), scalar, op));
 
@@ -457,24 +457,24 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         var big200 = BigInteger.One << 200;
 
         using var narrowArray = CreateSignedArray(elements, 4);
-        using var wideScalarMagnitude = new GpuBigUInt(_context, ToWords(big200, 8));
+        using var wideScalarMagnitude = new GpuBigUInt(Context, ToWords(big200, 8));
         foreach (var negative in new[] { false, true })
         {
-            var wideScalar = new GpuBigInt(wideScalarMagnitude, negative);
+            using var wideScalar = new GpuBigInt(wideScalarMagnitude.AsBorrowed(), negative);
             var actual = EvaluateBools(Compare(narrowArray.AsVectorizedEnumerable(), wideScalar, op));
             var scalarValue = negative ? -big200 : big200;
             Assert.Equal(elements.Select(e => ExpectedCompare(e.Value, scalarValue, op)).ToArray(), actual);
         }
 
         var big1500 = BigInteger.One << (32 * 1500);
-        using var hugeScalarMagnitude = new GpuBigUInt(_context, ToWords(big1500, 2048));
-        var hugeScalar = new GpuBigInt(hugeScalarMagnitude, isNegative: false);
+        using var hugeScalarMagnitude = new GpuBigUInt(Context, ToWords(big1500, 2048));
+        using var hugeScalar = new GpuBigInt(hugeScalarMagnitude.AsBorrowed(), isNegative: false);
         var hugeActual = EvaluateBools(Compare(narrowArray.AsVectorizedEnumerable(), hugeScalar, op));
         Assert.Equal(elements.Select(e => ExpectedCompare(e.Value, big1500, op)).ToArray(), hugeActual);
 
         using var wideArray = CreateSignedArray(elements, 8);
-        using var narrowScalarMagnitude = new GpuBigUInt(_context, [1u]);
-        var narrowScalar = new GpuBigInt(narrowScalarMagnitude, isNegative: true);
+        using var narrowScalarMagnitude = new GpuBigUInt(Context, [1u]);
+        using var narrowScalar = new GpuBigInt(narrowScalarMagnitude.AsBorrowed(), isNegative: true);
         var wideActual = EvaluateBools(Compare(wideArray.AsVectorizedEnumerable(), narrowScalar, op));
         Assert.Equal(elements.Select(e => ExpectedCompare(e.Value, BigInteger.MinusOne, op)).ToArray(), wideActual);
     }
@@ -496,9 +496,9 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         // input: this test with Equal
         SignedElement[] elements = [5, 6];
         using var array = CreateSignedArray(elements, 64);
-        using var backing = new GpuBigUIntArray(_context, 2, 1);
-        _context.Provider.CopyHostToDevice(backing.DevicePointer, [5u, 0xFFFFFFFFu], 2);
-        var scalar = new GpuBigInt(backing.BorrowElement(0), isNegative: false);
+        using var backing = new GpuBigUIntArray(Context, 2, 1);
+        Context.Provider.CopyHostToDevice(backing.DevicePointer, [5u, 0xFFFFFFFFu], 2);
+        using var scalar = new GpuBigInt(backing.BorrowElement(0), isNegative: false);
 
         var actual = EvaluateBools(Compare(array.AsVectorizedEnumerable(), scalar, op));
 

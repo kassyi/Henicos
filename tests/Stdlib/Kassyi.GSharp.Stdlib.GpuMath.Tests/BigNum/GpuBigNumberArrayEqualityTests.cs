@@ -97,7 +97,7 @@ public sealed class GpuBigNumberArrayEqualityTests
         Assert.NotEqual(zeroLenWords2.GetHashCode(), zeroLenWords4.GetHashCode());
 
         // Same 12-word buffer reshaped as (3, 4) vs (4, 3) differs in element shape.
-        var reshaped = new GpuBigUIntArray(workspaceA, array.Handle.Borrow(), WordsPerElement, Length);
+        using var reshaped = new GpuBigUIntArray(workspaceA, array.Handle.Borrow(), WordsPerElement, Length);
         AssertNotEqual(array, reshaped);
     }
 
@@ -182,13 +182,13 @@ public sealed class GpuBigNumberArrayEqualityTests
         // Differing only in Values while sharing Signs must not compare equal.
         // mutant: GpuBigIntArray.Equals drops `Values.Equals(other.Values)`
         using var altValues = new GpuBigUIntArray(workspace, Length, WordsPerElement);
-        var onlyValuesDiffer = new GpuBigIntArray(altValues.AsBorrowed(), array.Signs.AsBorrowed());
+        using var onlyValuesDiffer = new GpuBigIntArray(altValues.AsBorrowed(), array.Signs.AsBorrowed());
         AssertNotEqual(array, onlyValuesDiffer);
 
         // Differing only in Signs while sharing Values must not compare equal.
         // mutant: GpuBigIntArray.Equals drops `Signs.Equals(other.Signs)`
         using var altSigns = new GpuBigUIntArray(workspace, Length, 1);
-        var onlySignsDiffer = new GpuBigIntArray(array.Values.AsBorrowed(), altSigns.AsBorrowed());
+        using var onlySignsDiffer = new GpuBigIntArray(array.Values.AsBorrowed(), altSigns.AsBorrowed());
         AssertNotEqual(array, onlySignsDiffer);
     }
 
@@ -271,21 +271,21 @@ public sealed class GpuBigNumberArrayEqualityTests
         // Differing only in Significands while sharing Exponents and Signs must not compare equal.
         // mutant: GpuBigFloatArray.Equals drops `Significands.Equals(other.Significands)`
         using var altSignificands = new GpuBigUIntArray(workspace, Length, WordsPerElement);
-        var onlySignificandsDiffer = new GpuBigFloatArray(
+        using var onlySignificandsDiffer = new GpuBigFloatArray(
             altSignificands.AsBorrowed(), array.Exponents.AsBorrowed(), array.Signs.AsBorrowed());
         AssertNotEqual(array, onlySignificandsDiffer);
 
         // Differing only in Exponents while sharing Significands and Signs must not compare equal.
         // mutant: GpuBigFloatArray.Equals drops `Exponents.Equals(other.Exponents)`
         using var altExponents = new GpuBigUIntArray(workspace, Length, 1);
-        var onlyExponentsDiffer = new GpuBigFloatArray(
+        using var onlyExponentsDiffer = new GpuBigFloatArray(
             array.Significands.AsBorrowed(), altExponents.AsBorrowed(), array.Signs.AsBorrowed());
         AssertNotEqual(array, onlyExponentsDiffer);
 
         // Differing only in Signs while sharing Significands and Exponents must not compare equal.
         // mutant: GpuBigFloatArray.Equals drops `Signs.Equals(other.Signs)`
         using var altSigns = new GpuBigUIntArray(workspace, Length, 1);
-        var onlySignsDiffer = new GpuBigFloatArray(
+        using var onlySignsDiffer = new GpuBigFloatArray(
             array.Significands.AsBorrowed(), array.Exponents.AsBorrowed(), altSigns.AsBorrowed());
         AssertNotEqual(array, onlySignsDiffer);
     }

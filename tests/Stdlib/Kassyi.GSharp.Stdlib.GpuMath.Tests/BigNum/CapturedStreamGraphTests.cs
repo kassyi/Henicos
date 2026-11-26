@@ -11,8 +11,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
 {
     private const int Words = 8;
 
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
     private readonly GpuBigUInt _a;
     private readonly GpuBigUInt _b;
     private readonly GpuBigUInt _result;
@@ -20,20 +19,37 @@ public sealed class CapturedStreamGraphTests : IDisposable
     public CapturedStreamGraphTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
-        _a = new GpuBigUInt(_workspace, Words);
-        _b = new GpuBigUInt(_workspace, Words);
-        _result = new GpuBigUInt(_workspace, Words);
+        _testWorkspace = new GpuTestWorkspace(64, GpuExecutionEngine.GSharpAot);
+        GpuBigUInt a = default;
+        GpuBigUInt b = default;
+        GpuBigUInt result = default;
+        try
+        {
+            a = new GpuBigUInt(_testWorkspace.Workspace, Words);
+            b = new GpuBigUInt(_testWorkspace.Workspace, Words);
+            result = new GpuBigUInt(_testWorkspace.Workspace, Words);
+            _a = a;
+            _b = b;
+            _result = result;
+        }
+        catch
+        {
+            result.Dispose();
+            b.Dispose();
+            a.Dispose();
+            _testWorkspace.Dispose();
+            throw;
+        }
     }
+
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
 
     public void Dispose()
     {
         _result.Dispose();
         _b.Dispose();
         _a.Dispose();
-        _workspace.Dispose();
-        _scope.Dispose();
+        _testWorkspace.Dispose();
     }
 
     [SkippableFact]
@@ -43,24 +59,24 @@ public sealed class CapturedStreamGraphTests : IDisposable
         // Warm up the kernel and temp pool slot before capturing so the capture itself stays zero-allocation.
         WriteWords(_a, 1);
         WriteWords(_b, 2);
-        using (var warmupTemp = new GpuBigUInt(_workspace, Words))
+        using (var warmupTemp = new GpuBigUInt(Workspace, Words))
         {
-            _workspace.Provider.Add(_workspace, _a, _b, warmupTemp);
-            _workspace.Provider.CopyDeviceToDevice(_result.DevicePointer, warmupTemp.DevicePointer, Words,
-                _workspace.Stream);
+            Workspace.Provider.Add(Workspace, _a, _b, warmupTemp);
+            Workspace.Provider.CopyDeviceToDevice(_result.DevicePointer, warmupTemp.DevicePointer, Words,
+                Workspace.Stream);
         }
 
-        _workspace.Provider.SynchronizeStream(_workspace.Stream);
+        Workspace.Provider.SynchronizeStream(Workspace.Stream);
 
-        using var graph = CapturedStreamGraph.Capture(_workspace, () =>
+        using var graph = CapturedStreamGraph.Capture(Workspace, () =>
         {
-            using var temp = new GpuBigUInt(_workspace, Words);
-            _workspace.Provider.Add(_workspace, _a, _b, temp);
-            _workspace.Provider.CopyDeviceToDevice(_result.DevicePointer, temp.DevicePointer, Words,
-                _workspace.Stream);
+            using var temp = new GpuBigUInt(Workspace, Words);
+            Workspace.Provider.Add(Workspace, _a, _b, temp);
+            Workspace.Provider.CopyDeviceToDevice(_result.DevicePointer, temp.DevicePointer, Words,
+                Workspace.Stream);
         });
 
-        var afterCapture = _workspace.GetMemoryStatistics();
+        var afterCapture = Workspace.GetMemoryStatistics();
         for (var i = 1; i <= 10; i++)
         {
             var left = (BigInteger)i * 1_000_003;
@@ -69,12 +85,12 @@ public sealed class CapturedStreamGraphTests : IDisposable
             WriteWords(_b, right);
 
             graph.Launch();
-            _workspace.Provider.SynchronizeStream(_workspace.Stream);
+            Workspace.Provider.SynchronizeStream(Workspace.Stream);
 
             Assert.Equal(left + right, _result.ToBigInteger());
         }
 
-        var afterReplay = _workspace.GetMemoryStatistics();
+        var afterReplay = Workspace.GetMemoryStatistics();
         Assert.Equal(afterCapture.DriverAllocations, afterReplay.DriverAllocations);
         Assert.True(afterCapture.DeferredBuffers > 0);
 
@@ -90,7 +106,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
         }
 
         var allocated = GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
-        _workspace.Provider.SynchronizeStream(_workspace.Stream);
+        Workspace.Provider.SynchronizeStream(Workspace.Stream);
 
         Assert.Equal(0, allocated);
     }
@@ -101,12 +117,12 @@ public sealed class CapturedStreamGraphTests : IDisposable
     [Scenario(TestScenario.HappyPath)]
     public void Dispose_AfterCapture_DestroysGraphAndReturnsDeferredBuffers()
     {
-        var start = _workspace.GetMemoryStatistics();
-        var graph = CaptureWithDeferredTemp(_workspace, _a, _b, _result);
-        var compiled = _workspace.GetMemoryStatistics();
+        var start = Workspace.GetMemoryStatistics();
+        var graph = CaptureWithDeferredTemp(Workspace, _a, _b, _result);
+        var compiled = Workspace.GetMemoryStatistics();
 
         graph.Dispose();
-        var disposed = _workspace.GetMemoryStatistics();
+        var disposed = Workspace.GetMemoryStatistics();
 
         Assert.True(compiled.DeferredBuffers > start.DeferredBuffers);
         Assert.Equal(start.DeferredBuffers, disposed.DeferredBuffers);
@@ -118,13 +134,13 @@ public sealed class CapturedStreamGraphTests : IDisposable
     [Scenario(TestScenario.Boundary)]
     public void Dispose_CalledTwice_IsIdempotent()
     {
-        var graph = CaptureWithDeferredTemp(_workspace, _a, _b, _result);
+        var graph = CaptureWithDeferredTemp(Workspace, _a, _b, _result);
 
         graph.Dispose();
-        var afterFirst = _workspace.GetMemoryStatistics();
+        var afterFirst = Workspace.GetMemoryStatistics();
 
         graph.Dispose();
-        var afterSecond = _workspace.GetMemoryStatistics();
+        var afterSecond = Workspace.GetMemoryStatistics();
 
         Assert.Equal(afterFirst, afterSecond);
     }
@@ -133,7 +149,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
     [Scenario(TestScenario.SadPath)]
     public void Launch_AfterDispose_ThrowsObjectDisposedException()
     {
-        var graph = CaptureWithDeferredTemp(_workspace, _a, _b, _result);
+        var graph = CaptureWithDeferredTemp(Workspace, _a, _b, _result);
         graph.Dispose();
 
         Assert.Throws<ObjectDisposedException>(graph.Launch);
@@ -145,26 +161,26 @@ public sealed class CapturedStreamGraphTests : IDisposable
     [Scenario(TestScenario.SadPath)]
     public void Capture_BodyThrowsAfterFreeingTemp_AbortsAndReturnsDeferredBuffers()
     {
-        var start = _workspace.GetMemoryStatistics();
+        var start = Workspace.GetMemoryStatistics();
         var expected = new InvalidOperationException("Simulated capture failure.");
 
         var actual = Assert.Throws<InvalidOperationException>(() =>
-            CapturedStreamGraph.Capture(_workspace, () =>
+            CapturedStreamGraph.Capture(Workspace, () =>
             {
-                using var temp = new GpuBigUInt(_workspace, Words);
-                _workspace.Provider.CopyDeviceToDevice(_result.DevicePointer, temp.DevicePointer, Words,
-                    _workspace.Stream);
+                using var temp = new GpuBigUInt(Workspace, Words);
+                Workspace.Provider.CopyDeviceToDevice(_result.DevicePointer, temp.DevicePointer, Words,
+                    Workspace.Stream);
                 throw expected;
             }));
-        var failed = _workspace.GetMemoryStatistics();
+        var failed = Workspace.GetMemoryStatistics();
 
         Assert.Same(expected, actual);
         Assert.Equal((start.DeferredBuffers, start.LiveBuffers), (failed.DeferredBuffers, failed.LiveBuffers));
 
         WriteWords(_a, 11);
         WriteWords(_b, 31);
-        _workspace.Provider.Add(_workspace, _a, _b, _result);
-        _workspace.Provider.SynchronizeStream(_workspace.Stream);
+        Workspace.Provider.Add(Workspace, _a, _b, _result);
+        Workspace.Provider.SynchronizeStream(Workspace.Stream);
         Assert.Equal(new BigInteger(42), _result.ToBigInteger());
     }
 
@@ -175,21 +191,21 @@ public sealed class CapturedStreamGraphTests : IDisposable
     [Scenario(TestScenario.SadPath)]
     public void Capture_BodyInvalidatesStreamAndThrows_ThrowsAggregateException()
     {
-        var start = _workspace.GetMemoryStatistics();
+        var start = Workspace.GetMemoryStatistics();
         Exception? original = null;
 
         var error = Assert.Throws<AggregateException>(() =>
-            CapturedStreamGraph.Capture(_workspace, () =>
+            CapturedStreamGraph.Capture(Workspace, () =>
             {
-                using (var temp = new GpuBigUInt(_workspace, Words))
+                using (var temp = new GpuBigUInt(Workspace, Words))
                 {
-                    _workspace.Provider.CopyDeviceToDevice(_result.DevicePointer, temp.DevicePointer, Words,
-                        _workspace.Stream);
+                    Workspace.Provider.CopyDeviceToDevice(_result.DevicePointer, temp.DevicePointer, Words,
+                        Workspace.Stream);
                 }
 
                 try
                 {
-                    _workspace.Provider.ReadWord(_a.DevicePointer, 0, _workspace.Stream);
+                    Workspace.Provider.ReadWord(_a.DevicePointer, 0, Workspace.Stream);
                 }
                 catch (Exception ex)
                 {
@@ -197,7 +213,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
                     throw;
                 }
             }));
-        var failed = _workspace.GetMemoryStatistics();
+        var failed = Workspace.GetMemoryStatistics();
 
         Assert.NotNull(original);
         Assert.Equal(2, error.InnerExceptions.Count);
@@ -206,8 +222,8 @@ public sealed class CapturedStreamGraphTests : IDisposable
 
         WriteWords(_a, 19);
         WriteWords(_b, 23);
-        _workspace.Provider.Add(_workspace, _a, _b, _result);
-        _workspace.Provider.SynchronizeStream(_workspace.Stream);
+        Workspace.Provider.Add(Workspace, _a, _b, _result);
+        Workspace.Provider.SynchronizeStream(Workspace.Stream);
         Assert.Equal(new BigInteger(42), _result.ToBigInteger());
     }
 
@@ -215,34 +231,34 @@ public sealed class CapturedStreamGraphTests : IDisposable
     [Scenario(TestScenario.SadPath)]
     public void Capture_NestedOrDuringActiveDeferral_ThrowsInvalidOperationException()
     {
-        var start = _workspace.GetMemoryStatistics();
+        var start = Workspace.GetMemoryStatistics();
 
-        using (var outer = CapturedStreamGraph.Capture(_workspace, () =>
+        using (var outer = CapturedStreamGraph.Capture(Workspace, () =>
         {
-            using var temp = new GpuBigUInt(_workspace, Words);
-            _workspace.Provider.CopyDeviceToDevice(_result.DevicePointer, temp.DevicePointer, Words,
-                _workspace.Stream);
+            using var temp = new GpuBigUInt(Workspace, Words);
+            Workspace.Provider.CopyDeviceToDevice(_result.DevicePointer, temp.DevicePointer, Words,
+                Workspace.Stream);
             Assert.Throws<InvalidOperationException>(() =>
-                CapturedStreamGraph.Capture(_workspace, static () => { }));
+                CapturedStreamGraph.Capture(Workspace, static () => { }));
         }))
         {
             outer.Launch();
-            _workspace.Provider.SynchronizeStream(_workspace.Stream);
+            Workspace.Provider.SynchronizeStream(Workspace.Stream);
         }
 
-        var manager = (DefaultGpuMemoryManager)_workspace.MemoryManager;
+        var manager = (DefaultGpuMemoryManager)Workspace.MemoryManager;
         var deferral = manager.BeginDeferral();
         try
         {
             Assert.Throws<InvalidOperationException>(() =>
-                CapturedStreamGraph.Capture(_workspace, static () => { }));
+                CapturedStreamGraph.Capture(Workspace, static () => { }));
         }
         finally
         {
             manager.ReturnDeferred(manager.EndDeferral(deferral).Buffers);
         }
 
-        var end = _workspace.GetMemoryStatistics();
+        var end = Workspace.GetMemoryStatistics();
         Assert.Equal((start.DeferredBuffers, start.LiveBuffers), (end.DeferredBuffers, end.LiveBuffers));
     }
 

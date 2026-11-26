@@ -15,21 +15,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public sealed class DirectMethodWidthTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public DirectMethodWidthTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     public static TheoryData<int, int> WidthPairs() => DirectCases.WidthPairs();
 
@@ -37,25 +33,25 @@ public sealed class DirectMethodWidthTests : IDisposable
     [MemberData(nameof(WidthPairs))]
     [Scenario(TestScenario.Boundary)]
     public void AddSubtract_AcceptDifferentWidths_AndCheckTheOperandWidth(int aWords, int bWords) =>
-        DirectCases.AddSubtract(_workspace, aWords, bWords);
+        DirectCases.AddSubtract(Workspace, aWords, bWords);
 
     [Theory]
     [MemberData(nameof(WidthPairs))]
     [Scenario(TestScenario.Boundary)]
     public void AddSignedMagnitude_AcceptsDifferentWidths(int aWords, int bWords) =>
-        DirectCases.AddSignedMagnitude(_workspace, aWords, bWords);
+        DirectCases.AddSignedMagnitude(Workspace, aWords, bWords);
 
     [Theory]
     [MemberData(nameof(WidthPairs))]
     [Scenario(TestScenario.Boundary)]
     public void MulAndBitwise_AcceptDifferentWidths(int aWords, int bWords) =>
-        DirectCases.MulAndBitwise(_workspace, aWords, bWords);
+        DirectCases.MulAndBitwise(Workspace, aWords, bWords);
 
     [Theory]
     [MemberData(nameof(WidthPairs))]
     [Scenario(TestScenario.Boundary)]
     public void DivisionFamily_AcceptsDifferentWidths(int aWords, int bWords) =>
-        DirectCases.DivisionFamily(_workspace, aWords, bWords);
+        DirectCases.DivisionFamily(Workspace, aWords, bWords);
 
     [Theory]
     [InlineData(1)]
@@ -63,7 +59,7 @@ public sealed class DirectMethodWidthTests : IDisposable
     [InlineData(33)]
     [InlineData(64)]
     [Scenario(TestScenario.Boundary)]
-    public void Shifts_FollowTheirBounds(int aWords) => DirectCases.Shifts(_workspace, aWords);
+    public void Shifts_FollowTheirBounds(int aWords) => DirectCases.Shifts(Workspace, aWords);
 
     // A failed division leaves a wider quotient buffer as it was: the words above the quotient are cleared after it
     // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntMath.cs DivideByUInt32Core with
@@ -72,9 +68,9 @@ public sealed class DirectMethodWidthTests : IDisposable
     [Scenario(TestScenario.SadPath)]
     public void DivideByUInt32_ByZero_LeavesAWiderQuotientUntouched()
     {
-        using var a = new GpuBigUInt(_workspace, [100u]);
+        using var a = new GpuBigUInt(Workspace, [100u]);
         uint[] filled = [0xDEADBEEFu, 0xDEADBEEFu, 0x80000000u];
-        using var q = new GpuBigUInt(_workspace, filled);
+        using var q = new GpuBigUInt(Workspace, filled);
 
         Assert.Throws<DivideByZeroException>(() => GpuBigIntMath.DivideByUInt32(a, 0u, q));
         Assert.Equal(filled, q.ToHostArray());
@@ -86,8 +82,8 @@ public sealed class DirectMethodWidthTests : IDisposable
     [Scenario(TestScenario.Boundary)]
     public void DivideByUInt32_IntoABufferThatHoldsTheDividend_IsExact()
     {
-        using var q = new GpuBigUInt(_workspace, [0u, 100u]);
-        var dividend = new GpuBigUInt(_workspace, q.Handle.Slice(1, 1));
+        using var q = new GpuBigUInt(Workspace, [0u, 100u]);
+        using var dividend = new GpuBigUInt(Workspace, q.Handle.Slice(1, 1));
 
         var remainder = GpuBigIntMath.DivideByUInt32(dividend, 7u, q);
         Assert.Equal(2u, remainder);
@@ -109,12 +105,12 @@ public sealed class DirectMethodWidthTests : IDisposable
         {
             var b = BigInteger.One << (bits - 1) | 3;
             var a = (BigInteger.One << (2 * top - 1)) - 12345;
-            using var gpuA = new GpuBigUInt(_workspace, DirectLimbs(a, 2 * words));
-            using var gpuB = new GpuBigUInt(_workspace, DirectLimbs(b, words));
-            using var q = new GpuBigUInt(_workspace, 2 * words);
-            using var r = new GpuBigUInt(_workspace, words);
+            using var gpuA = new GpuBigUInt(Workspace, DirectLimbs(a, 2 * words));
+            using var gpuB = new GpuBigUInt(Workspace, DirectLimbs(b, words));
+            using var q = new GpuBigUInt(Workspace, 2 * words);
+            using var r = new GpuBigUInt(Workspace, words);
             GpuBigIntDivRem.DivRem(gpuA, gpuB, q, r);
-            _workspace.ThrowIfDeviceErrors();
+            Workspace.ThrowIfDeviceErrors();
             Assert.Equal(a / b, q.ToBigInteger());
             Assert.Equal(a % b, r.ToBigInteger());
         }
@@ -122,22 +118,22 @@ public sealed class DirectMethodWidthTests : IDisposable
         foreach (var modulus in new[] { BigInteger.One, BigInteger.One << (top - 1), (BigInteger.One << top) - 1 })
         {
             var baseValue = (BigInteger.One << (top - 2)) + 7;
-            using var gpuBase = new GpuBigUInt(_workspace, DirectLimbs(baseValue % modulus, words));
-            using var exponent = new GpuBigUInt(_workspace, DirectLimbs(65537, words));
-            using var gpuModulus = new GpuBigUInt(_workspace, DirectLimbs(modulus, words));
-            using var result = new GpuBigUInt(_workspace, words);
+            using var gpuBase = new GpuBigUInt(Workspace, DirectLimbs(baseValue % modulus, words));
+            using var exponent = new GpuBigUInt(Workspace, DirectLimbs(65537, words));
+            using var gpuModulus = new GpuBigUInt(Workspace, DirectLimbs(modulus, words));
+            using var result = new GpuBigUInt(Workspace, words);
             GpuBigIntDivRem.ModPow(gpuBase, exponent, gpuModulus, result);
-            _workspace.ThrowIfDeviceErrors();
+            Workspace.ThrowIfDeviceErrors();
             Assert.Equal(BigInteger.ModPow(baseValue, 65537, modulus), result.ToBigInteger());
         }
 
         foreach (var bits in new[] { 33, 64, top - 1, top })
         {
             var value = (BigInteger.One << bits) - 1;
-            using var gpuValue = new GpuBigUInt(_workspace, DirectLimbs(value, words));
-            using var root = new GpuBigUInt(_workspace, words);
+            using var gpuValue = new GpuBigUInt(Workspace, DirectLimbs(value, words));
+            using var root = new GpuBigUInt(Workspace, words);
             GpuBigIntDivRem.Sqrt(gpuValue, root);
-            _workspace.ThrowIfDeviceErrors();
+            Workspace.ThrowIfDeviceErrors();
             var s = root.ToBigInteger();
             Assert.True(s * s <= value && (s + 1) * (s + 1) > value, $"sqrt of {bits} bits");
         }
@@ -161,14 +157,14 @@ public sealed class DirectMethodWidthTests : IDisposable
         var value = BigInteger.One << (32 * aWords - 7) | 5;
         var limbs = new uint[aWords];
         value.WriteLimbs(limbs);
-        using var a = new GpuBigUInt(_workspace, limbs);
-        using var r = new GpuBigUInt(_workspace, aWords);
+        using var a = new GpuBigUInt(Workspace, limbs);
+        using var r = new GpuBigUInt(Workspace, aWords);
 
         GpuBigIntMath.ShiftLeftUnchecked(a, 6, r);
-        _workspace.ThrowIfDeviceErrors();
+        Workspace.ThrowIfDeviceErrors();
         Assert.Equal(value << 6, r.ToBigInteger());
 
-        using var wider = new GpuBigUInt(_workspace, aWords + 1);
+        using var wider = new GpuBigUInt(Workspace, aWords + 1);
         Assert.Throws<ArgumentException>(() => GpuBigIntMath.ShiftLeftUnchecked(a, 6, wider));
         Assert.Throws<ArgumentException>(() => GpuBigIntMath.ShiftLeftUnchecked(a, -1, r));
     }

@@ -14,21 +14,17 @@ public sealed class GpuBigUIntArrayTests : IDisposable
     private const int WordsPerElement = 4;
     private const int ElementBytes = WordsPerElement * sizeof(uint);
 
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public GpuBigUIntArrayTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(64, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
@@ -37,7 +33,7 @@ public sealed class GpuBigUIntArrayTests : IDisposable
         // The array owns one buffer of Length * WordsPerElement words.
         // mutant: GpuBigUIntArray.cs:39 `Length * WordsPerElement` -> `Length / WordsPerElement`
         // mutant: GpuBigUIntArray(GpuWorkspace, int, int) allocates a borrowed handle (OwnsBuffer false)
-        using var array = new GpuBigUIntArray(_workspace, Length, WordsPerElement);
+        using var array = new GpuBigUIntArray(Workspace, Length, WordsPerElement);
         Assert.Equal(
             (Length, WordsPerElement, Length * WordsPerElement, Length * WordsPerElement, true),
             (array.Length, array.WordsPerElement, array.TotalWords, array.Handle.NumWords, array.OwnsBuffer)
@@ -53,7 +49,7 @@ public sealed class GpuBigUIntArrayTests : IDisposable
         // Only 0 <= index < Length names an element.
         // mutant: GpuBigUIntArrayView.cs:79 `index < 0` -> `index <= 0` / `index >= Length` -> `index > Length` / `||`
         //         -> `&&`
-        using var array = new GpuBigUIntArray(_workspace, Length, WordsPerElement);
+        using var array = new GpuBigUIntArray(Workspace, Length, WordsPerElement);
         var error = Assert.Throws<ArgumentOutOfRangeException>(() => array.GetElement(index));
         Assert.Equal("index", error.ParamName);
     }
@@ -66,7 +62,7 @@ public sealed class GpuBigUIntArrayTests : IDisposable
     {
         // Element i is the WordsPerElement words starting at word i * WordsPerElement of the array.
         // mutant: GpuBigUIntArrayView.cs:79 `index < 0` -> `index <= 0` (index 0)
-        using var array = new GpuBigUIntArray(_workspace, Length, WordsPerElement);
+        using var array = new GpuBigUIntArray(Workspace, Length, WordsPerElement);
         var element = array.GetElement(index);
         Assert.Equal(
             (index, array.DevicePointer + (index * ElementBytes), WordsPerElement),
@@ -84,7 +80,7 @@ public sealed class GpuBigUIntArrayTests : IDisposable
     {
         // A slice must lie inside 0..Length.
         // mutant: GpuBigUIntArrayView.cs:96 each comparison and `||` (one row per condition)
-        using var array = new GpuBigUIntArray(_workspace, Length, WordsPerElement);
+        using var array = new GpuBigUIntArray(Workspace, Length, WordsPerElement);
         Assert.Throws<ArgumentOutOfRangeException>(() => array.Slice(offset, count));
     }
 
@@ -99,7 +95,7 @@ public sealed class GpuBigUIntArrayTests : IDisposable
         // A slice of `count` elements at `offset` starts offset * WordsPerElement words in and spans count elements.
         // mutant: GpuBigUIntArrayView.cs:96 `>` -> `>=` (rows that end at Length)
         // mutant: GpuBigUIntArrayView.cs:102 `elementCount * WordsPerElement` -> `elementCount / WordsPerElement`
-        using var array = new GpuBigUIntArray(_workspace, Length, WordsPerElement);
+        using var array = new GpuBigUIntArray(Workspace, Length, WordsPerElement);
         var slice = array.Slice(offset, count);
         Assert.Equal(
             (array.DevicePointer + (offset * ElementBytes), count, count * WordsPerElement, WordsPerElement),
@@ -115,7 +111,7 @@ public sealed class GpuBigUIntArrayTests : IDisposable
         // mutant: GpuBigIntMemoryHandle.cs:175 `WordOffset + wordOffset` -> `WordOffset - wordOffset` (both the slice
         //         and the
         //         element of a slice go through GpuBigIntMemoryHandle.Slice)
-        using var array = new GpuBigUIntArray(_workspace, Length, WordsPerElement);
+        using var array = new GpuBigUIntArray(Workspace, Length, WordsPerElement);
         var outer = array.Slice(1, 2);
         Assert.Equal(array.DevicePointer + (2 * ElementBytes), outer.Slice(1, 1).DevicePointer);
         Assert.Equal(array.DevicePointer + (2 * ElementBytes), outer.GetElement(1).DevicePointer);
@@ -127,13 +123,13 @@ public sealed class GpuBigUIntArrayTests : IDisposable
     {
         // The values and the signs of a signed array have one entry per element.
         // mutant: GpuBigIntArray.cs:55 `values.Length != signs.Length` -> `==` / throw removed
-        using var values = new GpuBigUIntArray(_workspace, 3, 2);
-        using var signs = new GpuBigUIntArray(_workspace, 2, 1);
+        using var values = new GpuBigUIntArray(Workspace, 3, 2);
+        using var signs = new GpuBigUIntArray(Workspace, 2, 1);
         Assert.Throws<ArgumentException>(() => new GpuBigIntArray(values, signs));
 
         // Matching lengths are accepted.
-        using var matchingSigns = new GpuBigUIntArray(_workspace, 3, 1);
-        var signed = new GpuBigIntArray(values, matchingSigns);
+        using var matchingSigns = new GpuBigUIntArray(Workspace, 3, 1);
+        using var signed = new GpuBigIntArray(values.AsBorrowed(), matchingSigns.AsBorrowed());
         Assert.Equal((3, 2), (signed.Length, signed.WordsPerElement));
     }
 }

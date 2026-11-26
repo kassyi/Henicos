@@ -10,21 +10,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public sealed class GpuBigFloatVectorDivisionPrecisionTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public GpuBigFloatVectorDivisionPrecisionTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(1024 * 1024, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1024 * 1024, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     private static readonly BigInteger AllOnes64 = (BigInteger.One << 64) - 1;
 
@@ -75,13 +71,13 @@ public sealed class GpuBigFloatVectorDivisionPrecisionTests : IDisposable
         int divisorExponent,
         bool divisorNegative)
     {
-        using var dividends = new GpuBigFloatArray(_workspace, 1, dividendWords);
+        using var dividends = new GpuBigFloatArray(Workspace, 1, dividendWords);
         using (var element = NewFloat(dividend, dividendWords, dividendExponent, dividendNegative))
         {
             dividends.SetElement(0, element);
         }
 
-        using var divisors = new GpuBigFloatArray(_workspace, 1, divisorWords);
+        using var divisors = new GpuBigFloatArray(Workspace, 1, divisorWords);
         using var scalar = NewFloat(divisor, divisorWords, divisorExponent, divisorNegative);
         divisors.SetElement(0, scalar);
 
@@ -91,7 +87,7 @@ public sealed class GpuBigFloatVectorDivisionPrecisionTests : IDisposable
 
         foreach (var (name, expression) in new[] { ("SelectDivide", bySelect), ("ZipDivide", byZip) })
         {
-            var result = expression.Evaluate(_workspace);
+            var result = expression.Evaluate(Workspace);
             Assert.Equal(resultWords, result.WordsPerElement);
             AssertQuotient($"{label}, {name}", result.GetElement(0), 32 * resultWords, dividend, dividendExponent,
                 dividendNegative, divisor, divisorExponent, divisorNegative);
@@ -128,7 +124,7 @@ public sealed class GpuBigFloatVectorDivisionPrecisionTests : IDisposable
         bool negative,
         uint divisor)
     {
-        using var dividends = new GpuBigFloatArray(_workspace, 2, words);
+        using var dividends = new GpuBigFloatArray(Workspace, 2, words);
         using (var element = NewFloat(dividend, words, exponent, negative))
         {
             dividends.SetElement(0, element);
@@ -136,7 +132,7 @@ public sealed class GpuBigFloatVectorDivisionPrecisionTests : IDisposable
         }
 
         using var expression = dividends.AsVectorizedEnumerable().SelectDivideByUInt32(divisor);
-        var result = expression.Evaluate(_workspace);
+        var result = expression.Evaluate(Workspace);
 
         Assert.Equal(words, result.WordsPerElement);
         for (var i = 0; i < 2; i++)
@@ -151,10 +147,10 @@ public sealed class GpuBigFloatVectorDivisionPrecisionTests : IDisposable
     [Scenario(TestScenario.SadPath)]
     public void GpuBigFloatArray_SelectDivideByUInt32_ZeroDivisor_Throws()
     {
-        using var dividends = new GpuBigFloatArray(_workspace, 1, 2);
+        using var dividends = new GpuBigFloatArray(Workspace, 1, 2);
         using var expression = dividends.AsVectorizedEnumerable().SelectDivideByUInt32(0u);
 
-        Assert.Throws<DivideByZeroException>(() => expression.Evaluate(_workspace));
+        Assert.Throws<DivideByZeroException>(() => expression.Evaluate(Workspace));
     }
 
     private static void AssertQuotient(
@@ -193,6 +189,6 @@ public sealed class GpuBigFloatVectorDivisionPrecisionTests : IDisposable
             data[w] = (uint)(magnitude >> (32 * w) & uint.MaxValue);
         }
 
-        return new GpuBigFloat(new GpuBigUInt(_workspace, data), exponent, negative);
+        return new GpuBigFloat(new GpuBigUInt(Workspace, data), exponent, negative);
     }
 }

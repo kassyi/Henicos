@@ -12,22 +12,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 /// </summary>
 public abstract class GpuBigFloatWorkspaceTestBase : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     protected GpuBigFloatWorkspaceTestBase()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        Context = new GpuWorkspace(1024 * 1024, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1024 * 1024, GpuExecutionEngine.GSharpAot);
     }
 
-    protected GpuWorkspace Context { get; }
+    protected GpuWorkspace Context => _testWorkspace.Workspace;
 
-    public void Dispose()
-    {
-        Context.Dispose();
-        _scope.Dispose();
-    }
+    public void Dispose() => _testWorkspace.Dispose();
 
     protected GpuBigFloat CreateFloat(long value, int exponent = 0, int numWords = 4) =>
         GpuBigFloatTestHelpers.CreateFloat(Context, value, exponent, numWords);

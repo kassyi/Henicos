@@ -118,7 +118,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         Assert.Equal(typeof(InvalidOperationException), expected.Error);
 
         using var any = arrS.AsVectorizedEnumerable().SelectSqrt().IsEqualTo(zero).Any();
-        Assert.Equal(expected, Outcome(() => any.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => any.Evaluate(Context)));
     }
 
     [Fact]
@@ -137,7 +137,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         Assert.Equal(typeof(InvalidOperationException), expected.Error);
 
         using var any = arrS.AsVectorizedEnumerable().SelectSqrt().IsEqualTo(zero).Any();
-        Assert.Equal(expected, Outcome(() => any.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => any.Evaluate(Context)));
     }
 
     [Fact]
@@ -164,7 +164,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             .SelectSqrt()
             .IsGreaterThan(zero)
             .Any();
-        Assert.Equal(expected, Outcome(() => any.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => any.Evaluate(Context)));
     }
 
     [Fact]
@@ -190,7 +190,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             .ZipDivide(arrC.AsVectorizedEnumerable())
             .IsGreaterThan(zero)
             .Any();
-        Assert.Equal(expected, Outcome(() => any.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => any.Evaluate(Context)));
     }
 
     [Fact]
@@ -209,7 +209,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         Assert.Equal(typeof(DivideByZeroException), expected.Error);
 
         using var any = arrS.AsVectorizedEnumerable().SelectSqrt().SelectDivide(zero).IsGreaterThan(zero).Any();
-        Assert.Equal(expected, Outcome(() => any.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => any.Evaluate(Context)));
     }
 
     [Fact]
@@ -226,7 +226,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         Assert.Equal(typeof(DivideByZeroException), expected.Error);
 
         using var any = arrS.AsVectorizedEnumerable().SelectSqrt().SelectDivideByUInt32(0u).IsGreaterThan(zero).Any();
-        Assert.Equal(expected, Outcome(() => any.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => any.Evaluate(Context)));
     }
 
     [Fact]
@@ -244,7 +244,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         Assert.Equal(typeof(InvalidOperationException), expected.Error);
 
         using var any = arrS.AsVectorizedEnumerable().SelectSqrt().SelectDivide(zero).IsGreaterThan(zero).Any();
-        Assert.Equal(expected, Outcome(() => any.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => any.Evaluate(Context)));
     }
 
     [Fact]
@@ -260,7 +260,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         Assert.Equal(typeof(InvalidOperationException), expected.Error);
 
         using var any = arrS.AsVectorizedEnumerable().SelectSqrt().SelectDivideByUInt32(0u).IsGreaterThan(zero).Any();
-        Assert.Equal(expected, Outcome(() => any.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => any.Evaluate(Context)));
     }
 
     public static TheoryData<string, bool> ScalarZeroDivisorCases => new()
@@ -286,7 +286,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var arrA = CreateArray(a);
         using var zero = CreateScalar(0);
         using var floatArr = CreateFloatArray([1, 2, 3]);
-        using var floatZero = GpuBigFloatTestHelpers.CreateFloat(_context, 0);
+        using var floatZero = GpuBigFloatTestHelpers.CreateFloat(Context, 0);
         var flags = operation switch
         {
             "SelectDivide" => arrA.AsVectorizedEnumerable().SelectDivide(zero).IsGreaterThan(zero),
@@ -295,7 +295,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         };
 
         using var quantifier = all ? flags.All() : flags.Any();
-        Assert.Equal(expected, Outcome(() => quantifier.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => quantifier.Evaluate(Context)));
     }
 
     // The result of an evaluation as a value or the type of the exception it throws
@@ -337,7 +337,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var arrB = CreateArray(b);
         var flags = arrA.AsVectorizedEnumerable().ZipDivide(arrB.AsVectorizedEnumerable()).IsGreaterThan(zero);
         using var quantifier = all ? flags.All() : flags.Any();
-        return quantifier.Evaluate(_context);
+        return quantifier.Evaluate(Context);
     }
 
     // Any of a / b == 0 through the vector expression
@@ -346,7 +346,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var arrA = CreateArray(a);
         using var arrB = CreateArray(b);
         using var any = arrA.AsVectorizedEnumerable().ZipDivide(arrB.AsVectorizedEnumerable()).IsEqualTo(zero).Any();
-        return any.Evaluate(_context);
+        return any.Evaluate(Context);
     }
 
     private static BigInteger[] ManyBlockValues(Func<int, int> value) =>

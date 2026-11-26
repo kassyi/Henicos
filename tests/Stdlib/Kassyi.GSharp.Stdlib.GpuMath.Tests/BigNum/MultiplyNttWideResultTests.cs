@@ -12,21 +12,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public sealed class MultiplyNttWideResultTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public MultiplyNttWideResultTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/Ntt35ConvolutionLauncher.cs
     // ResolveNtt35Carries without the clear above the product (the launcher cases keep 0xFFFFFFFF there)
@@ -35,7 +31,7 @@ public sealed class MultiplyNttWideResultTests : IDisposable
     [Scenario(TestScenario.Boundary)]
     public void Product_IntoADirtyWiderBuffer_IsExact_AndZeroAbove(int leftWords, int rightWords, int resultWords,
         bool square) =>
-        WideResultCases.Check(_workspace, leftWords, rightWords, resultWords, square);
+        WideResultCases.Check(Workspace, leftWords, rightWords, resultWords, square);
 }
 
 /// <summary><see cref="GpuBigIntMath.MultiplyNtt"/> into a wider, reused result buffer on the CPU fallback.</summary>

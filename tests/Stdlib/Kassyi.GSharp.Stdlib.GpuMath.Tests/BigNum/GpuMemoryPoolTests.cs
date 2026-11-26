@@ -14,21 +14,17 @@ public sealed class GpuMemoryPoolTests : IDisposable
 {
     private const int PoolWords = 37;
 
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public GpuMemoryPoolTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(64, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
@@ -37,12 +33,12 @@ public sealed class GpuMemoryPoolTests : IDisposable
         // A disposed value goes back to the pool and is handed out again, every time (not only the first time).
         // mutant: DefaultGpuMemoryManager.Free `bag.Add(handle.Buffer)` removed
         // mutant: GpuBigUInt.Dispose `MemoryManager.Free(Handle)` removed
-        var first = new GpuBigUInt(_workspace, PoolWords);
+        var first = new GpuBigUInt(Workspace, PoolWords);
         var pointer = first.DevicePointer;
         first.Dispose();
         for (var round = 0; round < 3; round++)
         {
-            var again = new GpuBigUInt(_workspace, PoolWords);
+            var again = new GpuBigUInt(Workspace, PoolWords);
             Assert.Equal((round, pointer), (round, again.DevicePointer));
             again.Dispose();
         }
@@ -54,12 +50,12 @@ public sealed class GpuMemoryPoolTests : IDisposable
     {
         // GpuBigUIntArray.Dispose frees its buffer (Length * WordsPerElement words) into the pool.
         // mutant: GpuBigUIntArray.Dispose `Workspace.MemoryManager.Free(Handle)` removed
-        var array = new GpuBigUIntArray(_workspace, PoolWords, 1);
+        var array = new GpuBigUIntArray(Workspace, PoolWords, 1);
         var pointer = array.DevicePointer;
         array.Dispose();
         for (var round = 0; round < 3; round++)
         {
-            var again = new GpuBigUIntArray(_workspace, PoolWords, 1);
+            var again = new GpuBigUIntArray(Workspace, PoolWords, 1);
             Assert.Equal((round, pointer), (round, again.DevicePointer));
             again.Dispose();
         }
@@ -73,12 +69,12 @@ public sealed class GpuMemoryPoolTests : IDisposable
         // so the next two 37-word allocations get exactly those two buffers.
         // mutant: GpuBigIntArray.Dispose `Values.Dispose()` removed
         // mutant: GpuBigIntArray.Dispose `Signs.Dispose()` removed
-        var array = new GpuBigIntArray(_workspace, PoolWords, 1);
+        var array = new GpuBigIntArray(Workspace, PoolWords, 1);
         IntPtr[] freed = [array.Values.DevicePointer, array.Signs.DevicePointer];
         array.Dispose();
 
-        using var x = new GpuBigUInt(_workspace, PoolWords);
-        using var y = new GpuBigUInt(_workspace, PoolWords);
+        using var x = new GpuBigUInt(Workspace, PoolWords);
+        using var y = new GpuBigUInt(Workspace, PoolWords);
         Assert.Equal(freed.Order(), new[] { x.DevicePointer, y.DevicePointer }.Order());
     }
 
@@ -88,13 +84,13 @@ public sealed class GpuMemoryPoolTests : IDisposable
     {
         // A rented buffer is owned: disposing it puts it back into the pool, and RentTemp hands it out again (#631).
         // mutant: GpuWorkspace.RentTemp wraps a borrowed handle (Dispose frees nothing)
-        var temp = _workspace.RentTemp(PoolWords);
+        var temp = Workspace.RentTemp(PoolWords);
         Assert.True(temp.OwnsBuffer);
         var pointer = temp.DevicePointer;
         temp.Dispose();
         for (var round = 0; round < 3; round++)
         {
-            var again = _workspace.RentTemp(PoolWords);
+            var again = Workspace.RentTemp(PoolWords);
             Assert.Equal((round, pointer), (round, again.DevicePointer));
             again.Dispose();
         }
@@ -108,14 +104,14 @@ public sealed class GpuMemoryPoolTests : IDisposable
         // or the next two allocations would share one buffer.
         // mutant: DefaultGpuMemoryManager.Free `!handle.Buffer.TryRetire(...)` -> `handle.Buffer.TryRetire(...)`
         // mutant: DefaultGpuMemoryManager.Free the `return` after a lost TryRetire removed
-        var a = new GpuBigUInt(_workspace, PoolWords);
+        var a = new GpuBigUInt(Workspace, PoolWords);
         var b = a;
         var pointer = a.DevicePointer;
         a.Dispose();
         b.Dispose();
 
-        using var x = new GpuBigUInt(_workspace, PoolWords);
-        using var y = new GpuBigUInt(_workspace, PoolWords);
+        using var x = new GpuBigUInt(Workspace, PoolWords);
+        using var y = new GpuBigUInt(Workspace, PoolWords);
         Assert.Equal(pointer, x.DevicePointer);
         Assert.NotEqual(x.DevicePointer, y.DevicePointer);
     }
@@ -126,12 +122,12 @@ public sealed class GpuMemoryPoolTests : IDisposable
     {
         // A borrowed value does not own its buffer: disposing it keeps the owner's buffer out of the pool.
         // mutant: GpuBigUInt.Dispose without the `Handle.OwnsBuffer` check
-        using var owner = new GpuBigUInt(_workspace, PoolWords);
-        var view = owner.Handle.AsBorrowedBigUInt(_workspace);
+        using var owner = new GpuBigUInt(Workspace, PoolWords);
+        var view = owner.Handle.AsBorrowedBigUInt(Workspace);
         Assert.False(view.OwnsBuffer);
         view.Dispose();
 
-        using var other = new GpuBigUInt(_workspace, PoolWords);
+        using var other = new GpuBigUInt(Workspace, PoolWords);
         Assert.NotEqual(owner.DevicePointer, other.DevicePointer);
     }
 
@@ -142,14 +138,14 @@ public sealed class GpuMemoryPoolTests : IDisposable
         // The quotient is allocated before the divisor is checked; when the division throws, it goes back to the pool.
         // The dividend is allocated first so that the quotient takes the pooled buffer `pooled`.
         // mutant: GpuBigUInt.DivideByUInt32 `quotient.Dispose()` removed
-        using var dividend = new GpuBigUInt(_workspace, new uint[PoolWords]);
-        var spare = new GpuBigUInt(_workspace, PoolWords);
+        using var dividend = new GpuBigUInt(Workspace, new uint[PoolWords]);
+        var spare = new GpuBigUInt(Workspace, PoolWords);
         var pooled = spare.DevicePointer;
         spare.Dispose();
 
         Assert.Throws<DivideByZeroException>(() => dividend.DivideByUInt32(0));
 
-        using var next = new GpuBigUInt(_workspace, PoolWords);
+        using var next = new GpuBigUInt(Workspace, PoolWords);
         Assert.Equal(pooled, next.DevicePointer);
     }
 
@@ -160,7 +156,7 @@ public sealed class GpuMemoryPoolTests : IDisposable
         // A newly allocated value reads as zero even when the driver hands back memory that held other data.
         // FromBigInteger(workspace, 0) relies on this (GpuBigUInt.cs:602-605).
         // mutant: DefaultGpuMemoryManager.Allocate `provider.ClearMemoryAsync(ptr, numWords, stream)` removed
-        var provider = _workspace.Provider;
+        var provider = Workspace.Provider;
         var reused = 0;
         foreach (var numWords in new[] { 41, 1024, 1 << 20 })
         {
@@ -170,7 +166,7 @@ public sealed class GpuMemoryPoolTests : IDisposable
             provider.FreeMemory(dirty);
 
             // The workspace pool holds no buffer of this size, so the manager allocates from the driver.
-            using var fresh = new GpuBigUInt(_workspace, numWords);
+            using var fresh = new GpuBigUInt(Workspace, numWords);
             if (fresh.DevicePointer != dirty)
             {
                 // The driver gave out another address; that address need not hold the pattern.
@@ -191,11 +187,11 @@ public sealed class GpuMemoryPoolTests : IDisposable
         // A buffer that held data reads as zero when the pool hands it out again. The ModInverse, ModPow, reciprocal
         // and inverse square root handlers rely on this and do not clear the buffers they allocate.
         // mutant: DefaultGpuMemoryManager.Free `provider.ClearMemoryAsync(buffer.Pointer, buffer.TotalWords, stream)` removed
-        var dirty = new GpuBigUInt(_workspace, Enumerable.Repeat(uint.MaxValue, PoolWords).ToArray());
+        var dirty = new GpuBigUInt(Workspace, Enumerable.Repeat(uint.MaxValue, PoolWords).ToArray());
         var pointer = dirty.DevicePointer;
         dirty.Dispose();
 
-        using var again = _workspace.RentTemp(PoolWords);
+        using var again = Workspace.RentTemp(PoolWords);
 
         // The same buffer, so the pool path (not a fresh driver allocation) produced it.
         Assert.Equal(pointer, again.DevicePointer);

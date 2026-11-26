@@ -16,21 +16,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public sealed class SignedDeviceSignTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public SignedDeviceSignTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     public static TheoryData<int> Widths() => new() { 1, 2, 33, 64 };
 
@@ -44,9 +40,9 @@ public sealed class SignedDeviceSignTests : IDisposable
     {
         foreach (var (x, y, z) in Triples(words))
         {
-            using var a = SignedCases.Value(_workspace, x, words);
-            using var b = SignedCases.Value(_workspace, y, words);
-            using var c = SignedCases.Value(_workspace, z, words);
+            using var a = SignedCases.Value(Workspace, x, words);
+            using var b = SignedCases.Value(Workspace, y, words);
+            using var c = SignedCases.Value(Workspace, z, words);
             GpuBigIntExpr ea = a, eb = b, ec = c;
             var d = ea - eb;
 
@@ -72,10 +68,10 @@ public sealed class SignedDeviceSignTests : IDisposable
     [Scenario(TestScenario.Boundary)]
     public void CancellingDifferences_ArePositiveZero()
     {
-        using var a = SignedCases.Value(_workspace, -12345, 2);
-        using var b = SignedCases.Value(_workspace, 12345, 2);
-        using var sum = ((GpuBigIntExpr)a + b).Evaluate(_workspace);
-        using var difference = ((GpuBigIntExpr)a - a).Evaluate(_workspace);
+        using var a = SignedCases.Value(Workspace, -12345, 2);
+        using var b = SignedCases.Value(Workspace, 12345, 2);
+        using var sum = ((GpuBigIntExpr)a + b).Evaluate(Workspace);
+        using var difference = ((GpuBigIntExpr)a - a).Evaluate(Workspace);
         Assert.False(sum.IsNegative);
         Assert.False(difference.IsNegative);
         Assert.True(sum.Value.IsZero());
@@ -95,9 +91,9 @@ public sealed class SignedDeviceSignTests : IDisposable
         var top = SignedCases.AllOnes(64);
         foreach (var sign in new[] { 1, -1 })
         {
-            using var a = SignedCases.Value(_workspace, sign * top, 2);
-            using var b = SignedCases.Value(_workspace, sign * top, 2);
-            using var c = SignedCases.Value(_workspace, sign * (top - 1), 2);
+            using var a = SignedCases.Value(Workspace, sign * top, 2);
+            using var b = SignedCases.Value(Workspace, sign * top, 2);
+            using var c = SignedCases.Value(Workspace, sign * (top - 1), 2);
             GpuBigIntExpr ea = a, eb = b, ec = c;
             var (x, z) = (sign * top, sign * (top - 1));
 
@@ -106,15 +102,15 @@ public sealed class SignedDeviceSignTests : IDisposable
             Check(GpuBigIntExpr.Max(ea + eb, ec), BigInteger.Max(x + x, z), $"Max(a + b, c), sign {sign}");
         }
 
-        using var zero = new GpuBigInt(new GpuBigUInt(_workspace, [0u, 0u]), isNegative: true);
-        using var one = SignedCases.Value(_workspace, 1, 1);
-        using var min = GpuBigIntExpr.Min(zero, one).Evaluate(_workspace);
+        using var zero = new GpuBigInt(new GpuBigUInt(Workspace, [0u, 0u]), isNegative: true);
+        using var one = SignedCases.Value(Workspace, 1, 1);
+        using var min = GpuBigIntExpr.Min(zero, one).Evaluate(Workspace);
         Assert.True(min.Value.IsZero());
         Assert.True(min.IsNegative);
 
         // a - b with a < b has a device sign, so the kernel chooses: Max(-0, -1) is the -0 operand
-        using var two = SignedCases.Value(_workspace, 2, 1);
-        using var max = GpuBigIntExpr.Max(zero, (GpuBigIntExpr)one - two).Evaluate(_workspace);
+        using var two = SignedCases.Value(Workspace, 2, 1);
+        using var max = GpuBigIntExpr.Max(zero, (GpuBigIntExpr)one - two).Evaluate(Workspace);
         Assert.True(max.Value.IsZero());
         Assert.True(max.IsNegative);
     }
@@ -125,10 +121,10 @@ public sealed class SignedDeviceSignTests : IDisposable
     public void Graph_MinDecidedByAHighWord_Replays()
     {
         var top = SignedCases.AllOnes(64);
-        using var a = SignedCases.Value(_workspace, top, 2);
-        using var b = SignedCases.Value(_workspace, top, 2);
-        using var c = SignedCases.Value(_workspace, top - 1, 2);
-        using var graph = GpuBigIntExpr.Min((GpuBigIntExpr)a + b, c).CompileToGraph(_workspace);
+        using var a = SignedCases.Value(Workspace, top, 2);
+        using var b = SignedCases.Value(Workspace, top, 2);
+        using var c = SignedCases.Value(Workspace, top - 1, 2);
+        using var graph = GpuBigIntExpr.Min((GpuBigIntExpr)a + b, c).CompileToGraph(Workspace);
         foreach (var (x, y, z) in new[] { (top, top, top - 1), ((BigInteger)1, (BigInteger)2, (BigInteger)5) })
         {
             Write(a, x);
@@ -150,10 +146,10 @@ public sealed class SignedDeviceSignTests : IDisposable
         // Operands of 2^20 words: the one-block kernels of the graph run for milliseconds, so Dispose comes before the
         // wait ends
         const int Words = 1 << 20;
-        using var a = SignedCases.Value(_workspace, 5, Words);
-        using var b = SignedCases.Value(_workspace, -9, Words);
+        using var a = SignedCases.Value(Workspace, 5, Words);
+        using var b = SignedCases.Value(Workspace, -9, Words);
         var expression = GpuBigIntExpr.Max((GpuBigIntExpr)a + b, (GpuBigIntExpr)b - a);
-        var graph = expression.CompileToGraph(_workspace);
+        var graph = expression.CompileToGraph(Workspace);
         var task = graph.ExecuteAsync();
         graph.Dispose();
         await task;
@@ -172,12 +168,12 @@ public sealed class SignedDeviceSignTests : IDisposable
     public async Task Graph_ReplaysNewMagnitudes_WithTheirSigns(string shape)
     {
         // a is positive, b and c negative (the leaves' signs are part of the expression)
-        using var a = SignedCases.Value(_workspace, 5, 2);
-        using var b = SignedCases.Value(_workspace, -9, 2);
-        using var c = SignedCases.Value(_workspace, -4, 2);
+        using var a = SignedCases.Value(Workspace, 5, 2);
+        using var b = SignedCases.Value(Workspace, -9, 2);
+        using var c = SignedCases.Value(Workspace, -4, 2);
         var expression = Build(shape, a, b, c);
 
-        using var graph = expression.CompileToGraph(_workspace);
+        using var graph = expression.CompileToGraph(Workspace);
         (BigInteger A, BigInteger B, BigInteger C)[] sets = [(5, 9, 4), (9, 5, 4), (7, 7, 2)];
         for (var i = 0; i < sets.Length; i++)
         {
@@ -209,7 +205,7 @@ public sealed class SignedDeviceSignTests : IDisposable
     public void TenValueSignedNodes_AreCapturedWithoutAHostRead()
     {
         var values = new BigInteger[] { 3, -8, 5, -1, 13, -21, 2, -34, 55, -89, 144 };
-        var leaves = values.Select(v => SignedCases.Value(_workspace, v, 2)).ToArray();
+        var leaves = values.Select(v => SignedCases.Value(Workspace, v, 2)).ToArray();
         try
         {
             GpuBigIntExpr e = leaves[0];
@@ -229,7 +225,7 @@ public sealed class SignedDeviceSignTests : IDisposable
                 }
             }
 
-            using var graph = e.CompileToGraph(_workspace);
+            using var graph = e.CompileToGraph(Workspace);
             graph.Execute();
             using var owned = graph.Result.ToOwned();
             Assert.Equal(expected, SignedCases.Read(owned));
@@ -245,7 +241,7 @@ public sealed class SignedDeviceSignTests : IDisposable
 
     private void Check(GpuBigIntExpr expression, BigInteger expected, string what)
     {
-        using var result = expression.Evaluate(_workspace);
+        using var result = expression.Evaluate(Workspace);
         var actual = SignedCases.Read(result);
         Assert.True(expected == actual, $"{what}: {actual}, expected {expected}");
 
@@ -300,6 +296,6 @@ public sealed class SignedDeviceSignTests : IDisposable
 
     // A new magnitude for a leaf; its sign flag stays the one of the expression
     private void Write(GpuBigInt leaf, BigInteger magnitude) =>
-        _workspace.Provider.CopyHostToDevice(leaf.Value.DevicePointer,
-            SignedCases.Limbs(magnitude, leaf.Value.NumWords), leaf.Value.NumWords, _workspace.Stream);
+        Workspace.Provider.CopyHostToDevice(leaf.Value.DevicePointer,
+            SignedCases.Limbs(magnitude, leaf.Value.NumWords), leaf.Value.NumWords, Workspace.Stream);
 }

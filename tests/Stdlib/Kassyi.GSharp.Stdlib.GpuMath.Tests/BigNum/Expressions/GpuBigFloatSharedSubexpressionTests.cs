@@ -1,4 +1,6 @@
 #nullable enable
+using Kassyi.GSharp.Core;
+
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 
 /// <summary>
@@ -9,16 +11,16 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public sealed class GpuBigFloatSharedSubexpressionTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
     private readonly List<IDisposable> _owned = [];
 
     public GpuBigFloatSharedSubexpressionTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(1024 * 1024, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1024 * 1024, GpuExecutionEngine.GSharpAot);
     }
+
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
 
     public void Dispose()
     {
@@ -27,8 +29,7 @@ public sealed class GpuBigFloatSharedSubexpressionTests : IDisposable
             owned.Dispose();
         }
 
-        _workspace.Dispose();
-        _scope.Dispose();
+        _testWorkspace.Dispose();
     }
 
     // e is read at offset 1 (Skip) and at offset 0 (Take): its second evaluation reuses the buffers of the first, so
@@ -42,10 +43,10 @@ public sealed class GpuBigFloatSharedSubexpressionTests : IDisposable
         using var difference = e.Skip(1).ZipSubtract(e.Take(3));
         using var greater = e.Skip(1).IsGreaterThan(e.Take(3));
 
-        var result = difference.Evaluate(_workspace);
-        var flags = greater.Evaluate(_workspace);
+        var result = difference.Evaluate(Workspace);
+        var flags = greater.Evaluate(Workspace);
         var flagsHost = new uint[3];
-        _workspace.Provider.CopyDeviceToHost(flagsHost, flags.DevicePointer, 3);
+        Workspace.Provider.CopyDeviceToHost(flagsHost, flags.DevicePointer, 3);
 
         AssertElement(result.GetElement(0), 3, "element 0");
         AssertElement(result.GetElement(1), 6, "element 1");
@@ -65,7 +66,7 @@ public sealed class GpuBigFloatSharedSubexpressionTests : IDisposable
         using var five = CreateFloat(5);
         using var selected = e.Skip(1).Where(e.Take(3).IsGreaterThan(five));
 
-        var result = selected.Evaluate(_workspace);
+        var result = selected.Evaluate(Workspace);
 
         Assert.Equal(2, result.Length);
         AssertElement(result.GetElement(0), 12, "element 0");
@@ -75,8 +76,8 @@ public sealed class GpuBigFloatSharedSubexpressionTests : IDisposable
     // [values] * 3 as a vector expression over an array this test owns
     private IGpuBigFloatVectorExpression TimesThree(long[] values)
     {
-        var array = new GpuBigFloatArray(_workspace, values.Length, 4);
-        _owned.Add(array);
+        var array = new GpuBigFloatArray(Workspace, values.Length, 4);
+        Keep(array);
         for (var i = 0; i < values.Length; i++)
         {
             using var element = CreateFloat(values[i]);
@@ -88,13 +89,15 @@ public sealed class GpuBigFloatSharedSubexpressionTests : IDisposable
         return array.AsVectorizedEnumerable().SelectMultiply(three);
     }
 
+    private void Keep([TakesOwnership] IDisposable owned) => _owned.Add(owned);
+
     private GpuBigFloat CreateFloat(long value)
     {
         var words = new uint[4];
         var magnitude = (ulong)Math.Abs(value);
         words[0] = (uint)magnitude;
         words[1] = (uint)(magnitude >> 32);
-        return new GpuBigFloat(new GpuBigUInt(_workspace, words), 0, value < 0);
+        return new GpuBigFloat(new GpuBigUInt(Workspace, words), 0, value < 0);
     }
 
     private static void AssertElement(scoped GpuBigFloatView element, BigInteger expected, string label)

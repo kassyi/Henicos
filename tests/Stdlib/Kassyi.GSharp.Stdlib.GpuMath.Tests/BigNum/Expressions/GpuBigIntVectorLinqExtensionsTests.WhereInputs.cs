@@ -32,7 +32,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             .Count();
         Assert.Throws<DivideByZeroException>(() =>
         {
-            using var result = count.Evaluate(_context);
+            using var result = count.Evaluate(Context);
         });
     }
 
@@ -98,7 +98,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             .Count();
         Assert.Throws<DivideByZeroException>(() =>
         {
-            using var result = count.Evaluate(_context);
+            using var result = count.Evaluate(Context);
         });
     }
 
@@ -204,14 +204,14 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             .ZipDivide(arrB.AsVectorizedEnumerable())
             .Where(arrM.AsVectorizedEnumerable().IsGreaterThan(zero))
             .Take(1);
-        var actual = Outcome(() => ToHostArray(expr.EvaluateOnCallStack(_context)));
+        var actual = Outcome(() => ToHostArray(expr.EvaluateOnCallStack(Context)));
         Assert.Equal(expected.Error, actual.Error);
         Assert.Equal(expected.Value, actual.Value);
     }
 
     private int EvaluateCount(GpuBigIntExpr countExpr)
     {
-        using var result = countExpr.Evaluate(_context);
+        using var result = countExpr.Evaluate(Context);
         return (int)ToBigInt(result);
     }
 

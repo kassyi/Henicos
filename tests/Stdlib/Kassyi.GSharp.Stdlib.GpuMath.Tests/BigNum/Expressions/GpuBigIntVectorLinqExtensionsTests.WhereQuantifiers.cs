@@ -32,7 +32,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             .Where(arrM.AsVectorizedEnumerable().IsGreaterThan(zero))
             .IsGreaterThan(zero)
             .Any();
-        Assert.Equal(expected, Outcome(() => any.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => any.Evaluate(Context)));
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             .Where(arrM.AsVectorizedEnumerable().IsGreaterThan(zero))
             .IsGreaterThan(zero)
             .All();
-        Assert.Equal(expected, Outcome(() => all.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => all.Evaluate(Context)));
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             .Where(arrM.AsVectorizedEnumerable().IsGreaterThan(zero))
             .IsGreaterThan(two)
             .Any();
-        Assert.Equal(expected, Outcome(() => any.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => any.Evaluate(Context)));
     }
 
     [Fact]
@@ -124,7 +124,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             .Skip(1)
             .IsGreaterThan(zero)
             .Any();
-        Assert.Equal(expected, Outcome(() => any.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => any.Evaluate(Context)));
     }
 
     [Fact]
@@ -153,7 +153,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             .Where(arrM.AsVectorizedEnumerable().IsGreaterThan(zero))
             .IsGreaterThan(zero)
             .Any();
-        Assert.Equal(expected, Outcome(() => any.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => any.Evaluate(Context)));
     }
 
     [Fact]
@@ -182,7 +182,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             .SelectSqrt()
             .IsGreaterThan(one)
             .Any();
-        Assert.Equal(expected, Outcome(() => any.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => any.Evaluate(Context)));
     }
 
     [Fact]
@@ -211,6 +211,6 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             .Where(arrM.AsVectorizedEnumerable().IsGreaterThan(zero))
             .IsGreaterThan(zero)
             .Any();
-        Assert.Equal(expected, Outcome(() => any.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => any.Evaluate(Context)));
     }
 }

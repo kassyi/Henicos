@@ -15,8 +15,7 @@ public sealed class ExpressionDisposalTests : IDisposable
     private const int Words = 2;
     private const int ElementCount = 8;
 
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
     private readonly GpuBigIntArray _array1;
     private readonly GpuBigIntArray _array2;
     private readonly GpuBigInt _scalar;
@@ -25,13 +24,34 @@ public sealed class ExpressionDisposalTests : IDisposable
     public ExpressionDisposalTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot);
-        _array1 = CreateIntArray([10, -3, 7, 12, -5, 4, 8, -1]);
-        _array2 = CreateIntArray([2, 6, -4, 9, 1, -8, 3, 5]);
-        _scalar = new GpuBigInt(GpuBigUInt.FromBigInteger(_workspace, 3, Words), false);
-        _zero = new GpuBigInt(GpuBigUInt.FromBigInteger(_workspace, 0, Words), false);
+        _testWorkspace = new GpuTestWorkspace(256, GpuExecutionEngine.GSharpAot);
+        GpuBigIntArray array1 = default;
+        GpuBigIntArray array2 = default;
+        GpuBigInt scalar = default;
+        GpuBigInt zero = default;
+        try
+        {
+            array1 = CreateIntArray([10, -3, 7, 12, -5, 4, 8, -1]);
+            array2 = CreateIntArray([2, 6, -4, 9, 1, -8, 3, 5]);
+            scalar = new GpuBigInt(GpuBigUInt.FromBigInteger(_testWorkspace.Workspace, 3, Words), false);
+            zero = new GpuBigInt(GpuBigUInt.FromBigInteger(_testWorkspace.Workspace, 0, Words), false);
+            _array1 = array1;
+            _array2 = array2;
+            _scalar = scalar;
+            _zero = zero;
+        }
+        catch
+        {
+            zero.Dispose();
+            scalar.Dispose();
+            array2.Dispose();
+            array1.Dispose();
+            _testWorkspace.Dispose();
+            throw;
+        }
     }
+
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
 
     public void Dispose()
     {
@@ -39,8 +59,7 @@ public sealed class ExpressionDisposalTests : IDisposable
         _scalar.Dispose();
         _array2.Dispose();
         _array1.Dispose();
-        _workspace.Dispose();
-        _scope.Dispose();
+        _testWorkspace.Dispose();
     }
 
     [SkippableFact]
@@ -48,16 +67,16 @@ public sealed class ExpressionDisposalTests : IDisposable
     public void RepeatedLoopWithUsing_LeavesLiveBuffersUnchanged()
     {
         // mutant: GpuBigIntExpr.Dispose is a no-op (each iteration leaves the SelectAdd cache alive)
-        var initialLive = _workspace.GetMemoryStatistics().LiveBuffers;
+        var initialLive = Workspace.GetMemoryStatistics().LiveBuffers;
 
         for (var i = 0; i < 10; i++)
         {
             using var expr = _array1.AsVectorizedEnumerable().SelectAdd(_scalar).Sum();
-            using var result = expr.Evaluate(_workspace);
+            using var result = expr.Evaluate(Workspace);
             Assert.Equal(new BigInteger(56), result.Value.ToBigInteger(result.IsNegative));
         }
 
-        Assert.Equal(initialLive, _workspace.GetMemoryStatistics().LiveBuffers);
+        Assert.Equal(initialLive, Workspace.GetMemoryStatistics().LiveBuffers);
     }
 
     [SkippableFact]
@@ -68,21 +87,21 @@ public sealed class ExpressionDisposalTests : IDisposable
         // mutant: default(GpuBigIntExpr).Dispose throws NullReferenceException
         default(GpuBigIntExpr).Dispose();
 
-        var initialLive = _workspace.GetMemoryStatistics().LiveBuffers;
+        var initialLive = Workspace.GetMemoryStatistics().LiveBuffers;
         var expr = _array1.AsVectorizedEnumerable().SelectAdd(_scalar).Sum();
         var copy = expr;
 
-        using (var result = expr.Evaluate(_workspace))
+        using (var result = expr.Evaluate(Workspace))
         {
             Assert.Equal(new BigInteger(56), result.Value.ToBigInteger(result.IsNegative));
-            Assert.True(_workspace.GetMemoryStatistics().LiveBuffers > initialLive);
+            Assert.True(Workspace.GetMemoryStatistics().LiveBuffers > initialLive);
         }
 
         expr.Dispose();
         copy.Dispose();
         expr.Dispose();
 
-        Assert.Equal(initialLive, _workspace.GetMemoryStatistics().LiveBuffers);
+        Assert.Equal(initialLive, Workspace.GetMemoryStatistics().LiveBuffers);
     }
 
     [SkippableFact]
@@ -90,17 +109,17 @@ public sealed class ExpressionDisposalTests : IDisposable
     public void DiamondSharedSubexpression_DisposesOnceWithoutError()
     {
         // mutant: shared sub-expression is not idempotent when reached down both Left and Right of SignedAddExpression
-        var initialLive = _workspace.GetMemoryStatistics().LiveBuffers;
+        var initialLive = Workspace.GetMemoryStatistics().LiveBuffers;
 
         var sum = _array1.AsVectorizedEnumerable().SelectAdd(_scalar).Sum();
         using (var doubled = sum + sum)
         {
-            using var result = doubled.Evaluate(_workspace);
+            using var result = doubled.Evaluate(Workspace);
             Assert.Equal(new BigInteger(112), result.Value.ToBigInteger(result.IsNegative));
         }
 
         sum.Dispose();
-        Assert.Equal(initialLive, _workspace.GetMemoryStatistics().LiveBuffers);
+        Assert.Equal(initialLive, Workspace.GetMemoryStatistics().LiveBuffers);
     }
 
     [SkippableFact]
@@ -108,16 +127,16 @@ public sealed class ExpressionDisposalTests : IDisposable
     public void LifoUsingDeclarations_DisposeChildAndParentWithoutError()
     {
         // C# disposes nested using declarations in LIFO order: sum (outer parent node) first, then vec (inner child node).
-        var initialLive = _workspace.GetMemoryStatistics().LiveBuffers;
+        var initialLive = Workspace.GetMemoryStatistics().LiveBuffers;
 
         using (var vec = _array1.AsVectorizedEnumerable().SelectAdd(_scalar))
         using (var sum = vec.Sum())
         {
-            using var result = sum.Evaluate(_workspace);
+            using var result = sum.Evaluate(Workspace);
             Assert.Equal(new BigInteger(56), result.Value.ToBigInteger(result.IsNegative));
         }
 
-        Assert.Equal(initialLive, _workspace.GetMemoryStatistics().LiveBuffers);
+        Assert.Equal(initialLive, Workspace.GetMemoryStatistics().LiveBuffers);
     }
 
     [SkippableFact]
@@ -125,17 +144,17 @@ public sealed class ExpressionDisposalTests : IDisposable
     public void CompoundSignedExpressions_PropagateDisposeThroughUnaryAndBinaryNodes()
     {
         // mutant: SignedBinaryExpression, SignedNegateExpression or SignedUnaryExpression does not forward Dispose to children
-        var initialLive = _workspace.GetMemoryStatistics().LiveBuffers;
+        var initialLive = Workspace.GetMemoryStatistics().LiveBuffers;
 
         using (var compound = -(_array1.AsVectorizedEnumerable().SelectAdd(_scalar).Sum()) *
                               (~(_array2.AsVectorizedEnumerable().Where(_array2.AsVectorizedEnumerable().IsGreaterThan(_zero)).Count())))
         {
-            using var result = compound.Evaluate(_workspace);
+            using var result = compound.Evaluate(Workspace);
             Assert.NotEqual(BigInteger.Zero, result.Value.ToBigInteger(result.IsNegative));
-            Assert.True(_workspace.GetMemoryStatistics().LiveBuffers > initialLive);
+            Assert.True(Workspace.GetMemoryStatistics().LiveBuffers > initialLive);
         }
 
-        Assert.Equal(initialLive, _workspace.GetMemoryStatistics().LiveBuffers);
+        Assert.Equal(initialLive, Workspace.GetMemoryStatistics().LiveBuffers);
     }
 
     [SkippableFact]
@@ -145,7 +164,7 @@ public sealed class ExpressionDisposalTests : IDisposable
         // GraphHandles.Destroy calls (_node as IDisposable)?.Dispose() when _ownsExpression is true.
         // With SignedBinaryExpression, SignedNegateExpression and SignedUnaryExpression implementing IDisposable,
         // disposing the graph alone frees all cached vector buffers in the compound expression tree.
-        var initialLive = _workspace.GetMemoryStatistics().LiveBuffers;
+        var initialLive = Workspace.GetMemoryStatistics().LiveBuffers;
 
         var leftVec = _array1.AsVectorizedEnumerable().SelectAdd(_scalar);
         var rightVec = _array2.AsVectorizedEnumerable().SelectAdd(_scalar);
@@ -153,13 +172,13 @@ public sealed class ExpressionDisposalTests : IDisposable
         var compound = (leftVec.Where(leftVec.IsGreaterThan(_zero)).Count()) +
                        (-(~(rightVec.Where(rightVec.IsGreaterThan(_zero)).Count())));
 
-        using (var graph = compound.CompileToGraph(_workspace))
+        using (var graph = compound.CompileToGraph(Workspace))
         {
             graph.Execute();
-            Assert.True(_workspace.GetMemoryStatistics().LiveBuffers > initialLive);
+            Assert.True(Workspace.GetMemoryStatistics().LiveBuffers > initialLive);
         }
 
-        Assert.Equal(initialLive, _workspace.GetMemoryStatistics().LiveBuffers);
+        Assert.Equal(initialLive, Workspace.GetMemoryStatistics().LiveBuffers);
     }
 
     [SkippableFact]
@@ -167,12 +186,12 @@ public sealed class ExpressionDisposalTests : IDisposable
     public void DisposingExpressionOwnedByLiveGraph_ThrowsAndLeavesGraphRunnable()
     {
         // mutant: GpuBigIntExpr.Dispose skips GraphOwnership.ThrowIfOwned(Node)
-        var initialLive = _workspace.GetMemoryStatistics().LiveBuffers;
+        var initialLive = Workspace.GetMemoryStatistics().LiveBuffers;
 
         var vec = _array1.AsVectorizedEnumerable().SelectAdd(_scalar);
         var expr = -(vec.Where(vec.IsGreaterThan(_zero)).Count());
 
-        var graph = expr.CompileToGraph(_workspace);
+        var graph = expr.CompileToGraph(Workspace);
         try
         {
             Assert.Throws<InvalidOperationException>(() => expr.Dispose());
@@ -187,7 +206,7 @@ public sealed class ExpressionDisposalTests : IDisposable
 
         // After the graph is disposed, ownership is released and repeated Dispose calls are safe no-ops.
         expr.Dispose();
-        Assert.Equal(initialLive, _workspace.GetMemoryStatistics().LiveBuffers);
+        Assert.Equal(initialLive, Workspace.GetMemoryStatistics().LiveBuffers);
     }
 
     [SkippableFact]
@@ -195,13 +214,13 @@ public sealed class ExpressionDisposalTests : IDisposable
     public void DisposingSubexpressionOwnedByLiveGraph_ThrowsAndLeavesGraphRunnable()
     {
         // mutant: GraphOwnership does not track child expressions of a compiled graph
-        var initialLive = _workspace.GetMemoryStatistics().LiveBuffers;
+        var initialLive = Workspace.GetMemoryStatistics().LiveBuffers;
 
         var vec = _array1.AsVectorizedEnumerable().SelectAdd(_scalar);
         var sub = vec.Where(vec.IsGreaterThan(_zero)).Count();
         var expr = -sub;
 
-        var graph = expr.CompileToGraph(_workspace);
+        var graph = expr.CompileToGraph(Workspace);
         try
         {
             Assert.Throws<InvalidOperationException>(() => sub.Dispose());
@@ -217,7 +236,7 @@ public sealed class ExpressionDisposalTests : IDisposable
 
         // After the graph is disposed, ownership is released and repeated Dispose calls are safe no-ops.
         sub.Dispose();
-        Assert.Equal(initialLive, _workspace.GetMemoryStatistics().LiveBuffers);
+        Assert.Equal(initialLive, Workspace.GetMemoryStatistics().LiveBuffers);
     }
 
     [SkippableFact]
@@ -225,21 +244,21 @@ public sealed class ExpressionDisposalTests : IDisposable
     public void CompilingSecondGraphSharingSubexpression_ThrowsWhileFirstGraphAlive_SucceedsAfterDisposal()
     {
         // mutant: GraphOwnership allows compiling a second graph that shares a subexpression with an active graph
-        var initialLive = _workspace.GetMemoryStatistics().LiveBuffers;
+        var initialLive = Workspace.GetMemoryStatistics().LiveBuffers;
 
         var vec = _array1.AsVectorizedEnumerable().SelectAdd(_scalar);
         var sub = vec.Where(vec.IsGreaterThan(_zero)).Count();
-        using var aMag = GpuBigUInt.FromBigInteger(_workspace, 10, 1);
-        using var bMag = GpuBigUInt.FromBigInteger(_workspace, 20, 1);
+        using var aMag = GpuBigUInt.FromBigInteger(Workspace, 10, 1);
+        using var bMag = GpuBigUInt.FromBigInteger(Workspace, 20, 1);
         var a = new GpuBigInt(aMag, false);
         var b = new GpuBigInt(bMag, false);
         var e1 = a + sub;
         var e2 = b + sub;
 
-        var graph1 = e1.CompileToGraph(_workspace);
+        var graph1 = e1.CompileToGraph(Workspace);
         try
         {
-            Assert.Throws<InvalidOperationException>(() => e2.CompileToGraph(_workspace));
+            Assert.Throws<InvalidOperationException>(() => e2.CompileToGraph(Workspace));
 
             graph1.Execute();
             Assert.Equal(new BigInteger(16), graph1.Result.Value.ToBigInteger(graph1.Result.IsNegative));
@@ -250,7 +269,7 @@ public sealed class ExpressionDisposalTests : IDisposable
         }
 
         // After graph1 is disposed, sub is no longer owned; e2 can now be compiled and executed.
-        var graph2 = e2.CompileToGraph(_workspace);
+        var graph2 = e2.CompileToGraph(Workspace);
         try
         {
             graph2.Execute();
@@ -264,32 +283,32 @@ public sealed class ExpressionDisposalTests : IDisposable
         sub.Dispose();
         aMag.Dispose();
         bMag.Dispose();
-        Assert.Equal(initialLive, _workspace.GetMemoryStatistics().LiveBuffers);
+        Assert.Equal(initialLive, Workspace.GetMemoryStatistics().LiveBuffers);
     }
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void FloatVectorExpression_RepeatedLoopAndRepeatedDispose_LeavesLiveBuffersUnchanged()
     {
-        using var floatArray = new GpuBigFloatArray(_workspace, ElementCount, Words);
-        using var floatScalarSig = GpuBigUInt.FromBigInteger(_workspace, 2, Words);
-        var floatScalar = new GpuBigFloat(floatScalarSig, 0, false);
+        using var floatArray = new GpuBigFloatArray(Workspace, ElementCount, Words);
+        using var floatScalarSig = GpuBigUInt.FromBigInteger(Workspace, 2, Words);
+        using var floatScalar = new GpuBigFloat(floatScalarSig.AsBorrowed(), 0, false);
 
-        var initialLive = _workspace.GetMemoryStatistics().LiveBuffers;
+        var initialLive = Workspace.GetMemoryStatistics().LiveBuffers;
 
         for (var i = 0; i < 10; i++)
         {
             using var floatVec = floatArray.AsVectorizedEnumerable().SelectAdd(floatScalar);
-            using var sum = floatVec.Sum(_workspace);
+            using var sum = floatVec.Sum(Workspace);
             floatVec.Dispose();
         }
 
-        Assert.Equal(initialLive, _workspace.GetMemoryStatistics().LiveBuffers);
+        Assert.Equal(initialLive, Workspace.GetMemoryStatistics().LiveBuffers);
     }
 
     private GpuBigIntArray CreateIntArray(int[] values)
     {
-        var array = new GpuBigIntArray(_workspace, values.Length, Words);
+        var array = new GpuBigIntArray(Workspace, values.Length, Words);
         var words = new uint[values.Length * Words];
         var signs = new uint[values.Length];
         for (var i = 0; i < values.Length; i++)
@@ -298,8 +317,8 @@ public sealed class ExpressionDisposalTests : IDisposable
             signs[i] = values[i] < 0 ? 1u : 0u;
         }
 
-        _workspace.Provider.CopyHostToDevice(array.Values.DevicePointer, words, words.Length, _workspace.Stream);
-        _workspace.Provider.CopyHostToDevice(array.Signs.DevicePointer, signs, signs.Length, _workspace.Stream);
+        Workspace.Provider.CopyHostToDevice(array.Values.DevicePointer, words, words.Length, Workspace.Stream);
+        Workspace.Provider.CopyHostToDevice(array.Signs.DevicePointer, signs, signs.Length, Workspace.Stream);
         return array;
     }
 }

@@ -4,21 +4,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public class GpuUIntBigIntegerCoreTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _context;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public GpuUIntBigIntegerCoreTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1024, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _context.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Context => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     [SkippableTheory]
     [Scenario(TestScenario.HappyPath)]
@@ -29,7 +25,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
     {
         CudaCapability.EnsureGpuAvailable();
         var original = BigInteger.Parse(valueStr);
-        using var gpuBigInt = GpuBigUInt.FromBigInteger(_context, original, minWords);
+        using var gpuBigInt = GpuBigUInt.FromBigInteger(Context, original, minWords);
         
         Assert.True(gpuBigInt.NumWords >= minWords);
 
@@ -43,7 +39,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
     {
         CudaCapability.EnsureGpuAvailable();
         var original = new BigInteger(0xDEADBEEF);
-        using var gpuBigInt = GpuBigUInt.FromBigInteger(_context, original, 1);
+        using var gpuBigInt = GpuBigUInt.FromBigInteger(Context, original, 1);
         
         using var padded = gpuBigInt.PadTo(4);
         Assert.Equal(4, padded.NumWords);
@@ -62,12 +58,12 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
     {
         CudaCapability.EnsureGpuAvailable();
         var originalData = new uint[] { 1, 2, 3, 4, 5 };
-        using var original = new GpuBigUInt(_context, originalData);
+        using var original = new GpuBigUInt(Context, originalData);
 
         // PadTo only widens; narrowing is explicit (Truncate: unchecked, Fit: checked)
         Assert.Throws<ArgumentOutOfRangeException>(() => original.PadTo(3));
 
-        using var truncated = original.Value.Truncate(3).Node.Evaluate(_context);
+        using var truncated = original.Value.Truncate(3).Node.Evaluate(Context);
         Assert.Equal(3, truncated.NumWords);
         Assert.Equal(new uint[] { 1, 2, 3 }, truncated.ToHostArray());
     }
@@ -80,11 +76,11 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
         var originalA = BigInteger.Parse("1234567890123456789012345678901234567890");
         var originalB = BigInteger.Parse("9876543210987654321098765432109876543210");
         
-        using var a = GpuBigUInt.FromBigInteger(_context, originalA);
-        using var b = GpuBigUInt.FromBigInteger(_context, originalB);
+        using var a = GpuBigUInt.FromBigInteger(Context, originalA);
+        using var b = GpuBigUInt.FromBigInteger(Context, originalB);
 
         var expr = a + b;
-        using var result = expr.Node.Evaluate(_context, null);
+        using var result = expr.Node.Evaluate(Context, null);
 
         Assert.Equal(originalA + originalB, result.ToBigInteger());
     }
@@ -96,8 +92,8 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
     [Scenario(TestScenario.SadPath)]
     public void Create_RejectsNonZeroExponentAndNegativeNonZero()
     {
-        using var nonZero = new GpuBigUInt(_context, [7u, 0u]);
-        using var zero = new GpuBigUInt(_context, 2);
+        using var nonZero = new GpuBigUInt(Context, [7u, 0u]);
+        using var zero = new GpuBigUInt(Context, 2);
 
         // An integer has exponent 0.
         // mutant: GpuBigUInt.cs:53 `exponent != 0` -> `exponent == 0`
@@ -120,18 +116,18 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
     {
         // A value has at least one word.
         // mutant: GpuBigUInt.cs:124 `numWords <= 0` -> `numWords < 0` (0 words)
-        Assert.Throws<ArgumentOutOfRangeException>(() => new GpuBigUInt(_context, 0));
-        Assert.Throws<ArgumentOutOfRangeException>(() => new GpuBigUInt(_context, -1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new GpuBigUInt(Context, 0));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new GpuBigUInt(Context, -1));
 
         // Host data must be given and must not be empty.
         // mutant: GpuBigUInt.cs:141 `ArgumentNullException.ThrowIfNull(hostData)` removed (NullReferenceException
         //         instead)
         // mutant: GpuBigUInt.cs:142 `hostData.Length == 0` -> `!=` / throw removed
-        Assert.Throws<ArgumentNullException>(() => new GpuBigUInt(_context, (uint[])null));
-        Assert.Throws<ArgumentException>(() => new GpuBigUInt(_context, Array.Empty<uint>()));
+        Assert.Throws<ArgumentNullException>(() => new GpuBigUInt(Context, (uint[])null));
+        Assert.Throws<ArgumentException>(() => new GpuBigUInt(Context, Array.Empty<uint>()));
 
         // A value allocated by the constructor owns its buffer.
-        using var owned = new GpuBigUInt(_context, 4);
+        using var owned = new GpuBigUInt(Context, 4);
         Assert.True(owned.OwnsBuffer);
         Assert.Equal(4, owned.NumWords);
 
@@ -149,7 +145,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
         // SetIsNegative(true) sets bit 31 of the top word and keeps it set when it already is; false clears it.
         // The other bits of the top word and the lower words are unchanged.
         // mutant: GpuBigUInt.cs:520 `word |= 0x80000000` -> `word ^= 0x80000000` (second call)
-        using var value = new GpuBigUInt(_context, [5u, 0x1234_5678u]);
+        using var value = new GpuBigUInt(Context, [5u, 0x1234_5678u]);
         value.SetIsNegative(true);
         value.SetIsNegative(true);
         Assert.True(value.GetIsNegative());
@@ -167,13 +163,13 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
     {
         // The square of an n-word value needs 2n words; one word less is rejected.
         // mutant: GpuBigUInt.cs:538 `NumWords < logicalWords * 2` -> `NumWords <= logicalWords * 2`
-        using var tooSmall = new GpuBigUInt(_context, 3);
+        using var tooSmall = new GpuBigUInt(Context, 3);
         Assert.Throws<InvalidOperationException>(() => tooSmall.Square(2));
 
         // Exactly 2n words is enough: the low n words are squared in place.
         uint[] words = [uint.MaxValue, 3u, 9u, 9u];
         var logical = new BigInteger(uint.MaxValue) + (new BigInteger(3) << 32);
-        using var exact = new GpuBigUInt(_context, words);
+        using var exact = new GpuBigUInt(Context, words);
         Assert.True(exact.Square(2));
         Assert.Equal(logical * logical, exact.ToBigInteger());
     }
@@ -211,15 +207,15 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
 
     private GpuBigUIntArray CreateFilledArray()
     {
-        var array = new GpuBigUIntArray(_context, 3, 4);
-        _context.Provider.CopyHostToDevice(array.DevicePointer, s_arrayData, s_arrayData.Length, _context.Stream);
+        var array = new GpuBigUIntArray(Context, 3, 4);
+        Context.Provider.CopyHostToDevice(array.DevicePointer, s_arrayData, s_arrayData.Length, Context.Stream);
         return array;
     }
 
     private uint[] ReadArray(GpuBigUIntArray array)
     {
         var host = new uint[array.TotalWords];
-        _context.Provider.CopyDeviceToHost(host, array.DevicePointer, host.Length, _context.Stream);
+        Context.Provider.CopyDeviceToHost(host, array.DevicePointer, host.Length, Context.Stream);
         return host;
     }
 
@@ -251,7 +247,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
     [Scenario(TestScenario.Boundary)]
     public void CopyFrom_HonorsOffsetsAndBounds()
     {
-        using var source = new GpuBigUInt(_context, [101u, 102u, 103u, 104u]);
+        using var source = new GpuBigUInt(Context, [101u, 102u, 103u, 104u]);
 
         // A destination offset copies only the words that fit (2), and the next element is untouched.
         // mutant: GpuBigUInt.cs:278 `NumWords - destOffsetWords` -> `NumWords + destOffsetWords`
@@ -343,7 +339,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
         // mutant: GpuBigUInt.ThrowIfOffsetOutOfRange `ThrowIfGreaterThan` -> `ThrowIfGreaterThanOrEqual`
         // (Clear(offsetWords: 4) in Clear_RangeAndPastEnd)
         using var array = CreateFilledArray();
-        using var source = new GpuBigUInt(_context, [101u, 102u, 103u, 104u, 105u, 106u, 107u, 108u]);
+        using var source = new GpuBigUInt(Context, [101u, 102u, 103u, 104u, 105u, 106u, 107u, 108u]);
 
         var error = Assert.Throws<ArgumentOutOfRangeException>(() => write(array.GetElement(1), source));
         Assert.Equal((call, paramName), (call, error.ParamName));

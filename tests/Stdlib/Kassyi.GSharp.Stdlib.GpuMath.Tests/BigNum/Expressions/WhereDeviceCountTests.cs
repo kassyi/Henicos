@@ -13,16 +13,16 @@ public sealed class WhereDeviceCountTests : IDisposable
 {
     private const int Words = 3;
 
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
     private readonly List<IDisposable> _owned = [];
 
     public WhereDeviceCountTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1024, GpuExecutionEngine.GSharpAot);
     }
+
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
 
     public void Dispose()
     {
@@ -31,8 +31,7 @@ public sealed class WhereDeviceCountTests : IDisposable
             owned.Dispose();
         }
 
-        _workspace.Dispose();
-        _scope.Dispose();
+        _testWorkspace.Dispose();
     }
 
     public static TheoryData<string, BigInteger[], BigInteger[], int> SelectionCases() => new()
@@ -64,8 +63,8 @@ public sealed class WhereDeviceCountTests : IDisposable
         Assert.Equal(selected.Aggregate(BigInteger.Zero, (s, v) => s + v), ReadScalar(Filtered().Sum()));
         if (selected.Length == 0)
         {
-            Assert.Throws<InvalidOperationException>(() => Filtered().Max().Evaluate(_workspace));
-            Assert.Throws<InvalidOperationException>(() => Filtered().Min().Evaluate(_workspace));
+            Assert.Throws<InvalidOperationException>(() => Filtered().Max().Evaluate(Workspace));
+            Assert.Throws<InvalidOperationException>(() => Filtered().Min().Evaluate(Workspace));
         }
         else
         {
@@ -73,19 +72,19 @@ public sealed class WhereDeviceCountTests : IDisposable
             Assert.Equal(selected.Min(), ReadScalar(Filtered().Min()));
         }
 
-        using var zero = GpuBigUInt.FromBigInteger(_workspace, 0, Words);
-        var scalarZero = new GpuBigInt(zero, false);
+        using var zero = GpuBigUInt.FromBigInteger(Workspace, 0, Words);
+        using var scalarZero = new GpuBigInt(zero.AsBorrowed(), false);
         using var any = Filtered().IsGreaterThan(scalarZero).Any();
         using var all = Filtered().IsGreaterThan(scalarZero).All();
-        Assert.Equal(selected.Any(v => v > 0), any.Evaluate(_workspace));
-        Assert.Equal(selected.All(v => v > 0), all.Evaluate(_workspace));
+        Assert.Equal(selected.Any(v => v > 0), any.Evaluate(Workspace));
+        Assert.Equal(selected.All(v => v > 0), all.Evaluate(Workspace));
 
         Assert.Equal(new BigInteger(selected.Skip(1).Take(1).Count()), ReadScalar(Filtered().Skip(1).Take(1).Count()));
 
         using var filtered = Filtered();
         Assert.Throws<InvalidOperationException>(() => filtered.Length);
         Assert.Equal(values.Length, filtered.Capacity);
-        Assert.Equal(selected, Read(filtered.Evaluate(_workspace)));
+        Assert.Equal(selected, Read(filtered.Evaluate(Workspace)));
     }
 
     [SkippableTheory]
@@ -145,7 +144,7 @@ public sealed class WhereDeviceCountTests : IDisposable
 
         using var filtered = array.AsVectorizedEnumerable().Where(Flags(flags));
 
-        Assert.Equal([new BigInteger(10), 30, 40], Read(filtered.Evaluate(_workspace)));
+        Assert.Equal([new BigInteger(10), 30, 40], Read(filtered.Evaluate(Workspace)));
     }
 
     [SkippableFact]
@@ -156,7 +155,7 @@ public sealed class WhereDeviceCountTests : IDisposable
         var array = CreateArray([1, 2, 3]);
         using var filtered = array.AsVectorizedEnumerable().Where(Flags([1, 0]));
 
-        Assert.Throws<ArgumentException>(() => filtered.Evaluate(_workspace));
+        Assert.Throws<ArgumentException>(() => filtered.Evaluate(Workspace));
     }
 
     [SkippableFact]
@@ -165,9 +164,9 @@ public sealed class WhereDeviceCountTests : IDisposable
     {
         var array = CreateArray([1, 2, 3]);
         using var filtered = array.AsVectorizedEnumerable().Where(Flags([1, 0, 1]));
-        using var target = new GpuBigUIntArray(_workspace, 3, Words);
+        using var target = new GpuBigUIntArray(Workspace, 3, Words);
 
-        Assert.Throws<NotSupportedException>(() => filtered.Evaluate(_workspace, targetResult: target));
+        Assert.Throws<NotSupportedException>(() => filtered.Evaluate(Workspace, targetResult: target));
     }
 
     [SkippableFact]
@@ -178,11 +177,11 @@ public sealed class WhereDeviceCountTests : IDisposable
         // input changed (the reason for keeping the count on the device, decision G4).
         // mutant: Count writes the capacity
         var array = CreateArray([-5, 3, -1, 8]);
-        using var zero = GpuBigUInt.FromBigInteger(_workspace, 0, Words);
+        using var zero = GpuBigUInt.FromBigInteger(Workspace, 0, Words);
         var negative = array.AsVectorizedEnumerable().IsLessThan(new GpuBigInt(zero, false));
         var count = array.AsVectorizedEnumerable().Where(negative).Count();
 
-        using var graph = count.CompileToGraph(_workspace);
+        using var graph = count.CompileToGraph(Workspace);
         graph.Execute();
         var first = graph.Result.Value.ToBigInteger();
         Upload(array, [-5, -3, -1, -8]);
@@ -201,7 +200,7 @@ public sealed class WhereDeviceCountTests : IDisposable
         var array = CreateArray([-5, 3, -1, 8]);
         var sum = array.AsVectorizedEnumerable().Where(Flags([1, 0, 1, 1])).Sum();
 
-        Assert.Throws<NotSupportedException>(() => sum.CompileToGraph(_workspace));
+        Assert.Throws<NotSupportedException>(() => sum.CompileToGraph(Workspace));
     }
 
     [SkippableFact]
@@ -217,7 +216,7 @@ public sealed class WhereDeviceCountTests : IDisposable
             .ZipDivide(divisors.AsVectorizedEnumerable())
             .Count();
 
-        Assert.Throws<NotSupportedException>(() => count.CompileToGraph(_workspace));
+        Assert.Throws<NotSupportedException>(() => count.CompileToGraph(Workspace));
 
         Assert.Equal(new BigInteger(3), ReadScalar(array.AsVectorizedEnumerable().Where(Flags([1, 0, 1, 1])).Count()));
     }
@@ -233,7 +232,7 @@ public sealed class WhereDeviceCountTests : IDisposable
         var flags = Flags([1, 0, 1, 1]);
         var count = array.AsVectorizedEnumerable().Where(flags).SelectSqrt().Count();
 
-        Assert.Throws<InvalidOperationException>(() => count.CompileToGraph(_workspace));
+        Assert.Throws<InvalidOperationException>(() => count.CompileToGraph(Workspace));
 
         // The workspace is usable afterwards: the same Where counted without a graph
         Assert.Equal(new BigInteger(3), ReadScalar(array.AsVectorizedEnumerable().Where(Flags([1, 0, 1, 1])).Count()));
@@ -246,10 +245,10 @@ public sealed class WhereDeviceCountTests : IDisposable
         // The public Evaluate of a filtered vector reads the count; inside a capture that is an InvalidOperationException
         var array = CreateArray([1, 2, 3]);
         using var filtered = array.AsVectorizedEnumerable().Where(Flags([1, 0, 1]));
-        filtered.Evaluate(_workspace);
+        filtered.Evaluate(Workspace);
 
-        var provider = _workspace.Provider;
-        provider.BeginCapture(_workspace.Stream);
+        var provider = Workspace.Provider;
+        provider.BeginCapture(Workspace.Stream);
         string? error;
         try
         {
@@ -257,7 +256,7 @@ public sealed class WhereDeviceCountTests : IDisposable
         }
         finally
         {
-            provider.DestroyGraph(provider.EndCapture(_workspace.Stream), IntPtr.Zero);
+            provider.DestroyGraph(provider.EndCapture(Workspace.Stream), IntPtr.Zero);
         }
 
         Assert.Equal(nameof(InvalidOperationException), error);
@@ -316,7 +315,7 @@ public sealed class WhereDeviceCountTests : IDisposable
         Assert.Equal(new BigInteger(expected.Length), ReadScalar(Divided().Count()));
         Assert.Equal(expected.Aggregate(BigInteger.Zero, (s, v) => s + v), ReadScalar(Divided().Sum()));
         using var divided = Divided();
-        Assert.Equal(expected, Read(divided.Evaluate(_workspace)));
+        Assert.Equal(expected, Read(divided.Evaluate(Workspace)));
     }
 
     [SkippableTheory]
@@ -339,9 +338,9 @@ public sealed class WhereDeviceCountTests : IDisposable
         Assert.Throws<DivideByZeroException>(
             () => values.Where((_, i) => flags[i] == 1).Select(v => Reference(v, operation, 0)).ToArray());
         using var sum = DivideBy(array.AsVectorizedEnumerable().Where(Flags(flags)), operation, 0).Sum();
-        Assert.Throws<DivideByZeroException>(() => sum.Evaluate(_workspace));
+        Assert.Throws<DivideByZeroException>(() => sum.Evaluate(Workspace));
         using var divided = DivideBy(array.AsVectorizedEnumerable().Where(Flags(flags)), operation, 0);
-        Assert.Throws<DivideByZeroException>(() => divided.Evaluate(_workspace));
+        Assert.Throws<DivideByZeroException>(() => divided.Evaluate(Workspace));
     }
 
     [SkippableTheory]
@@ -358,7 +357,7 @@ public sealed class WhereDeviceCountTests : IDisposable
         Assert.Equal(expected.Aggregate(BigInteger.Zero, (s, v) => s + v),
             ReadScalar(DivideBy(array.AsVectorizedEnumerable(), operation, 0).Sum()));
         using var divided = DivideBy(array.AsVectorizedEnumerable(), operation, 0);
-        Assert.Equal(expected, Read(divided.Evaluate(_workspace)));
+        Assert.Equal(expected, Read(divided.Evaluate(Workspace)));
     }
 
     [SkippableTheory]
@@ -379,7 +378,7 @@ public sealed class WhereDeviceCountTests : IDisposable
 
         using var divided = DivideBy(array.AsVectorizedEnumerable().Where(Flags(flags)), operation, divisor);
 
-        Assert.Equal(expected, Read(divided.Evaluate(_workspace)));
+        Assert.Equal(expected, Read(divided.Evaluate(Workspace)));
     }
 
     [SkippableTheory]
@@ -399,7 +398,7 @@ public sealed class WhereDeviceCountTests : IDisposable
         uint[] flags = divisor == 0 ? [0, 0, 0, 0] : [1, 0, 1, 1];
         var count = DivideBy(array.AsVectorizedEnumerable().Where(Flags(flags)), operation, divisor).Count();
 
-        Assert.Throws<NotSupportedException>(() => count.CompileToGraph(_workspace));
+        Assert.Throws<NotSupportedException>(() => count.CompileToGraph(Workspace));
 
         Assert.Equal(new BigInteger(3), ReadScalar(array.AsVectorizedEnumerable().Where(Flags([1, 0, 1, 1])).Count()));
     }
@@ -407,7 +406,7 @@ public sealed class WhereDeviceCountTests : IDisposable
     // The scalar division named by the theory data, by a non-negative divisor
     private IGpuBigIntVectorExpression DivideBy(IGpuBigIntVectorExpression source, string operation, uint divisor)
     {
-        var scalar = new GpuBigInt(Keep(GpuBigUInt.FromBigInteger(_workspace, divisor, Words)), false);
+        using var scalar = new GpuBigInt(Keep(GpuBigUInt.FromBigInteger(Workspace, divisor, Words)).AsBorrowed(), false);
         return operation switch
         {
             "SelectDivide" => source.SelectDivide(scalar),
@@ -426,7 +425,7 @@ public sealed class WhereDeviceCountTests : IDisposable
     {
         try
         {
-            _ = expression.Evaluate(_workspace).Length;
+            _ = expression.Evaluate(Workspace).Length;
             return null;
         }
         catch (InvalidOperationException ex)
@@ -441,13 +440,13 @@ public sealed class WhereDeviceCountTests : IDisposable
         if (mask.Length > 0)
         {
             var maskArray = CreateArray(mask);
-            return maskArray.AsVectorizedEnumerable().IsEqualTo(new GpuBigInt(Keep(GpuBigUInt.FromBigInteger(_workspace, 1, Words)), false));
+            return maskArray.AsVectorizedEnumerable().IsEqualTo(new GpuBigInt(Keep(GpuBigUInt.FromBigInteger(Workspace, 1, Words)), false));
         }
 
-        var scalar = Keep(GpuBigUInt.FromBigInteger(_workspace, BigInteger.Abs(threshold), Words));
-        var signed = new GpuBigInt(scalar, threshold < 0);
+        var scalar = Keep(GpuBigUInt.FromBigInteger(Workspace, BigInteger.Abs(threshold), Words));
+        using var signed = new GpuBigInt(scalar.AsBorrowed(), threshold < 0);
         return name == "negative"
-            ? array.AsVectorizedEnumerable().IsLessThan(new GpuBigInt(Keep(GpuBigUInt.FromBigInteger(_workspace, 0, Words)), false))
+            ? array.AsVectorizedEnumerable().IsLessThan(new GpuBigInt(Keep(GpuBigUInt.FromBigInteger(Workspace, 0, Words)), false))
             : array.AsVectorizedEnumerable().IsGreaterThan(signed);
     }
 
@@ -459,21 +458,21 @@ public sealed class WhereDeviceCountTests : IDisposable
 
     private IGpuBoolVectorExpression Flags(uint[] flags)
     {
-        var array = new GpuBigUIntArray(_workspace, flags.Length, 1);
-        _workspace.Provider.CopyHostToDevice(array.DevicePointer, flags, flags.Length, _workspace.Stream);
+        var array = new GpuBigUIntArray(Workspace, flags.Length, 1);
+        Workspace.Provider.CopyHostToDevice(array.DevicePointer, flags, flags.Length, Workspace.Stream);
         _owned.Add(array);
         return new FlagsLeaf(array);
     }
 
     private BigInteger ReadScalar(GpuBigIntExpr expression)
     {
-        using var result = expression.Evaluate(_workspace);
+        using var result = expression.Evaluate(Workspace);
         return result.Value.ToBigInteger(result.IsNegative);
     }
 
     private GpuBigIntArray CreateArray(BigInteger[] values)
     {
-        var array = new GpuBigIntArray(_workspace, values.Length, Words);
+        var array = new GpuBigIntArray(Workspace, values.Length, Words);
         _owned.Add(array);
         Upload(array, values);
         return array;
@@ -496,8 +495,8 @@ public sealed class WhereDeviceCountTests : IDisposable
 
         if (values.Length > 0)
         {
-            _workspace.Provider.CopyHostToDevice(array.Values.DevicePointer, words, words.Length, _workspace.Stream);
-            _workspace.Provider.CopyHostToDevice(array.Signs.DevicePointer, signs, signs.Length, _workspace.Stream);
+            Workspace.Provider.CopyHostToDevice(array.Values.DevicePointer, words, words.Length, Workspace.Stream);
+            Workspace.Provider.CopyHostToDevice(array.Signs.DevicePointer, signs, signs.Length, Workspace.Stream);
         }
     }
 
@@ -507,8 +506,8 @@ public sealed class WhereDeviceCountTests : IDisposable
         var signs = new uint[array.Length];
         if (array.Length > 0)
         {
-            _workspace.Provider.CopyDeviceToHost(words, array.Values.DevicePointer, words.Length, _workspace.Stream);
-            _workspace.Provider.CopyDeviceToHost(signs, array.Signs.DevicePointer, signs.Length, _workspace.Stream);
+            Workspace.Provider.CopyDeviceToHost(words, array.Values.DevicePointer, words.Length, Workspace.Stream);
+            Workspace.Provider.CopyDeviceToHost(signs, array.Signs.DevicePointer, signs.Length, Workspace.Stream);
         }
 
         var result = new BigInteger[array.Length];

@@ -5,21 +5,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public class ModPowPolyAlgorithmTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _context;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public ModPowPolyAlgorithmTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _context = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(4096, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _context.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Context => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     private static BigInteger GenerateRandomBigInteger(int bits, Random rng)
     {
@@ -52,7 +48,7 @@ public class ModPowPolyAlgorithmTests : IDisposable
         // Arrange: Generate random BigIntegers.
         // For >1024-bit host-loop crossover cases, use a 64-bit (2-word) exponent to verify full-width
         // 2048/4096-bit multiplications and Barrett reductions across word boundaries without thousands of host-loop iterations.
-        int expBitLength = bitLength <= _context.PolyAlgorithmThreshold ? bitLength / 2 : 64;
+        int expBitLength = bitLength <= Context.PolyAlgorithmThreshold ? bitLength / 2 : 64;
         var rng = new Random(1337 + bitLength);
         var baseValue = GenerateRandomBigInteger(bitLength, rng);
         var expValue = GenerateRandomBigInteger(expBitLength, rng);
@@ -68,10 +64,10 @@ public class ModPowPolyAlgorithmTests : IDisposable
 
         var numWords = (bitLength + 31) / 32;
 
-        using var gpuBase = GpuBigUInt.FromBigInteger(_context, baseValue, numWords);
-        using var gpuExp = GpuBigUInt.FromBigInteger(_context, expValue, numWords);
-        using var gpuMod = GpuBigUInt.FromBigInteger(_context, modValue, numWords);
-        using var gpuResult = new GpuBigUInt(_context, numWords);
+        using var gpuBase = GpuBigUInt.FromBigInteger(Context, baseValue, numWords);
+        using var gpuExp = GpuBigUInt.FromBigInteger(Context, expValue, numWords);
+        using var gpuMod = GpuBigUInt.FromBigInteger(Context, modValue, numWords);
+        using var gpuResult = new GpuBigUInt(Context, numWords);
 
         // Act
         GpuBigIntDivRem.ModPow(gpuBase, gpuExp, gpuMod, gpuResult);
@@ -230,32 +226,32 @@ public class ModPowPolyAlgorithmTests : IDisposable
         var modValue = BigInteger.Parse("123456789012345678901234567890123456789012345678901234567891"); // odd
         var numWords = 10;
         
-        using var gpuMod = GpuBigUInt.FromBigInteger(_context, modValue, numWords);
-        using var gpuResult = new GpuBigUInt(_context, numWords);
+        using var gpuMod = GpuBigUInt.FromBigInteger(Context, modValue, numWords);
+        using var gpuResult = new GpuBigUInt(Context, numWords);
 
         // 1. Base 0
-        using var gpuBase0 = GpuBigUInt.FromBigInteger(_context, BigInteger.Zero, numWords);
-        using var gpuExp = GpuBigUInt.FromBigInteger(_context, new BigInteger(5), numWords);
+        using var gpuBase0 = GpuBigUInt.FromBigInteger(Context, BigInteger.Zero, numWords);
+        using var gpuExp = GpuBigUInt.FromBigInteger(Context, new BigInteger(5), numWords);
         GpuBigIntDivRem.ModPow(gpuBase0, gpuExp, gpuMod, gpuResult);
         Assert.Equal(BigInteger.ModPow(BigInteger.Zero, 5, modValue), gpuResult.ToBigInteger());
 
         // 2. Exponent 0
-        using var gpuBase5 = GpuBigUInt.FromBigInteger(_context, new BigInteger(5), numWords);
-        using var gpuExp0 = GpuBigUInt.FromBigInteger(_context, BigInteger.Zero, numWords);
+        using var gpuBase5 = GpuBigUInt.FromBigInteger(Context, new BigInteger(5), numWords);
+        using var gpuExp0 = GpuBigUInt.FromBigInteger(Context, BigInteger.Zero, numWords);
         GpuBigIntDivRem.ModPow(gpuBase5, gpuExp0, gpuMod, gpuResult);
         Assert.Equal(BigInteger.ModPow(5, BigInteger.Zero, modValue), gpuResult.ToBigInteger());
         
         // 3. Base 1
-        using var gpuBase1 = GpuBigUInt.FromBigInteger(_context, BigInteger.One, numWords);
+        using var gpuBase1 = GpuBigUInt.FromBigInteger(Context, BigInteger.One, numWords);
         GpuBigIntDivRem.ModPow(gpuBase1, gpuExp, gpuMod, gpuResult);
         Assert.Equal(BigInteger.ModPow(BigInteger.One, 5, modValue), gpuResult.ToBigInteger());
 
         // 4. Modulus 0 (DivideByZeroException)
-        using var gpuMod0 = GpuBigUInt.FromBigInteger(_context, BigInteger.Zero, numWords);
+        using var gpuMod0 = GpuBigUInt.FromBigInteger(Context, BigInteger.Zero, numWords);
         Assert.Throws<DivideByZeroException>(() => GpuBigIntDivRem.ModPow(gpuBase5, gpuExp, gpuMod0, gpuResult));
 
         // 5. Size Mismatch (ArgumentException)
-        using var gpuMismatch = new GpuBigUInt(_context, numWords + 1);
+        using var gpuMismatch = new GpuBigUInt(Context, numWords + 1);
         Assert.Throws<ArgumentException>(() => GpuBigIntDivRem.ModPow(gpuMismatch, gpuExp, gpuMod, gpuResult));
     }
 
@@ -280,24 +276,24 @@ public class ModPowPolyAlgorithmTests : IDisposable
         const int NumWords = 64;
         const int TargetBits = 96 * NumWords + 512;
         var (gpuBase, gpuExp, gpuMod, gpuRecip, gpuResult, _) =
-            CreateModPowNttMegaKernelTestInputs(_context, NumWords, TargetBits, new BigInteger(65537));
+            CreateModPowNttMegaKernelTestInputs(Context, NumWords, TargetBits, new BigInteger(65537));
         using (gpuBase)
         using (gpuExp)
         using (gpuMod)
         using (gpuRecip)
         using (gpuResult)
         {
-            var beforeStats = _context.GetMemoryStatistics();
+            var beforeStats = Context.GetMemoryStatistics();
             var handler = new KernelAdvancedMathHandler();
             var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
                 handler.ExecuteModPowNttMegaKernel(
-                    _context, gpuBase, gpuResult, gpuMod, gpuRecip, gpuExp,
+                    Context, gpuBase, gpuResult, gpuMod, gpuRecip, gpuExp,
                     NumWords, TargetBits, gridDim: 1, blockDim: blockDim));
 
             Assert.Equal("blockDim", exception.ParamName);
             // mutant: KernelAdvancedMathHandler.cs:270 `ThrowIfInvalidMegaKernelBlockDim(blockDim);` moved after the
             //         first RentTemp (260u then throws only after renting)
-            var afterStats = _context.GetMemoryStatistics();
+            var afterStats = Context.GetMemoryStatistics();
             Assert.Equal(beforeStats.PeakLiveBuffers, afterStats.PeakLiveBuffers);
             Assert.Equal(beforeStats.DriverAllocations, afterStats.DriverAllocations);
         }
@@ -321,7 +317,7 @@ public class ModPowPolyAlgorithmTests : IDisposable
         var transformLength = CooperativeMegaKernelLauncher.TransformLengthFor(2 * NumWords + (TargetBits + 31) / 32);
         var sharedMemBytes = CooperativeMegaKernelLauncher.ComputeMegaKernelSharedMemoryBytes(transformLength);
         int blocksPerSm;
-        using (new GpuKernelLoader.CudaContextScope(_context.IsolatedContext.Handle))
+        using (new GpuKernelLoader.CudaContextScope(Context.IsolatedContext.Handle))
         {
             CudaException.ThrowIfError(CudaDriverApi.cuOccupancyMaxActiveBlocksPerMultiprocessor(
                 out blocksPerSm, GpuBigIntDivRemKernels.ResolveModPowNttMegaKernel(), (int)BlockDim, sharedMemBytes));
@@ -330,24 +326,24 @@ public class ModPowPolyAlgorithmTests : IDisposable
         Skip.If(blocksPerSm > 0, "One block of 1024 threads of the ModPow kernel fits on this device.");
 
         var (gpuBase, gpuExp, gpuMod, gpuRecip, gpuResult, _) =
-            CreateModPowNttMegaKernelTestInputs(_context, NumWords, TargetBits, new BigInteger(65537));
+            CreateModPowNttMegaKernelTestInputs(Context, NumWords, TargetBits, new BigInteger(65537));
         using (gpuBase)
         using (gpuExp)
         using (gpuMod)
         using (gpuRecip)
         using (gpuResult)
         {
-            var beforeStats = _context.GetMemoryStatistics();
+            var beforeStats = Context.GetMemoryStatistics();
             var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
                 new KernelAdvancedMathHandler().ExecuteModPowNttMegaKernel(
-                    _context, gpuBase, gpuResult, gpuMod, gpuRecip, gpuExp,
+                    Context, gpuBase, gpuResult, gpuMod, gpuRecip, gpuExp,
                     NumWords, TargetBits, gridDim: 1, blockDim: BlockDim));
 
             Assert.Equal("blockDim", exception.ParamName);
-            var afterStats = _context.GetMemoryStatistics();
+            var afterStats = Context.GetMemoryStatistics();
             Assert.Equal(beforeStats.PeakLiveBuffers, afterStats.PeakLiveBuffers);
             Assert.Equal(beforeStats.DriverAllocations, afterStats.DriverAllocations);
-            Assert.Equal(0u, _context.LastModPowNttBlockDim);
+            Assert.Equal(0u, Context.LastModPowNttBlockDim);
         }
     }
 
@@ -363,7 +359,7 @@ public class ModPowPolyAlgorithmTests : IDisposable
         const int NumWords = 64;
         const int TargetBits = 96 * NumWords + 512;
         var (gpuBase, gpuExp, gpuMod, gpuRecip, gpuResult, expected) =
-            CreateModPowNttMegaKernelTestInputs(_context, NumWords, TargetBits, new BigInteger(65537));
+            CreateModPowNttMegaKernelTestInputs(Context, NumWords, TargetBits, new BigInteger(65537));
         using (gpuBase)
         using (gpuExp)
         using (gpuMod)
@@ -371,11 +367,11 @@ public class ModPowPolyAlgorithmTests : IDisposable
         using (gpuResult)
         {
             new KernelAdvancedMathHandler().ExecuteModPowNttMegaKernel(
-                _context, gpuBase, gpuResult, gpuMod, gpuRecip, gpuExp,
+                Context, gpuBase, gpuResult, gpuMod, gpuRecip, gpuExp,
                 NumWords, TargetBits, gridDim: 1, blockDim: blockDim);
 
             Assert.Equal(expected, gpuResult.ToBigInteger());
-            Assert.Equal(blockDim, _context.LastModPowNttBlockDim);
+            Assert.Equal(blockDim, Context.LastModPowNttBlockDim);
         }
     }
 

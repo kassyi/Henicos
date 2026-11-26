@@ -25,7 +25,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             .Skip(1)
             .IsGreaterThan(zero)
             .Any();
-        Assert.Equal(expected, Outcome(() => any.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => any.Evaluate(Context)));
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             .Take(2)
             .IsGreaterThan(five)
             .Any();
-        Assert.Equal(expected, Outcome(() => any.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => any.Evaluate(Context)));
     }
 
     [Fact]
@@ -69,7 +69,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             .Skip(1)
             .IsGreaterThan(three)
             .Any();
-        Assert.Equal(expected, Outcome(() => any.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => any.Evaluate(Context)));
     }
 
     [Fact]
@@ -90,7 +90,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             .Take(2)
             .IsGreaterThan(two)
             .Any();
-        Assert.Equal(expected, Outcome(() => any.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => any.Evaluate(Context)));
     }
 
     [Fact]
@@ -100,7 +100,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     {
         long[] values = [1, 4, -4, 16];
         using var arr = CreateFloatArray(values);
-        using var one = GpuBigFloatTestHelpers.CreateFloat(_context, 1);
+        using var one = GpuBigFloatTestHelpers.CreateFloat(Context, 1);
 
         // Skip(1).Take(2): ln(4) > 1 decides at window index 0 before -4 throws at index 1
         var expected = Outcome(
@@ -113,7 +113,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             .Take(2)
             .IsGreaterThan(one)
             .Any();
-        Assert.Equal(expected, Outcome(() => any.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => any.Evaluate(Context)));
     }
 
     [Fact]
@@ -139,7 +139,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         }
 
         using var any = chain.IsGreaterThan(zero).Any();
-        Assert.Equal(expected, Outcome(() => any.Evaluate(_context)));
+        Assert.Equal(expected, Outcome(() => any.Evaluate(Context)));
     }
 
     [Fact]
@@ -159,7 +159,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         }
 
         using var any = dag.IsGreaterThan(zero).Any();
-        Assert.Equal(a.Select(static x => IsqrtContract(x) * 16 > 0).Any(static x => x), any.Evaluate(_context));
+        Assert.Equal(a.Select(static x => IsqrtContract(x) * 16 > 0).Any(static x => x), any.Evaluate(Context));
     }
 
     [Fact]
@@ -182,6 +182,6 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         }
 
         var any = dag.ZipAdd(mismatch.AsVectorizedEnumerable()).IsGreaterThan(zero).Any();
-        Assert.Throws<ArgumentException>(() => any.Evaluate(_context));
+        Assert.Throws<ArgumentException>(() => any.Evaluate(Context));
     }
 }

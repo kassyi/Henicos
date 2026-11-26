@@ -4,21 +4,17 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public partial class GpuBigIntVectorLinqExtensionsTests : IDisposable
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _context;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public GpuBigIntVectorLinqExtensionsTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _context = new GpuWorkspace(1024 * 1024, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(1024 * 1024, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _context.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Context => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     private GpuBigInt CreateScalar(BigInteger val, int numWords = 8)
     {
@@ -27,13 +23,13 @@ public partial class GpuBigIntVectorLinqExtensionsTests : IDisposable
         var bytes = val.ToByteArray(isUnsigned: true, isBigEndian: false);
         var buffer = new uint[numWords];
         Buffer.BlockCopy(bytes, 0, buffer, 0, Math.Min(bytes.Length, buffer.Length * 4));
-        var u = new GpuBigUInt(_context, buffer);
+        var u = new GpuBigUInt(Context, buffer);
         return new GpuBigInt(u, isNeg);
     }
 
     private GpuBigIntArray CreateArray(BigInteger[] vals, int numWords = 8)
     {
-        var array = new GpuBigIntArray(_context, vals.Length, numWords);
+        var array = new GpuBigIntArray(Context, vals.Length, numWords);
         var valuesHost = new uint[vals.Length * numWords];
         var signsHost = new uint[vals.Length];
 
@@ -49,8 +45,8 @@ public partial class GpuBigIntVectorLinqExtensionsTests : IDisposable
             signsHost[i] = isNeg ? 1u : 0u;
         }
 
-        _context.Provider.CopyHostToDevice(array.Values.DevicePointer, valuesHost, valuesHost.Length);
-        _context.Provider.CopyHostToDevice(array.Signs.DevicePointer, signsHost, signsHost.Length);
+        Context.Provider.CopyHostToDevice(array.Values.DevicePointer, valuesHost, valuesHost.Length);
+        Context.Provider.CopyHostToDevice(array.Signs.DevicePointer, signsHost, signsHost.Length);
         return array;
     }
 
@@ -61,8 +57,8 @@ public partial class GpuBigIntVectorLinqExtensionsTests : IDisposable
         var valuesHost = new uint[length * words];
         var signsHost = new uint[length];
 
-        _context.Provider.CopyDeviceToHost(valuesHost, array.Values.DevicePointer, valuesHost.Length);
-        _context.Provider.CopyDeviceToHost(signsHost, array.Signs.DevicePointer, signsHost.Length);
+        Context.Provider.CopyDeviceToHost(valuesHost, array.Values.DevicePointer, valuesHost.Length);
+        Context.Provider.CopyDeviceToHost(signsHost, array.Signs.DevicePointer, signsHost.Length);
 
         var result = new BigInteger[length];
         for (int i = 0; i < length; i++)

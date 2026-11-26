@@ -185,7 +185,9 @@ public class GpuBigIntContextTests
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
+#pragma warning disable GSH0067 // The finalizer is what this test checks
     private static void CreateAndDropProbe() => _ = new FinalizerProbeWorkspace();
+#pragma warning restore GSH0067
 
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
@@ -241,13 +243,17 @@ public class GpuBigIntContextTests
         // mutant: GpuWorkspace.cs:475 `exceptions?.Add(ex)` removed
         CudaCapability.EnsureGpuAvailable();
         var workspace = new GpuWorkspace(4);
+        GpuBigUInt value;
         using (new GpuKernelLoader.CudaContextScope())
         {
-            var value = new GpuBigUInt(workspace, 1024);
+            value = new GpuBigUInt(workspace, 1024);
             workspace.Provider.FreeMemory(value.DevicePointer);
         }
 
-        Assert.Throws<AggregateException>(workspace.Dispose);
+        using (value)
+        {
+            Assert.Throws<AggregateException>(workspace.Dispose);
+        }
     }
 
     /// <summary>

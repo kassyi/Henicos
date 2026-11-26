@@ -29,22 +29,18 @@ public class GpuBigFloatWideOperandTests : IDisposable
     // (WideOperandOptions.DivideMinDivisorWords); the default widths have their own tests.
     private const int CaseMinDivisorWords = 0;
 
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public GpuBigFloatWideOperandTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
-        _workspace.WideOperands.DivideMinDivisorWords = CaseMinDivisorWords;
+        _testWorkspace = new GpuTestWorkspace(4096, GpuExecutionEngine.GSharpAot);
+        _testWorkspace.Workspace.WideOperands.DivideMinDivisorWords = CaseMinDivisorWords;
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     private sealed record RsqrtCase(uint[] Words, int Exponent, int ResultWords);
 
@@ -93,7 +89,7 @@ public class GpuBigFloatWideOperandTests : IDisposable
         var rsqrtCase = s_rsqrtCases[caseName];
         var p = 32 * rsqrtCase.ResultWords;
         var expected = BigFloatReference.RzRsqrt(FromWords(rsqrtCase.Words), rsqrtCase.Exponent, p);
-        var path = ExpectedRsqrtPath(rsqrtCase, _workspace.WideOperands);
+        var path = ExpectedRsqrtPath(rsqrtCase, Workspace.WideOperands);
 
         var before = Counts();
         var gpu = RunRsqrt(GSharpKernelFloatProvider.Instance, rsqrtCase);
@@ -136,7 +132,7 @@ public class GpuBigFloatWideOperandTests : IDisposable
         var divideCase = s_divideCases[caseName];
         var p = 32 * divideCase.ResultWords;
         var expected = ExpectedQuotient(divideCase);
-        var path = ExpectedDividePath(divideCase, _workspace.WideOperands);
+        var path = ExpectedDividePath(divideCase, Workspace.WideOperands);
 
         var before = Counts();
         var gpu = RunDivide(GSharpKernelFloatProvider.Instance, divideCase);
@@ -179,10 +175,10 @@ public class GpuBigFloatWideOperandTests : IDisposable
     [InlineData(4)]
     public void Divide_ZeroByWideDivisor_IsZero(int n)
     {
-        using var left = new GpuBigUInt(_workspace, new uint[3]);
+        using var left = new GpuBigUInt(Workspace, new uint[3]);
         var divisorWords = n + 2 + WideOperandOptions.DefaultThresholdWords;
-        using var right = new GpuBigUInt(_workspace, RandomWords(new Random(4190 + n), divisorWords));
-        using var result = new GpuBigUInt(_workspace, Enumerable.Repeat(uint.MaxValue, n).ToArray());
+        using var right = new GpuBigUInt(Workspace, RandomWords(new Random(4190 + n), divisorWords));
+        using var result = new GpuBigUInt(Workspace, Enumerable.Repeat(uint.MaxValue, n).ToArray());
         var context = CreateContext();
         var leftOperand = new GpuFloatOperand(left.Handle, 7, true);
         var rightOperand = new GpuFloatOperand(right.Handle, -3);
@@ -205,7 +201,7 @@ public class GpuBigFloatWideOperandTests : IDisposable
     [InlineData(7)]
     public void WideOperandThreshold_SwitchesThePath(int threshold)
     {
-        _workspace.WideOperands.ThresholdWords = threshold;
+        Workspace.WideOperands.ThresholdWords = threshold;
         var random = new Random(4140 + threshold);
         foreach (var n in new[] { 1, 3 })
         {
@@ -266,7 +262,7 @@ public class GpuBigFloatWideOperandTests : IDisposable
     [Scenario(TestScenario.Boundary)]
     public void WideOperandLimits_SwitchThePath()
     {
-        var options = _workspace.WideOperands;
+        var options = Workspace.WideOperands;
         options.DivideMinDivisorWords = WideOperandOptions.DefaultDivideMinDivisorWords;
         var random = new Random(4146);
         foreach (var n in new[] { options.DivideMaxResultWords, options.DivideMaxResultWords + 1 })
@@ -321,10 +317,10 @@ public class GpuBigFloatWideOperandTests : IDisposable
             var divideCase = new DivideCase(RandomWords(random, random.Next(1, 16 * n + 3)), random.Next(-1000, 1000),
                 random.Next(2) == 0, RandomWords(random, words), random.Next(-1000, 1000), n);
 
-            _workspace.WideOperands.ThresholdWords = 0;
+            Workspace.WideOperands.ThresholdWords = 0;
             var truncatedRsqrt = RunRsqrt(GSharpKernelFloatProvider.Instance, rsqrtCase);
             var truncatedQuotient = RunDivide(GSharpKernelFloatProvider.Instance, divideCase);
-            _workspace.WideOperands.ThresholdWords = int.MaxValue;
+            Workspace.WideOperands.ThresholdWords = int.MaxValue;
             var fullRsqrt = RunRsqrt(GSharpKernelFloatProvider.Instance, rsqrtCase);
             var fullQuotient = RunDivide(GSharpKernelFloatProvider.Instance, divideCase);
 
@@ -346,8 +342,8 @@ public class GpuBigFloatWideOperandTests : IDisposable
     [InlineData(64)]
     public void WideOperands_LargeWidths_AreRoundedTowardZero(int n)
     {
-        _workspace.WideOperands.DivideMaxResultWords = int.MaxValue;
-        _workspace.WideOperands.RsqrtMaxResultWords = int.MaxValue;
+        Workspace.WideOperands.DivideMaxResultWords = int.MaxValue;
+        Workspace.WideOperands.RsqrtMaxResultWords = int.MaxValue;
         var random = new Random(4160 + n);
         foreach (var words in new[] { 4 * n, 16 * n })
         {
@@ -361,7 +357,7 @@ public class GpuBigFloatWideOperandTests : IDisposable
                 var expected = BigFloatReference.RzRsqrt(FromWords(rsqrtCase.Words), rsqrtCase.Exponent, 32 * n);
                 var before = Counts();
                 Assert.True(expected == RunRsqrt(GSharpKernelFloatProvider.Instance, rsqrtCase), $"Rsqrt n={n}, w={words}");
-                Assert.Equal(ExpectedRsqrtPath(rsqrtCase, _workspace.WideOperands), Counts() - before);
+                Assert.Equal(ExpectedRsqrtPath(rsqrtCase, Workspace.WideOperands), Counts() - before);
             }
 
             var divisors = new[]
@@ -373,7 +369,7 @@ public class GpuBigFloatWideOperandTests : IDisposable
             {
                 var before = Counts();
                 Assert.True(ExpectedQuotient(divideCase) == RunDivide(GSharpKernelFloatProvider.Instance, divideCase), $"Divide n={n}, w={words}");
-                Assert.Equal(ExpectedDividePath(divideCase, _workspace.WideOperands), Counts() - before);
+                Assert.Equal(ExpectedDividePath(divideCase, Workspace.WideOperands), Counts() - before);
             }
         }
     }
@@ -627,12 +623,12 @@ public class GpuBigFloatWideOperandTests : IDisposable
     }
 
     private PathCounts Counts() =>
-        new(_workspace.WideOperandCounters.Truncations, _workspace.WideOperandCounters.BoundChecks);
+        new(Workspace.WideOperandCounters.Truncations, Workspace.WideOperandCounters.BoundChecks);
 
     private (BigInteger Significand, long Exponent) RunRsqrt(IGpuBigFloatArithmetic arithmetic, RsqrtCase rsqrtCase)
     {
-        using var value = new GpuBigUInt(_workspace, rsqrtCase.Words);
-        using var result = new GpuBigUInt(_workspace, rsqrtCase.ResultWords);
+        using var value = new GpuBigUInt(Workspace, rsqrtCase.Words);
+        using var result = new GpuBigUInt(Workspace, rsqrtCase.ResultWords);
         var context = CreateContext();
         var operand = new GpuFloatOperand(value.Handle, rsqrtCase.Exponent);
         var rsqrt = arithmetic.Rsqrt(ref context, in operand, result.Handle);
@@ -643,9 +639,9 @@ public class GpuBigFloatWideOperandTests : IDisposable
     // The sign is checked here (the dividend's sign; divisors are positive) and the magnitude returned.
     private (BigInteger Significand, long Exponent) RunDivide(IGpuBigFloatArithmetic arithmetic, DivideCase divideCase)
     {
-        using var left = new GpuBigUInt(_workspace, divideCase.Left);
-        using var right = new GpuBigUInt(_workspace, divideCase.Right);
-        using var result = new GpuBigUInt(_workspace, divideCase.ResultWords);
+        using var left = new GpuBigUInt(Workspace, divideCase.Left);
+        using var right = new GpuBigUInt(Workspace, divideCase.Right);
+        using var result = new GpuBigUInt(Workspace, divideCase.ResultWords);
         var context = CreateContext();
         var leftOperand = new GpuFloatOperand(left.Handle, divideCase.LeftExponent, divideCase.LeftNegative);
         var rightOperand = new GpuFloatOperand(right.Handle, divideCase.RightExponent);
@@ -656,7 +652,7 @@ public class GpuBigFloatWideOperandTests : IDisposable
     }
 
     private GpuBigIntExecutionContext CreateContext() =>
-        new(_workspace, _workspace.MemoryManager, new LegacyProviderArithmeticAdapter(), _workspace.Stream);
+        new(Workspace, Workspace.MemoryManager, new LegacyProviderArithmeticAdapter(), Workspace.Stream);
 
     private static string Describe((BigInteger Significand, long Exponent) value) =>
         $"0x{value.Significand:X} * 2^{value.Exponent}";

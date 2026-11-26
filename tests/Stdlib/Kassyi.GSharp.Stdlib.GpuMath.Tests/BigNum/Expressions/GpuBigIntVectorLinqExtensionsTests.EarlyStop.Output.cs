@@ -103,7 +103,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     public void FloatSelectDivide_ZeroScalarUnderScope_ZerosOutput()
     {
         using var arr = CreateFloatArray([1, 2]);
-        using var zero = GpuBigFloatTestHelpers.CreateFloat(_context, 0);
+        using var zero = GpuBigFloatTestHelpers.CreateFloat(Context, 0);
         using var expression = arr.AsVectorizedEnumerable().SelectDivide(zero);
 
         // mutant: FloatVectorBinaryScalarExpressionBase.Apply without RecordedTail.Clear
@@ -116,11 +116,11 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     private BigInteger[] EvaluateIntUnderScope(IGpuBigIntVectorExpression expression, int count, int expectedIndex)
     {
         var words = expression.WordsPerElement;
-        using var target = new GpuBigUIntArray(_context, count, words);
+        using var target = new GpuBigUIntArray(Context, count, words);
         FillOnes(target.DevicePointer, count * words);
         using (var scope = PendingThrows.Begin())
         {
-            expression.Evaluate(_context, targetResult: target);
+            expression.Evaluate(Context, targetResult: target);
             Assert.Equal(expectedIndex, scope.Instance.MinIndex);
         }
 
@@ -135,19 +135,19 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         IGpuBigFloatVectorExpression expression, int count, int expectedIndex)
     {
         var words = expression.WordsPerElement;
-        using var significands = new GpuBigUIntArray(_context, count * words, 1);
-        using var exponents = new GpuBigUIntArray(_context, count, 1);
-        using var signs = new GpuBigUIntArray(_context, count, 1);
+        using var significands = new GpuBigUIntArray(Context, count * words, 1);
+        using var exponents = new GpuBigUIntArray(Context, count, 1);
+        using var signs = new GpuBigUIntArray(Context, count, 1);
         FillOnes(significands.DevicePointer, count * words);
         FillOnes(exponents.DevicePointer, count);
         FillOnes(signs.DevicePointer, count);
         var target = new GpuBigFloatArrayView(
-            new GpuBigUIntArrayView(_context, significands.Handle, count, words),
-            new GpuBigUIntArrayView(_context, exponents.Handle, count, 1),
-            new GpuBigUIntArrayView(_context, signs.Handle, count, 1));
+            new GpuBigUIntArrayView(Context, significands.Handle, count, words),
+            new GpuBigUIntArrayView(Context, exponents.Handle, count, 1),
+            new GpuBigUIntArrayView(Context, signs.Handle, count, 1));
         using (var scope = PendingThrows.Begin())
         {
-            expression.Evaluate(_context, 0, count, target);
+            expression.Evaluate(Context, 0, count, target);
             Assert.Equal(expectedIndex, scope.Instance.MinIndex);
         }
 
@@ -163,12 +163,12 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         element.Significand.All(static w => w == 0) && element.Exponent == 0 && element.Sign == 0;
 
     private void FillOnes(IntPtr destination, int words) =>
-        _context.Provider.CopyHostToDevice(destination, Enumerable.Repeat(uint.MaxValue, words).ToArray(), words);
+        Context.Provider.CopyHostToDevice(destination, Enumerable.Repeat(uint.MaxValue, words).ToArray(), words);
 
     private uint[] ReadWords(IntPtr source, int words)
     {
         var host = new uint[words];
-        _context.Provider.CopyDeviceToHost(host, source, words);
+        Context.Provider.CopyDeviceToHost(host, source, words);
         return host;
     }
 }

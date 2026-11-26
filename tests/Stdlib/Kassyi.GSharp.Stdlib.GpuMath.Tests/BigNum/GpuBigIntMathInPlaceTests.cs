@@ -29,21 +29,17 @@ public sealed class GpuBigIntMathInPlaceTests : IDisposable
     // A warp, a block of 1024 threads and two passes of it, each with its neighbours
     private static readonly int[] BoundaryWords = [31, 32, 33, 1023, 1024, 1025, 2047, 2048, 2049];
 
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _workspace;
+    private readonly GpuTestWorkspace _testWorkspace;
 
     public GpuBigIntMathInPlaceTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _workspace = new GpuWorkspace(4 * LargeWords, GpuExecutionEngine.GSharpAot);
+        _testWorkspace = new GpuTestWorkspace(4 * LargeWords, GpuExecutionEngine.GSharpAot);
     }
 
-    public void Dispose()
-    {
-        _workspace.Dispose();
-        _scope.Dispose();
-    }
+    private GpuWorkspace Workspace => _testWorkspace.Workspace;
+
+    public void Dispose() => _testWorkspace.Dispose();
 
     public enum Operation
     {
@@ -153,8 +149,8 @@ public sealed class GpuBigIntMathInPlaceTests : IDisposable
         var (a0, b0) = Operands(operation, words, shift, random);
         const uint Scalar = 0x9E3779B9u;
 
-        using var a = GpuBigUInt.FromBigInteger(_workspace, a0, words);
-        using var b = GpuBigUInt.FromBigInteger(_workspace, b0, words);
+        using var a = GpuBigUInt.FromBigInteger(Workspace, a0, words);
+        using var b = GpuBigUInt.FromBigInteger(Workspace, b0, words);
         var result = resultIsRight ? b : a;
 
         var expected = Run(operation, a, b, result, shift, Scalar, a0, b0, words);
@@ -202,7 +198,7 @@ public sealed class GpuBigIntMathInPlaceTests : IDisposable
         var onTop = overlap != PartialOverlap.LeftIntoTheWordsAbove;
         var buffer0 = onTop ? (source0 << 32) | other0 : (other0 << wordBits) | source0;
 
-        using var buffer = GpuBigUInt.FromBigInteger(_workspace, buffer0, words + 1);
+        using var buffer = GpuBigUInt.FromBigInteger(Workspace, buffer0, words + 1);
         GpuBigUIntView view = buffer;
         BigInteger expected;
         switch (overlap)
@@ -240,7 +236,7 @@ public sealed class GpuBigIntMathInPlaceTests : IDisposable
         const int Seed = 7011;
         var source0 = RandomValue(new Random(Seed), 32 * Words);
 
-        using var buffer = GpuBigUInt.FromBigInteger(_workspace, source0, Gap + Words + 1);
+        using var buffer = GpuBigUInt.FromBigInteger(Workspace, source0, Gap + Words + 1);
         GpuBigUIntView view = buffer;
         GpuBigIntMath.ShiftLeft(view.Slice(0, Words), Shift, view.Slice(Gap, Words + 1));
 
@@ -268,7 +264,7 @@ public sealed class GpuBigIntMathInPlaceTests : IDisposable
         var bits = (32 * InPlaceMaxWords) - (operation == Operation.ShiftLeft ? Shift * Count : 0);
         var value0 = RandomValue(new Random(seed), bits);
 
-        using var value = GpuBigUInt.FromBigInteger(_workspace, value0, InPlaceMaxWords);
+        using var value = GpuBigUInt.FromBigInteger(Workspace, value0, InPlaceMaxWords);
         for (var n = 0; n < Count; n++)
         {
             if (operation == Operation.ShiftLeft)
@@ -339,11 +335,11 @@ public sealed class GpuBigIntMathInPlaceTests : IDisposable
         // The shared operand at words [0, n) with the filler above, or at [gap, n + gap) with the filler below; the
         // result at the other end
         var buffer0 = offset > 0 ? (filler0 << (32 * words)) | shared0 : (shared0 << (32 * gap)) | filler0;
-        using var buffer = GpuBigUInt.FromBigInteger(_workspace, buffer0, words + gap);
+        using var buffer = GpuBigUInt.FromBigInteger(Workspace, buffer0, words + gap);
         GpuBigUIntView view = buffer;
         var operandView = view.Slice(offset > 0 ? 0 : gap, words);
         var resultView = view.Slice(offset > 0 ? gap : 0, words);
-        using var other = GpuBigUInt.FromBigInteger(_workspace, rightIsShared ? a0 : b0, words);
+        using var other = GpuBigUInt.FromBigInteger(Workspace, rightIsShared ? a0 : b0, words);
         var operand = operandView.AsBorrowedBigUInt();
         var (a, b) = rightIsShared ? (other, operand) : (operand, other);
 
@@ -372,9 +368,9 @@ public sealed class GpuBigIntMathInPlaceTests : IDisposable
         // on words that leave the top.
         var seed = 7014 + (words * 31) + shift;
         var value0 = RandomValue(new Random(seed), 32 * words);
-        using var value = GpuBigUInt.FromBigInteger(_workspace, value0, words);
+        using var value = GpuBigUInt.FromBigInteger(Workspace, value0, words);
 
-        _workspace.Provider.ShiftLeft(_workspace, value, shift, value);
+        Workspace.Provider.ShiftLeft(Workspace, value, shift, value);
 
         var mask = (BigInteger.One << (32 * words)) - 1;
         Assert.True(((value0 << shift) & mask) == value.ToBigInteger(), $"words {words} shift {shift} seed {seed}");
