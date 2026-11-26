@@ -11,6 +11,7 @@ import type {
   RemoteStatementContext,
   RemoteStatementRewrite,
 } from "../plugin-api.ts";
+import { isSafeEnvKey } from "./env-policy.ts";
 
 /** Aggregated remote CPU offload rules collected from all active plugins. */
 export interface ResolvedRemoteRules {
@@ -20,6 +21,10 @@ export interface ResolvedRemoteRules {
   readonly pathExtensions: ReadonlySet<string>;
   readonly collectDirOptions: ReadonlySet<string>;
   readonly defaultEnv: Readonly<Record<string, string>>;
+  readonly allowedEnv: ReadonlySet<string>;
+  readonly localOnlyEnv: ReadonlySet<string>;
+  readonly allowedEnvLower: ReadonlyMap<string, string>;
+  readonly localOnlyEnvLower: ReadonlyMap<string, string>;
   readonly syncExcludePrefixes: readonly string[];
   readonly syncExcludeFindNames: readonly string[];
   readonly failureArtifacts: readonly RemoteFailureArtifactRule[];
@@ -42,6 +47,10 @@ export const EmptyRemoteRules: ResolvedRemoteRules = {
   pathExtensions: new Set(),
   collectDirOptions: new Set(),
   defaultEnv: Object.create(null) as Record<string, string>,
+  allowedEnv: new Set(),
+  localOnlyEnv: new Set(),
+  allowedEnvLower: new Map(),
+  localOnlyEnvLower: new Map(),
   syncExcludePrefixes: [],
   syncExcludeFindNames: [],
   failureArtifacts: [],
@@ -62,7 +71,6 @@ export interface RemoteContributionEntry {
 const SafeRelPosixPattern = /^[A-Za-z0-9_./-]+$/;
 const SafeProgramPattern = /^[A-Za-z0-9._-]+$/;
 const SafeFindNamePattern = /^[A-Za-z0-9_.*?-]+$/;
-const SafeEnvKeyPattern = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const SafeProcessNamePattern = /^[A-Za-z0-9_.+-]{1,32}$/;
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -128,7 +136,7 @@ function mergeSafeEnv(target: Record<string, string>, raw: unknown): void {
     return;
   }
   for (const [key, value] of Object.entries(raw)) {
-    if (SafeEnvKeyPattern.test(key) && typeof value === "string") {
+    if (isSafeEnvKey(key) && typeof value === "string") {
       target[key] = value;
     }
   }
@@ -200,6 +208,7 @@ const asPrefix = (s: string): string | null => {
 const asFindName = (s: string): string | null => (isSafeFindName(s) ? s : null);
 const asProcessName = (s: string): string | null => (SafeProcessNamePattern.test(s) ? s : null);
 const asCleanDir = (s: string): string | null => normalizeSafeDir(s);
+const asEnvKey = (s: string): string | null => (isSafeEnvKey(s) ? s : null);
 
 type OptionPathFn = NonNullable<RemoteOffloadContribution["isOptionValuePath"]>;
 type StatementRewriteFn = NonNullable<RemoteOffloadContribution["rewriteStatement"]>;
@@ -282,6 +291,8 @@ export function resolveRemoteRules(entries: readonly RemoteContributionEntry[]):
   const pathExtensions = new Set<string>();
   const collectDirOptions = new Set<string>();
   const defaultEnv = Object.create(null) as Record<string, string>;
+  const allowedEnv = new Set<string>();
+  const localOnlyEnv = new Set<string>();
   const syncExcludePrefixes = new Set<string>();
   const syncExcludeFindNames = new Set<string>();
   const failureArtifacts: RemoteFailureArtifactRule[] = [];
@@ -300,6 +311,8 @@ export function resolveRemoteRules(entries: readonly RemoteContributionEntry[]):
     collectStrings(pathExtensions, c.pathExtensions, asExtension);
     collectStrings(collectDirOptions, c.collectDirOptions, asOption);
     mergeSafeEnv(defaultEnv, c.defaultEnv);
+    collectStrings(allowedEnv, c.allowedEnv, asEnvKey);
+    collectStrings(localOnlyEnv, c.localOnlyEnv, asEnvKey);
     collectStrings(syncExcludePrefixes, c.syncExcludePrefixes, asPrefix);
     collectStrings(syncExcludeFindNames, c.syncExcludeFindNames, asFindName);
     collectFailureArtifacts(failureArtifacts, c.failureArtifacts);
@@ -317,6 +330,26 @@ export function resolveRemoteRules(entries: readonly RemoteContributionEntry[]):
     }
   }
 
+  const localOnlyEnvLower = new Map<string, string>();
+  for (const key of localOnlyEnv) {
+    const lower = key.toLowerCase();
+    if (!localOnlyEnvLower.has(lower)) {
+      localOnlyEnvLower.set(lower, key);
+    }
+  }
+  for (const key of [...allowedEnv]) {
+    if (localOnlyEnvLower.has(key.toLowerCase())) {
+      allowedEnv.delete(key);
+    }
+  }
+  const allowedEnvLower = new Map<string, string>();
+  for (const key of allowedEnv) {
+    const lower = key.toLowerCase();
+    if (!allowedEnvLower.has(lower)) {
+      allowedEnvLower.set(lower, key);
+    }
+  }
+
   return {
     allowedPrograms,
     pathValueOptions,
@@ -324,6 +357,10 @@ export function resolveRemoteRules(entries: readonly RemoteContributionEntry[]):
     pathExtensions,
     collectDirOptions,
     defaultEnv,
+    allowedEnv,
+    localOnlyEnv,
+    allowedEnvLower,
+    localOnlyEnvLower,
     syncExcludePrefixes: [...syncExcludePrefixes],
     syncExcludeFindNames: [...syncExcludeFindNames],
     failureArtifacts,

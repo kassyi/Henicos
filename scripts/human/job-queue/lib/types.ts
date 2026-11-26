@@ -27,6 +27,7 @@ export interface TestProjectEntry {
 export interface TargetDialectModule {
   testProjectFiles(testsDir: string): TestProjectEntry[];
   dialectOf(projectFile: string): "cpu" | "cuda" | null;
+  remoteOffloadOf(projectFile: string): string | null;
 }
 
 export type ConfigFileStatus = "ok" | "missing" | "invalid";
