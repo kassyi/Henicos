@@ -43,7 +43,7 @@ public class GpuBigIntSqrtDoublingThresholdTests
 
     // Sqrt is the floor on both sides of the threshold, and a root of r words takes the doubling exactly when r is
     // above the threshold (7: at 6 and 7 the mega-kernel, at 8 the doubling; 0: always; int.MaxValue: never).
-    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:69 `>` -> `>=` (threshold 7, root 7 counts a run)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:131 `>` -> `>=` (threshold 7, root 7 counts a run)
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(ThresholdInputs))]
@@ -86,7 +86,7 @@ public class GpuBigIntSqrtDoublingThresholdTests
     // length 64r and 64r - 1, all ones, the lowest value, the square of the largest root and one below it, and a
     // negative D in a wide stage.
     // mutant: GpuWorkspace.cs:145 `} = 5956;` -> `} = 5955;` (5956 counts a doubling run)
-    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:69 `>` -> `>=` (5956 counts a doubling run)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:131 `>` -> `>=` (5956 counts a doubling run)
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(DefaultThresholdInputs))]
@@ -105,49 +105,6 @@ public class GpuBigIntSqrtDoublingThresholdTests
         // The path follows the default: one doubling run above 5956 root words, none at 5956.
         Assert.Equal(rootWords > 5956 ? 1 : 0, ctx.InverseSqrtDoublingRuns - runsBefore);
         ctx.ThrowIfDeviceErrors();
-    }
-
-    // The doubling is derived for the operand of SqrtFloor only. With the threshold at 0, a margin one word wider and a
-    // bit length below 32n - 1 keep the mega-kernel.
-    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:70 `&& marginWords == SqrtFloorMarginWords(...)` removed
-    //         (WiderMargin counts a run)
-    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:71 `&& actualBits >= 32 * operandWords - 1` removed
-    //         (ShorterBitLength counts a run)
-    [SkippableTheory]
-    [Scenario(TestScenario.Boundary)]
-    [InlineData("WiderMargin")]
-    [InlineData("ShorterBitLength")]
-    public void ApproximateInverseSqrt_OperandOutsideTheDoublingDerivation_KeepsTheMegaKernel(string condition)
-    {
-        CudaCapability.EnsureGpuAvailable();
-        const int OperandWords = 8;
-        var marginWords = GpuBigIntDivRem.SqrtFloorMarginWords(OperandWords - 1) + (condition == "WiderMargin" ? 1 : 0);
-        var a = condition switch
-        {
-            "WiderMargin" => GpuBigIntInverseSqrtDoublingTests.BuildNormalizedOperand("Random", OperandWords),
-            "ShorterBitLength" => GpuBigIntSqrtTests.RandomWithBitLength(new Random(1709 + 53 * OperandWords),
-                32 * OperandWords - 2),
-            _ => throw new ArgumentOutOfRangeException(nameof(condition), condition, "Unknown condition."),
-        };
-        using var ctx = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
-        ctx.SqrtPrecisionDoublingThresholdWords = 0;
-        using var operand = GpuBigUInt.FromBigInteger(ctx, a, OperandWords);
-        using var inverse = new GpuBigUInt(ctx, OperandWords + marginWords);
-        var runsBefore = ctx.InverseSqrtDoublingRuns;
-
-        GpuBigIntDivRem.ApproximateInverseSqrt(operand, inverse, marginWords);
-
-        // Outside the derivation the doubling does not run.
-        Assert.Equal(runsBefore, ctx.InverseSqrtDoublingRuns);
-        if (condition == "WiderMargin")
-        {
-            // The mega-kernel keeps its contract: at most ApproximateInverseSqrtMaxError below the floor, never above.
-            // The shorter bit length is outside the normalized operand of the contract, so its value is not checked.
-            var floor = InverseSqrtDoublingReference.FloorScaledInverseSqrt(a, 32 * (OperandWords + marginWords));
-            var below = floor - inverse.ToBigInteger();
-            Assert.True(below >= 0 && below <= GpuBigIntDivRem.ApproximateInverseSqrtMaxError,
-                $"WiderMargin: floor(2^B / sqrt(a)) - x = {below}");
-        }
     }
 
     // The threshold is a word count: a negative value is rejected and the previous value stays.

@@ -223,9 +223,9 @@ flowchart LR
   - `D = floor((2^(64p + 60) - A_k·S) / 2^(32p + 60))`, signed (third floor);
   - `dY = floor(Yt·D / 2^(32 dw + 1))`, `Yt` the top `dw` words of `Y` (fourth floor), and `Y' = Y + dY`.
 - **Signed values without a synchronization**: `D` is kept as `D + 2^(32 dw - 1)`, non-negative for every `|D| < 2^(32 dw - 1)`, and `Yt·D` as `Yt·(D + 2^(32 dw - 1)) - Yt·2^(32 dw - 1)` modulo `2^(32(p + dw + 1))`, so every step uses the unsigned multiplication, shift and modular addition already on the device. Debug builds check the bound on `D` on the device (`BigIntWideOps.CheckFitsBits`); release builds launch nothing for it.
-- **Result**: `x~ = floor(Y_K / 2^(32 p_K - E))`.
-- **Error bounds**: `|D| < 2^(32 dw - 1)` in every stage (at least 24 bits to spare), `|Y_K - floor(x* 2^(32 p_K - E))| <= 1` and `|x~ - floor(x*)| <= 1`, proved for `w >= 2` under the initial-guess error of at most `5·2^-32` (provable, about `2^-29.678`) with `x0 <= x*`.
-- **Contract**: the approximate inverse square root returns `x~ - 1`, so its result stays at most `ApproximateInverseSqrtMaxError` below the floor and never above it, as the mega-kernel's does. `SqrtFloor` then corrects its estimate to the exact floor either way.
+- **Result**: the last stage `Y` at `p_y` working words feeds the Karp-Markstein step directly (no full-width `x~` shift).
+- **Error bounds**: `|D| < 2^(32 dw - 1)` in every stage (at least 24 bits to spare), `|Y_k - Y*(p_k)| <= 5/4 + 2^-21` for every stage `p_k >= 3`, proved for `w >= 2` under the initial-guess error of at most `5·2^-32` (provable, about `2^-29.678`) with `x0 <= x*`.
+- **Contract**: `y = Y - 2` stays at most 3 below `floor(2^P / sqrt(A))` and never above it, which feeds the Karp-Markstein step; `ApproximateInverseSqrt` always uses the cooperative mega-kernel.
 
 ### Karp-Markstein Square Root
 

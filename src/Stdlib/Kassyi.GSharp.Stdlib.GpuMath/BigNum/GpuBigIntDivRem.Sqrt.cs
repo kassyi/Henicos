@@ -46,12 +46,6 @@ public static partial class GpuBigIntDivRem
     /// products and the step loop of the correction. The result stays below the root because every iteration computes
     /// its products exactly and only rounds down, and one exact Newton step <c>x(3 - a x^2) / 2</c> never passes
     /// <c>2^B / sqrt(a)</c>.
-    /// <para>
-    /// An operand of <see cref="SqrtFloor"/> (bit length <c>32n</c> or <c>32n - 1</c>, margin
-    /// <c>SqrtFloorMarginWords(n - 1)</c>) whose root is wider than
-    /// <see cref="GpuWorkspace.SqrtPrecisionDoublingThresholdWords"/> words takes the precision doubling driven from
-    /// the host; its result, within one of the floor, is lowered by one so that it stays at or below the floor.
-    /// </para>
     /// </remarks>
     internal static void ApproximateInverseSqrt(
         scoped GpuBigUIntView targetOperand,
@@ -81,16 +75,6 @@ public static partial class GpuBigIntDivRem
         var currentBits = 31; // X_top has 31 bits
 
         ComputeInitialGuess(targetOperand, resultBuffer, targetBits, isSquareRoot: true);
-
-        if (!correctsToFloor && UsesInverseSqrtDoubling(targetOperand.Workspace, n, marginWords, actualBits))
-        {
-            // Wide roots: precision doubling from the guess in resultBuffer. x~ is within one of the floor; x~ - 1
-            // stays at or below it, as the mega-kernel's; x~ >= 2^(16n + 32m) - 1 >= 2^31 keeps it in range
-            targetOperand.Workspace.CountInverseSqrtDoubling();
-            InverseSqrtDoubling(targetOperand, resultBuffer, marginWords, firstY: null, trace: null);
-            GpuBigIntMath.Sub(resultBuffer, 1u, resultBuffer);
-            return;
-        }
 
         var iterations = CalculateNewtonRaphsonIterationCount(currentBits, targetBits);
 
