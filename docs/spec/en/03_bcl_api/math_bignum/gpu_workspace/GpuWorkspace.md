@@ -67,7 +67,7 @@ Thrown when CUDA context or workspace initialization fails.
 | [MemoryManager](#memorymanager) | Gets the memory manager for this workspace. |
 | [PolyAlgorithmThreshold](#polyalgorithmthreshold) | Gets or sets the bit length threshold for algorithm selection in poly-algorithms like ModPow. |
 | [Provider](#provider) | Gets the active GPU arithmetic execution provider implementation. |
-| [SqrtPrecisionDoublingThresholdWords](#sqrtprecisiondoublingthresholdwords) | Gets or sets the size of a square root, in words, above which its inverse square root is computed by precision doubling driven from the host. |
+| [SqrtPrecisionDoublingThresholdWords](#sqrtprecisiondoublingthresholdwords) | Gets or sets the size of a square root, in words, above which its square root takes a half-precision inverse square root by precision doubling driven from the host and one Karp-Markstein step. |
 | [Stream](#stream) | Gets the dedicated CUDA Stream for this workspace, used for operations and CUDA Graph capture. |
 | [Transcendental](#transcendental) | Gets the tuning parameters of the big-float `Exp`, `Log` and `Pow` run on this workspace. |
 | [WorkspacePointer](#workspacepointer) | Gets the raw native device pointer to the allocated workspace scratchpad memory (used by legacy native backend). |
@@ -122,13 +122,13 @@ public IGpuExecutionProvider Provider { get; }
 
 ## SqrtPrecisionDoublingThresholdWords
 
-Gets or sets the size of a square root, in 32-bit words, above which its inverse square root is computed by precision doubling driven from the host instead of one cooperative mega-kernel. Default is `5956` words.
+Gets or sets the size of a square root, in 32-bit words, above which its square root takes an inverse square root of half the root's precision by precision doubling driven from the host and one Karp-Markstein step, instead of a full-precision inverse square root in one cooperative mega-kernel. Default is `5956` words.
 
 ```csharp
 public int SqrtPrecisionDoublingThresholdWords { get; set; }
 ```
 
-The size is the word count of the root: `r` words for an operand of `2r` words of `GpuBigIntDivRem.Sqrt`, and the significand words of a big-float square root. A root of at most this many words runs every Newton iteration at full width in one cooperative kernel; a wider root runs a chain of ordinary kernel launches whose working precision doubles from two words to the full width, with far fewer multiplied words but a few hundred more launches.
+The size is the word count of the root: `r` words for an operand of `2r` words of `GpuBigIntDivRem.Sqrt`, and the significand words of a big-float square root. A root of at most this many words runs every Newton iteration at full width in one cooperative kernel; a wider root runs a chain of ordinary kernel launches whose working precision doubles from two words to half the root, then two products and two squarings at most as wide as the root.
 
 The result is exactly the same either way; only the time differs. The size at which the two take the same time depends on the GPU (its number of SMs and its launch latency), so measure it on yours and set it here. The default, 5956 root words, is where the cooperative mega-kernel stops being the faster path: up to 5956 words its transforms fit 65536 points, and from 5957 words they need 131072 points, where host-driven precision doubling is faster. The value comes from the `arithmetic sqrt-path` benchmark on an idle machine. `0` sends every root to the precision doubling, `int.MaxValue` every root to the mega-kernel.
 

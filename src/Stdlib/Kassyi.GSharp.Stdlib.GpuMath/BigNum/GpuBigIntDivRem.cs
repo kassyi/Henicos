@@ -800,6 +800,27 @@ public static partial class GpuBigIntDivRem
             : (topBig << -shiftInTruncated);
     }
 
+    // Computes x0 ~ 2^targetBits / sqrt(a) from ReadLeadingBits (one host synchronization) for a normalized operand of
+    // at least 2 words, and returns the operand's bit length.
+    private static BigInteger InitialGuessSquareRootFromLeadingBits(GpuBigUInt operand, int targetBits,
+        out int actualBits)
+    {
+        operand.Workspace.Provider.ReadLeadingBits(operand.Workspace, operand, out actualBits, out var leadingBits);
+        return actualBits >= 63
+            ? InitialGuessSquareRootFromLeadingBits(actualBits, leadingBits, targetBits)
+            : BigInteger.Zero;
+    }
+
+    // Pure host computation of x0 ~ 2^targetBits / sqrt(a) from ReadLeadingBits (top bit at bit 63, actualBits >= 63).
+    internal static BigInteger InitialGuessSquareRootFromLeadingBits(int actualBits, ulong leadingBits, int targetBits)
+    {
+        // Even actualBits -> 62-bit window (>> 2); odd actualBits -> 61-bit window (>> 3), matching ReadSeedTop parity.
+        var shift = (actualBits & 1) == 0 ? 2 : 3;
+        var top = new BigInteger(leadingBits >> shift);
+        var totalShift = actualBits - (64 - shift);
+        return InitialGuessFromTop(top, actualBits, totalShift, targetBits, isSquareRoot: true);
+    }
+
     // Computes x0 ~ 2^targetBits / sqrt(a) or 2^targetBits / a from the 62-bit seed window.
     private static BigInteger InitialGuessFromTop(BigInteger top, int actualBits, int totalShift, int targetBits,
         bool isSquareRoot)

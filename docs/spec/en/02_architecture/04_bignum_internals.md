@@ -188,7 +188,7 @@ Because floating-point operations ultimately delegate to integer significand ari
 | **Addition / Subtraction** | $\mathcal{O}(N)$ | Highly parallelized across CUDA blocks. |
 | **Multiplication** | $\mathcal{O}(N \log N)$ | Number Theoretic Transform (NTT) / Fast Fourier Transform (FFT). |
 | **Division** | $\mathcal{O}(N \log N)$ | Newton-Raphson Iteration (utilizing NTT Multiplication). |
-| **Square Root** | $\mathcal{O}(N \log N)$ | Newton-Raphson inverse square root (one cooperative mega-kernel up to `GpuWorkspace.SqrtPrecisionDoublingThresholdWords` root words, host-driven precision doubling above), one multiplication and an exact correction to the floor. |
+| **Square Root** | $\mathcal{O}(N \log N)$ | Newton-Raphson inverse square root (one cooperative mega-kernel up to `GpuWorkspace.SqrtPrecisionDoublingThresholdWords` root words), one multiplication and an exact correction to the floor; above the threshold, a half-precision inverse square root by host-driven precision doubling, one Karp-Markstein step and the same correction. |
 | **Power of 10** | $\mathcal{O}(N \log N)$ | Binary Exponentiation (dominated by NTT multiplication). |
 | **Bitwise Operations** | $\mathcal{O}(N)$ | Approaching $\mathcal{O}(1)$ step time due to massive parallelism. |
 | **GCD** | $\mathcal{O}(N^2)$ to $\mathcal{O}(N \log^2 N)$ | Lehmer's GCD algorithm optimized for GPU execution. |
@@ -226,6 +226,18 @@ flowchart LR
 - **Result**: `x~ = floor(Y_K / 2^(32 p_K - E))`.
 - **Error bounds**: `|D| < 2^(32 dw - 1)` in every stage (at least 24 bits to spare), `|Y_K - floor(x* 2^(32 p_K - E))| <= 1` and `|x~ - floor(x*)| <= 1`, proved for `w >= 2` under the initial-guess error of at most `5·2^-32` (provable, about `2^-29.678`) with `x0 <= x*`.
 - **Contract**: the approximate inverse square root returns `x~ - 1`, so its result stays at most `ApproximateInverseSqrtMaxError` below the floor and never above it, as the mega-kernel's does. `SqrtFloor` then corrects its estimate to the exact floor either way.
+
+### Karp-Markstein Square Root
+
+Above `GpuWorkspace.SqrtPrecisionDoublingThresholdWords`, `SqrtFloor` (`GpuBigIntDivRem.SqrtKarpMarkstein.cs`) stops the precision doubling at `p_y = max(3, floor(n / 2) + 1)` working words for a root of `n` words (`w = n + 1`, `A = floor(a / 2^(32(n - 1)))`, `j = floor(n / 2)`):
+
+- **Constants**: aligned to word boundaries from the minimal `(h, P, u, T) = (16n + 1, 32n + 7, 48n + 7, 32n - 1)` by taking `h = 16(n + 1)`, `P = 16n + 14 + 32 p_y`, `u = 32n - 1 + 32 p_y`, and `T = 32n - 1` (`u - T = 32 p_y`). The lower-bound proof is monotone in `h` and `P - h`, so the margin holds with slack.
+- **Half-precision inverse**: `y = Y - 2`, where `Y` is the last stage at `p_y >= 3` words (`|Y - Y*(p_y)| <= 5/4 + 2^-21`). Thus `0 <= floor(2^P / sqrt(A)) - y <= 3`, never above the root.
+- **Half-precision root and step**:
+  - `A_t = floor(A / 2^(32j))` (`ceil(n / 2) + 1` words), `s0 = floor(A_t·y / 2^(P - 32j))` (`floor(n / 2) + 1` words), `s = s0·2^(16n - 16)`.
+  - `d_hi = A - s0^2` (checked subtraction, `ceil(n / 2) + 1` words, `< 2^(16n + 21)`), `d' = floor(d_hi / 2^31) = floor((a - s^2) / 2^T)` (`ceil(n / 2)` words, `< 2^(16n - 10)`, checked in Debug by `BigIntWideOps.CheckFitsBits`).
+  - `delta = floor(y·d' / 2^(32 p_y))` (borrowed top `ceil(n / 2)` words of `y·d'`, no copy), `r'' = s + delta` (checked addition, `n` words).
+- **Error bound and correction**: `r'' - floor(sqrt(a)) in {-1, 0}` for every `n >= 1`, so `SqrtFloorCorrection` finishes in 0 or 1 step. `a - r''^2` is taken from `r''^2` because a squaring costs less than the two products of `d - 2s*delta - delta^2` on this NTT.
 
 ### Cooperative Mega-Kernel NTT
 

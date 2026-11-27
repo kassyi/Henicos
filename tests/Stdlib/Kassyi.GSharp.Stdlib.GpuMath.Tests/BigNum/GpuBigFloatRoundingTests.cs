@@ -645,7 +645,7 @@ public class GpuBigFloatRoundingTests : IDisposable
     // mutant: GSharpKernelFloatProvider.cs:329 `% 2 != 0` -> `% 2 == 0` (every case: the root of 2·a, or an odd shift)
     // mutant: GSharpKernelFloatProvider.cs:335 `checked((int)shift)` -> `checked((int)Math.Max(shift, 0))` (Width9, Width16, Width16ZeroLow)
     // mutant: GSharpKernelFloatProvider.cs:328 `2L * 32 * n` -> `2 * 32 * n` (ParityMin, ParityMinPlus1: E - t wraps)
-    // mutant: GpuBigIntDivRem.Sqrt.cs:175 `+ 48` -> `+ 47` (the estimate is twice the root)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:210 `+ 48` -> `+ 47` (the estimate is twice the root)
     // mutant: GpuBigIntSqrtKernels.cu.cs:178 `AddSmallSigned(trial, slackWords, -1)` removed (NearSquarePlus2R steps to
     //         r + 1,
     // NearSquareMinus1)

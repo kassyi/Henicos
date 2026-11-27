@@ -266,7 +266,7 @@ Thrown when the quotient and remainder buffers overlap each other or an input. U
 
 Computes the integer square root ($\lfloor\sqrt{\text{leftOperand}}\rfloor$) on the GPU. The operand is shifted left by an even number of bits so that its root fills whole words, that root is taken with an inverse square root, one product and an exact correction, and it is shifted back right by half the shift. The result is exactly the floor of the square root.
 
-A root wider than `GpuWorkspace.SqrtPrecisionDoublingThresholdWords` words takes its inverse square root by precision doubling driven from the host; the result is the same.
+A root wider than `GpuWorkspace.SqrtPrecisionDoublingThresholdWords` words takes a half-precision inverse square root by precision doubling driven from the host and one Karp-Markstein step; the result is the same.
 
 ```csharp
 public static void Sqrt(scoped GpuBigUIntView leftOperand, scoped GpuBigUIntView resultBuffer);

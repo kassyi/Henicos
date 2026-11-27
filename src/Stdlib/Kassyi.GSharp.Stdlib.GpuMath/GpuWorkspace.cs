@@ -114,16 +114,16 @@ public class GpuWorkspace : IGpuResourceScope
     public int PolyAlgorithmThreshold { get; set; } = 1024;
 
     /// <summary>
-    /// Gets or sets the size of a square root, in 32-bit words, above which its inverse square root is computed by
-    /// precision doubling driven from the host instead of one cooperative mega-kernel. Default is 5956 words.
+    /// Gets or sets the size of a square root, in 32-bit words, above which it takes a half-precision inverse square
+    /// root by host-driven precision doubling and one Karp-Markstein step instead of one cooperative mega-kernel.
+    /// Default is 5956 words.
     /// </summary>
     /// <remarks>
     /// <para>
     /// The size is the word count of the root: <c>r</c> words for an operand of <c>2r</c> words of
     /// <c>GpuBigIntDivRem.Sqrt</c>, and the significand words of a big-float square root. A root of at most this many
     /// words runs every Newton iteration at full width in one cooperative kernel; a wider root runs a chain of ordinary
-    /// kernel launches whose working precision doubles from two words to the full width, with far fewer multiplied
-    /// words but a few hundred more launches.
+    /// launches doubling from two words to half the root, then two products and two squarings at most as wide as it.
     /// </para>
     /// <para>
     /// The result is exactly the same either way; only the time differs. The size at which the two take the same time
