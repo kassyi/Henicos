@@ -1,6 +1,8 @@
 #nullable enable
 using System.IO;
 using System.Linq;
+using Kassyi.GSharp.Compiler.Marshaling;
+using Kassyi.GSharp.Compiler.Models;
 using Kassyi.GSharp.Compiler.Transpiler;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 
@@ -509,6 +511,212 @@ public class ManagedStackEligibilityTests
         var waitGeneric = libType.GetMembers("WaitGeneric").OfType<IMethodSymbol>().Single();
 
         Assert.False(ManagedStackEligibility.IsStackFunction(waitGeneric, library));
+    }
+
+    // Pre-E4-2: operator macro target is skipped until E4-2 enables suspending operator macros
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void IsStackKernel_SuspendingOperatorMacroInNonPartialType_SkipsMacroTarget()
+    {
+        const string Source = """
+            using Kassyi.GSharp.Core;
+
+            namespace ManagedOperatorMacroSkipCases;
+
+            public struct NonPartialMacroSum
+            {
+                public int V;
+
+                [GpuOperatorMacro(typeof(NonPartialMacroOps), nameof(NonPartialMacroOps.Add))]
+                public static NonPartialMacroSum operator +(NonPartialMacroSum left, NonPartialMacroSum right) =>
+                    throw new GpuOnlyException();
+            }
+
+            public static class NonPartialMacroOps
+            {
+                [GpuDeviceFunction]
+                public static void Add(ref NonPartialMacroSum result, NonPartialMacroSum left, NonPartialMacroSum right)
+                {
+                    Gpu.SyncThreads();
+                    result.V = left.V + right.V;
+                }
+            }
+
+            public static partial class Kernels
+            {
+                [GpuKernel]
+                public static void OperatorMacroWithBarrierKernel(int[] data)
+                {
+                    var x = new NonPartialMacroSum { V = data[ThreadIndex.X] };
+                    Gpu.SyncThreads();
+                    NonPartialMacroSum z;
+                    z = x + x;
+                    data[ThreadIndex.X] = z.V;
+                }
+            }
+            """;
+        var compilation = RoslynTestUtility.CreateCompilation(Source);
+        var type = compilation.GetTypeByMetadataName("ManagedOperatorMacroSkipCases.Kernels")
+            ?? throw new InvalidOperationException("Type 'Kernels' not found.");
+        var kernel = type.GetMembers("OperatorMacroWithBarrierKernel").OfType<IMethodSymbol>().Single();
+
+        Assert.True(ManagedStackEligibility.IsStackKernel(kernel, compilation));
+        Assert.Null(ManagedStackEligibility.FindKernelReason(kernel, compilation));
+
+        var forms = ManagedStackFormCollector.Collect(
+            compilation, ManagedBarrierModel.Stack, exportDeviceCode: false, CancellationToken.None);
+        var fallback = Assert.Single(
+            forms.Fallbacks,
+            static f => f.MethodName == "Kernels.OperatorMacroWithBarrierKernel");
+        Assert.Equal("StackFormGenerationFailed", fallback.Reason.Name);
+    }
+
+    private const string GenericStructMethodSource = """
+        using System;
+        using Kassyi.GSharp.Core;
+
+        namespace ManagedGenericStructMethodCases;
+
+        public interface IAct
+        {
+            static abstract void Act();
+        }
+
+        public partial struct BarrierDevAct : IAct
+        {
+            [GpuDeviceFunction]
+            public static void Act() => Gpu.SyncThreads();
+        }
+
+        public partial struct PlainDevAct : IAct
+        {
+            [GpuDeviceFunction]
+            public static void Act()
+            {
+            }
+        }
+
+        public partial struct GenBox<T> where T : struct, IAct
+        {
+            [GpuDeviceFunction]
+            public static void Step() => T.Act();
+        }
+
+        public partial struct PartialGenStruct<T> where T : struct, IAct
+        {
+            [GpuDeviceFunction]
+            public static partial void PartialHelper();
+
+            public static partial void PartialHelper() => T.Act();
+        }
+
+        public static partial class Kernels
+        {
+            [GpuKernel]
+            public static void CallsGenBoxBarrierOnly(int[] data)
+            {
+                GenBox<BarrierDevAct>.Step();
+                data[ThreadIndex.X] = 1;
+            }
+
+            [GpuKernel]
+            public static void CallsGenBoxBarrierPlusSync(int[] data)
+            {
+                Gpu.SyncThreads();
+                GenBox<BarrierDevAct>.Step();
+                data[ThreadIndex.X] = 1;
+            }
+
+            [GpuKernel]
+            public static void PassesGenBoxBarrierMethodGroup(int[] data)
+            {
+                Gpu.SyncThreads();
+                Action step = GenBox<BarrierDevAct>.Step;
+                step();
+                data[ThreadIndex.X] = 1;
+            }
+
+            [GpuKernel]
+            public static void CallsPartialGenStructBarrierPlusSync(int[] data)
+            {
+                Gpu.SyncThreads();
+                PartialGenStruct<BarrierDevAct>.PartialHelper();
+                data[ThreadIndex.X] = 1;
+            }
+
+            [GpuKernel]
+            public static void CallsGenBoxPlainPlusSync(int[] data)
+            {
+                Gpu.SyncThreads();
+                GenBox<PlainDevAct>.Step();
+                data[ThreadIndex.X] = 1;
+            }
+        }
+        """;
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("CallsGenBoxBarrierOnly", false)]
+    [InlineData("CallsGenBoxBarrierPlusSync", false)]
+    [InlineData("PassesGenBoxBarrierMethodGroup", false)]
+    [InlineData("CallsPartialGenStructBarrierPlusSync", false)]
+    [InlineData("CallsGenBoxPlainPlusSync", true)]
+    public void FindKernelReason_NonGenericMethodOnGenericStruct_ReportsGenericDeviceFunctionInsteadOfNoBlockBarrier(
+        string methodName,
+        bool expectedEligible)
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(GenericStructMethodSource);
+        var type = compilation.GetTypeByMetadataName("ManagedGenericStructMethodCases.Kernels")
+            ?? throw new InvalidOperationException("Type 'Kernels' not found.");
+        var kernel = type.GetMembers(methodName).OfType<IMethodSymbol>().Single();
+        var declaration = (MethodDeclarationSyntax)kernel.DeclaringSyntaxReferences[0].GetSyntax();
+        var model = compilation.GetSemanticModel(declaration.SyntaxTree);
+
+        Assert.Equal(NativeStackObstacle.None, NativeStackEligibility.Classify(kernel, declaration, model));
+
+        var reason = ManagedStackEligibility.FindKernelReason(kernel, compilation);
+        var forms = ManagedStackFormCollector.Collect(
+            compilation, ManagedBarrierModel.Stack, exportDeviceCode: false, CancellationToken.None);
+        if (expectedEligible)
+        {
+            Assert.Null(reason);
+            Assert.Contains(forms.Kernels,
+                k => k.KernelName == GlobalCppNames.GetKernelName(kernel));
+        }
+        else
+        {
+            Assert.NotNull(reason);
+            Assert.Equal("GenericDeviceFunction", reason.Value.Name);
+            var fallback = Assert.Single(forms.Fallbacks,
+                f => f.MethodName == KernelHostNames.GetMessageName(kernel));
+            Assert.Equal("GenericDeviceFunction", fallback.Reason.Name);
+        }
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void IsStackFunction_ConstructedGenericStructMethods_AvoidsCacheCollision()
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(GenericStructMethodSource);
+        var genBox = compilation.GetTypeByMetadataName("ManagedGenericStructMethodCases.GenBox`1")
+            ?? throw new InvalidOperationException("Type 'GenBox' not found.");
+        var plainAct = compilation.GetTypeByMetadataName("ManagedGenericStructMethodCases.PlainDevAct")
+            ?? throw new InvalidOperationException("Type 'PlainDevAct' not found.");
+        var barrierAct = compilation.GetTypeByMetadataName("ManagedGenericStructMethodCases.BarrierDevAct")
+            ?? throw new InvalidOperationException("Type 'BarrierDevAct' not found.");
+
+        var plainStep = genBox.Construct(plainAct).GetMembers("Step").OfType<IMethodSymbol>().Single();
+        var barrierStep = genBox.Construct(barrierAct).GetMembers("Step").OfType<IMethodSymbol>().Single();
+
+        Assert.False(ManagedStackEligibility.IsStackFunction(plainStep, compilation));
+        Assert.Equal(
+            nameof(NativeStackObstacle.NoBlockBarrier),
+            ManagedStackEligibility.FindFunctionReason(plainStep, compilation)?.Name);
+
+        Assert.False(ManagedStackEligibility.IsStackFunction(barrierStep, compilation));
+        Assert.Equal(
+            "GenericDeviceFunction",
+            ManagedStackEligibility.FindFunctionReason(barrierStep, compilation)?.Name);
     }
 
     private static IMethodSymbol GetMethod(string typeName, string methodName)

@@ -29,21 +29,24 @@ internal static class ManagedStackEligibility
     /// can run on the stack.
     /// </summary>
     public static StateMachineReason? FindFunctionReason(IMethodSymbol function, Compilation compilation) =>
-        FindFunctionReason(function, compilation, new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default));
+        FindFunctionReason(
+            function,
+            compilation,
+            caller: null,
+            new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default));
 
     private static StateMachineReason? FindFunctionReason(IMethodSymbol function, Compilation compilation,
-        HashSet<IMethodSymbol> visiting)
+        CycleStep? caller, HashSet<IMethodSymbol> visiting)
     {
-        var definition = (function.ReducedFrom ?? function).OriginalDefinition;
-        definition = definition.PartialDefinitionPart ?? definition;
+        var target = SuspensionAnalysis.ToCanonicalDefinitionPart(function.GetConstructedReducedFrom() ?? function);
         var cache = s_functions.For(compilation);
-        if (cache.TryGetValue(definition, out var cached))
+        if (cache.TryGetValue(target, out var cached))
         {
             return cached;
         }
 
-        // A cycle through method groups (F passes F, or F and G pass each other)
-        if (!visiting.Add(definition))
+        // A cycle through method groups (F passes F, F and G pass each other, or polymorphic recursion)
+        if (StopsPolymorphicRecursion(target, caller, compilation) || !visiting.Add(target))
         {
             return Managed(nameof(NativeStackObstacle.RecursiveSuspendingCall),
                 "it reaches a recursive suspending device function");
@@ -52,14 +55,14 @@ internal static class ManagedStackEligibility
         StateMachineReason? reason;
         try
         {
-            reason = ComputeFunctionReason(definition, compilation, visiting);
+            reason = ComputeFunctionReason(target, compilation, caller, visiting);
         }
         finally
         {
-            visiting.Remove(definition);
+            visiting.Remove(target);
         }
 
-        cache.TryAdd(definition, reason);
+        cache.TryAdd(target, reason);
         return reason;
     }
 
@@ -99,13 +102,18 @@ internal static class ManagedStackEligibility
         }
 
         var semanticModel = compilation.GetCachedSemanticModel(declaration.SyntaxTree);
-        return FindBodyReason(body, kernel, compilation, semanticModel) ??
-               FindCalleeReason(body, compilation, semanticModel, null);
+        var callees = GetDirectCallees(body, TypeArgumentMap.Of(kernel), compilation);
+        return FindBodyReason(body, callees, compilation, semanticModel) ??
+               FindCalleeReason(callees, compilation, semanticModel, null, null);
     }
 
+    private static ImmutableArray<CalleeSite> GetDirectCallees(SyntaxNode body, TypeArgumentMap typeArguments,
+        Compilation compilation) =>
+        DirectCallees.Of([body], typeArguments, compilation);
+
     // A body in which no thread ever waits, or a struct member reaching a split
-    private static StateMachineReason? FindBodyReason(SyntaxNode body, IMethodSymbol kernel, Compilation compilation,
-        SemanticModel semanticModel)
+    private static StateMachineReason? FindBodyReason(SyntaxNode body, ImmutableArray<CalleeSite> callees,
+        Compilation compilation, SemanticModel semanticModel)
     {
         var waits = false;
         foreach (var node in RemovedCalls.DescendantNodesThatRun(body, semanticModel))
@@ -126,7 +134,7 @@ internal static class ManagedStackEligibility
             }
         }
 
-        if (SuspensionAnalysis.HasStructMemberSplit(body, TypeArgumentMap.Of(kernel), compilation))
+        if (SuspensionAnalysis.HasStructMemberSplit(callees, compilation))
         {
             return Managed(nameof(NativeStackObstacle.StructMemberSplit), StructMemberSplitSentence);
         }
@@ -135,20 +143,33 @@ internal static class ManagedStackEligibility
     }
 
     // The reason of the first suspending function that the body calls or names as a method group
-    private static StateMachineReason? FindCalleeReason(SyntaxNode body, Compilation compilation,
-        SemanticModel semanticModel, HashSet<IMethodSymbol>? visiting)
+    private static StateMachineReason? FindCalleeReason(ImmutableArray<CalleeSite> callees,
+        Compilation compilation, SemanticModel semanticModel, CycleStep? caller, HashSet<IMethodSymbol>? visiting)
     {
-        foreach (var (callee, isMethodGroup) in
-                 SuspensionAnalysis.GetReferencedSuspendingFunctions(body, compilation, semanticModel))
+        foreach (var site in callees)
         {
+            if (CalleeSite.IsOperatorMacro(site, compilation)) // E4-2 removes this skip
+            {
+                continue;
+            }
+
+            if (site.Callee.MethodKind is not (MethodKind.Ordinary or MethodKind.ReducedExtension) ||
+                !SuspensionAnalysis.HasDeviceFunctionAttribute(site.Callee) ||
+                !SuspensionAnalysis.IsSuspendingFunction(site.Callee, compilation))
+            {
+                continue;
+            }
+
+            var isMethodGroup = DirectCallees.IsMethodGroupSite(site.Site, site.Callee, semanticModel);
             var reason = visiting is null
-                ? FindFunctionReason(callee, compilation)
-                : FindFunctionReason(callee, compilation, visiting);
+                ? FindFunctionReason(site.Callee, compilation)
+                : FindFunctionReason(site.Callee, compilation, caller, visiting);
             if (reason is not null)
             {
-                return !SuspensionAnalysis.TryGetDeviceFunctionBody(callee, compilation, out _) &&
+                var definition = GenericExpansion.GetCanonicalDefinition(site.Callee);
+                return !SuspensionAnalysis.TryGetDeviceFunctionBody(definition, compilation, out _) &&
                        reason.Value.Name == nameof(NativeStackObstacle.ImportedSuspendingCall)
-                    ? CreateImportedMissingFormReason(callee, compilation, isMethodGroup)
+                    ? CreateImportedMissingFormReason(definition, compilation, isMethodGroup)
                     : reason;
             }
         }
@@ -185,20 +206,21 @@ internal static class ManagedStackEligibility
         return null;
     }
 
-    private static StateMachineReason? ComputeFunctionReason(IMethodSymbol function, Compilation compilation,
-        HashSet<IMethodSymbol> visiting)
+    private static StateMachineReason? ComputeFunctionReason(IMethodSymbol target, Compilation compilation,
+        CycleStep? caller, HashSet<IMethodSymbol> visiting)
     {
-        var suspends = SuspensionAnalysis.IsSuspendingFunction(function, compilation);
-        if (!SuspensionAnalysis.TryGetDeviceFunctionBody(function, compilation, out var declaration))
+        var suspends = SuspensionAnalysis.IsSuspendingFunction(target, compilation);
+        var definition = GenericExpansion.GetCanonicalDefinition(target);
+        if (!SuspensionAnalysis.TryGetDeviceFunctionBody(definition, compilation, out var declaration))
         {
             if (!suspends)
             {
                 return Managed(nameof(NativeStackObstacle.NoBlockBarrier), NoBarrierSentence);
             }
 
-            return ImportedStackForms.HasManagedForm(function, compilation)
+            return ImportedStackForms.HasManagedForm(definition, compilation)
                 ? null
-                : CreateImportedMissingFormReason(function, compilation, isMethodGroup: false);
+                : CreateImportedMissingFormReason(definition, compilation, isMethodGroup: false);
         }
 
         if (declaration.GetBodyNode() is not { } body)
@@ -208,31 +230,75 @@ internal static class ManagedStackEligibility
                 : Managed(nameof(NativeStackObstacle.NoBlockBarrier), NoBarrierSentence);
         }
 
-        if (GenericDefinitions.IsLeftOut(function, compilation))
+        if (GenericDefinitions.IsLeftOut(definition, compilation))
         {
             return Managed("GenericDeviceFunction", "it is a generic device function");
         }
 
-        if (!SuspensionAnalysis.RequiresStateMachine(function, compilation))
+        if (!suspends)
         {
-            return suspends
-                ? Managed(nameof(NativeStackObstacle.RecursiveSuspendingCall),
-                    "it reaches a recursive suspending device function")
-                : Managed(nameof(NativeStackObstacle.NoBlockBarrier), NoBarrierSentence);
+            return Managed(nameof(NativeStackObstacle.NoBlockBarrier), NoBarrierSentence);
         }
 
-        if (FindFunctionShapeReason(function, compilation) is { } shapeReason)
+        // A non-generic device function of a generic type whose suspension depends on the type arguments has no open
+        // stack form (CollectFunctions only inspects the unconstructed declaration, where IsSuspendingFunction is false)
+        if (!SuspensionAnalysis.IsSuspendingFunction(definition, compilation))
+        {
+            return Managed("GenericDeviceFunction", "it is a generic device function");
+        }
+
+        if (!SuspensionAnalysis.RequiresStateMachine(target, compilation))
+        {
+            return Managed(nameof(NativeStackObstacle.RecursiveSuspendingCall),
+                "it reaches a recursive suspending device function");
+        }
+
+        if (FindFunctionShapeReason(target, compilation) is { } shapeReason)
         {
             return shapeReason;
         }
 
-        if (SuspensionAnalysis.HasStructMemberSplit(body, TypeArgumentMap.Of(function), compilation))
+        var callees = GetDirectCallees(body, TypeArgumentMap.Of(target), compilation);
+        if (SuspensionAnalysis.HasStructMemberSplit(callees, compilation))
         {
             return Managed(nameof(NativeStackObstacle.StructMemberSplit), StructMemberSplitSentence);
         }
 
         var semanticModel = compilation.GetCachedSemanticModel(declaration.SyntaxTree);
-        return FindCalleeReason(body, compilation, semanticModel, visiting);
+        return FindCalleeReason(callees, compilation, semanticModel, new CycleStep(target, caller), visiting);
+    }
+
+    private sealed class CycleStep(IMethodSymbol function, CycleStep? caller)
+    {
+        public IMethodSymbol Function { get; } = function;
+
+        public CycleStep? Caller { get; } = caller;
+    }
+
+    private static bool StopsPolymorphicRecursion(IMethodSymbol function, CycleStep? caller, Compilation compilation)
+    {
+        if (caller is null)
+        {
+            return false;
+        }
+
+        var definition = GenericExpansion.GetCanonicalDefinition(function);
+        if (!GenericExpansion.GetExpandingCallees(GenericExpansion.GetCanonicalDefinition(caller.Function), compilation)
+                .AsStackEnumerable()
+                .Any(definition, static (callee, own) => callee.IsEqualTo(own)))
+        {
+            return false;
+        }
+
+        for (var enclosing = caller; enclosing != null; enclosing = enclosing.Caller)
+        {
+            if (GenericExpansion.GetCanonicalDefinition(enclosing.Function).IsEqualTo(definition))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // What the function itself has that the managed stack form cannot copy or run

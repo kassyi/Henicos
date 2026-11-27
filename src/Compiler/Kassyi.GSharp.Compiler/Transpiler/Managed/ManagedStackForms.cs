@@ -268,22 +268,34 @@ internal static class ManagedStackFormCollector
         }
 
         var semanticModel = compilation.GetCachedSemanticModel(declaration.SyntaxTree);
-        foreach (var (callee, isMethodGroup) in
-                 SuspensionAnalysis.GetReferencedSuspendingFunctions(body, compilation, semanticModel))
+        foreach (var site in DirectCallees.Of([body], TypeArgumentMap.Of(method), compilation))
         {
-            if (!SuspensionAnalysis.TryGetDeviceFunctionBody(callee, compilation, out _))
+            if (CalleeSite.IsOperatorMacro(site, compilation)) // E4-2 removes this skip
             {
-                if (!ManagedStackEligibility.IsStackFunction(callee, compilation))
+                continue;
+            }
+
+            if (site.Callee.MethodKind is not (MethodKind.Ordinary or MethodKind.ReducedExtension) ||
+                !SuspensionAnalysis.HasDeviceFunctionAttribute(site.Callee) ||
+                !SuspensionAnalysis.IsSuspendingFunction(site.Callee, compilation))
+            {
+                continue;
+            }
+
+            var definition = GetDefinition(site.Callee);
+            var isMethodGroup = DirectCallees.IsMethodGroupSite(site.Site, site.Callee, semanticModel);
+            if (!SuspensionAnalysis.TryGetDeviceFunctionBody(definition, compilation, out _))
+            {
+                if (!ManagedStackEligibility.IsStackFunction(site.Callee, compilation))
                 {
                     fallbackReason = ManagedStackEligibility.CreateImportedMissingFormReason(
-                        callee, compilation, isMethodGroup);
+                        definition, compilation, isMethodGroup);
                     return true;
                 }
 
                 continue;
             }
 
-            var definition = GetDefinition(callee);
             if (!deviceSources.ContainsKey(definition))
             {
                 var detail = isMethodGroup

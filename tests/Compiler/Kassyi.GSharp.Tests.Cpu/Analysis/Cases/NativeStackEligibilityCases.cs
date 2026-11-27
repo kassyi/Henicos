@@ -842,6 +842,43 @@ namespace NativeStackOperatorMacroCases
         }
     }
 
+    // Pre-E4-2: operator macro target is skipped until E4-2 enables suspending operator macros
+    public struct GridSyncMacroSum
+    {
+        public int V;
+
+        [GpuOperatorMacro(typeof(SuspendingMacroOps), nameof(SuspendingMacroOps.AddGridSync))]
+        public static GridSyncMacroSum operator +(GridSyncMacroSum left, GridSyncMacroSum right) =>
+            throw new GpuOnlyException();
+    }
+
+    // Pre-E4-2: operator macro target is skipped until E4-2 enables suspending operator macros
+    public struct BarrierMacroSum
+    {
+        public int V;
+
+        [GpuOperatorMacro(typeof(SuspendingMacroOps), nameof(SuspendingMacroOps.AddBarrier))]
+        public static BarrierMacroSum operator +(BarrierMacroSum left, BarrierMacroSum right) =>
+            throw new GpuOnlyException();
+    }
+
+    public static partial class SuspendingMacroOps
+    {
+        [GpuDeviceFunction]
+        public static void AddGridSync(ref GridSyncMacroSum result, GridSyncMacroSum left, GridSyncMacroSum right)
+        {
+            Kassyi.GSharp.Core.Gpu.SyncGrid();
+            result.V = left.V + right.V;
+        }
+
+        [GpuDeviceFunction]
+        public static void AddBarrier(ref BarrierMacroSum result, BarrierMacroSum left, BarrierMacroSum right)
+        {
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            result.V = left.V + right.V;
+        }
+    }
+
     public static partial class Kernels
     {
         [GpuKernel]
@@ -870,6 +907,27 @@ namespace NativeStackOperatorMacroCases
             Kassyi.GSharp.Core.Gpu.SyncThreads();
             WarpSum z;
             z = x - x;
+            data[ThreadIndex.X] = z.V;
+        }
+
+        // Pre-E4-2: operator macro target is skipped until E4-2 enables suspending operator macros
+        [GpuKernel]
+        public static void GridSyncMacroAfterBarrierKernel(int[] data)
+        {
+            var x = new GridSyncMacroSum { V = data[ThreadIndex.X] };
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            GridSyncMacroSum z;
+            z = x + x;
+            data[ThreadIndex.X] = z.V;
+        }
+
+        // Pre-E4-2: operator macro target is skipped until E4-2 enables suspending operator macros
+        [GpuKernel]
+        public static void BarrierMacroWithoutDirectBarrierKernel(int[] data)
+        {
+            var x = new BarrierMacroSum { V = data[ThreadIndex.X] };
+            BarrierMacroSum z;
+            z = x + x;
             data[ThreadIndex.X] = z.V;
         }
     }

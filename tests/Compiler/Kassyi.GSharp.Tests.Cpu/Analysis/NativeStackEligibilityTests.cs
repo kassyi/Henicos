@@ -125,6 +125,20 @@ public class NativeStackEligibilityTests
         Assert.Equal(expected, NativeStackEligibility.Classify(symbol, declaration, model));
     }
 
+    // Pre-E4-2: operator macro target is skipped until E4-2 enables suspending operator macros
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("GridSyncMacroAfterBarrierKernel", NativeStackObstacle.None)]
+    [InlineData("BarrierMacroWithoutDirectBarrierKernel", NativeStackObstacle.NoBlockBarrier)]
+    internal void Classify_SuspendingOperatorMacroTarget_SkipsMacroTarget(
+        string methodName,
+        NativeStackObstacle expected)
+    {
+        var (symbol, declaration, model) = GetKernel(s_compilation, "NativeStackOperatorMacroCases.Kernels", methodName);
+
+        Assert.Equal(expected, NativeStackEligibility.Classify(symbol, declaration, model));
+    }
+
     // The visit counts of a kernel with size - 1 collectives of its own and no calls take size slots
     // The reason of a failed stack lowering goes into the kernel's C++ text as one comment line: a line break or a
     // backslash (which would continue the comment) becomes a space

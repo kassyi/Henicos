@@ -206,8 +206,9 @@ internal static class SuspensionAnalysis
 
     /// <summary>
     /// The device functions that reach a phase barrier and are called from <paramref name="body"/>, in call order.
-    /// Does not follow struct members: struct members have no state-machine frame (<c>DeviceFunctionForms.Create</c>,
-    /// <c>ManagedStateMachineAvailability</c>, <c>ManagedStackForms</c>, and stack eligibility callers).
+    /// Used by the state machine frames only (<c>DeviceFunctionForms.Create</c>,
+    /// <c>ManagedStateMachineAvailability</c>); the stack side reads <see cref="DirectCallees"/>. Does not follow
+    /// struct members: struct members have no state-machine frame.
     /// </summary>
     public static ImmutableArray<IMethodSymbol> GetSuspendingCallees(SyntaxNode body, Compilation compilation)
     {
@@ -225,57 +226,29 @@ internal static class SuspensionAnalysis
     }
 
     /// <summary>
-    /// The <c>[GpuDeviceFunction]</c> methods that reach a phase barrier and are called or named as a method group in
-    /// <paramref name="body"/>, outside calls that C# removes (<see cref="RemovedCalls"/>) and <c>nameof</c>
-    /// arguments, with repeats.
-    /// </summary>
-    internal static IEnumerable<(IMethodSymbol Definition, bool IsMethodGroup)> GetReferencedSuspendingFunctions(
-        SyntaxNode body,
-        Compilation compilation,
-        SemanticModel semanticModel)
-    {
-        foreach (var node in RemovedCalls.DescendantNodesThatRun(body, semanticModel))
-        {
-            if (node is not SimpleNameSyntax || NameofOperator.Encloses(node, semanticModel))
-            {
-                continue;
-            }
-
-            if (semanticModel.GetSymbolInfo(node).Symbol is not IMethodSymbol method)
-            {
-                continue;
-            }
-
-            var definition = (method.ReducedFrom ?? method).OriginalDefinition;
-            definition = definition.PartialDefinitionPart ?? definition;
-            if (HasDeviceFunctionAttribute(definition) &&
-                IsSuspendingFunction(definition, compilation))
-            {
-                yield return (definition, MethodGroupReference.Is(node, semanticModel));
-            }
-        }
-    }
-
-    /// <summary>
     /// Whether <paramref name="body"/> directly calls a member of an emitted struct (not a <c>[GpuDeviceFunction]</c>)
     /// that reaches a split point (block barrier, grid barrier, warp collective, or suspending device function).
     /// </summary>
-    internal static bool HasStructMemberSplit(SyntaxNode body, TypeArgumentMap typeArguments, Compilation compilation)
-    {
-        var semanticModel = compilation.GetCachedSemanticModel(body.SyntaxTree);
-        foreach (var site in DirectCallees.Of([body], typeArguments, compilation))
-        {
-            if (!HasDeviceFunctionAttribute(site.Callee) &&
-                IsEmittedStructMember(site.Callee) &&
-                !DirectCallees.IsMethodGroupSite(site.Site, site.Callee, semanticModel) &&
-                IsSuspendingFunction(site.Callee, compilation))
-            {
-                return true;
-            }
-        }
+    internal static bool HasStructMemberSplit(SyntaxNode body, TypeArgumentMap typeArguments, Compilation compilation) =>
+        HasStructMemberSplit(DirectCallees.Of([body], typeArguments, compilation), compilation);
 
-        return false;
-    }
+    /// <summary>
+    /// Whether <paramref name="callees"/> contains a direct call to a member of an emitted struct (not a
+    /// <c>[GpuDeviceFunction]</c>) that reaches a split point (block barrier, grid barrier, warp collective, or
+    /// suspending device function).
+    /// </summary>
+    internal static bool HasStructMemberSplit(ImmutableArray<CalleeSite> callees, Compilation compilation) =>
+        callees
+            .AsStackEnumerable()
+            .Any(compilation, static (site, c) =>
+                !HasDeviceFunctionAttribute(site.Callee) &&
+                IsEmittedStructMember(site.Callee) &&
+                !DirectCallees.IsMethodGroupSite(
+                    site.Site,
+                    site.Callee,
+                    c.GetCachedSemanticModel(site.Site.SyntaxTree)) &&
+                IsSuspendingFunction(site.Callee, c)
+            );
 
     private static bool Reaches(IMethodSymbol method, BarrierQuery query, Compilation compilation)
     {
@@ -287,7 +260,7 @@ internal static class SuspensionAnalysis
 
     // Normalizes a partial method symbol (including a constructed implementing part, where Roslyn leaves
     // PartialDefinitionPart null) to the defining declaration symbol with the same type arguments.
-    private static IMethodSymbol ToCanonicalDefinitionPart(IMethodSymbol method)
+    internal static IMethodSymbol ToCanonicalDefinitionPart(IMethodSymbol method)
     {
         if (method.PartialDefinitionPart is { } directDef)
         {
@@ -448,8 +421,9 @@ internal static class SuspensionAnalysis
     /// <summary>
     /// The definitions of the <c>[GpuDeviceFunction]</c> methods that <paramref name="body"/> calls, outside the
     /// calls that C# removes (<see cref="RemovedCalls"/>), in call order, with repeats: those with a body in the
-    /// compilation, and those of another assembly that recorded them (<see cref="DeviceExportTable"/>).
-    /// Does not follow struct members: struct members have no state-machine frame.
+    /// compilation, and those of another assembly that recorded them (<see cref="DeviceExportTable"/>). Used by the
+    /// state machine frames (and recursion / <see cref="DynamicSharedMemoryAnalysis"/>) only; the stack side reads
+    /// <see cref="DirectCallees"/>. Does not follow struct members: struct members have no state-machine frame.
     /// </summary>
     internal static IEnumerable<IMethodSymbol> GetDeviceFunctionCallees(SyntaxNode body, Compilation compilation)
     {
@@ -533,7 +507,7 @@ internal static class SuspensionAnalysis
         [NotNullWhen(true)] out MethodDeclarationSyntax? declaration) =>
         TryGetBody(method, HasDeviceFunctionAttribute(method), compilation, out declaration);
 
-    private static bool HasDeviceFunctionAttribute(IMethodSymbol method)
+    internal static bool HasDeviceFunctionAttribute(IMethodSymbol method)
     {
         var original = (method.ReducedFrom ?? method).OriginalDefinition;
         return original.HasAttribute(KnownAttributes.GpuDeviceFunction) ||
