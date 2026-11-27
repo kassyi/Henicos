@@ -235,7 +235,12 @@ const plugin = {
         const parsed = parseSharedCommand(turnCommand, context.shell);
         const inLanguage = parsed !== null && (parsed.kind !== "recipe" || options.sharedRecipes.includes(parsed.name));
         if (!inLanguage) {
-          return { refuse: formatOutsideLanguageRefusal(turnCommand, context.shell) };
+          return {
+            refuse: formatOutsideLanguageRefusal(turnCommand, context.shell, {
+              ...(split !== null ? { splitBuild: { build: split.build, originalCommand: command } } : {}),
+              sharedRecipes: options.sharedRecipes,
+            }),
+          };
         }
       }
     }
