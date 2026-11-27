@@ -39,6 +39,22 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
+        // The test of a lowered user-defined && or ||: <operator false or true>([&]<left temporary>)
+        if (node.Expression is IdentifierNameSyntax { Identifier.ValueText: GSharpInternalNames.Lowering.TruthTest })
+        {
+            var test = OperatorMacroSyntax.GetTruthTest(node, context.Query.SemanticModel)
+                       ?? throw new InvalidOperationException(
+                           "G#: internal error: a truth test without its operator (please report this G# bug).");
+            MacroRules.GpuOperatorMacroTranspiler.AppendTruthTestCall(
+                test,
+                OperatorMacroCallPlanner.IsPassedByReference(test.Parameters[0]),
+                node.ArgumentList.Arguments[0].Expression,
+                static (argument, ref ctx) => ctx.Visitor.Visit(argument),
+                ref context
+            );
+            return;
+        }
+
         if (context.Query.SemanticModel.GetSymbol(node) is IMethodSymbol symbol)
         {
             // C# removes the call of a partial method without an implementing declaration, or of a [Conditional]

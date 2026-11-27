@@ -9,18 +9,26 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// unconditionally. After this pass the call sits in a branch that <see cref="BranchRewriter"/> lowers like any other.
 /// <code>
 /// bool ok = a &amp;&amp; S();   →   var t = a; if (t) { t = S(); } bool ok = t;
+/// T c = a &amp;&amp; S();     →   var l = default; l = a; var r = default; if (__gsharp_truth_test(l)) { r = l; } else { r = l &amp; S(); } T c = r;
 /// int v = c ? S() : x;   →   var t = default; if (c) { t = S(); } else { t = x; } int v = t;
 /// </code>
-/// The temporary of a conditional operator is initialized with <c>default</c> carrying the span of the original
-/// operator, which is how <see cref="Transpiler.HoistedFieldTypeResolver"/> finds its type.
+/// The temporary of a conditional operator or a user-defined short-circuit operator is initialized with <c>default</c>
+/// carrying the span of the original operator, which is how <see cref="Transpiler.HoistedFieldTypeResolver"/> finds its
+/// type.
 /// </remarks>
 /// <param name="names">
 /// The names of the temporaries of the method, shared with the other passes that declare temporaries; a new set when
 /// omitted.
 /// </param>
-public class ConditionalEvaluationRewriter(LoweringTempNames? names = null) : CSharpSyntaxRewriter, IBlockLoweringPass
+/// <param name="semanticModel">
+/// A semantic model of the body, used to recognize user-defined <c>&amp;&amp;</c> / <c>||</c> operators and to keep the
+/// C# evaluation order of an assignment target before a user-defined conditional.
+/// </param>
+public class ConditionalEvaluationRewriter(LoweringTempNames? names = null, SemanticModel? semanticModel = null)
+    : CSharpSyntaxRewriter, IBlockLoweringPass
 {
     private readonly LoweringTempNames _names = names ?? new LoweringTempNames();
+    private readonly SemanticModel? _semanticModel = semanticModel;
 
     /// <summary>Rewrites the conditional operators in the block that need it.</summary>
     public BlockSyntax Rewrite(BlockSyntax block) =>
@@ -87,16 +95,157 @@ public class ConditionalEvaluationRewriter(LoweringTempNames? names = null) : CS
                 continue;
             }
 
-            var (prefix, temp) = Lower(conditional);
-            pending.Push(statement.ReplaceNode(conditional, temp.WithTriviaFrom(conditional)));
-            for (var i = prefix.Length - 1; i >= 0; i--)
+            if (conditional is BinaryExpressionSyntax logical && IsUserDefined(logical))
             {
-                pending.Push(prefix[i]);
+                var (targetPrefix, spilledLeft) = SpillAssignmentTarget(statement, logical);
+                var (prefix, temp) = LowerUserDefined(logical);
+                var replacement = temp.WithTriviaFrom(logical);
+                var rewrittenStatement = spilledLeft != null &&
+                                         statement is ExpressionStatementSyntax
+                                         {
+                                             Expression: AssignmentExpressionSyntax assignment
+                                         } expressionStatement
+                    ? expressionStatement.WithExpression(
+                        assignment
+                            .WithLeft(spilledLeft.WithTriviaFrom(assignment.Left))
+                            .WithRight(assignment.Right.ReplaceNode(logical, replacement)))
+                    : statement.ReplaceNode(logical, replacement);
+                pending.Push(rewrittenStatement);
+                for (var i = prefix.Length - 1; i >= 0; i--)
+                {
+                    pending.Push(prefix[i]);
+                }
+
+                for (var i = targetPrefix.Length - 1; i >= 0; i--)
+                {
+                    pending.Push(targetPrefix[i]);
+                }
+
+                continue;
+            }
+
+            var (builtinPrefix, builtinTemp) = Lower(conditional);
+            pending.Push(statement.ReplaceNode(conditional, builtinTemp.WithTriviaFrom(conditional)));
+            for (var i = builtinPrefix.Length - 1; i >= 0; i--)
+            {
+                pending.Push(builtinPrefix[i]);
             }
         }
 
         return SyntaxFactory.List(newStatements);
     }
+
+    // A && or || that calls a user-defined & or | and tests its left operand with operator false or true
+    private bool IsUserDefined(BinaryExpressionSyntax binary) =>
+        _semanticModel != null &&
+        OperatorMacroSyntax.GetOperator(binary, _semanticModel) is
+        {
+            Method: not null,
+            IsLifted: false,
+            Test: not null
+        };
+
+    // Spills the parts of a simple assignment's target (indices, array or pointer receiver, pointer of *p / p->F)
+    // before a user-defined && or || in its right operand, so C# evaluates the target parts before the left operand
+    // while keeping any element check on the final store
+    private (ImmutableArray<StatementSyntax> Prefix, ExpressionSyntax? SpilledLeft) SpillAssignmentTarget(
+        StatementSyntax statement,
+        BinaryExpressionSyntax conditional)
+    {
+        if (statement is not ExpressionStatementSyntax
+            {
+                Expression: AssignmentExpressionSyntax
+                {
+                    RawKind: (int)SyntaxKind.SimpleAssignmentExpression
+                } assignment
+            } ||
+            !IsDescendant(conditional, assignment.Right))
+        {
+            return (ImmutableArray<StatementSyntax>.Empty, null);
+        }
+
+        var arguments = SyntaxFactory.SeparatedList(
+            [
+                SyntaxFactory.Argument(assignment.Left.WithoutTrivia())
+                    .WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.RefKeyword)),
+                SyntaxFactory.Argument(assignment.Right.WithoutTrivia())
+            ]
+        );
+        var prefix = ImmutableArray.CreateBuilder<StatementSyntax>();
+        var compilation = _semanticModel?.Compilation;
+        var spilledLeft = LocationPartSpiller.SpillLocation(
+            assignment.Left,
+            arguments,
+            0,
+            _semanticModel,
+            expression =>
+            {
+                var tempName = _names.NextArgument();
+                prefix.Add(LoweringSyntax.DeclareTemporary(
+                    tempName,
+                    expression.WithoutTrivia().WithSpilledTypeSpanFrom(expression, compilation),
+                    expression,
+                    compilation,
+                    new SyntaxAnnotation(LoweringAnnotations.ArgumentTempAnnotationKind)));
+                return SyntaxFactory.IdentifierName(tempName)
+                    .WithSpilledTypeSpanFrom(expression, compilation)
+                    .WithTriviaFrom(expression);
+            });
+        return prefix.Count == 0
+            ? (ImmutableArray<StatementSyntax>.Empty, null)
+            : (prefix.ToImmutable(), spilledLeft);
+    }
+
+    private static bool IsDescendant(SyntaxNode node, SyntaxNode ancestor)
+    {
+        for (var current = node; current != null; current = current.Parent)
+        {
+            if (ReferenceEquals(current, ancestor))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // var <left> = default; <left> = <x>; var <result> = default;
+    // if (__gsharp_truth_test(<left>)) { <result> = <left>; } else { <result> = <left> & <y>; }
+    private (ImmutableArray<StatementSyntax> Prefix, IdentifierNameSyntax Temp) LowerUserDefined(
+        BinaryExpressionSyntax binary)
+    {
+        var compilation = _semanticModel?.Compilation;
+        var leftName = _names.NextCondition();
+        var resultName = _names.NextCondition();
+        var left = SyntaxFactory.IdentifierName(leftName).WithSpilledTypeSpanFrom(binary, compilation);
+        var result = SyntaxFactory.IdentifierName(resultName).WithSpilledTypeSpanFrom(binary, compilation);
+        var testArguments = SyntaxFactory.ArgumentList(
+            SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(left))
+        );
+        var test = SyntaxFactory.InvocationExpression(
+            SyntaxFactory.IdentifierName(GSharpInternalNames.Lowering.TruthTest),
+            testArguments
+        ).WithOriginalSpanFrom(binary);
+        var operatorKind = binary.IsKind(SyntaxKind.LogicalAndExpression)
+            ? SyntaxKind.BitwiseAndExpression
+            : SyntaxKind.BitwiseOrExpression;
+        var call = SyntaxFactory.BinaryExpression(operatorKind, left, binary.Right.WithoutTrivia())
+            .WithOriginalSpanFrom(binary);
+        var statements = ImmutableArray.Create<StatementSyntax>(
+            LoweringSyntax.DeclareLocal(leftName, TypedDefault(binary)),
+            Assign(left, binary.Left),
+            LoweringSyntax.DeclareLocal(resultName, TypedDefault(binary)),
+            SyntaxFactory.IfStatement(
+                test,
+                SyntaxFactory.Block(Assign(result, left)),
+                SyntaxFactory.ElseClause(SyntaxFactory.Block(Assign(result, call)))
+            )
+        );
+        return (statements, result);
+    }
+
+    private static LiteralExpressionSyntax TypedDefault(ExpressionSyntax typed) =>
+        SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression).WithOriginalSpanFrom(typed);
 
     private (ImmutableArray<StatementSyntax> Prefix, IdentifierNameSyntax Temp) Lower(ExpressionSyntax conditional)
     {

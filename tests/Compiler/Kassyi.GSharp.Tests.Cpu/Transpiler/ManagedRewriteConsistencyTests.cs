@@ -1,5 +1,6 @@
 #nullable enable
 using Kassyi.GSharp.Compiler.Extensions;
+using Kassyi.GSharp.Compiler.Semantics;
 using Kassyi.GSharp.Compiler.Transpiler.Helpers.Calls;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Operations;

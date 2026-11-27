@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Transpiler;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>
 /// Whether C# removes a call because of <c>[Conditional]</c>: the method (for an override, the method it overrides

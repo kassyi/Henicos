@@ -251,7 +251,7 @@ internal sealed class IrSpillApplication
         var irLowered = new IrSplitLoweringPass(bodyModel, symbol, body, names).Rewrite(prepared);
         var unmarked = new MarkRemover().Visit(irLowered) as BlockSyntax ??
                        throw new InvalidOperationException("The marks were removed with the block.");
-        var conditionalsLowered = new ConditionalEvaluationRewriter(names).Rewrite(unmarked);
+        var conditionalsLowered = new ConditionalEvaluationRewriter(names, bodyModel).Rewrite(unmarked);
         var hoisted = new WarpInstructionRewriter(bodyModel, names).Rewrite(conditionalsLowered);
         if (!SyntaxFactory.AreEquivalent(hoisted, withIr, topLevel: false))
         {

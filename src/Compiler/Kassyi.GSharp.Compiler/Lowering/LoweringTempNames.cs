@@ -20,6 +20,10 @@ public sealed class LoweringTempNames
     /// <summary>The next name of the temporary of a <c>?:</c>, <c>&amp;&amp;</c> or <c>||</c>.</summary>
     public string NextCondition() => $"{GSharpInternalNames.Lowering.ConditionTempPrefix}{_conditions++}";
 
+    /// <summary>Whether <paramref name="name"/> is a condition temporary declared by <see cref="NextCondition"/>.</summary>
+    internal static bool IsConditionTemp(string name) =>
+        name.StartsWith(GSharpInternalNames.Lowering.ConditionTempPrefix, StringComparison.Ordinal);
+
     /// <summary>The next name of the temporary of a warp operation that splits.</summary>
     public string NextWarp() => $"{GSharpInternalNames.Lowering.WarpTempPrefix}{_values++}";
 

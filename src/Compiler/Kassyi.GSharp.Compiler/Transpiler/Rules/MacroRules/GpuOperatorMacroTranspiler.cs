@@ -165,6 +165,25 @@ internal static class GpuOperatorMacroTranspiler
         return true;
     }
 
+    internal delegate void TruthTestOperandWriter<in TOperand>(TOperand operand, ref TranspileContext context);
+
+    // <test>([&]<operand>)
+    internal static void AppendTruthTestCall<TOperand>(
+        IMethodSymbol test,
+        bool passByReference,
+        TOperand operand,
+        TruthTestOperandWriter<TOperand> writeOperand,
+        ref TranspileContext context)
+    {
+        var writer = context.Emitter.Writer;
+        writer.Append(GlobalCppNames.GetFunctionName(test));
+        using (writer.Parentheses())
+        {
+            writer.AppendIf(passByReference, "&");
+            writeOperand(operand, ref context);
+        }
+    }
+
     // if(<test>(__gsharp_seq_1)) { <target>=__gsharp_seq_1; }
     // The test of the left operand in its temporary (temps[Left]) and the assignment of it to the target
     // (temps[Result], <resultSlot>, or <result>) when the test holds
@@ -175,12 +194,13 @@ internal static class GpuOperatorMacroTranspiler
         writer.Append("if");
         using (writer.Parentheses())
         {
-            writer.Append(GlobalCppNames.GetFunctionName(plan.Test));
-            using (writer.Parentheses())
-            {
-                writer.AppendIf(plan.PassesTestByReference, "&");
-                EvaluationOrder.AppendTempName(writer, temps[(int)MacroOperandRole.Left]);
-            }
+            AppendTruthTestCall(
+                plan.Test,
+                plan.PassesTestByReference,
+                temps[(int)MacroOperandRole.Left],
+                static (temp, ref ctx) => EvaluationOrder.AppendTempName(ctx.Emitter.Writer, temp),
+                ref context
+            );
         }
 
         writer.AppendLine();

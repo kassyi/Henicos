@@ -5,6 +5,7 @@ using Kassyi.GSharp.Compiler.Ir.Classifying;
 using Kassyi.GSharp.Compiler.Ir.Expressions;
 using Kassyi.GSharp.Compiler.Ir.Statements;
 using Kassyi.GSharp.Compiler.Lowering;
+using Kassyi.GSharp.Compiler.Semantics;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
