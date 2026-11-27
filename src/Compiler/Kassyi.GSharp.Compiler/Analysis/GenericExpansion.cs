@@ -46,12 +46,38 @@ internal static class GenericExpansion
     private static readonly ConditionalWeakTable<Compilation, Components> s_components = new();
 
     /// <summary>
+    /// The canonical unconstructed defining declaration of <paramref name="method"/> (unreducing extension methods
+    /// and mapping partial implementing parts to their defining part).
+    /// </summary>
+    internal static IMethodSymbol GetCanonicalDefinition(IMethodSymbol method)
+    {
+        var definition = DeviceFunctionEffects.GetDefinition(method);
+        return definition.PartialDefinitionPart ?? definition;
+    }
+
+    private static ITypeParameterSymbol GetCanonicalTypeParameter(ITypeParameterSymbol parameter)
+    {
+        var original = parameter.OriginalDefinition;
+        if (original.DeclaringMethod is { } declaringMethod)
+        {
+            var canonicalMethod = GetCanonicalDefinition(declaringMethod);
+            if (!canonicalMethod.IsEqualTo(declaringMethod) &&
+                original.Ordinal < canonicalMethod.TypeParameters.Length)
+            {
+                return canonicalMethod.TypeParameters[original.Ordinal];
+            }
+        }
+
+        return original;
+    }
+
+    /// <summary>
     /// The definitions that <paramref name="definition"/> calls through an expansive edge on a cycle of the type
     /// parameters: the calls that make a new construction at every turn.
     /// </summary>
     public static ImmutableArray<IMethodSymbol> GetExpandingCallees(IMethodSymbol definition,
         Compilation compilation) =>
-        s_expanding.For(compilation).GetOrAdd(definition, d =>
+        s_expanding.For(compilation).GetOrAdd(GetCanonicalDefinition(definition), d =>
         {
             var components = s_components.GetValue(compilation, static c => new Components(c));
             var expanding = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
@@ -87,13 +113,13 @@ internal static class GenericExpansion
     // The edges of the calls written in definition's bodies, with the parameterless constructor calls that a callee's
     // new Q() makes of the arguments passed for Q
     private static ImmutableArray<TypeParameterEdge> GetEdges(IMethodSymbol definition, Compilation compilation) =>
-        s_edges.For(compilation).GetOrAdd(definition, d =>
+        s_edges.For(compilation).GetOrAdd(GetCanonicalDefinition(definition), d =>
         {
             var edges = ImmutableArray.CreateBuilder<TypeParameterEdge>();
             var pending = new Stack<(IMethodSymbol Call, IMethodSymbol Callee)>();
-            DeviceFunctionReach.GetWrittenCallees(d, compilation)
+            DirectCallees.GetWrittenCallees(d, compilation)
                 .AsStackEnumerable()
-                .Do(pending, static (call, stack) => stack.Push((call, DeviceFunctionEffects.GetDefinition(call))));
+                .Do(pending, static (call, stack) => stack.Push((call, GetCanonicalDefinition(call))));
             while (pending.Count > 0)
             {
                 var (call, callee) = pending.Pop();
@@ -109,7 +135,7 @@ internal static class GenericExpansion
         ImmutableArray<TypeParameterEdge>.Builder edges, Stack<(IMethodSymbol Call, IMethodSymbol Callee)> pending)
     {
         var arguments = GetTypeArguments(call);
-        var parameters = GetTypeParameters(DeviceFunctionEffects.GetDefinition(call));
+        var parameters = GetTypeParameters(GetCanonicalDefinition(call));
         var occurring = new HashSet<ITypeParameterSymbol>(SymbolEqualityComparer.Default);
         for (var i = 0; i < arguments.Count && i < parameters.Count; i++)
         {
@@ -117,7 +143,9 @@ internal static class GenericExpansion
             AddTypeParameters(arguments[i], occurring);
             foreach (var from in occurring)
             {
-                edges.Add(new TypeParameterEdge(from, parameters[i], !arguments[i].IsEqualTo(from), callee));
+                var isExpansive = !(arguments[i] is ITypeParameterSymbol argumentParameter &&
+                                    GetCanonicalTypeParameter(argumentParameter).IsEqualTo(from));
+                edges.Add(new TypeParameterEdge(from, parameters[i], isExpansive, callee));
             }
 
             if (arguments[i] is INamedTypeSymbol { TypeKind: TypeKind.Struct } argument &&
@@ -134,7 +162,7 @@ internal static class GenericExpansion
     // How the bodies that can use parameter run code of its type argument: new Q(), or a member of an interface
     // reached through Q; directly or by passing Q on unchanged to a type parameter that does
     private static TypeParameterUse GetUse(ITypeParameterSymbol parameter, Compilation compilation) =>
-        s_use.For(compilation).GetOrAdd(parameter, p => FindUse(p, compilation));
+        s_use.For(compilation).GetOrAdd(GetCanonicalTypeParameter(parameter), p => FindUse(p, compilation));
 
     private static TypeParameterUse FindUse(ITypeParameterSymbol parameter, Compilation compilation)
     {
@@ -162,13 +190,15 @@ internal static class GenericExpansion
     private static void AddPassedOn(ITypeParameterSymbol current, IMethodSymbol method, Compilation compilation,
         HashSet<ITypeParameterSymbol> seen, Stack<ITypeParameterSymbol> pending)
     {
-        foreach (var callee in DeviceFunctionReach.GetWrittenCallees(method, compilation))
+        foreach (var callee in DirectCallees.GetWrittenCallees(method, compilation))
         {
             var arguments = GetTypeArguments(callee);
-            var parameters = GetTypeParameters(DeviceFunctionEffects.GetDefinition(callee));
+            var parameters = GetTypeParameters(GetCanonicalDefinition(callee));
             for (var i = 0; i < arguments.Count && i < parameters.Count; i++)
             {
-                if (arguments[i].IsEqualTo(current) && seen.Add(parameters[i]))
+                if (arguments[i] is ITypeParameterSymbol argument &&
+                    GetCanonicalTypeParameter(argument).IsEqualTo(current) &&
+                    seen.Add(parameters[i]))
                 {
                     pending.Push(parameters[i]);
                 }
@@ -179,7 +209,7 @@ internal static class GenericExpansion
     // The type parameters that method's bodies create with new Q() or reach a member of an interface through
     private static ImmutableArray<(ITypeParameterSymbol Parameter, TypeParameterUse Use)> GetUsedTypeParameters(
         IMethodSymbol method, Compilation compilation) =>
-        s_used.For(compilation).GetOrAdd(method, m =>
+        s_used.For(compilation).GetOrAdd(GetCanonicalDefinition(method), m =>
         {
             var used = ImmutableArray.CreateBuilder<(ITypeParameterSymbol Parameter, TypeParameterUse Use)>();
             if (!DeviceFunctionBodies.TryGet(m, compilation, out var bodies))
@@ -208,11 +238,11 @@ internal static class GenericExpansion
         {
             if (node is ITypeParameterObjectCreationOperation { Type: ITypeParameterSymbol created })
             {
-                used.Add((created, TypeParameterUse.Created));
+                used.Add((GetCanonicalTypeParameter(created), TypeParameterUse.Created));
             }
-            else if ((DeviceFunctionReach.GetConstrainedReceiver(node) ?? GetDisposed(node)) is { } reached)
+            else if ((DirectCallees.GetConstrainedReceiver(node) ?? GetDisposed(node)) is { } reached)
             {
-                used.Add((reached, TypeParameterUse.Reached));
+                used.Add((GetCanonicalTypeParameter(reached), TypeParameterUse.Reached));
             }
         }
     }
@@ -233,11 +263,12 @@ internal static class GenericExpansion
     private static IEnumerable<ITypeParameterSymbol> GetSuccessors(ITypeParameterSymbol parameter,
         Compilation compilation)
     {
-        foreach (var method in GetScope(parameter, compilation))
+        var canonical = GetCanonicalTypeParameter(parameter);
+        foreach (var method in GetScope(canonical, compilation))
         {
             foreach (var edge in GetEdges(method, compilation))
             {
-                if (edge.From.IsEqualTo(parameter))
+                if (edge.From.IsEqualTo(canonical))
                 {
                     yield return edge.To;
                 }
@@ -246,10 +277,12 @@ internal static class GenericExpansion
     }
 
     // The methods whose bodies can use parameter: its method, or every method of its type and of the types in it
-    private static ImmutableArray<IMethodSymbol> GetScope(ITypeParameterSymbol parameter, Compilation compilation) =>
-        parameter.DeclaringMethod is { } method
-            ? ImmutableArray.Create(method.OriginalDefinition)
-            : parameter.DeclaringType is { } type
+    private static ImmutableArray<IMethodSymbol> GetScope(ITypeParameterSymbol parameter, Compilation compilation)
+    {
+        var canonical = GetCanonicalTypeParameter(parameter);
+        return canonical.DeclaringMethod is { } method
+            ? ImmutableArray.Create(GetCanonicalDefinition(method))
+            : canonical.DeclaringType is { } type
                 ? s_methods.For(compilation).GetOrAdd(type.OriginalDefinition, static t =>
                 {
                     var methods = ImmutableArray.CreateBuilder<IMethodSymbol>();
@@ -257,6 +290,7 @@ internal static class GenericExpansion
                     return methods.ToImmutable();
                 })
                 : ImmutableArray<IMethodSymbol>.Empty;
+    }
 
     private static void AddMethods(INamedTypeSymbol type, ImmutableArray<IMethodSymbol>.Builder methods)
     {
@@ -265,7 +299,7 @@ internal static class GenericExpansion
             switch (member)
             {
                 case IMethodSymbol method:
-                    methods.Add(method);
+                    methods.Add(GetCanonicalDefinition(method));
                     break;
                 case INamedTypeSymbol nested:
                     AddMethods(nested, methods);
@@ -280,7 +314,7 @@ internal static class GenericExpansion
         switch (type)
         {
             case ITypeParameterSymbol parameter:
-                parameters.Add(parameter);
+                parameters.Add(GetCanonicalTypeParameter(parameter));
                 break;
             case INamedTypeSymbol named:
                 for (var current = named; current != null; current = current.ContainingType)
@@ -345,7 +379,8 @@ internal static class GenericExpansion
             {
                 try
                 {
-                    return GetComponent(from) == GetComponent(to);
+                    return GetComponent(GetCanonicalTypeParameter(from)) ==
+                           GetComponent(GetCanonicalTypeParameter(to));
                 }
                 catch (Exception)
                 {

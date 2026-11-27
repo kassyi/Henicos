@@ -577,54 +577,32 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task ChainedLabelJump_GotoToInnerLabelFromAnotherState_ReportsGSH0121OnGoto()
-    {
-        var actual = await RunAsync("Analyzers/BarrierUsage/ChainedLabelGotoKernels.cu.cs", "Cpu");
-
-        var id = GSharpDiagnostics.GotoToChainedLabelAcrossStates.Id;
-        // mutant: FindGotosToChainedLabelsAcrossStates `!=` -> `==` -> none of these, and the same-state goto instead
-        // mutant: the chain walk stops after one inner label -> no report at line 59
-        // mutant: NumberStates with an empty set of state labels -> no report at line 85
-        Assert.Equal(
-            [
-                (id, 21, 13, 21, 25),
-                (id, 35, 13, 35, 25),
-                (id, 59, 13, 59, 24),
-                (id, 85, 13, 85, 25),
-                (id, 102, 13, 102, 25)
-            ],
-            actual);
-    }
-
-    [Fact]
-    [Scenario(TestScenario.SadPath)]
-    public async Task ChainedLabelJump_Generator_ReportsTheAnalyzersGSH0121AndTheGeneratedCSharpCompiles()
+    public async Task ChainedLabelJump_GotoToInnerLabelFromAnotherState_ReportsGSH0121OnceFromTheGeneratorOnlyAndTheOutputCompiles()
     {
         var compilation = RoslynTestUtility.CreateCompilation(
             RoslynTestUtility.ReadTestCase("Analyzers/BarrierUsage/ChainedLabelGotoKernels.cu.cs"));
 
         var run = await KernelDiagnostics.RunCompilationAsync(compilation, "Cpu");
 
+        var id = GSharpDiagnostics.GotoToChainedLabelAcrossStates.Id;
+        // An IDE shows the diagnostics of the analyzer and of the generator side by side and merges none, so a goto
+        // reported from both places is seen twice (#2121): the generator alone reports it, once per goto
+        // mutant: KernelBarrierValidator calling a Validate of GSH0121 again -> the analyzer reports every goto too
+        // mutant: FindGotosToChainedLabelsAcrossStates `!=` -> `==` -> none of these, and the same-state goto instead
+        // mutant: the chain walk stops after one inner label -> no report at line 59
+        // mutant: NumberStates with an empty set of state labels -> no report at line 85
+        // mutant: HeldRefLocalSite.Collect without the GSH0121 sites -> the generator reports nothing
+        Assert.Empty(run.Analyzer.Where(d => d.Id == id));
         Assert.Equal(
             [
-                (DiagnosticOrigin.Analyzer, 21, 13, 21, 25),
-                (DiagnosticOrigin.Analyzer, 35, 13, 35, 25),
-                (DiagnosticOrigin.Analyzer, 59, 13, 59, 24),
-                (DiagnosticOrigin.Analyzer, 85, 13, 85, 25),
-                (DiagnosticOrigin.Analyzer, 102, 13, 102, 25)
+                (DiagnosticOrigin.Generator, 21, 13, 21, 25),
+                (DiagnosticOrigin.Generator, 35, 13, 35, 25),
+                (DiagnosticOrigin.Generator, 59, 13, 59, 24),
+                (DiagnosticOrigin.Generator, 85, 13, 85, 25),
+                (DiagnosticOrigin.Generator, 102, 13, 102, 25)
             ],
-            run.Analyzer
-                .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))
-                .ToImmutableArray()
-                .Ranges(GSharpDiagnostics.GotoToChainedLabelAcrossStates.Id)
-                .OrderBy(static r => r.StartLine)
-                .ToList());
-        Assert.Equal(5, run.Analyzer.Length);
-        // The generator reports the same diagnostics from its own lowering, so a build without the analyzers stops too.
-        // Equal diagnostics (same descriptor, place and arguments) are the ones the compiler shows once
-        // mutant: HeldRefLocalSite.Collect without the GSH0121 sites -> the generator reports nothing
+            GeneratorRanges(run, id));
         Assert.Equal(5, run.Generator.Length);
-        Assert.True(run.Analyzer.ToHashSet().SetEquals(run.Generator));
         Assert.Empty(KernelDiagnostics.FindStatedFailures(run));
         // The managed output of a rejected method is not written: no CS0159 is generated
         // mutant: ManagedCSharpTranspiler.CreateBody without the GotosToChainedLabelsAcrossStates branch -> CS0159
@@ -644,23 +622,15 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
         // A CUDA project exports its device code by default: its consumers on the CPU paths run the managed state
         // machine of the device function, which the rejected jump leaves empty. The kernels run on the GPU as written
-        // mutant: ChainedLabelJumpChecks without the IsKernel check -> the gotos of the kernels too
-        // mutant: ChainedLabelJumpChecks without the ExportsDeviceCode check -> nothing
         // mutant: ReportHeldRefLocals with the kernels' sites on CUDA -> the generator reports the kernels too
         var id = GSharpDiagnostics.GotoToChainedLabelAcrossStates.Id;
-        Assert.Equal(
-            [(DiagnosticOrigin.Analyzer, 102, 13, 102, 25)],
-            run.Analyzer
-                .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))
-                .ToImmutableArray()
-                .Ranges(id)
-                .ToList());
-        Assert.True(run.Analyzer.Where(d => d.Id == id).ToHashSet().SetEquals(run.Generator.Where(d => d.Id == id)));
+        Assert.Empty(run.Analyzer.Where(d => d.Id == id));
+        Assert.Equal([(DiagnosticOrigin.Generator, 102, 13, 102, 25)], GeneratorRanges(run, id));
     }
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task ChainedLabelJump_GotoAcrossBarrier_ReportsGSH0040AloneFromAnalyzerAndGenerator()
+    public async Task ChainedLabelJump_GotoAcrossBarrier_ReportsGSH0040AloneAndGSH0121FromTheGeneratorOnly()
     {
         var compilation = RoslynTestUtility.CreateCompilation(
             RoslynTestUtility.ReadTestCase("Analyzers/BarrierUsage/ChainedLabelGotoBarrierKernels.cu.cs"));
@@ -668,11 +638,11 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
         var run = await KernelDiagnostics.RunCompilationAsync(compilation, "Cpu");
 
         // A goto across a barrier or a call that suspends gets GSH0040 only; one across a shuffle alone keeps GSH0121,
-        // though the method has a barrier before the chain. The generator reports the same, so a build without the
-        // analyzers stops at the same places
+        // though the method has a barrier before the chain. The generator reports both, so a build without the
+        // analyzers stops at the same places; GSH0121 comes from the generator alone
         // mutant: FindReported without the IsCrossBarrierGoto check -> GSH0121 at lines 31 and 50 too
         // mutant: IsCrossBarrierGoto given the goto of the lowered body -> GSH0121 at lines 31 and 50 too
-        // mutant: GSH0121 left out whenever the method has a barrier -> no GSH0121 at line 70
+        // mutant: HeldRefLocalSite.Collect skipping a method that has a barrier -> no GSH0121 at line 70
         // mutant: HeldRefLocalSite.Report without the CrossesBarrier branch -> the generator reports GSH0121 at 31 and 50
         var gsh0040 = GSharpDiagnostics.CrossBarrierGotoProhibited.Id;
         var gsh0121 = GSharpDiagnostics.GotoToChainedLabelAcrossStates.Id;
@@ -682,12 +652,13 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
         Assert.Equal(
             [(DiagnosticOrigin.Analyzer, 31, 13, 31, 25), (DiagnosticOrigin.Analyzer, 50, 13, 50, 25)],
             analyzer.Ranges(gsh0040).OrderBy(static r => r.StartLine).ToList());
-        Assert.Equal([(DiagnosticOrigin.Analyzer, 70, 13, 70, 25)], analyzer.Ranges(gsh0121).ToList());
+        Assert.Empty(analyzer.Ranges(gsh0121));
+        Assert.Equal([(DiagnosticOrigin.Generator, 70, 13, 70, 25)], GeneratorRanges(run, gsh0121));
         Assert.Equal(3, run.Generator.Length);
         Assert.True(run.Analyzer
-            .Where(d => d.Id == gsh0040 || d.Id == gsh0121)
+            .Where(d => d.Id == gsh0040)
             .ToHashSet()
-            .SetEquals(run.Generator));
+            .SetEquals(run.Generator.Where(d => d.Id == gsh0040)));
     }
 
     [Fact]
@@ -702,6 +673,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
             new Dictionary<string, string> { ["build_property.GSharpExportDeviceCode"] = "false" });
 
         Assert.DoesNotContain(run.Analyzer, static d => d.Id == GSharpDiagnostics.GotoToChainedLabelAcrossStates.Id);
+        // mutant: ReportHeldRefLocals without the early return for CUDA without the export -> the device function's GSH0121
         Assert.Empty(run.Generator);
         Assert.Empty(KernelDiagnostics.FindStatedFailures(run));
     }
@@ -739,7 +711,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
         // Sibling blocks may declare one label name. A goto is measured against the label C# binds it to, so a barrier
         // between the blocks is crossed by neither goto; one inside the goto's own block still is (GSH0040), and a
-        // chained goto across a shuffle alone stays GSH0121 from the analyzer and the generator
+        // chained goto across a shuffle alone stays GSH0121, from the generator
         // mutant: CrossBarrierChecks.FindTargetLabel by name -> GSH0040 at lines 31, 91 and 114 too
         // mutant: the nearest label of the name before the goto -> GSH0040 at line 114 (the forward goto)
         // mutant: FindReported finding the label by name -> no GSH0121 at line 91, the generator reports GSH0040 there
@@ -749,9 +721,9 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
             .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))
             .ToImmutableArray();
         Assert.Equal([(DiagnosticOrigin.Analyzer, 59, 17, 59, 28)], analyzer.Ranges(gsh0040).ToList());
-        Assert.Equal([(DiagnosticOrigin.Analyzer, 91, 17, 91, 29)], analyzer.Ranges(gsh0121).ToList());
+        Assert.Empty(analyzer.Ranges(gsh0121));
+        Assert.Equal([(DiagnosticOrigin.Generator, 91, 17, 91, 29)], GeneratorRanges(run, gsh0121));
         Assert.Single(run.Generator);
-        Assert.True(run.Analyzer.Where(d => d.Id == gsh0121).ToHashSet().SetEquals(run.Generator));
     }
 
     [Theory]
@@ -780,6 +752,237 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
         Assert.Contains("in a lambda or anonymous method", messages[0], StringComparison.Ordinal);
         Assert.Contains("in a local function", messages[1], StringComparison.Ordinal);
     }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task StructMemberAndCollectionBuilder_InDivergentBranchOrWithVariantArg_MatchesDirectCallDiagnostics(
+        string dialect)
+    {
+        const string testCase = "Analyzers/BarrierUsage/StructMemberBarrierKernels.cu.cs";
+        var actual = await RunAsync(testCase, dialect);
+        var gsh0039 = GSharpDiagnostics.CrossBarrierRefStructProhibited.Id;
+        var gsh0043 = GSharpDiagnostics.FixedBlockBarrierProhibited.Id;
+        var gsh0083 = GSharpDiagnostics.LaunchDependentDivergentBarrier.Id;
+        var gsh0084 = GSharpDiagnostics.BarrierAfterDivergentExit.Id;
+
+        Assert.Equal(
+            [
+                (gsh0084, 31, 13, 31, 31),
+                (gsh0084, 41, 13, 41, 31),
+                (gsh0084, 53, 13, 53, 31),
+                (gsh0084, 64, 13, 64, 31),
+                (gsh0084, 90, 13, 90, 31),
+                (gsh0084, 102, 13, 102, 31),
+                (gsh0084, 113, 13, 113, 31),
+                (gsh0084, 125, 13, 125, 31),
+                (gsh0084, 136, 13, 136, 31),
+                (gsh0083, 158, 17, 158, 58),
+                (gsh0083, 168, 36, 168, 42),
+                (gsh0084, 190, 13, 190, 31),
+                (gsh0083, 203, 13, 203, 59),
+                (gsh0083, 226, 13, 229, 14),
+                (gsh0043, 242, 25, 242, 32),
+                (gsh0083, 242, 25, 242, 32),
+                (gsh0083, 259, 21, 259, 27),
+                (gsh0084, 272, 13, 272, 31),
+                (gsh0084, 302, 13, 302, 31),
+                (gsh0083, 318, 11, 318, 20),
+                (gsh0084, 327, 9, 327, 18),
+                (gsh0084, 335, 17, 335, 59),
+                (gsh0083, 378, 52, 378, 56),
+                (gsh0083, 389, 13, 389, 19),
+                (gsh0084, 401, 13, 401, 31),
+                (gsh0083, 414, 9, 414, 15),
+                (gsh0083, 424, 9, 424, 15),
+                (gsh0083, 434, 9, 434, 13),
+                (gsh0083, 456, 13, 459, 14),
+                (gsh0039, 478, 19, 478, 20),
+                (gsh0039, 517, 19, 517, 20),
+                (gsh0083, 528, 9, 528, 39),
+                (gsh0084, 559, 13, 559, 31),
+                (gsh0084, 570, 13, 570, 31),
+                (gsh0084, 581, 13, 581, 31),
+                (gsh0084, 592, 13, 592, 31),
+                (gsh0084, 603, 13, 603, 31),
+                (gsh0084, 614, 13, 614, 31),
+                (gsh0084, 627, 13, 627, 31),
+                (gsh0084, 638, 13, 638, 31),
+                (gsh0083, 650, 17, 650, 56),
+                (gsh0083, 659, 17, 659, 57),
+                (gsh0083, 675, 17, 675, 55),
+                (gsh0083, 696, 13, 696, 30),
+                (gsh0083, 721, 17, 721, 53),
+                (gsh0083, 730, 17, 730, 54),
+                (gsh0084, 749, 13, 749, 31),
+                (gsh0084, 771, 13, 771, 31),
+                (gsh0084, 793, 13, 793, 31),
+                (gsh0083, 896, 16, 896, 62)
+            ],
+            actual);
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.Boundary)]
+    public async Task PartialPolymorphicRecursion_AnalyzerAndGenerator_ReportGSH0123WithoutOverflow(string dialect)
+    {
+        const string Source = """
+            using Kassyi.GSharp.Core;
+
+            namespace PartialPolyAnalyzerCases;
+
+            public struct PolyWrap<T>
+            {
+                public T Value;
+            }
+
+            public static partial class Kernels
+            {
+                [GpuDeviceFunction]
+                public static partial void PartialPolyNonExtAttrDef<T>(int depth, T value);
+
+                public static partial void PartialPolyNonExtAttrDef<T>(int depth, T value)
+                {
+                    if (depth <= 0)
+                    {
+                        return;
+                    }
+
+                    PartialPolyNonExtAttrDef<PolyWrap<T>>(depth - 1, new PolyWrap<T> { Value = value });
+                }
+
+                [GpuKernel]
+                public static void PartialPolyNonExtAttrDefKernel(int[] data)
+                {
+                    PartialPolyNonExtAttrDef(2, 0);
+                    Gpu.SyncThreads();
+                    data[0] = 1;
+                }
+
+                public static partial void PartialPolyNonExtAttrImpl<T>(int depth, T value);
+
+                [GpuDeviceFunction]
+                public static partial void PartialPolyNonExtAttrImpl<T>(int depth, T value)
+                {
+                    if (depth <= 0)
+                    {
+                        return;
+                    }
+
+                    PartialPolyNonExtAttrImpl<PolyWrap<T>>(depth - 1, new PolyWrap<T> { Value = value });
+                }
+
+                [GpuKernel]
+                public static void PartialPolyNonExtAttrImplKernel(int[] data)
+                {
+                    PartialPolyNonExtAttrImpl(2, 0);
+                    Gpu.SyncThreads();
+                    data[0] = 1;
+                }
+
+                [GpuDeviceFunction]
+                public static partial int PartialPolyExtAttrDef<T>(this int depth, T value);
+
+                public static partial int PartialPolyExtAttrDef<T>(this int depth, T value) =>
+                    depth <= 0 ? 0 : (depth - 1).PartialPolyExtAttrDef(new PolyWrap<T> { Value = value });
+
+                [GpuKernel]
+                public static void PartialPolyExtAttrDefKernel(int[] data)
+                {
+                    data[0] = 2.PartialPolyExtAttrDef(0);
+                    Gpu.SyncThreads();
+                }
+
+                public static partial int PartialPolyExtAttrImpl<T>(this int depth, T value);
+
+                [GpuDeviceFunction]
+                public static partial int PartialPolyExtAttrImpl<T>(this int depth, T value) =>
+                    depth <= 0 ? 0 : (depth - 1).PartialPolyExtAttrImpl(new PolyWrap<T> { Value = value });
+
+                [GpuKernel]
+                public static void PartialPolyExtAttrImplKernel(int[] data)
+                {
+                    data[0] = 2.PartialPolyExtAttrImpl(0);
+                    Gpu.SyncThreads();
+                }
+
+                [GpuDeviceFunction]
+                public static partial void PartialPolyIndirectAttrDef<T>(int depth, T value);
+
+                public static partial void PartialPolyIndirectAttrDef<T>(int depth, T value)
+                {
+                    if (depth <= 0)
+                    {
+                        return;
+                    }
+
+                    PartialPolyIndirectHelperDef(depth, value);
+                }
+
+                [GpuDeviceFunction]
+                public static void PartialPolyIndirectHelperDef<U>(int depth, U value) =>
+                    PartialPolyIndirectAttrDef(depth - 1, new PolyWrap<U> { Value = value });
+
+                [GpuKernel]
+                public static void PartialPolyIndirectAttrDefKernel(int[] data)
+                {
+                    PartialPolyIndirectAttrDef(2, 0);
+                    Gpu.SyncThreads();
+                    data[0] = 1;
+                }
+
+                public static partial void PartialPolyIndirectAttrImpl<T>(int depth, T value);
+
+                [GpuDeviceFunction]
+                public static partial void PartialPolyIndirectAttrImpl<T>(int depth, T value)
+                {
+                    if (depth <= 0)
+                    {
+                        return;
+                    }
+
+                    PartialPolyIndirectHelperImpl(depth, value);
+                }
+
+                [GpuDeviceFunction]
+                public static void PartialPolyIndirectHelperImpl<U>(int depth, U value) =>
+                    PartialPolyIndirectAttrImpl(depth - 1, new PolyWrap<U> { Value = value });
+
+                [GpuKernel]
+                public static void PartialPolyIndirectAttrImplKernel(int[] data)
+                {
+                    PartialPolyIndirectAttrImpl(2, 0);
+                    Gpu.SyncThreads();
+                    data[0] = 1;
+                }
+            }
+            """;
+
+        var compilation = RoslynTestUtility.CreateCompilation(Source);
+        Assert.Empty(compilation.GetDiagnostics()
+            .Where(static d => d.Severity == DiagnosticSeverity.Error)
+            .Select(static d => d.ToString()));
+        var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
+        var gsh0123 = GSharpDiagnostics.GenericDeviceFunctionNotCompiled.Id;
+        var stated = KernelDiagnostics.FindStatedFailures(run);
+
+        Assert.Equal(8, run.Analyzer.Count(d => d.Id == gsh0123));
+        Assert.Empty(run.Generator);
+        Assert.Equal(8, stated.Count);
+        Assert.All(stated, static f => Assert.True(f.IsReported, f.Failure));
+    }
+
+    private static List<(DiagnosticOrigin Origin, int StartLine, int StartColumn, int EndLine, int EndColumn)>
+        GeneratorRanges(KernelDiagnosticsRun run, string id) =>
+        run.Generator
+            .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Generator, d))
+            .ToImmutableArray()
+            .Ranges(id)
+            .OrderBy(static r => r.StartLine)
+            .ToList();
 
     private static async Task<IReadOnlyList<(string Id, int StartLine, int StartCol, int EndLine, int EndCol)>> RunAsync(
         string relativeTestCasePath, string dialect = "Cuda")

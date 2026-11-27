@@ -241,6 +241,62 @@ public static partial class FallbackCases
     {
         NonPartialHolder.NonPartialSuspendingHelper(data);
     }
+
+    [GpuDeviceFunction]
+    public static int StructCtorDeviceHelper(int value)
+    {
+        var holder = new FallbackBarrierCtor(value);
+        return holder.Value;
+    }
+
+    [GpuKernel]
+    public static void StructCtorBarrierKernel(int[] data)
+    {
+        var holder = new FallbackBarrierCtor(data[ThreadIndex.X]);
+        data[ThreadIndex.X] = holder.Value;
+    }
+
+    [GpuDeviceFunction]
+    public static int GridSyncStructCtorDeviceHelper(int value)
+    {
+        var holder = new FallbackGridSyncCtor(value);
+        return holder.Value;
+    }
+
+    [GpuKernel]
+    public static void GridSyncStructCtorKernel(int[] data)
+    {
+        var holder = new FallbackGridSyncCtor(data[ThreadIndex.X]);
+        data[ThreadIndex.X] = holder.Value;
+    }
+
+    [GpuKernel]
+    public static void CallsGridSyncStructCtorDeviceKernel(int[] data)
+    {
+        data[ThreadIndex.X] = GridSyncStructCtorDeviceHelper(data[ThreadIndex.X]);
+    }
+}
+
+public struct FallbackGridSyncCtor
+{
+    public int Value;
+
+    public FallbackGridSyncCtor(int value)
+    {
+        Gpu.SyncGrid();
+        Value = value;
+    }
+}
+
+public struct FallbackBarrierCtor
+{
+    public int Value;
+
+    public FallbackBarrierCtor(int value)
+    {
+        Gpu.SyncThreads();
+        Value = value;
+    }
 }
 
 public partial struct InstanceDeviceHolder

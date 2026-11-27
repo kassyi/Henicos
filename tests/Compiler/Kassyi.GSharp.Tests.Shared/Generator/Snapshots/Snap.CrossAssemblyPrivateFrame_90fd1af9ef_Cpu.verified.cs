@@ -235,6 +235,9 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__CrossAssemblyPrivateFrameKernels__AddHundred(int[] buffer, int tid) => global::Kassyi.GSharp.Tests.DeviceLibrary.LibPrivateFrame.__gsharp_stackmodel_Kassyi__GSharp__Tests__DeviceLibrary__LibPrivateFrame__KeepAcrossBarrier(buffer, tid) + 100;
+
 }
 }
 

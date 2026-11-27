@@ -1,0 +1,21 @@
+namespace Kassyi.GSharp.Compiler.Transpiler;
+
+/// <summary>
+/// Eligibility of a suspending <c>[GpuDeviceFunction]</c> declared in another assembly for the managed stack model
+/// (<c>GSharpManagedBarrierModel=Stack</c>).
+/// </summary>
+internal static class ImportedStackForms
+{
+    /// <summary>
+    /// Whether <paramref name="function"/> has a usable managed stack form in its own assembly: its export record is
+    /// compatible with this G#, did not fail for the C++ dialect, carries <c>ManagedStackForm</c>, and reaches neither
+    /// a grid barrier nor a warp collective (neither runs on the managed stack across assemblies yet).
+    /// </summary>
+    public static bool HasManagedForm(IMethodSymbol function, Compilation compilation) =>
+        DeviceExportTable.TryFindFunction(function, compilation, out var imported) &&
+        imported.IsCompatible &&
+        !imported.FailedFor(isCuda: false) &&
+        imported.Record.Traits.ManagedStackForm &&
+        !SuspensionAnalysis.ReachesGridBarrierOnStack(function, compilation) &&
+        !SuspensionAnalysis.ReachesWarpShuffleOnStack(function, compilation);
+}

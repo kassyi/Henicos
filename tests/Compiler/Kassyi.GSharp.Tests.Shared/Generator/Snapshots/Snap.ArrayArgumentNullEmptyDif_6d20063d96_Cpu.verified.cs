@@ -292,6 +292,24 @@ global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gri
 }
 return;
 }
+// Throw for overlapping arguments that no CUDA address aligns, as the CUDA launcher does
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(s), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
+{
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[12];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = (global::System.IntPtr)s.Length * sizeof(global::System.Int32);
+__gsharp_alias_ranges[2] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[3] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[4] = 4;
+__gsharp_alias_ranges[5] = 0;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[7] = (global::System.IntPtr)(o?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.ThrowIfNoDeviceAlignment(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 12), new byte[] {19, 11}, "s,o", stackalloc int[] {4, 4});
+}
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
 string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
@@ -645,6 +663,24 @@ global::System.Int32[] __gsharp_csharp_arg_2 = o;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.ArrayArgumentNullEmptyDifferentialKernels.MemoryKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2));
 return;
 }
+// Throw for overlapping arguments that no CUDA address aligns, as the CUDA launcher does
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(m.Span), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
+{
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[12];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = (global::System.IntPtr)m.Length * sizeof(global::System.Int32);
+__gsharp_alias_ranges[2] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[3] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[4] = 4;
+__gsharp_alias_ranges[5] = 0;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[7] = (global::System.IntPtr)(o?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.ThrowIfNoDeviceAlignment(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 12), new byte[] {3, 11}, "m,o", stackalloc int[] {4, 4});
+}
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
 string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
@@ -997,6 +1033,24 @@ global::Kassyi.GSharp.Tests.Shared.Differential.ArrayArgumentRead __gsharp_cshar
 global::System.Int32[] __gsharp_csharp_arg_2 = o;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.ArrayArgumentNullEmptyDifferentialKernels.SegmentKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2));
 return;
+}
+// Throw for overlapping arguments that no CUDA address aligns, as the CUDA launcher does
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(g.AsSpan()), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
+{
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[12];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = (global::System.IntPtr)g.Count * sizeof(global::System.Int32);
+__gsharp_alias_ranges[2] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[3] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[4] = 4;
+__gsharp_alias_ranges[5] = 0;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[7] = (global::System.IntPtr)(o?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.ThrowIfNoDeviceAlignment(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 12), new byte[] {3, 11}, "g,o", stackalloc int[] {4, 4});
 }
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
@@ -1383,6 +1437,24 @@ if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ArrayArgumentNullEmptyDifferentialKernels.SegmentForEachBarrierKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
 }
+// Throw for overlapping arguments that no CUDA address aligns, as the CUDA launcher does
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(g.AsSpan()), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
+{
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[12];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = (global::System.IntPtr)g.Count * sizeof(global::System.Int32);
+__gsharp_alias_ranges[2] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[3] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[4] = 4;
+__gsharp_alias_ranges[5] = 0;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = (global::System.IntPtr)(o?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.ThrowIfNoDeviceAlignment(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 12), new byte[] {3, 11}, "g,o", stackalloc int[] {4, 4});
+}
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
 string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
@@ -1767,6 +1839,24 @@ global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemByte
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ArrayArgumentNullEmptyDifferentialKernels.ImmutableForEachBarrierKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
+}
+// Throw for overlapping arguments that no CUDA address aligns, as the CUDA launcher does
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(g.AsSpan()), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
+{
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[12];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = (global::System.IntPtr)g.AsSpan().Length * sizeof(global::System.Int32);
+__gsharp_alias_ranges[2] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[3] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[4] = 4;
+__gsharp_alias_ranges[5] = 0;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = (global::System.IntPtr)(o?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.ThrowIfNoDeviceAlignment(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 12), new byte[] {1, 11}, "g,o", stackalloc int[] {4, 4});
 }
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
@@ -2175,6 +2265,24 @@ global::System.Int32[] __gsharp_csharp_arg_2 = o;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.ArrayArgumentNullEmptyDifferentialKernels.ImmutableKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2));
 return;
 }
+// Throw for overlapping arguments that no CUDA address aligns, as the CUDA launcher does
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(ia.AsSpan()), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
+{
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[12];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = (global::System.IntPtr)ia.AsSpan().Length * sizeof(global::System.Int32);
+__gsharp_alias_ranges[2] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[3] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[4] = 4;
+__gsharp_alias_ranges[5] = 0;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[7] = (global::System.IntPtr)(o?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.ThrowIfNoDeviceAlignment(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 12), new byte[] {1, 11}, "ia,o", stackalloc int[] {4, 4});
+}
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
 string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
@@ -2519,6 +2627,24 @@ global::Kassyi.GSharp.Tests.Shared.Differential.ArrayArgumentRead __gsharp_cshar
 global::System.Int32[] __gsharp_csharp_arg_2 = o;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.ArrayArgumentNullEmptyDifferentialKernels.NullableMemoryKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2));
 return;
+}
+// Throw for overlapping arguments that no CUDA address aligns, as the CUDA launcher does
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(m.GetValueOrDefault().Span), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
+{
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[12];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = (global::System.IntPtr)m.GetValueOrDefault().Length * sizeof(global::System.Int32);
+__gsharp_alias_ranges[2] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[3] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[4] = 4;
+__gsharp_alias_ranges[5] = 0;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[7] = (global::System.IntPtr)(o?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.ThrowIfNoDeviceAlignment(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 12), new byte[] {3, 11}, "m,o", stackalloc int[] {4, 4});
 }
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
@@ -2897,6 +3023,24 @@ global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gri
 }
 return;
 }
+// Throw for overlapping arguments that no CUDA address aligns, as the CUDA launcher does
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(s), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
+{
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[12];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = (global::System.IntPtr)s.Length * sizeof(global::System.Int32);
+__gsharp_alias_ranges[2] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[3] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[4] = 4;
+__gsharp_alias_ranges[5] = 0;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[7] = (global::System.IntPtr)(o?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.ThrowIfNoDeviceAlignment(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 12), new byte[] {17, 11}, "s,o", stackalloc int[] {4, 4});
+}
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
 string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
@@ -3250,6 +3394,24 @@ global::System.Int32[] __gsharp_csharp_arg_2 = o;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.ArrayArgumentNullEmptyDifferentialKernels.ReadOnlyMemoryKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2));
 return;
 }
+// Throw for overlapping arguments that no CUDA address aligns, as the CUDA launcher does
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(m.Span), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
+{
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[12];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = (global::System.IntPtr)m.Length * sizeof(global::System.Int32);
+__gsharp_alias_ranges[2] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[3] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[4] = 4;
+__gsharp_alias_ranges[5] = 0;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[7] = (global::System.IntPtr)(o?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.ThrowIfNoDeviceAlignment(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 12), new byte[] {1, 11}, "m,o", stackalloc int[] {4, 4});
+}
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
 string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
@@ -3570,6 +3732,24 @@ global::System.Nullable<global::System.ArraySegment<global::System.Int32>> __gsh
 global::System.Int32[] __gsharp_csharp_arg_1 = o;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.ArrayArgumentNullEmptyDifferentialKernels.NullableSegmentKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
 return;
+}
+// Throw for overlapping arguments that no CUDA address aligns, as the CUDA launcher does
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(g.GetValueOrDefault().AsSpan()), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
+{
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[12];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = (global::System.IntPtr)g.GetValueOrDefault().Count * sizeof(global::System.Int32);
+__gsharp_alias_ranges[2] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[3] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[4] = 4;
+__gsharp_alias_ranges[5] = 0;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = (global::System.IntPtr)(o?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.ThrowIfNoDeviceAlignment(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 12), new byte[] {3, 11}, "g,o", stackalloc int[] {4, 4});
 }
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
@@ -3893,6 +4073,24 @@ global::System.Nullable<global::System.Collections.Immutable.ImmutableArray<glob
 global::System.Int32[] __gsharp_csharp_arg_1 = o;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.ArrayArgumentNullEmptyDifferentialKernels.NullableImmutableKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
 return;
+}
+// Throw for overlapping arguments that no CUDA address aligns, as the CUDA launcher does
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(ia.GetValueOrDefault().AsSpan()), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
+{
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[12];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = (global::System.IntPtr)ia.GetValueOrDefault().AsSpan().Length * sizeof(global::System.Int32);
+__gsharp_alias_ranges[2] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[3] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[4] = 4;
+__gsharp_alias_ranges[5] = 0;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = (global::System.IntPtr)(o?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.ThrowIfNoDeviceAlignment(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 12), new byte[] {1, 11}, "ia,o", stackalloc int[] {4, 4});
 }
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
@@ -4218,6 +4416,30 @@ global::System.Nullable<global::System.Memory<global::System.Int32>> __gsharp_cs
 global::System.Int32[] __gsharp_csharp_arg_2 = o;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.ArrayArgumentNullEmptyDifferentialKernels.TwoNullableMemoryKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2));
 return;
+}
+// Throw for overlapping arguments that no CUDA address aligns, as the CUDA launcher does
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(a.GetValueOrDefault().Span), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(b.GetValueOrDefault().Span), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
+{
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[18];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = (global::System.IntPtr)a.GetValueOrDefault().Length * sizeof(global::System.Int32);
+__gsharp_alias_ranges[2] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[3] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[4] = 4;
+__gsharp_alias_ranges[5] = 0;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = (global::System.IntPtr)b.GetValueOrDefault().Length * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+__gsharp_alias_ranges[12] = (global::System.IntPtr)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[13] = (global::System.IntPtr)(o?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[14] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[15] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[16] = 4;
+__gsharp_alias_ranges[17] = 0;
+global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.ThrowIfNoDeviceAlignment(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 18), new byte[] {3, 3, 11}, "a,b,o", stackalloc int[] {4, 4, 4});
 }
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";

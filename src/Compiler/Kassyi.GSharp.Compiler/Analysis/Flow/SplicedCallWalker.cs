@@ -65,7 +65,7 @@ internal static class SplicedCallWalker
 
     // M(out local), M(out parameter): the callee writes the variable when it returns (OnCallReturned) and reads nothing
     // of it; a ref local or ref parameter passed as out is a location, which is read
-    private static bool IsWrittenByCallee(IArgumentOperation argument) =>
+    internal static bool IsWrittenByCallee(IArgumentOperation argument) =>
         argument is
         {
             Parameter.RefKind: RefKind.Out,
@@ -78,31 +78,98 @@ internal static class SplicedCallWalker
     private static SplitPoint? GetSplit(Compilation compilation, IInvocationOperation invocation,
         ControlFlowGraph graph)
     {
+        if (TryGetImplicitUsingDispose(invocation, compilation, out var dispose, out var usingSyntax))
+        {
+            return GetMemberSplit(compilation, dispose, invocation.Arguments, invocation, graph, usingSyntax);
+        }
+
         var intrinsic = SyncIntrinsicClassifier.Classify(invocation.TargetMethod);
         if (intrinsic.Kind is SyncIntrinsicKind.BlockBarrier or SyncIntrinsicKind.GridBarrier)
         {
-            return new SplitPoint(SplitKind.Call, invocation.Syntax, intrinsic.Scope, null, graph);
+            return new SplitPoint(SplitKind.Call, invocation.Syntax, intrinsic.Scope, null, graph, invocation);
         }
 
         return intrinsic.SplitsStateMachine
-            ? new SplitPoint(SplitKind.Call, invocation.Syntax, null, null, graph)
+            ? new SplitPoint(SplitKind.Call, invocation.Syntax, null, null, graph, invocation)
             : GetSuspendingSplit(compilation, invocation, graph);
+    }
+
+    // Roslyn's ControlFlowGraph lowers `using` / `using var` Dispose() calls into Finally blocks as an
+    // IInvocationOperation on the VariableDeclaratorSyntax or the UsingStatementSyntax expression, targeting
+    // IDisposable.Dispose (or the ref-struct Dispose pattern). Map it back to the concrete Dispose method and the
+    // enclosing using syntax so SplitsAt and Sites match DirectCallees.Of.
+    private static bool TryGetImplicitUsingDispose(IInvocationOperation invocation, Compilation compilation,
+        [NotNullWhen(true)] out IMethodSymbol? dispose, [NotNullWhen(true)] out SyntaxNode? usingSyntax)
+    {
+        usingSyntax = invocation.Syntax switch
+        {
+            VariableDeclaratorSyntax { Parent.Parent: (UsingStatementSyntax or LocalDeclarationStatementSyntax) and var owner } =>
+                owner,
+            var expr when invocation.TargetMethod is { Name: nameof(IDisposable.Dispose), Parameters.Length: 0, ReturnsVoid: true } =>
+                GetEnclosingUsingStatement(expr),
+            _ => null
+        };
+
+        if (usingSyntax == null)
+        {
+            dispose = null;
+            return false;
+        }
+
+        if (invocation.Instance?.Type is INamedTypeSymbol resourceType &&
+            UsingDisposeLookup.Find(resourceType, compilation) is { } concreteDispose)
+        {
+            dispose = concreteDispose;
+            return true;
+        }
+
+        dispose = invocation.TargetMethod;
+        return true;
+    }
+
+    private static UsingStatementSyntax? GetEnclosingUsingStatement(SyntaxNode expression)
+    {
+        var current = expression;
+        while (current.Parent is ParenthesizedExpressionSyntax parenthesized)
+        {
+            current = parenthesized;
+        }
+
+        return current.Parent is UsingStatementSyntax usingStmt && usingStmt.Expression == current
+            ? usingStmt
+            : null;
     }
 
     // A call of a device function that suspends: a barrier site when it reaches a barrier
     private static SplitPoint? GetSuspendingSplit(Compilation compilation, IInvocationOperation invocation,
-        ControlFlowGraph graph)
+        ControlFlowGraph graph) =>
+        GetMemberSplit(compilation, invocation.TargetMethod, invocation.Arguments, invocation, graph);
+
+    internal static SplitPoint? GetMemberSplit(Compilation compilation, IMethodSymbol method,
+        ImmutableArray<IArgumentOperation> arguments, IOperation operation, ControlFlowGraph graph,
+        SyntaxNode? siteSyntax = null)
     {
-        var method = invocation.TargetMethod;
+        var syntax = siteSyntax ?? operation.Syntax;
         if (!SuspensionAnalysis.IsSuspendingFunction(method, compilation))
         {
             return null;
         }
 
         return SuspensionAnalysis.ReachesBlockBarrier(method, compilation)
-            ? new SplitPoint(SplitKind.Call, invocation.Syntax, SuspensionAnalysis.GetBarrierScope(method, compilation),
-                invocation, graph)
-            : new SplitPoint(SplitKind.Call, invocation.Syntax, null, null, graph);
+            ? new SplitPoint(SplitKind.Call, syntax, SuspensionAnalysis.GetBarrierScope(method, compilation),
+                new BarrierCallSite(method, arguments, operation, syntax), graph, operation, method)
+            : new SplitPoint(SplitKind.Call, syntax, null, null, graph, operation, method);
+    }
+
+    internal static void RecordMethodSplitIfSuspending(SplicedFlowContext context, IMethodSymbol? method,
+        IOperation operation, ControlFlowGraph graph, SyntaxNode? siteSyntax = null)
+    {
+        if (method != null &&
+            GetMemberSplit(context.Model.Compilation, method, ImmutableArray<IArgumentOperation>.Empty, operation, graph,
+                siteSyntax) is { } split)
+        {
+            context.Record((recorder, node) => recorder.OnSplit(split, node), context.Current.Index);
+        }
     }
 
     // <arguments> <body>: the body where it is called, once for SyncGrid with a split in each gap, in a loop for

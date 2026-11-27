@@ -221,7 +221,7 @@ function checkRealConfigIntegration(assert, createEngine) {
     ['Bash', 'just fuzz-diff cpu 5', false, ['--weight', '2']],
     ['PowerShell', `dotnet test Kassyi.GSharp.Tests.Cpu --filter "Name~it's" -p:Y='a b'`, false, []],
     ['PowerShell', 'dotnet build X && dotnet test Kassyi.GSharp.Tests.Cuda', true, []],
-    ['PowerShell', 'just test-category Runtime', true, []],
+    ['PowerShell', 'just test-differential-cuda', true, []],
   ];
   for (const [tool, command, gpu, options] of rewritten) {
     const kind = tool === 'PowerShell' ? 'pwsh' : 'bash';

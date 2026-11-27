@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Compiler.Ir.Expressions;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Compiler.Ir.Splitting;
 
@@ -26,7 +27,7 @@ internal static class IrReadOnlyReceivers
     /// (a superset: a field written in a constructor counts as read-only too).
     /// </param>
     public static bool IsCopiedBeforeTheCall(IrExpression? receiver, IMethodSymbol? member, IMethodSymbol? enclosing) =>
-        receiver is { Category: IrCategory.Location, Type: { IsValueType: true, IsRefLikeType: false } type } &&
+        receiver is { Category: IrCategory.Location, Type: { IsValueType: true } type } &&
         member is { IsReadOnly: false, IsStatic: false } &&
         !type.IsReadOnly &&
         IsReadOnlyVariable(receiver, enclosing);
@@ -35,8 +36,8 @@ internal static class IrReadOnlyReceivers
     /// Whether <paramref name="location"/> is a variable C# does not let a member write: an <see langword="in"/> or
     /// <see langword="ref readonly"/> parameter or local, <see langword="this"/> of a <see langword="readonly"/>
     /// member, a <see langword="readonly"/> field (except one of the struct read through <see langword="this"/> in a
-    /// constructor of that struct, which the constructor may write), a field of such a struct variable, or a reference
-    /// returned as <see langword="ref readonly"/>.
+    /// constructor of that struct, which the constructor may write), a field of such a struct variable, a reference
+    /// returned as <see langword="ref readonly"/>, or a <see langword="ref"/> conditional with a readonly branch.
     /// </summary>
     /// <param name="location">The location read.</param>
     /// <param name="enclosing">
@@ -45,11 +46,20 @@ internal static class IrReadOnlyReceivers
     /// </param>
     public static bool IsReadOnlyVariable(IrExpression location, IMethodSymbol? enclosing) => location switch
     {
-        IrVariableReference { Variable.RefKind: RefKind.In or RefKind.RefReadOnlyParameter } => true,
+        IrVariableReference { Variable.RefKind: RefKind.In or RefKind.RefReadOnlyParameter or RefKind.RefReadOnly } => true,
         IrFieldReference { Field.IsReadOnly: true } field => !IsWrittenInConstructor(field, enclosing),
         IrFieldReference { Receiver: { Type.IsValueType: true } receiver } => IsReadOnlyVariable(receiver, enclosing),
         IrCall { Method.ReturnsByRefReadonly: true } => true,
         IrPropertyReference { Property.ReturnsByRefReadonly: true } => true,
+        IrConditional { IsRef: true } conditional => conditional.Condition.ConstantValue switch
+        {
+            { HasValue: true, Value: true } => IsReadOnlyVariable(conditional.WhenTrue, enclosing),
+            { HasValue: true, Value: false } => IsReadOnlyVariable(conditional.WhenFalse, enclosing),
+            _ => IsReadOnlyVariable(conditional.WhenTrue, enclosing) ||
+                 IsReadOnlyVariable(conditional.WhenFalse, enclosing)
+        },
+        IrOpaqueExpression { Operation: IInlineArrayAccessOperation inlineArray } =>
+            ReadOnlyReceivers.IsReadOnlyVariable(inlineArray),
         _ => false
     };
 

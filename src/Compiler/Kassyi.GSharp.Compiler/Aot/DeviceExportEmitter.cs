@@ -493,6 +493,12 @@ internal static class DeviceExportEmitter
                 writer.Append($", {AttributeNames.Traits.ReachesGeneratedMeaning} = ");
                 writer.Append(traits.ReachesGeneratedMeaning ? "true" : "false");
             }
+
+            AppendBoolProperty(writer, AttributeNames.Traits.ReachesWarpShuffle, traits.ReachesWarpShuffle);
+            AppendBoolProperty(writer, AttributeNames.Traits.ReachesActiveMask, traits.ReachesActiveMask);
+            AppendBoolProperty(writer, AttributeNames.Traits.ReachesGridBarrier, traits.ReachesGridBarrier);
+            AppendBoolProperty(writer, AttributeNames.Traits.ManagedStackForm, traits.ManagedStackForm);
+            AppendBoolProperty(writer, AttributeNames.Traits.StackOnly, traits.StackOnly);
         }
 
         writer.AppendLine("]");

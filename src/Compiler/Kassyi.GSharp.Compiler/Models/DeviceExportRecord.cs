@@ -63,7 +63,12 @@ internal readonly record struct DeviceExportRecord(
         bool ReachesArrivalBarrier = false,
         bool ReachesSharedMemory = false,
         bool ReachesGeneratedMeaning = false,
-        bool PrivateManagedFrame = false)
+        bool PrivateManagedFrame = false,
+        bool ReachesWarpShuffle = false,
+        bool ReachesActiveMask = false,
+        bool ReachesGridBarrier = false,
+        bool ManagedStackForm = false,
+        bool StackOnly = false)
     {
         /// <summary>
         /// The traits of a record that is not a transpiled function (a struct, or a function that failed): no frame, no
@@ -95,7 +100,7 @@ internal readonly record struct DeviceExportRecord(
     /// finds the records by those names. A change of <c>InternalNames.yml</c> or of a prelude changes
     /// <see cref="CurrentPreludeHash"/> by itself.
     /// </remarks>
-    public const int CurrentFormatVersion = 5;
+    public const int CurrentFormatVersion = 6;
 
     /// <summary>
     /// The hash that this G# writes into its records and requires of the records it imports

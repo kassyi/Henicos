@@ -179,6 +179,15 @@ internal sealed class FlowCaptureTable
         switch (operation)
         {
             case IFlowAnonymousFunctionOperation:
+            case IObjectCreationOperation:
+                return;
+            case IInvocationOperation invocation
+                when !invocation.TargetMethod.ReturnsByRef && !invocation.TargetMethod.ReturnsByRefReadonly:
+                if (invocation.Type is { IsRefLikeType: true } && invocation.Instance is { } instance)
+                {
+                    CollectCapturedReads(instance, reads, isDeclaredInFrame);
+                }
+
                 return;
             case ILocalReferenceOperation { Local: var local } when !isDeclaredInFrame(local):
                 reads.Add(local);

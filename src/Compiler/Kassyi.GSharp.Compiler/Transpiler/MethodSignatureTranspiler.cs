@@ -26,7 +26,8 @@ internal static class MethodSignatureTranspiler
         var method = plan.Declaration;
         var methodSymbol = plan.Symbol;
         var isDevice = plan.Kind != MethodEmissionKind.Kernel;
-        if (isDevice && methodSymbol != null && GpuCodeConstraints.IsInstanceDeviceFunction(methodSymbol))
+        var receiver = isDevice ? ReceiverParameter.Plan(in plan) : default;
+        if (receiver.FailsUnsupported && methodSymbol != null)
         {
             context.Reporter.Fail(
                 GSharpDiagnostics.InstanceDeviceFunctionNotSupported,
@@ -79,23 +80,33 @@ internal static class MethodSignatureTranspiler
         context.Emitter.Writer.Append($" {methodName}");
         using (context.Emitter.Writer.Parentheses())
         {
+            if (receiver.Type is { } receiverType)
+            {
+                StructOrdering.RegisterUsedStructIfApplicable(receiverType, ref context);
+                context.Emitter.Writer.AppendIf(receiver.IsConst, "const ");
+                context.Emitter.Dialect.AppendType(ref context, receiverType);
+                context.Emitter.Writer.Append($"* {GSharpInternalNames.Lowering.ReceiverParameter}");
+                context.Emitter.Writer.AppendIf(method.ParameterList.Parameters.Count > 0, ", ");
+            }
+
             WriteParameters(method.ParameterList.Parameters, isDevice, ref context,
                 contextName != null ? copiedParameters : null);
 
+            var hasPrecedingParams = receiver.HasParameter || method.ParameterList.Parameters.Count > 0;
             if (takesTable)
             {
-                DynamicSharedMemoryEmitter.AppendTableParameter(method.ParameterList.Parameters.Count > 0, ref context);
+                DynamicSharedMemoryEmitter.AppendTableParameter(hasPrecedingParams, ref context);
             }
 
             // The native stack form of a device function that reaches a warp collective takes the offset of its frame
             if (takesWarpFrame)
             {
-                StackWarpEmitter.AppendFrameParameter(method.ParameterList.Parameters.Count > 0, ref context);
+                StackWarpEmitter.AppendFrameParameter(hasPrecedingParams, ref context);
             }
 
             if (contextName != null)
             {
-                if (method.ParameterList.Parameters.Count > 0)
+                if (hasPrecedingParams)
                 {
                     context.Emitter.Writer.Append(", ");
                 }
@@ -111,7 +122,7 @@ internal static class MethodSignatureTranspiler
                 return;
             }
 
-            var written = method.ParameterList.Parameters.Count > 0 || contextName != null;
+            var written = hasPrecedingParams || contextName != null;
             var hidden = KernelHiddenParameters.For(method, methodSymbol, context.Query.SemanticModel,
                 context.Emitter.Dialect.IsCuda);
             if (hidden.ResultBuffer)
@@ -149,6 +160,15 @@ internal static class MethodSignatureTranspiler
     public static void WriteSuspendingDeviceSignature(MethodDeclarationSyntax method, IMethodSymbol methodSymbol,
         IReadOnlyCollection<string> copiedParameters, ref TranspileContext context)
     {
+        if (GpuCodeConstraints.IsInstanceDeviceFunction(methodSymbol))
+        {
+            context.Reporter.Fail(
+                GSharpDiagnostics.InstanceDeviceFunctionNotSupported,
+                method.Identifier.GetLocation(),
+                methodSymbol.ContainingType.Name,
+                methodSymbol.Name);
+        }
+
         FailUnsupportedParameterTypes(methodSymbol, ref context);
 
         var methodName = CppNameResolver.IsEmittedDeviceFunction(methodSymbol, context.Emitter.Dialect)

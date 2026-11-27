@@ -81,6 +81,23 @@ internal sealed class UniformityAnalysis
         return Run(new UniformityState(model, method, spliced, recorder, calleesInProgress));
     }
 
+    /// <summary>
+    /// Analyzes <paramref name="parts"/>, the initializer and body parts of <paramref name="method"/> in execution order,
+    /// for a call whose arguments vary as <paramref name="masks"/> says.
+    /// </summary>
+    public static UniformityAnalysis AnalyzeBodySequence(
+        IReadOnlyList<(ControlFlowGraph Graph, SemanticModel Model)> parts,
+        SemanticModel defaultModel,
+        IMethodSymbol method,
+        ArgumentMasks masks,
+        HashSet<CalleeCall> calleesInProgress)
+    {
+        var recorder = new UniformityRecorder(method, masks);
+        var spliced = SplicedFlowBuilder.BuildSequence(parts, defaultModel,
+            ImmutableArray.Create<IFlowRecorder>(recorder));
+        return Run(new UniformityState(defaultModel, method, spliced, recorder, calleesInProgress));
+    }
+
     /// <summary>Whether only some threads of a block reach the call or object creation <paramref name="node"/>.</summary>
     public bool IsReachedByPartOfBlock(SyntaxNode node) =>
         _state.Recorder.NodesOf.TryGetValue(node, out var nodes) &&

@@ -213,9 +213,10 @@ internal static class PropertyAccessorAssignment
             context.Visitor.Visit(receiver);
             writer.Append('.');
         }
-        else if (context.Emitter.StructConstructorType != null)
+        else if (context.Emitter.StructSelf.Form is SelfForm.ConstructorSelf or SelfForm.ReceiverParameter)
         {
-            writer.Append(GSharpInternalNames.Lowering.ConstructorSelf).Append('.');
+            ThisExpressionTranspilerRule.AppendSelf(ref context);
+            writer.Append('.');
         }
 
         writer.AppendCppName(CppNameResolver.Resolve(property, property.Name, context.Emitter.Dialect)).Append("()");

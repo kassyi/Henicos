@@ -102,12 +102,12 @@ internal static class CppNameResolver
     /// </summary>
     /// <remarks>
     /// Only the primary constructor sees the parameter; it is emitted as a factory function
-    /// (<see cref="Emitter.StructConstructorType"/> is set). Any other member that reads it (a property accessor or
-    /// <c>Dispose</c>, emitted as member functions) reads the hidden field, as in C#. Another constructor cannot read
-    /// it (CS9105).
+    /// (<see cref="SelfForm.ConstructorSelf"/> is set). Any other member that reads it (a property accessor or
+    /// <c>Dispose</c>, emitted as member functions, or an instance device function) reads the hidden field, as in C#.
+    /// Another constructor cannot read it (CS9105).
     /// </remarks>
     public static bool IsCapturedParameterReference(IParameterSymbol parameter, ref TranspileContext context) =>
-        context.Emitter.StructConstructorType == null &&
+        context.Emitter.StructSelf.Form != SelfForm.ConstructorSelf &&
         parameter.ContainingSymbol is IMethodSymbol constructor &&
         constructor.IsPrimaryConstructor() &&
         constructor.ContainingType is { } type &&
@@ -152,7 +152,8 @@ internal static class CppNameResolver
     /// than an intrinsic that the dialect maps to a built-in.
     /// </summary>
     public static bool IsEmittedDeviceFunction(IMethodSymbol method, ITranspilerDialect dialect) =>
-        method is { MethodKind: MethodKind.Ordinary, IsStatic: true } &&
+        method is { MethodKind: MethodKind.Ordinary } &&
+        (method.IsStatic || method.ContainingType is { IsValueType: true }) &&
         method.OriginalDefinition.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
         !dialect.TryMapIntrinsic(method, out _);
 

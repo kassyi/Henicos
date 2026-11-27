@@ -245,7 +245,7 @@ public sealed class MemoryExtensionsTranspilerRule : IInvocationTranspilerRule
         }
 
         if (model.GetTypeSymbol(expression) is not INamedTypeSymbol { TypeKind: TypeKind.Struct, IsGenericType: false } comparer ||
-            !GlobalCppNames.IsEmittedUserType(comparer))
+            !EmittedUserTypes.IsEmittedUserType(comparer))
         {
             context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, argument, ComparerNotStruct);
             return false;
@@ -278,7 +278,7 @@ public sealed class MemoryExtensionsTranspilerRule : IInvocationTranspilerRule
         }
 
         if (key is INamedTypeSymbol { TypeKind: TypeKind.Struct, IsGenericType: false } named &&
-            GlobalCppNames.IsEmittedUserType(named) &&
+            EmittedUserTypes.IsEmittedUserType(named) &&
             SortComparisonMembers.TryGetCompareTo(named, context.Query.SemanticModel.Compilation, out compareTo))
         {
             return true;
@@ -297,6 +297,7 @@ public sealed class MemoryExtensionsTranspilerRule : IInvocationTranspilerRule
         expression is AnonymousFunctionExpressionSyntax ||
         (expression is IdentifierNameSyntax or MemberAccessExpressionSyntax &&
          model.GetSymbol(expression) is IMethodSymbol target &&
+         target.IsStatic &&
          CppNameResolver.IsEmittedDeviceFunction(target, dialect));
 
     // Comparer<T>.Default, which .NET sorts with the default order (GenericArraySortHelper)
