@@ -135,6 +135,17 @@ function rewrite(segment, list, reason, context) {
   return result.undecided !== undefined ? result : { gpu: result.gpu, options: [] };
 }
 
+/**
+ * True when `run --gpu` would accept the command (share-refusal.ts, the same definition the queue client applies), so
+ * the hook may queue it with --gpu; false sends it with --gpu-exclusive. The TypeScript module is loaded on first use.
+ */
+function confirmSharedGpu(command, shell, options) {
+  if (!isPlainObject(options) || options.sharedRecipes === undefined) {
+    return true; // without the share options the client refuses nothing (shareOptions in share-rules.ts)
+  }
+  return require('./share-refusal.ts').sharedTurnRefusal(command, shell, options) === null;
+}
+
 module.exports = {
   name: './scripts/human/job-queue-henicos',
   validateOptions,
@@ -154,6 +165,7 @@ module.exports = {
   },
   legacyQueueScripts: ['build-queue.js'],
   rewrite,
+  confirmSharedGpu,
   messages: {
     denialText,
     additionalContext,

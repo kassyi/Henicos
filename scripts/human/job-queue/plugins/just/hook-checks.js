@@ -8,7 +8,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const justPlugin = require('./hook-rules.js');
-const { DryRunTimeoutMs, recipeQueue } = require('./justfile.js');
+const { DryRunTimeoutMs, expandsInShell, recipeQueue, runJustDryRun } = require('./justfile.js');
 
 const DefaultOptions = {
   hookRecipes: '^(test\\S*|coverage-diff|fuzz-\\S+|mutate|long-checks|bench\\S*|doctest)$',
@@ -221,6 +221,32 @@ function checks(assert, { createEngine }) {
     // just rewrite behavior
     const ctx = { root: tmpDir, changedDirectory: false, entry: 'scripts/human/job-queue.js' };
     assert.strictEqual(DryRunTimeoutMs, 5000, 'dry-run timeout is 5s');
+    const spawned = [];
+    runJustDryRun('jf', 'mutate', ['gpumath'], (program, args, options) => spawned.push({ program, args, options }));
+    assert.deepStrictEqual(spawned[0].args, ['--dry-run', '--justfile', 'jf', 'mutate', 'gpumath'], 'dry-run argv');
+    assert.strictEqual(spawned[0].options.timeout, DryRunTimeoutMs, 'the dry run is spawned with the 5 s limit');
+    assert.deepStrictEqual(
+      recipeQueue('mutate', tmpDir, 'scripts/human/job-queue.js', ['$P'], () => assert.fail('no dry run for $P')),
+      { undecided: 'just mutate chooses its queue options from its arguments' },
+      'an argument the shell expands is not dry-run',
+    );
+    const expanding = ['$P', '"$P"', '${P}', '`x`', 'src/*.cs', 'a?', '[ab]', '{a,b}', '~', '~/x', 'X=~/x', 'a:~/x'];
+    const literal = ["'$P'", 'HEAD~3', '"Name~A"', 'Name~A', '"src/*.cs"', "'{a,b}'", 'gpumath', 'Category!=Stress'];
+    for (const word of expanding) {
+      assert.strictEqual(expandsInShell(word), true, `the shell expands ${word}`);
+    }
+    for (const word of literal) {
+      assert.strictEqual(expandsInShell(word), false, `the shell leaves ${word} as it is`);
+    }
+    assert.deepStrictEqual(
+      recipeQueue('mutate', tmpDir, 'scripts/human/job-queue.js', ['gpumath', 'HEAD~3'], () => ({
+        status: 0,
+        stderr: 'node scripts/human/job-queue.js run --gpu-exclusive -- node scripts/human/mutate.js\n',
+        stdout: '',
+      })),
+      { gpu: true, gpuExclusive: true, options: [] },
+      'a ~ inside a word is dry-run',
+    );
     assert.deepStrictEqual(
       justPlugin.rewrite('just test', ['just', 'test'], { tool: 'just', verb: 'test' }, ctx),
       { gpu: true, gpuExclusive: false, options: [] },

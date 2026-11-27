@@ -142,7 +142,9 @@ function rewrite(_segment, list, reason, context) {
   const unquote = (context && typeof context.argumentText === 'function' && context.argumentText) || defaultUnquote;
   const { index } = justRecipeCall(list, unquote);
   const args = index >= 0 ? recipeArguments(list, index, unquote) : [];
-  return recipeQueue(reason.verb, context.root, context.entry, args);
+  // The words as written, so that a dry run is skipped when the shell would expand one ($P, a glob)
+  const rawArgs = index >= 0 ? recipeArguments(list, index, (word) => word) : [];
+  return recipeQueue(reason.verb, context.root, context.entry, args, undefined, rawArgs);
 }
 
 module.exports = {

@@ -13,6 +13,35 @@ const JustfileName = 'justfile';
 const OptionsPattern = /^((--gpu-exclusive|--gpu|--weight \d+)( |$))*$/;
 const DryRunTimeoutMs = 5000;
 
+/**
+ * True when bash or PowerShell may change the word `raw` (as written, quotes included) before just sees it: `$` or a
+ * backtick outside single quotes, a glob or brace character outside quotes, or `~` unquoted at the start of the word
+ * or after `=` or `:`. Errs towards true (an escaped `\$` counts).
+ */
+function expandsInShell(raw) {
+  let quote = null;
+  for (let i = 0; i < raw.length; i++) {
+    const c = raw[i];
+    if (quote === "'") {
+      quote = c === "'" ? null : quote;
+      continue;
+    }
+    if (c === '$' || c === '`') {
+      return true;
+    }
+    if (quote === '"') {
+      quote = c === '"' ? null : quote;
+      continue;
+    }
+    if (c === "'" || c === '"') {
+      quote = c;
+    } else if ('*?[{'.includes(c) || (c === '~' && (i === 0 || raw[i - 1] === '=' || raw[i - 1] === ':'))) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /** Builds the regex matching `queue := "node <entry> run"` in a justfile. */
 function buildQueueLinePattern(entry) {
   const escaped = entry.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -38,8 +67,8 @@ function parseQueueOptions(options) {
 }
 
 /** Runs `just --dry-run` once with a 5-second timeout to resolve conditional recipe queue options. */
-function runJustDryRun(justfilePath, recipe, args) {
-  return childProcess.spawnSync('just', ['--dry-run', '--justfile', justfilePath, recipe, ...args], {
+function runJustDryRun(justfilePath, recipe, args, spawn = childProcess.spawnSync) {
+  return spawn('just', ['--dry-run', '--justfile', justfilePath, recipe, ...args], {
     encoding: 'utf8',
     timeout: DryRunTimeoutMs,
     windowsHide: true,
@@ -47,8 +76,11 @@ function runJustDryRun(justfilePath, recipe, args) {
 }
 
 /** Resolves queue options from the first `node <entry> run ... -- ` line of `just --dry-run` output. */
-function resolveDryRunQueue(recipe, justfilePath, entry, args, dryRun) {
+function resolveDryRunQueue(recipe, justfilePath, entry, args, dryRun, rawArgs) {
   const fallback = { undecided: `just ${recipe} chooses its queue options from its arguments` };
+  if (rawArgs.some((arg) => typeof arg !== 'string' || expandsInShell(arg))) {
+    return fallback; // the shell expands $P or a glob after the hook: the dry run would read another argument
+  }
   let result;
   try {
     result = dryRun(justfilePath, recipe, args);
@@ -121,7 +153,7 @@ function justVariables(justfile) {
 }
 
 /** The queue options of a just recipe: { options, gpu, gpuExclusive } or { undecided: why }. */
-function recipeQueue(recipe, root, entry, args = [], dryRun = runJustDryRun) {
+function recipeQueue(recipe, root, entry, args = [], dryRun = runJustDryRun, rawArgs = args) {
   const justfilePath = path.join(root, JustfileName);
   let justfile;
   try {
@@ -145,7 +177,8 @@ function recipeQueue(recipe, root, entry, args = [], dryRun = runJustDryRun) {
   }
   const [options] = [...found];
   if (found.size > 1 || !OptionsPattern.test(options)) {
-    return resolveDryRunQueue(recipe, justfilePath, entry, Array.isArray(args) ? args : [], dryRun);
+    const list = Array.isArray(args) ? args : [];
+    return resolveDryRunQueue(recipe, justfilePath, entry, list, dryRun, Array.isArray(rawArgs) ? rawArgs : list);
   }
   return parseQueueOptions(options);
 }
@@ -154,6 +187,8 @@ module.exports = {
   DryRunTimeoutMs,
   JustfileName,
   OptionsPattern,
+  expandsInShell,
+  runJustDryRun,
   buildDryRunQueuePattern,
   buildQueueLinePattern,
   justVariables,

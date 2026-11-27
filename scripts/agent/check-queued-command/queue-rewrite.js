@@ -14,7 +14,8 @@
 // turn into a Windows path (/x..., X=/x...), a segment that already runs the queue, and a working directory without the
 // configured queue entry script.
 //
-// GPU use and build-then-test splitting are delegated to the enabled plugins (`rewrite` and `splitForRewrite`) in
+// GPU use, build-then-test splitting and the share check are delegated to the enabled plugins (`rewrite`,
+// `splitForRewrite` and `confirmSharedGpu`, which turns a --gpu that `run --gpu` would refuse into --gpu-exclusive) in
 // configuration order. An undecided command is denied as before, with a sentence saying that it may need --gpu.
 //
 // Usage: require('./queue-rewrite.js').createRewriter(engineConfig, rules, opts) returns
@@ -168,6 +169,9 @@ function createRewriter(engineConfig, rules = createRules(engineConfig), { toler
   const splitPlugins = engineConfig.rulePlugins.filter(
     (plugin) => typeof plugin.module.splitForRewrite === 'function',
   );
+  const confirmPlugins = engineConfig.rulePlugins.filter(
+    (plugin) => typeof plugin.module.confirmSharedGpu === 'function',
+  );
   const api = (name) => engineConfig.apiByName.get(name);
 
   /** One denied segment: { gpu, gpuExclusive?, options } or { undecided } or null (plain denial). */
@@ -184,6 +188,25 @@ function createRewriter(engineConfig, rules = createRules(engineConfig), { toler
       }
     }
     return null;
+  }
+
+  /**
+   * False when an enabled plugin's `confirmSharedGpu(command, shell, options)` says that `run --gpu` would refuse the
+   * command (it is outside the share language), or throws: the rewrite then asks for --gpu-exclusive instead.
+   */
+  function sharedTurnAccepted(command, kind) {
+    const shell = kind === 'pwsh' ? 'pwsh' : 'bash';
+    for (const plugin of confirmPlugins) {
+      try {
+        if (plugin.module.confirmSharedGpu(command, shell, plugin.options) !== true) {
+          return false;
+        }
+      } catch (error) {
+        reportError(pluginError(plugin.name, 'confirmSharedGpu()', error));
+        return false;
+      }
+    }
+    return true;
   }
 
   /** Optional build-then-test split delegated to enabled plugins. */
@@ -271,8 +294,11 @@ function createRewriter(engineConfig, rules = createRules(engineConfig), { toler
     if (undecided.length > 0) {
       return { note: undecidedNote(undecided) };
     }
-    const gpuFlags = gpuExclusive ? ['--gpu-exclusive'] : gpu ? ['--gpu'] : [];
     const split = gpu ? splitBuilds(segments, reader) : null;
+    if (gpu && !gpuExclusive && !sharedTurnAccepted(split === null ? body : split.tests, kind)) {
+      gpuExclusive = true; // run --gpu would refuse a command outside the share language
+    }
+    const gpuFlags = gpuExclusive ? ['--gpu-exclusive'] : gpu ? ['--gpu'] : [];
     if (split !== null) {
       // The builds take CPU slots only; the GPU turn waits for them and is held for the tests alone
       const builds = queuedCommand(kind, split.builds, options, '', queueScript);

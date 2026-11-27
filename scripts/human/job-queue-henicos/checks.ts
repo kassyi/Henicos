@@ -24,6 +24,7 @@ import {
   formatOutsideLanguageRefusal,
   parseSharedCommand,
 } from "./command-language.ts";
+import { sharedTurnRefusal } from "./share-refusal.ts";
 import { checkCommandLanguage } from "./command-language-checks.ts";
 import { checkNameFilter } from "./name-filter-checks.ts";
 import { checkHenicosOffloadSources } from "./offload-source-checks.ts";
@@ -322,7 +323,7 @@ function checkGpuCheckHook(assert: AssertModule, host: PluginHost): void {
     assert.strictEqual(splitLines.length, 4, "split refusal must be 4 lines");
     assert.ok(
       splitLines[0]?.includes("dotnet build tests/Compiler/Kassyi.GSharp.Tests.Cuda") &&
-        splitLines[0]?.includes("runs first as a CPU job"),
+        splitLines[0]?.includes("would run first as a CPU job"),
       "line 0 names the CPU build job",
     );
     assert.ok(splitLines[1]?.includes("in test part at pos"), "line 1 states position is within the test part");
@@ -863,7 +864,7 @@ function checkOutsideLanguageRefusal(assert: AssertModule): void {
   });
   const splitAddedLines = splitAdded.split("\n");
   assert.strictEqual(splitAddedLines.length, 4, "split refusal has 4 lines");
-  assert.ok(splitAddedLines[0]?.includes("`dotnet build tests/X` runs first as a CPU job"));
+  assert.ok(splitAddedLines[0]?.includes("`dotnet build tests/X` would run first as a CPU job"));
   assert.ok(splitAddedLines[1]?.includes("in test part at pos"));
   assert.strictEqual(splitAddedLines[2], "Accepted form: dotnet test tests/X (dropped: -p:Foo=1)");
 
@@ -904,6 +905,31 @@ function checkOutsideLanguageRefusal(assert: AssertModule): void {
   );
 
   // Separator stops item collection so tokens from a trailing command are not pulled in
+  // Quoted tokens are cut to 80 characters; the length failure is not put in parentheses twice
+  const longWord = `-p:X=${"a".repeat(5000)}`;
+  const longLines = formatOutsideLanguageRefusal(`dotnet test tests/X ${longWord}`, "bash").split("\n");
+  assert.ok(
+    longLines.every((line) => line.length <= 200),
+    `refusal lines stay short: ${longLines.map((l) => l.length)}`,
+  );
+  const overlong = formatOutsideLanguageRefusal(`dotnet test tests/X --filter "${"a".repeat(5000)}"`, "bash");
+  assert.ok(/ \(\d+ chars\): /.test(overlong) && !overlong.includes("(("), `one pair of parentheses: ${overlong}`);
+  assert.ok(
+    formatOutsideLanguageRefusal("dotnet test tests/X (Name~A)", "bash").includes(" ((Name~A)): "),
+    "a token that starts with ( keeps its parentheses",
+  );
+  const noRedirect = sharedTurnRefusal("dotnet test tests/X -p:A=1", "bash", {
+    exclusiveCategories: ["Stress"],
+    exclusiveEnv: [],
+    sharedRecipes: ["test"],
+  });
+  assert.ok(noRedirect !== null && !noRedirect.includes(">>"), `no redirect, no append note: ${noRedirect}`);
+  const withRedirect = sharedTurnRefusal("dotnet test tests/X -p:A=1 > tmp/x.log", "bash", {
+    exclusiveCategories: ["Stress"],
+    exclusiveEnv: [],
+    sharedRecipes: ["test"],
+  });
+  assert.ok(withRedirect?.split("\n")[0]?.includes("append (>>)"), `the split redirect is named: ${withRedirect}`);
   const chainedRefusal = formatOutsideLanguageRefusal('dotnet test tests/X --filter "Name~A"; echo --no-build', "bash");
   assert.strictEqual(
     chainedRefusal.split("\n")[1],

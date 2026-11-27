@@ -1145,9 +1145,16 @@ function buildAcceptedExample(command: string, shell: ShellName, options?: Refus
   return { example: DefaultExample, dropped: [] };
 }
 
+/** A token cut to 80 characters for the refusal message. */
+function shortToken(token: string): string {
+  return token.length > 80 ? `${token.slice(0, 77)}...` : token;
+}
+
 /**
- * Formats the refusal message for a `--gpu` command outside the allow-listed language:
- * - optional line 0 (when build-split occurred): notes that `<build>` runs first as a CPU job and the refusal applies to the test part;
+ * Formats the refusal message for a `--gpu` command outside the allow-listed language (each quoted token cut to 80
+ * characters):
+ * - optional line 0 (when build-split occurred): notes that `<build>` would run first as a CPU job, that the test part's
+ *   redirects (when it has any) append after the split, that nothing was queued, and that the refusal applies to the test part;
  * - line 1: where parsing stopped (within the test part when split) and what was expected;
  * - line 2: an accepted example verified by `parseSharedCommand(example, shell)` (falling back to `DefaultExample`), naming dropped tokens;
  * - line 3: hint to re-queue with `--gpu-exclusive` if exclusive GPU access is intended.
@@ -1164,20 +1171,26 @@ export function formatOutsideLanguageRefusal(command: string, shell: ShellName, 
     }
   } else {
     const rawTok = parsed.failure.token;
-    const shownTok = rawTok.length > 80 ? `${rawTok.slice(0, 77)}...` : rawTok;
+    const shownTok = shortToken(rawTok);
+    // The length failure's token is already "(5020 chars)"
+    const tokenNote = shownTok === "" ? "" : /^\(\d+ chars\)$/.test(shownTok) ? ` ${shownTok}` : ` (${shownTok})`;
     where =
       `outside --gpu command language${inTestPart} at pos ${parsed.failure.position}` +
-      `${shownTok !== "" ? ` (${shownTok})` : ""}: expected ${parsed.failure.expected}.`;
+      `${tokenNote}: expected ${parsed.failure.expected}.`;
   }
 
   const { example, dropped } = buildAcceptedExample(command, shell, options);
   const droppedNote =
-    dropped.length > 0 ? ` (dropped: ${dropped.slice(0, 4).join(", ")}${dropped.length > 4 ? ", ..." : ""})` : "";
+    dropped.length > 0
+      ? ` (dropped: ${dropped.slice(0, 4).map(shortToken).join(", ")}${dropped.length > 4 ? ", ..." : ""})`
+      : "";
 
   const lines: string[] = [];
   if (options?.splitBuild !== undefined) {
     lines.push(
-      `[gpu-share] \`${options.splitBuild.build}\` runs first as a CPU job; the refusal below applies to the test part.`,
+      `[gpu-share] \`${shortToken(options.splitBuild.build)}\` would run first as a CPU job` +
+        (command.includes(">>") ? " and the test part's redirects append (>>) after the split" : "") +
+        "; nothing was queued, and the refusal below applies to the test part.",
     );
   }
   lines.push(
