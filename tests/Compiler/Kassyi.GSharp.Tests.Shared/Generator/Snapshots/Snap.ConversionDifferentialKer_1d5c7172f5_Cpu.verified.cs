@@ -236,6 +236,9 @@ if (native.Unsigned64Values.Data == global::System.IntPtr.Zero)
 host.Unsigned64Values = default;
 }
 }
+public static unsafe void UnmarshalArrays_IntegerConversionInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.IntegerConversionInputs host, ref AotContexts.IntegerConversionInputs native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_IntegerConversionInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.IntegerConversionInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Signed32Values != null)
@@ -364,6 +367,9 @@ if (native.Unsigned64Values.Data == global::System.IntPtr.Zero)
 host.Unsigned64Values = default;
 }
 }
+public static unsafe void UnmarshalArrays_DirectFloatDoubleCastInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.DirectFloatDoubleCastInputs host, ref AotContexts.DirectFloatDoubleCastInputs native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_DirectFloatDoubleCastInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.DirectFloatDoubleCastInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.SingleValues != null)
@@ -491,6 +497,9 @@ if (native.DoubleResults.Data == global::System.IntPtr.Zero)
 {
 host.DoubleResults = default;
 }
+}
+public static unsafe void UnmarshalArrays_DirectFloatDoubleCastResults(in global::Kassyi.GSharp.Tests.Shared.Differential.DirectFloatDoubleCastResults host, ref AotContexts.DirectFloatDoubleCastResults native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_DirectFloatDoubleCastResults(ref global::Kassyi.GSharp.Tests.Shared.Differential.DirectFloatDoubleCastResults host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -635,6 +644,9 @@ if (native.ShiftCounts.Data == global::System.IntPtr.Zero)
 host.ShiftCounts = default;
 }
 }
+public static unsafe void UnmarshalArrays_IntegerCastAndShiftInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.IntegerCastAndShiftInputs host, ref AotContexts.IntegerCastAndShiftInputs native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_IntegerCastAndShiftInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.IntegerCastAndShiftInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Signed32Values != null)
@@ -741,6 +753,9 @@ if (native.UnsignedResults.Data == global::System.IntPtr.Zero)
 {
 host.UnsignedResults = default;
 }
+}
+public static unsafe void UnmarshalArrays_IntegerCastAndShiftResults(in global::Kassyi.GSharp.Tests.Shared.Differential.IntegerCastAndShiftResults host, ref AotContexts.IntegerCastAndShiftResults native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_IntegerCastAndShiftResults(ref global::Kassyi.GSharp.Tests.Shared.Differential.IntegerCastAndShiftResults host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

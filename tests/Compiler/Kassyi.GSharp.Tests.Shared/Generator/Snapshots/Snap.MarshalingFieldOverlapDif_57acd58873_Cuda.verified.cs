@@ -334,6 +334,25 @@ handle.Free();
 }
 host.Tag = native.Tag;
 }
+public static unsafe void UnmarshalArrays_DiffDeepBag(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag host, ref AotContexts.DiffDeepBag native, global::System.IntPtr hStream = default)
+{
+if (native.Data.Data != global::System.IntPtr.Zero && host.Data != null)
+{
+int size = checked(host.Data.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Data, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Data.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
 public static void AliasHeldArrays_DiffDeepBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Data != null)
@@ -394,6 +413,30 @@ if (native.Items.Data == global::System.IntPtr.Zero)
 host.Items = default;
 }
 else if (host.Items != null)
+{
+int size = checked(host.Items.Length * sizeof(AotContexts.DiffVec2Padded));
+if (size > 0)
+{
+AotContexts.DiffVec2Padded[] tempArray = new AotContexts.DiffVec2Padded[host.Items.Length];
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(tempArray, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Items.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+for (int i = 0; i < host.Items.Length; i++)
+{
+Unmarshal_DiffVec2Padded(ref host.Items[i], ref tempArray[i], hStream);
+}
+}
+}
+}
+public static unsafe void UnmarshalArrays_DiffPaddedHolder(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffPaddedHolder host, ref AotContexts.DiffPaddedHolder native, global::System.IntPtr hStream = default)
+{
+if (native.Items.Data != global::System.IntPtr.Zero && host.Items != null)
 {
 int size = checked(host.Items.Length * sizeof(AotContexts.DiffVec2Padded));
 if (size > 0)
@@ -478,6 +521,15 @@ global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag value = host.GetValu
 Unmarshal_DiffDeepBag(ref value, ref native.Value, hStream);
 host = value;
 }
+public static unsafe void UnmarshalArrays___gsharp_nullable_of_DiffDeepBag(in global::System.Nullable<global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag> host, ref AotContexts.__gsharp_nullable_of_DiffDeepBag native, global::System.IntPtr hStream = default)
+{
+if (!host.HasValue || native.HasValue == 0)
+{
+return;
+}
+global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag value = host.GetValueOrDefault();
+UnmarshalArrays_DiffDeepBag(in value, ref native.Value, hStream);
+}
 public static void AliasHeldArrays___gsharp_nullable_of_DiffDeepBag(ref global::System.Nullable<global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag> host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.HasValue)
@@ -547,6 +599,23 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 }
 host.Tag = native.Tag;
 }
+public static unsafe void UnmarshalArrays_DiffMemoryBag(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffMemoryBag host, ref AotContexts.DiffMemoryBag native, global::System.IntPtr hStream = default)
+{
+{
+global::System.Span<global::System.Int32> view = host.Data.Span;
+if (!global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(view) && native.Data.Data != global::System.IntPtr.Zero)
+{
+int size = checked(view.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+fixed (global::System.Int32* pView = view)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)pView, native.Data.Data, (global::System.IntPtr)size, hStream));
+}
+}
+}
+}
+}
 public static void AliasHeldArrays_DiffMemoryBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffMemoryBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 held.AddView<global::System.Int32>(host.Data, true, 4, 0, false);
@@ -612,6 +681,23 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 }
 host.Tag = native.Tag;
 }
+public static unsafe void UnmarshalArrays_DiffSegmentBag(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffSegmentBag host, ref AotContexts.DiffSegmentBag native, global::System.IntPtr hStream = default)
+{
+{
+global::System.Span<global::System.Int32> view = global::System.MemoryExtensions.AsSpan(host.Data);
+if (!global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(view) && native.Data.Data != global::System.IntPtr.Zero)
+{
+int size = checked(view.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+fixed (global::System.Int32* pView = view)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)pView, native.Data.Data, (global::System.IntPtr)size, hStream));
+}
+}
+}
+}
+}
 public static void AliasHeldArrays_DiffSegmentBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffSegmentBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 held.AddView<global::System.Int32>(global::System.MemoryExtensions.AsMemory(host.Data), true, 4, 0, false, true);
@@ -663,6 +749,9 @@ public static unsafe void Unmarshal_DiffReadOnlyMemoryBag(ref global::Kassyi.GSh
 {
 host.Tag = native.Tag;
 }
+public static unsafe void UnmarshalArrays_DiffReadOnlyMemoryBag(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffReadOnlyMemoryBag host, ref AotContexts.DiffReadOnlyMemoryBag native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_DiffReadOnlyMemoryBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffReadOnlyMemoryBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 held.AddView<global::System.Int32>(host.Data, false, 4, 0, false);
@@ -713,6 +802,9 @@ native.Tag = host.Tag;
 public static unsafe void Unmarshal_DiffImmutableArrayBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffImmutableArrayBag host, ref AotContexts.DiffImmutableArrayBag native, global::System.IntPtr hStream = default)
 {
 host.Tag = native.Tag;
+}
+public static unsafe void UnmarshalArrays_DiffImmutableArrayBag(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffImmutableArrayBag host, ref AotContexts.DiffImmutableArrayBag native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_DiffImmutableArrayBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffImmutableArrayBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -819,6 +911,37 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 }
 }
 }
+public static unsafe void UnmarshalArrays_DiffTwoMemoryViews(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffTwoMemoryViews host, ref AotContexts.DiffTwoMemoryViews native, global::System.IntPtr hStream = default)
+{
+{
+global::System.Span<global::System.Int32> view = host.A.Span;
+if (!global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(view) && native.A.Data != global::System.IntPtr.Zero)
+{
+int size = checked(view.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+fixed (global::System.Int32* pView = view)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)pView, native.A.Data, (global::System.IntPtr)size, hStream));
+}
+}
+}
+}
+{
+global::System.Span<global::System.Int32> view = host.B.Span;
+if (!global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(view) && native.B.Data != global::System.IntPtr.Zero)
+{
+int size = checked(view.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+fixed (global::System.Int32* pView = view)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)pView, native.B.Data, (global::System.IntPtr)size, hStream));
+}
+}
+}
+}
+}
 public static void AliasHeldArrays_DiffTwoMemoryViews(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffTwoMemoryViews host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 held.AddView<global::System.Int32>(host.A, true, 4, 0, false);
@@ -844,6 +967,10 @@ public static unsafe void Unmarshal_DiffNullableMemoryBag(ref global::Kassyi.GSh
 {
 Unmarshal___gsharp_nullable_of_Memory_Int32(ref host.Data, ref native.Data, hStream);
 host.Tag = native.Tag;
+}
+public static unsafe void UnmarshalArrays_DiffNullableMemoryBag(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableMemoryBag host, ref AotContexts.DiffNullableMemoryBag native, global::System.IntPtr hStream = default)
+{
+UnmarshalArrays___gsharp_nullable_of_Memory_Int32(in host.Data, ref native.Data, hStream);
 }
 public static void AliasHeldArrays_DiffNullableMemoryBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableMemoryBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -918,6 +1045,28 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 }
 host = value;
 }
+public static unsafe void UnmarshalArrays___gsharp_nullable_of_Memory_Int32(in global::System.Nullable<global::System.Memory<global::System.Int32>> host, ref AotContexts.__gsharp_nullable_of_Memory_Int32 native, global::System.IntPtr hStream = default)
+{
+if (!host.HasValue || native.HasValue == 0)
+{
+return;
+}
+global::System.Memory<global::System.Int32> value = host.GetValueOrDefault();
+{
+global::System.Span<global::System.Int32> view = value.Span;
+if (!global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(view) && native.Value.Data != global::System.IntPtr.Zero)
+{
+int size = checked(view.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+fixed (global::System.Int32* pView = view)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)pView, native.Value.Data, (global::System.IntPtr)size, hStream));
+}
+}
+}
+}
+}
 public static void AliasHeldArrays___gsharp_nullable_of_Memory_Int32(ref global::System.Nullable<global::System.Memory<global::System.Int32>> host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.HasValue)
@@ -946,6 +1095,10 @@ public static unsafe void Unmarshal_DiffNestedMemoryBag(ref global::Kassyi.GShar
 {
 Unmarshal_DiffMemoryBag(ref host.Inner, ref native.Inner, hStream);
 host.Scale = native.Scale;
+}
+public static unsafe void UnmarshalArrays_DiffNestedMemoryBag(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffNestedMemoryBag host, ref AotContexts.DiffNestedMemoryBag native, global::System.IntPtr hStream = default)
+{
+UnmarshalArrays_DiffMemoryBag(in host.Inner, ref native.Inner, hStream);
 }
 public static void AliasHeldArrays_DiffNestedMemoryBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNestedMemoryBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -1012,6 +1165,23 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 }
 host.Tag = native.Tag;
 }
+public static unsafe void UnmarshalArrays_DiffShortMemoryBag(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffShortMemoryBag host, ref AotContexts.DiffShortMemoryBag native, global::System.IntPtr hStream = default)
+{
+{
+global::System.Span<global::System.Int16> view = host.Data.Span;
+if (!global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(view) && native.Data.Data != global::System.IntPtr.Zero)
+{
+int size = checked(view.Length * sizeof(global::System.Int16));
+if (size > 0)
+{
+fixed (global::System.Int16* pView = view)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)pView, native.Data.Data, (global::System.IntPtr)size, hStream));
+}
+}
+}
+}
+}
 public static void AliasHeldArrays_DiffShortMemoryBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffShortMemoryBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 held.AddView<global::System.Int16>(host.Data, true, 2, 0, false);
@@ -1073,6 +1243,9 @@ native.Tag = host.Tag;
 public static unsafe void Unmarshal_DiffReadOnlyMemoryOfBagsHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffReadOnlyMemoryOfBagsHolder host, ref AotContexts.DiffReadOnlyMemoryOfBagsHolder native, global::System.IntPtr hStream = default)
 {
 host.Tag = native.Tag;
+}
+public static unsafe void UnmarshalArrays_DiffReadOnlyMemoryOfBagsHolder(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffReadOnlyMemoryOfBagsHolder host, ref AotContexts.DiffReadOnlyMemoryOfBagsHolder native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_DiffReadOnlyMemoryOfBagsHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffReadOnlyMemoryOfBagsHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -1142,6 +1315,9 @@ native.Tag = host.Tag;
 public static unsafe void Unmarshal_DiffImmutableArrayOfBagsHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffImmutableArrayOfBagsHolder host, ref AotContexts.DiffImmutableArrayOfBagsHolder native, global::System.IntPtr hStream = default)
 {
 host.Tag = native.Tag;
+}
+public static unsafe void UnmarshalArrays_DiffImmutableArrayOfBagsHolder(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffImmutableArrayOfBagsHolder host, ref AotContexts.DiffImmutableArrayOfBagsHolder native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_DiffImmutableArrayOfBagsHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffImmutableArrayOfBagsHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -1230,6 +1406,33 @@ Unmarshal_DiffVec2Padded(ref view[i], ref tempArray[i], hStream);
 }
 }
 }
+public static unsafe void UnmarshalArrays_DiffPaddedMemoryHolder(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffPaddedMemoryHolder host, ref AotContexts.DiffPaddedMemoryHolder native, global::System.IntPtr hStream = default)
+{
+{
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Differential.DiffVec2Padded> view = host.Items.Span;
+if (!global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(view) && native.Items.Data != global::System.IntPtr.Zero)
+{
+int size = checked(view.Length * sizeof(AotContexts.DiffVec2Padded));
+if (size > 0)
+{
+AotContexts.DiffVec2Padded[] tempArray = new AotContexts.DiffVec2Padded[view.Length];
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(tempArray, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Items.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+for (int i = 0; i < view.Length; i++)
+{
+Unmarshal_DiffVec2Padded(ref view[i], ref tempArray[i], hStream);
+}
+}
+}
+}
+}
 public static void AliasHeldArrays_DiffPaddedMemoryHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffPaddedMemoryHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 held.AddView<global::Kassyi.GSharp.Tests.Shared.Differential.DiffVec2Padded>(host.Items, true, 8, 0, true);
@@ -1274,6 +1477,23 @@ native.Data.Length = view.Length;
 }
 }
 public static unsafe void Unmarshal_DiffVector2MemoryBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffVector2MemoryBag host, ref AotContexts.DiffVector2MemoryBag native, global::System.IntPtr hStream = default)
+{
+{
+global::System.Span<global::System.Numerics.Vector2> view = host.Data.Span;
+if (!global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(view) && native.Data.Data != global::System.IntPtr.Zero)
+{
+int size = checked(view.Length * sizeof(global::System.Numerics.Vector2));
+if (size > 0)
+{
+fixed (global::System.Numerics.Vector2* pView = view)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)pView, native.Data.Data, (global::System.IntPtr)size, hStream));
+}
+}
+}
+}
+}
+public static unsafe void UnmarshalArrays_DiffVector2MemoryBag(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffVector2MemoryBag host, ref AotContexts.DiffVector2MemoryBag native, global::System.IntPtr hStream = default)
 {
 {
 global::System.Span<global::System.Numerics.Vector2> view = host.Data.Span;
@@ -1342,6 +1562,25 @@ if (native.Data.Data == global::System.IntPtr.Zero)
 host.Data = default;
 }
 else if (host.Data != null)
+{
+int size = checked(host.Data.Length * sizeof(global::System.Numerics.Vector2));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Data, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Data.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
+public static unsafe void UnmarshalArrays_DiffVector2ArrayBag(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffVector2ArrayBag host, ref AotContexts.DiffVector2ArrayBag native, global::System.IntPtr hStream = default)
+{
+if (native.Data.Data != global::System.IntPtr.Zero && host.Data != null)
 {
 int size = checked(host.Data.Length * sizeof(global::System.Numerics.Vector2));
 if (size > 0)

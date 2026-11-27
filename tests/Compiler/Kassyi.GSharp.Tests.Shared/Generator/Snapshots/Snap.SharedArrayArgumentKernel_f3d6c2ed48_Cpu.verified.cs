@@ -129,6 +129,9 @@ if (native.Data.Data == global::System.IntPtr.Zero)
 host.Data = default;
 }
 }
+public static unsafe void UnmarshalArrays_SharedArrayHolder(in global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder host, ref AotContexts.SharedArrayHolder native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_SharedArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Data != null)
@@ -189,6 +192,9 @@ if (native.Data.Data == global::System.IntPtr.Zero)
 {
 host.Data = default;
 }
+}
+public static unsafe void UnmarshalArrays_ConvertBag(in global::Kassyi.GSharp.Tests.Shared.Core.ConvertBag host, ref AotContexts.ConvertBag native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_ConvertBag(ref global::Kassyi.GSharp.Tests.Shared.Core.ConvertBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

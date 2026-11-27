@@ -432,6 +432,9 @@ if (native.Fallbacks.Data == global::System.IntPtr.Zero)
 host.Fallbacks = default;
 }
 }
+public static unsafe void UnmarshalArrays_NullableCoalesceOperands(in global::Kassyi.GSharp.Tests.Shared.Differential.NullableCoalesceOperands host, ref AotContexts.NullableCoalesceOperands native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_NullableCoalesceOperands(ref global::Kassyi.GSharp.Tests.Shared.Differential.NullableCoalesceOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.FirstPresence != null)
@@ -568,6 +571,9 @@ if (native.SecondValues.Data == global::System.IntPtr.Zero)
 {
 host.SecondValues = default;
 }
+}
+public static unsafe void UnmarshalArrays_NullablePairOperands(in global::Kassyi.GSharp.Tests.Shared.Differential.NullablePairOperands host, ref AotContexts.NullablePairOperands native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_NullablePairOperands(ref global::Kassyi.GSharp.Tests.Shared.Differential.NullablePairOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -712,6 +718,9 @@ if (native.NarrowUnsignedValues.Data == global::System.IntPtr.Zero)
 host.NarrowUnsignedValues = default;
 }
 }
+public static unsafe void UnmarshalArrays_WiderWithNarrowerNullableOperands(in global::Kassyi.GSharp.Tests.Shared.Differential.WiderWithNarrowerNullableOperands host, ref AotContexts.WiderWithNarrowerNullableOperands native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_WiderWithNarrowerNullableOperands(ref global::Kassyi.GSharp.Tests.Shared.Differential.WiderWithNarrowerNullableOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.WidePresence != null)
@@ -833,6 +842,9 @@ if (native.UInt16Values.Data == global::System.IntPtr.Zero)
 {
 host.UInt16Values = default;
 }
+}
+public static unsafe void UnmarshalArrays_NarrowCoalescePromotionOperands(in global::Kassyi.GSharp.Tests.Shared.Differential.NarrowCoalescePromotionOperands host, ref AotContexts.NarrowCoalescePromotionOperands native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_NarrowCoalescePromotionOperands(ref global::Kassyi.GSharp.Tests.Shared.Differential.NarrowCoalescePromotionOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

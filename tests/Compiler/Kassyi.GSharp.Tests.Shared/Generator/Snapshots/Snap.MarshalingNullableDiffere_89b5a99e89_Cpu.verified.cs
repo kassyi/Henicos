@@ -198,6 +198,15 @@ global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffBag value = host.Get
 Unmarshal_NullableDiffBag(ref value, ref native.Value, hStream);
 host = value;
 }
+public static unsafe void UnmarshalArrays___gsharp_nullable_of_NullableDiffBag(in global::System.Nullable<global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffBag> host, ref AotContexts.__gsharp_nullable_of_NullableDiffBag native, global::System.IntPtr hStream = default)
+{
+if (!host.HasValue || native.HasValue == 0)
+{
+return;
+}
+global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffBag value = host.GetValueOrDefault();
+UnmarshalArrays_NullableDiffBag(in value, ref native.Value, hStream);
+}
 public static void AliasHeldArrays___gsharp_nullable_of_NullableDiffBag(ref global::System.Nullable<global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffBag> host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.HasValue)
@@ -260,6 +269,9 @@ if (native.Data.Data == global::System.IntPtr.Zero)
 {
 host.Data = default;
 }
+}
+public static unsafe void UnmarshalArrays_NullableDiffBag(in global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffBag host, ref AotContexts.NullableDiffBag native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_NullableDiffBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -361,6 +373,9 @@ if (native.Inners.Data == global::System.IntPtr.Zero)
 host.Inners = default;
 }
 }
+public static unsafe void UnmarshalArrays_NullableDiffArrayHolder(in global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffArrayHolder host, ref AotContexts.NullableDiffArrayHolder native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_NullableDiffArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffArrayHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Items != null)
@@ -420,6 +435,10 @@ public static unsafe void Unmarshal_NullableDiffBagHolder(ref global::Kassyi.GSh
 {
 host.A = native.A;
 Unmarshal___gsharp_nullable_of_NullableDiffBag(ref host.Bag, ref native.Bag, hStream);
+}
+public static unsafe void UnmarshalArrays_NullableDiffBagHolder(in global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffBagHolder host, ref AotContexts.NullableDiffBagHolder native, global::System.IntPtr hStream = default)
+{
+UnmarshalArrays___gsharp_nullable_of_NullableDiffBag(in host.Bag, ref native.Bag, hStream);
 }
 public static void AliasHeldArrays_NullableDiffBagHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffBagHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

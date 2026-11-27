@@ -74,6 +74,9 @@ if (native.Items.Data == global::System.IntPtr.Zero)
 host.Items = default;
 }
 }
+public static unsafe void UnmarshalArrays_NullableOrderArrayHolder(in global::Kassyi.GSharp.Tests.Shared.Differential.NullableOrderArrayHolder host, ref AotContexts.NullableOrderArrayHolder native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_NullableOrderArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.NullableOrderArrayHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Items != null)

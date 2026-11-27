@@ -162,6 +162,25 @@ handle.Free();
 }
 }
 }
+public static unsafe void UnmarshalArrays_NullableOrderArrayHolder(in global::Kassyi.GSharp.Tests.Shared.Differential.NullableOrderArrayHolder host, ref AotContexts.NullableOrderArrayHolder native, global::System.IntPtr hStream = default)
+{
+if (native.Items.Data != global::System.IntPtr.Zero && host.Items != null)
+{
+int size = checked(host.Items.Length * sizeof(global::System.Nullable<global::Kassyi.GSharp.Tests.Shared.Differential.NullableOrderArrayInner>));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Items, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Items.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
 public static void AliasHeldArrays_NullableOrderArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.NullableOrderArrayHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Items != null)

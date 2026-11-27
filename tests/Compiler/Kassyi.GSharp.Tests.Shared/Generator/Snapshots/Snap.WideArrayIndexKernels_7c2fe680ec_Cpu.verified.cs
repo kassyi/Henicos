@@ -354,6 +354,10 @@ if (native.Results.Data == global::System.IntPtr.Zero)
 host.Results = default;
 }
 }
+public static unsafe void UnmarshalArrays_WideIndexBuffers(in global::Kassyi.GSharp.Tests.Shared.Syntax.WideIndexBuffers host, ref AotContexts.WideIndexBuffers native, global::System.IntPtr hStream = default)
+{
+UnmarshalArrays_WideIndexHolder(in host.Holder, ref native.Holder, hStream);
+}
 public static void AliasHeldArrays_WideIndexBuffers(ref global::Kassyi.GSharp.Tests.Shared.Syntax.WideIndexBuffers host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Target != null)
@@ -424,6 +428,9 @@ if (native.Data.Data == global::System.IntPtr.Zero)
 {
 host.Data = default;
 }
+}
+public static unsafe void UnmarshalArrays_WideIndexHolder(in global::Kassyi.GSharp.Tests.Shared.Syntax.WideIndexHolder host, ref AotContexts.WideIndexHolder native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_WideIndexHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.WideIndexHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

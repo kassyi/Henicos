@@ -354,7 +354,7 @@ internal static class CpuHostLaunchEmitter
     {
         var shape = sharing.Parameters[index];
         var member = AliasGroupEmitter.CpuBufferPointer(sharing.Aliases, index);
-        var unmarshals = (shape.IsCpuConvertedStruct && !shape.IsInReference) ||
+        var unmarshals = shape.IsCpuConvertedStruct ||
             shape is { IsCpuConvertedArray: true, IsCopiedOut: true, IsReadOnlyContainer: false };
         writer.AppendLineIf(member is not null && unmarshals, $"if (!({member?.Member}))");
         using var notMember = member is not null && unmarshals ? writer.Scope() : default;
@@ -363,6 +363,10 @@ internal static class CpuHostLaunchEmitter
             case { IsCpuConvertedStruct: true, IsInReference: false, UnmarshalMethodName: { } unmarshal }:
                 var native = KernelHostNames.GetLocal(LauncherLocal.Native, shape);
                 writer.AppendLine($"{unmarshal}(ref {shape.Identifier}, ref {native}, hStream);");
+                break;
+            case { IsCpuConvertedStruct: true, IsInReference: true, UnmarshalArraysMethodName: { } unmarshalArrays }:
+                var nativeArrays = KernelHostNames.GetLocal(LauncherLocal.Native, shape);
+                writer.AppendLine($"{unmarshalArrays}(in {shape.Identifier}, ref {nativeArrays}, hStream);");
                 break;
             case { IsCpuConvertedArray: true, IsCopiedOut: true, IsReadOnlyContainer: false }:
                 // The spans of the marshaling are in its own scope for a member of a group

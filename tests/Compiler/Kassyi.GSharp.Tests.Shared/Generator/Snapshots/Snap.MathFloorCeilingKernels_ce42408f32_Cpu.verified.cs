@@ -111,6 +111,9 @@ if (native.CeilingResults.Data == global::System.IntPtr.Zero)
 host.CeilingResults = default;
 }
 }
+public static unsafe void UnmarshalArrays_DoubleFloorCeilingBuffers(in global::Kassyi.GSharp.Tests.Shared.Syntax.DoubleFloorCeilingBuffers host, ref AotContexts.DoubleFloorCeilingBuffers native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_DoubleFloorCeilingBuffers(ref global::Kassyi.GSharp.Tests.Shared.Syntax.DoubleFloorCeilingBuffers host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Inputs != null)
@@ -214,6 +217,9 @@ if (native.CeilingResults.Data == global::System.IntPtr.Zero)
 {
 host.CeilingResults = default;
 }
+}
+public static unsafe void UnmarshalArrays_SingleFloorCeilingBuffers(in global::Kassyi.GSharp.Tests.Shared.Syntax.SingleFloorCeilingBuffers host, ref AotContexts.SingleFloorCeilingBuffers native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_SingleFloorCeilingBuffers(ref global::Kassyi.GSharp.Tests.Shared.Syntax.SingleFloorCeilingBuffers host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -319,6 +325,9 @@ if (native.Results.Data == global::System.IntPtr.Zero)
 host.Results = default;
 }
 }
+public static unsafe void UnmarshalArrays_DoublePowBuffers(in global::Kassyi.GSharp.Tests.Shared.Syntax.DoublePowBuffers host, ref AotContexts.DoublePowBuffers native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_DoublePowBuffers(ref global::Kassyi.GSharp.Tests.Shared.Syntax.DoublePowBuffers host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Bases != null)
@@ -422,6 +431,9 @@ if (native.Results.Data == global::System.IntPtr.Zero)
 {
 host.Results = default;
 }
+}
+public static unsafe void UnmarshalArrays_SinglePowBuffers(in global::Kassyi.GSharp.Tests.Shared.Syntax.SinglePowBuffers host, ref AotContexts.SinglePowBuffers native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_SinglePowBuffers(ref global::Kassyi.GSharp.Tests.Shared.Syntax.SinglePowBuffers host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

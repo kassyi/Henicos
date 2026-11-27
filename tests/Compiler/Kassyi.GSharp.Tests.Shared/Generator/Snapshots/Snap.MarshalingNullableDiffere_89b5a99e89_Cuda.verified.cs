@@ -263,6 +263,15 @@ global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffBag value = host.Get
 Unmarshal_NullableDiffBag(ref value, ref native.Value, hStream);
 host = value;
 }
+public static unsafe void UnmarshalArrays___gsharp_nullable_of_NullableDiffBag(in global::System.Nullable<global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffBag> host, ref AotContexts.__gsharp_nullable_of_NullableDiffBag native, global::System.IntPtr hStream = default)
+{
+if (!host.HasValue || native.HasValue == 0)
+{
+return;
+}
+global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffBag value = host.GetValueOrDefault();
+UnmarshalArrays_NullableDiffBag(in value, ref native.Value, hStream);
+}
 public static void AliasHeldArrays___gsharp_nullable_of_NullableDiffBag(ref global::System.Nullable<global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffBag> host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.HasValue)
@@ -324,6 +333,25 @@ if (native.Data.Data == global::System.IntPtr.Zero)
 host.Data = default;
 }
 else if (host.Data != null)
+{
+int size = checked(host.Data.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Data, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Data.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
+public static unsafe void UnmarshalArrays_NullableDiffBag(in global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffBag host, ref AotContexts.NullableDiffBag native, global::System.IntPtr hStream = default)
+{
+if (native.Data.Data != global::System.IntPtr.Zero && host.Data != null)
 {
 int size = checked(host.Data.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -550,6 +578,51 @@ Unmarshal___gsharp_nullable_of_NullableDiffInner(ref host.Inners[i], ref tempArr
 }
 }
 }
+public static unsafe void UnmarshalArrays_NullableDiffArrayHolder(in global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffArrayHolder host, ref AotContexts.NullableDiffArrayHolder native, global::System.IntPtr hStream = default)
+{
+if (native.Items.Data != global::System.IntPtr.Zero && host.Items != null)
+{
+int size = checked(host.Items.Length * sizeof(AotContexts.__gsharp_nullable_of_Vector2));
+if (size > 0)
+{
+AotContexts.__gsharp_nullable_of_Vector2[] tempArray = new AotContexts.__gsharp_nullable_of_Vector2[host.Items.Length];
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(tempArray, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Items.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+for (int i = 0; i < host.Items.Length; i++)
+{
+Unmarshal___gsharp_nullable_of_Vector2(ref host.Items[i], ref tempArray[i], hStream);
+}
+}
+}
+if (native.Inners.Data != global::System.IntPtr.Zero && host.Inners != null)
+{
+int size = checked(host.Inners.Length * sizeof(AotContexts.__gsharp_nullable_of_NullableDiffInner));
+if (size > 0)
+{
+AotContexts.__gsharp_nullable_of_NullableDiffInner[] tempArray = new AotContexts.__gsharp_nullable_of_NullableDiffInner[host.Inners.Length];
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(tempArray, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Inners.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+for (int i = 0; i < host.Inners.Length; i++)
+{
+Unmarshal___gsharp_nullable_of_NullableDiffInner(ref host.Inners[i], ref tempArray[i], hStream);
+}
+}
+}
+}
 public static void AliasHeldArrays_NullableDiffArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffArrayHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Items != null)
@@ -581,6 +654,10 @@ public static unsafe void Unmarshal_NullableDiffBagHolder(ref global::Kassyi.GSh
 {
 host.A = native.A;
 Unmarshal___gsharp_nullable_of_NullableDiffBag(ref host.Bag, ref native.Bag, hStream);
+}
+public static unsafe void UnmarshalArrays_NullableDiffBagHolder(in global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffBagHolder host, ref AotContexts.NullableDiffBagHolder native, global::System.IntPtr hStream = default)
+{
+UnmarshalArrays___gsharp_nullable_of_NullableDiffBag(in host.Bag, ref native.Bag, hStream);
 }
 public static void AliasHeldArrays_NullableDiffBagHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffBagHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

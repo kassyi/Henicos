@@ -218,6 +218,9 @@ if (native.Right.Data == global::System.IntPtr.Zero)
 host.Right = default;
 }
 }
+public static unsafe void UnmarshalArrays_OperatorMacroBinaryOperands(in global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroBinaryOperands host, ref AotContexts.OperatorMacroBinaryOperands native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_OperatorMacroBinaryOperands(ref global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroBinaryOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Left != null)

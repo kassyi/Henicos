@@ -346,6 +346,41 @@ handle.Free();
 }
 }
 }
+public static unsafe void UnmarshalArrays_OperatorMacroBinaryOperands(in global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroBinaryOperands host, ref AotContexts.OperatorMacroBinaryOperands native, global::System.IntPtr hStream = default)
+{
+if (native.Left.Data != global::System.IntPtr.Zero && host.Left != null)
+{
+int size = checked(host.Left.Length * sizeof(global::System.UInt32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Left, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Left.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.Right.Data != global::System.IntPtr.Zero && host.Right != null)
+{
+int size = checked(host.Right.Length * sizeof(global::System.UInt32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Right, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Right.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
 public static void AliasHeldArrays_OperatorMacroBinaryOperands(ref global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroBinaryOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Left != null)

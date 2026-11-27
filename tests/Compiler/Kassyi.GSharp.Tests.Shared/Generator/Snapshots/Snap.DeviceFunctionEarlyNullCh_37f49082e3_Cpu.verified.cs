@@ -124,6 +124,10 @@ if (native.Other.Data == global::System.IntPtr.Zero)
 host.Other = default;
 }
 }
+public static unsafe void UnmarshalArrays_DeviceFunctionOuterBag(in global::Kassyi.GSharp.Tests.Shared.Core.DeviceFunctionOuterBag host, ref AotContexts.DeviceFunctionOuterBag native, global::System.IntPtr hStream = default)
+{
+UnmarshalArrays_DeviceFunctionInnerBag(in host.Inner, ref native.Inner, hStream);
+}
 public static void AliasHeldArrays_DeviceFunctionOuterBag(ref global::Kassyi.GSharp.Tests.Shared.Core.DeviceFunctionOuterBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 AliasHeldArrays_DeviceFunctionInnerBag(ref host.Inner, held);
@@ -185,6 +189,9 @@ if (native.Data.Data == global::System.IntPtr.Zero)
 {
 host.Data = default;
 }
+}
+public static unsafe void UnmarshalArrays_DeviceFunctionInnerBag(in global::Kassyi.GSharp.Tests.Shared.Core.DeviceFunctionInnerBag host, ref AotContexts.DeviceFunctionInnerBag native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_DeviceFunctionInnerBag(ref global::Kassyi.GSharp.Tests.Shared.Core.DeviceFunctionInnerBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

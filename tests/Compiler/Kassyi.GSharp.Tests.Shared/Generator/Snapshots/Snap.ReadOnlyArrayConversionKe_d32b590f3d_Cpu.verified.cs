@@ -107,6 +107,9 @@ if (native.Optional.Data == global::System.IntPtr.Zero)
 host.Optional = default;
 }
 }
+public static unsafe void UnmarshalArrays_ReadOnlyArrayHolder(in global::Kassyi.GSharp.Tests.Shared.Core.ReadOnlyArrayHolder host, ref AotContexts.ReadOnlyArrayHolder native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_ReadOnlyArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.ReadOnlyArrayHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Fixed != null)

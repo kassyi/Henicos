@@ -373,6 +373,9 @@ if (native.GridStats.Data == global::System.IntPtr.Zero)
 host.GridStats = default;
 }
 }
+public static unsafe void UnmarshalArrays_MultiPhaseReductionWorkspace(in global::Kassyi.GSharp.Tests.Shared.Differential.MultiPhaseReductionWorkspace host, ref AotContexts.MultiPhaseReductionWorkspace native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_MultiPhaseReductionWorkspace(ref global::Kassyi.GSharp.Tests.Shared.Differential.MultiPhaseReductionWorkspace host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.BlockSums != null)

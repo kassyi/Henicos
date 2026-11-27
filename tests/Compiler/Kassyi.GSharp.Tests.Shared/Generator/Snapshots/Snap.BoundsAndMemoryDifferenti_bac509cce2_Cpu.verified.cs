@@ -209,6 +209,9 @@ if (native.WriteIndices.Data == global::System.IntPtr.Zero)
 host.WriteIndices = default;
 }
 }
+public static unsafe void UnmarshalArrays_ArrayIndexBoundsInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.ArrayIndexBoundsInputs host, ref AotContexts.ArrayIndexBoundsInputs native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_ArrayIndexBoundsInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.ArrayIndexBoundsInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Source != null)
@@ -308,6 +311,9 @@ host.Indices = default;
 host.SliceStart = native.SliceStart;
 host.SliceLength = native.SliceLength;
 }
+public static unsafe void UnmarshalArrays_SpanSliceIndexInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.SpanSliceIndexInputs host, ref AotContexts.SpanSliceIndexInputs native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_SpanSliceIndexInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.SpanSliceIndexInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Backing != null)
@@ -397,6 +403,9 @@ host.Starts = default;
 }
 host.SliceStart = native.SliceStart;
 host.SliceLength = native.SliceLength;
+}
+public static unsafe void UnmarshalArrays_SpanSliceStartInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.SpanSliceStartInputs host, ref AotContexts.SpanSliceStartInputs native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_SpanSliceStartInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.SpanSliceStartInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -503,6 +512,9 @@ host.Counts = default;
 host.SliceStart = native.SliceStart;
 host.SliceLength = native.SliceLength;
 }
+public static unsafe void UnmarshalArrays_SpanSliceRangeInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.SpanSliceRangeInputs host, ref AotContexts.SpanSliceRangeInputs native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_SpanSliceRangeInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.SpanSliceRangeInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Backing != null)
@@ -581,6 +593,9 @@ if (native.Indices.Data == global::System.IntPtr.Zero)
 host.Indices = default;
 }
 host.Rows = native.Rows;
+}
+public static unsafe void UnmarshalArrays_MemoryBoundsIndexInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.MemoryBoundsIndexInputs host, ref AotContexts.MemoryBoundsIndexInputs native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_MemoryBoundsIndexInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.MemoryBoundsIndexInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -683,6 +698,9 @@ host.SliceStart = native.SliceStart;
 host.SliceLength = native.SliceLength;
 host.OtherLength = native.OtherLength;
 }
+public static unsafe void UnmarshalArrays_WrongSpanBoundsCheckInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.WrongSpanBoundsCheckInputs host, ref AotContexts.WrongSpanBoundsCheckInputs native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_WrongSpanBoundsCheckInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.WrongSpanBoundsCheckInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Backing != null)
@@ -761,6 +779,9 @@ if (native.Data.Data == global::System.IntPtr.Zero)
 host.Data = default;
 }
 host.Offset = native.Offset;
+}
+public static unsafe void UnmarshalArrays_DiffNonNullableHolder(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffNonNullableHolder host, ref AotContexts.DiffNonNullableHolder native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_DiffNonNullableHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNonNullableHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

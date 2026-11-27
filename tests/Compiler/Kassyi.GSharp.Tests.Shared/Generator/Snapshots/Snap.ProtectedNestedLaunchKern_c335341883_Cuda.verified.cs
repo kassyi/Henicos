@@ -162,6 +162,25 @@ handle.Free();
 }
 host.Factor = native.Factor;
 }
+public static unsafe void UnmarshalArrays_ProtectedNestedLaunchBase_ProtectedPayload(in global::Kassyi.GSharp.Tests.Shared.Marshaling.ProtectedNestedLaunchBase.ProtectedPayload host, ref AotContexts.ProtectedPayload native, global::System.IntPtr hStream = default)
+{
+if (native.Values.Data != global::System.IntPtr.Zero && host.Values != null)
+{
+int size = checked(host.Values.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Values, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Values.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
 public static void AliasHeldArrays_ProtectedNestedLaunchBase_ProtectedPayload(ref global::Kassyi.GSharp.Tests.Shared.Marshaling.ProtectedNestedLaunchBase.ProtectedPayload host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Values != null)
@@ -378,6 +397,25 @@ handle.Free();
 }
 }
 host.Factor = native.Factor;
+}
+public static unsafe void UnmarshalArrays_ProtectedNestedLaunchBase_ProtectedPayload(in global::Kassyi.GSharp.Tests.Shared.Marshaling.ProtectedNestedLaunchBase.ProtectedPayload host, ref AotContexts.ProtectedPayload native, global::System.IntPtr hStream = default)
+{
+if (native.Values.Data != global::System.IntPtr.Zero && host.Values != null)
+{
+int size = checked(host.Values.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Values, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Values.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
 }
 public static void AliasHeldArrays_ProtectedNestedLaunchBase_ProtectedPayload(ref global::Kassyi.GSharp.Tests.Shared.Marshaling.ProtectedNestedLaunchBase.ProtectedPayload host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

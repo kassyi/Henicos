@@ -1106,6 +1106,9 @@ if (native.After.Data == global::System.IntPtr.Zero)
 host.After = default;
 }
 }
+public static unsafe void UnmarshalArrays_FailureAfterBarrierBuffers(in global::Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers host, ref AotContexts.FailureAfterBarrierBuffers native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_FailureAfterBarrierBuffers(ref global::Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Source != null)

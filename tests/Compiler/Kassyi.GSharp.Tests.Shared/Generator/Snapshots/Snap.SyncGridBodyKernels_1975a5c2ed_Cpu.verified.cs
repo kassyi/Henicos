@@ -685,6 +685,9 @@ if (native.Counters.Data == global::System.IntPtr.Zero)
 host.Counters = default;
 }
 }
+public static unsafe void UnmarshalArrays_DeclarationAfterReturnBuffers(in global::Kassyi.GSharp.Tests.Shared.Transpiler.DeclarationAfterReturnBuffers host, ref AotContexts.DeclarationAfterReturnBuffers native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_DeclarationAfterReturnBuffers(ref global::Kassyi.GSharp.Tests.Shared.Transpiler.DeclarationAfterReturnBuffers host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Input != null)

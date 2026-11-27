@@ -217,6 +217,9 @@ if (native.Data.Data == global::System.IntPtr.Zero)
 host.Data = default;
 }
 }
+public static unsafe void UnmarshalArrays_LayoutReproBag(in global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag host, ref AotContexts.LayoutReproBag native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_LayoutReproBag(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Data != null)
@@ -283,6 +286,17 @@ if (native.Elems.Data == global::System.IntPtr.Zero)
 host.Elems = default;
 }
 else if (host.Elems != null)
+{
+AotContexts.LayoutReproInnerBag* shadow = (AotContexts.LayoutReproInnerBag*)native.Elems.Data;
+for (int i = 0; i < host.Elems.Length; i++)
+{
+Unmarshal_LayoutReproInnerBag(ref host.Elems[i], ref shadow[i], hStream);
+}
+}
+}
+public static unsafe void UnmarshalArrays_LayoutReproElemHolder(in global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElemHolder host, ref AotContexts.LayoutReproElemHolder native, global::System.IntPtr hStream = default)
+{
+if (native.Elems.Data != global::System.IntPtr.Zero && host.Elems != null)
 {
 AotContexts.LayoutReproInnerBag* shadow = (AotContexts.LayoutReproInnerBag*)native.Elems.Data;
 for (int i = 0; i < host.Elems.Length; i++)
@@ -362,6 +376,9 @@ if (native.Items.Data == global::System.IntPtr.Zero)
 host.Items = default;
 }
 }
+public static unsafe void UnmarshalArrays_LayoutReproInnerBag(in global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInnerBag host, ref AotContexts.LayoutReproInnerBag native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_LayoutReproInnerBag(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInnerBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Items != null)
@@ -432,6 +449,9 @@ if (native.B.Data == global::System.IntPtr.Zero)
 {
 host.B = default;
 }
+}
+public static unsafe void UnmarshalArrays_LayoutReproPair(in global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproPair host, ref AotContexts.LayoutReproPair native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_LayoutReproPair(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproPair host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -649,6 +669,10 @@ public static unsafe void Unmarshal_LayoutReproArrOuter(ref global::Kassyi.GShar
 {
 Unmarshal_LayoutReproArrPair(ref host.P, ref native.P, hStream);
 }
+public static unsafe void UnmarshalArrays_LayoutReproArrOuter(in global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter host, ref AotContexts.LayoutReproArrOuter native, global::System.IntPtr hStream = default)
+{
+UnmarshalArrays_LayoutReproArrPair(in host.P, ref native.P, hStream);
+}
 public static void AliasHeldArrays_LayoutReproArrOuter(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 AliasHeldArrays_LayoutReproArrPair(ref host.P, held);
@@ -701,6 +725,16 @@ fixed (byte* pField = native._element0)
 for (int k = 0; k < 2; k++)
 {
 Unmarshal_LayoutReproWithArr(ref host[k], ref ((AotContexts.LayoutReproWithArr*)pField)[k], hStream);
+}
+}
+}
+public static unsafe void UnmarshalArrays_LayoutReproArrPair(in global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrPair host, ref AotContexts.LayoutReproArrPair native, global::System.IntPtr hStream = default)
+{
+fixed (byte* pField = native._element0)
+{
+for (int k = 0; k < 2; k++)
+{
+UnmarshalArrays_LayoutReproWithArr(in host[k], ref ((AotContexts.LayoutReproWithArr*)pField)[k], hStream);
 }
 }
 }
@@ -765,6 +799,9 @@ if (native.Data.Data == global::System.IntPtr.Zero)
 {
 host.Data = default;
 }
+}
+public static unsafe void UnmarshalArrays_LayoutReproWithArr(in global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproWithArr host, ref AotContexts.LayoutReproWithArr native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_LayoutReproWithArr(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproWithArr host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
