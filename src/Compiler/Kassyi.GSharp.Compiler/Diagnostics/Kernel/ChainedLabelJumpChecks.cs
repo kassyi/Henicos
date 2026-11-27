@@ -12,8 +12,9 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 /// a device function of one that exports its device code (a CUDA kernel runs as written).
 /// GSH0121 is the generator's alone: the analyzer does not report it. An IDE shows the diagnostics of the analyzer and
 /// of the generator side by side and does not merge equal ones at the same place, so a diagnostic reported from both
-/// would be seen twice (#2121). A build without the analyzers still stops, and a method that the generator cannot lower
-/// is reported as GSH0048.
+/// would be seen twice (#2121). GSH0040 (a goto across a barrier) is the analyzer's alone for the same reason: a build
+/// without the analyzers does not report it, and the managed body of the method then throws where it runs
+/// (<see cref="ManagedCSharpTranspiler"/>). A method that the generator cannot lower is reported as GSH0048.
 /// </remarks>
 internal static class ChainedLabelJumpChecks
 {
@@ -21,12 +22,13 @@ internal static class ChainedLabelJumpChecks
     /// The gotos of <paramref name="lowered"/> that cannot be lowered
     /// (<see cref="LoweredStateMachine.GotosToChainedLabelsAcrossStates"/>), each with its place in the user's source,
     /// without the ones that cross a barrier or a call that suspends: such a goto is GSH0040's
-    /// (<see cref="CrossBarrierChecks.IsCrossBarrierGoto"/>), which the analyzer reports alone, every other one GSH0121's.
+    /// (<see cref="CrossBarrierChecks.IsCrossBarrierGoto"/>), which the analyzer reports alone, every other one
+    /// GSH0121's.
     /// </summary>
     /// <remarks>
     /// The one definition of the gotos the generator reports as GSH0121. A goto across a barrier is left out, as the
     /// analyzer reports it (<see cref="CrossBarrierChecks"/>) and an IDE would show it twice if the generator did too;
-    /// the managed body that the rejected jump leaves out is not written either way. The goto of the
+    /// the managed body of the method throws where it runs, whether or not the analyzers ran. The goto of the
     /// lowered body is found again in the user's source by its reported place, and its label as GSH0040 finds it
     /// (<see cref="CrossBarrierChecks.FindTargetLabel"/>). The barriers are the calls that run (<see cref="RemovedCalls"/>) and
     /// <see cref="KernelConstructChecks.IsBarrierCall"/> accepts; in a device iterator, where the scan collects none

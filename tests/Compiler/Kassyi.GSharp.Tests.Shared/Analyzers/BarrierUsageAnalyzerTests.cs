@@ -1,8 +1,14 @@
 using System;
 using System.Globalization;
+using System.IO;
+using System.Reflection;
+using System.Runtime.Loader;
 using System.Threading.Tasks;
+using Kassyi.GSharp.Compiler;
 using Kassyi.GSharp.Compiler.Diagnostics;
+using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Tests.Shared.Helpers;
+using Microsoft.CodeAnalysis.CSharp;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Analyzers;
@@ -657,6 +663,77 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
         Assert.Equal([(DiagnosticOrigin.Generator, 70, 13, 70, 25)], GeneratorRanges(run, gsh0121));
         Assert.DoesNotContain(run.Generator, d => d.Id == gsh0040);
         Assert.Single(run.Generator);
+    }
+
+    [Theory]
+    [InlineData("ChainedBarrierBackInnerKernel", 31)]
+    [InlineData("ChainedSuspendingCallBackInnerKernel", 50)]
+    [Scenario(TestScenario.SadPath)]
+    public void ChainedLabelJump_GotoAcrossBarrierWithoutAnalyzers_ManagedBodyThrowsAtTheJumpAndTheLauncherEnds(
+        string kernelName, int line)
+    {
+        // A caller in the compilation: the launcher takes a span, which reflection cannot pass
+        var caller = CSharpSyntaxTree.ParseText($$"""
+            namespace Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage;
+
+            public static class ChainedLabelGotoBarrierCaller
+            {
+                public static void Run(int[] result) =>
+                    ChainedLabelGotoBarrierKernels.Launch{{kernelName}}(result, blockDimX: 4);
+            }
+            """, new CSharpParseOptions(LanguageVersion.Preview));
+        var unnamed = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Analyzers/BarrierUsage/ChainedLabelGotoBarrierKernels.cu.cs"));
+        // The place of the goto in the message is the file name and the position, so the tree needs a path
+        var kernelTree = unnamed.SyntaxTrees[0];
+        var compilation = unnamed
+            .ReplaceSyntaxTree(kernelTree, CSharpSyntaxTree.ParseText(kernelTree.GetText(),
+                new CSharpParseOptions(LanguageVersion.Preview), "ChainedLabelGotoBarrierKernels.cu.cs"))
+            .AddSyntaxTrees(caller);
+        var driver = CSharpGeneratorDriver.Create(
+            generators: [new GpuKernelGenerator().AsSourceGenerator()],
+            additionalTexts: null,
+            parseOptions: new CSharpParseOptions(LanguageVersion.Preview),
+            optionsProvider: new TestAnalyzerConfigOptionsProvider("Cpu"));
+        driver.RunGeneratorsAndUpdateCompilation(compilation, out var output, out _);
+
+        using var peStream = new MemoryStream();
+        Assert.True(output.Emit(peStream).Success);
+        peStream.Position = 0;
+        var loadContext = new AssemblyLoadContext($"ChainedLabelJumpThrow_{Guid.NewGuid():N}", isCollectible: true);
+        var launcher = loadContext.LoadFromStream(peStream)
+            .GetType("Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.ChainedLabelGotoBarrierCaller",
+                throwOnError: true)
+            ?.GetMethod("Run", BindingFlags.Public | BindingFlags.Static);
+        Assert.NotNull(launcher);
+
+        // The analyzers are not run, so GSH0040 does not stop the build, and an empty body would leave the state
+        // machine without ending (the launcher loops for ever): the body throws at the goto instead
+        // mutant: ManagedCSharpTranspiler.CreateBody returning an empty body again -> the launcher does not end
+        var launch = Task.Run(() =>
+        {
+            using (GpuExecution.Use(KernelExecution.Managed))
+            {
+                launcher.Invoke(null, [new int[4]]);
+            }
+        });
+        var ended = false;
+        try
+        {
+            ended = launch.Wait(TimeSpan.FromSeconds(30));
+        }
+        catch (AggregateException)
+        {
+            ended = true;
+        }
+
+        Assert.True(ended, "the managed launcher did not end");
+        var failure = Assert.IsType<AggregateException>(launch.Exception).Flatten().InnerException;
+        var thrown = Assert.IsType<NotSupportedException>(
+            failure is TargetInvocationException invocation ? invocation.InnerException : failure);
+        Assert.Contains(GSharpDiagnostics.CrossBarrierGotoProhibited.Id, thrown.Message, StringComparison.Ordinal);
+        Assert.Contains($"ChainedLabelGotoBarrierKernels.cu.cs({line},13)", thrown.Message, StringComparison.Ordinal);
+        Assert.Contains("goto second", thrown.Message, StringComparison.Ordinal);
     }
 
     [Fact]

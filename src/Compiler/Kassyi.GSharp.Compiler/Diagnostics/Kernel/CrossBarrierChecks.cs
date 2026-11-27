@@ -58,7 +58,9 @@ internal static class CrossBarrierChecks
     /// since sibling blocks may declare the same label name; <see langword="null"/> for <c>goto case</c> and
     /// <c>goto default</c>.
     /// </summary>
-    /// <remarks>The one lookup of GSH0040 (the analyzer) and of GSH0121 (<see cref="ChainedLabelJumpChecks.FindReported"/>).</remarks>
+    /// <remarks>
+    /// The one lookup of GSH0040 (the analyzer) and of GSH0121 (<see cref="ChainedLabelJumpChecks.FindReported"/>).
+    /// </remarks>
     internal static LabeledStatementSyntax? FindTargetLabel(IReadOnlyList<LabeledStatementSyntax> labels,
         GotoStatementSyntax gotoStmt, SemanticModel semanticModel) =>
         gotoStmt.IsKind(SyntaxKind.GotoStatement) &&
