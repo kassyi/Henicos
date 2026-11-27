@@ -71,6 +71,50 @@ public class NativeStackEligibilityTests
         "MethodGroupSelfCycleKernel", NativeStackObstacle.RecursiveSuspendingCall)]
     [InlineData("NativeStackEligibilityCases.Kernels",
         "MethodGroupMutualCycleKernel", NativeStackObstacle.RecursiveSuspendingCall)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "StructCtorBarrierKernel", NativeStackObstacle.StructMemberSplit)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "StructCtorAndDirectBarrierKernel", NativeStackObstacle.StructMemberSplit)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "WrapperCallingStructCtorKernel", NativeStackObstacle.StructMemberSplit)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "GenericStructBarrierKernel", NativeStackObstacle.StructMemberSplit)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "GenericStructPlainKernel", NativeStackObstacle.NoBlockBarrier)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "GridSyncStructCtorKernel", NativeStackObstacle.StructMemberSplit)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "GridSyncStructCtorDeviceFunc", NativeStackObstacle.StructMemberSplit)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "CallsGridSyncStructCtorDeviceKernel", NativeStackObstacle.StructMemberSplit)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "ConstrainedGenMethodKernel", NativeStackObstacle.StructMemberSplit)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "ConstrainedGenMethodPlainKernel", NativeStackObstacle.NoBlockBarrier)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "PartialGenericKernel", NativeStackObstacle.StructMemberSplit)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "PartialGenericPlainKernel", NativeStackObstacle.NoBlockBarrier)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "PartialStructGenericDeviceFunctionKernel", NativeStackObstacle.None)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "PartialGenericStructDeviceFunctionKernel", NativeStackObstacle.None)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "PartialPolyNonExtAttrDefKernel", NativeStackObstacle.None)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "PartialPolyNonExtAttrImplKernel", NativeStackObstacle.None)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "PartialPolyExtAttrDefKernel", NativeStackObstacle.None)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "PartialPolyExtAttrImplKernel", NativeStackObstacle.None)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "PartialPolyIndirectAttrDefKernel", NativeStackObstacle.None)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "PartialPolyIndirectAttrImplKernel", NativeStackObstacle.None)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "PartialPolyBarrierAttrDefKernel", NativeStackObstacle.RecursiveSuspendingCall)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "PartialPolyIndirectBarrierAttrImplKernel", NativeStackObstacle.RecursiveSuspendingCall)]
     internal void Classify_KernelBody_ReturnsExpectedObstacle(
         string typeName,
         string methodName,

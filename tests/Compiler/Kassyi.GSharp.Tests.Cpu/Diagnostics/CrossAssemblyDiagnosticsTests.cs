@@ -569,6 +569,140 @@ public class CrossAssemblyDiagnosticsTests
         Assert.Empty(diagnostics.Where(static d => d.Id is "GSH0088" or "GSH0090"));
     }
 
+    // Partial [GpuDeviceFunction] export divergence matches between PartialDefinitionPart and
+    // PartialImplementationPart, and consumer assemblies diagnose variant arguments while accepting uniform ones
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void PartialDeviceFunction_GetExportedDivergence_MatchesBetweenDefinitionAndImplementation()
+    {
+        const string Source = """
+            using Kassyi.GSharp.Core;
+
+            namespace PartialLib;
+
+            public static partial class PartialFunctions
+            {
+                [GpuDeviceFunction]
+                public static partial int PartialCondSyncAttrOnDef(int x);
+
+                public static partial int PartialCondSyncAttrOnDef(int x)
+                {
+                    if (x > 0)
+                    {
+                        Gpu.SyncThreads();
+                    }
+
+                    return x;
+                }
+
+                [GpuDeviceFunction]
+                public static partial int PartialCondTwoBarriersAttrOnDef(int x);
+
+                public static partial int PartialCondTwoBarriersAttrOnDef(int x)
+                {
+                    if (x > 0)
+                    {
+                        Gpu.SyncThreads();
+                    }
+
+                    Gpu.SyncThreads();
+                    return x;
+                }
+            }
+            """;
+
+        var compilation = RoslynTestUtility.CreateCompilation(Source);
+        var type = Assert.IsAssignableFrom<INamedTypeSymbol>(
+            compilation.GetTypeByMetadataName("PartialLib.PartialFunctions"));
+
+        var condSyncDef = type.GetMembers("PartialCondSyncAttrOnDef").OfType<IMethodSymbol>().Single();
+        var condSyncImpl = Assert.IsAssignableFrom<IMethodSymbol>(condSyncDef.PartialImplementationPart);
+        var expectedCondSync = new ExportedBarrierDivergence(0, 1, false);
+        Assert.Equal(expectedCondSync, UniformityAnalysis.GetExportedDivergence(condSyncDef, compilation));
+        Assert.Equal(expectedCondSync, UniformityAnalysis.GetExportedDivergence(condSyncImpl, compilation));
+
+        var twoBarriersDef = type.GetMembers("PartialCondTwoBarriersAttrOnDef").OfType<IMethodSymbol>().Single();
+        var twoBarriersImpl = Assert.IsAssignableFrom<IMethodSymbol>(twoBarriersDef.PartialImplementationPart);
+        var expectedTwoBarriers = new ExportedBarrierDivergence(1, 0, false);
+        Assert.Equal(expectedTwoBarriers, UniformityAnalysis.GetExportedDivergence(twoBarriersDef, compilation));
+        Assert.Equal(expectedTwoBarriers, UniformityAnalysis.GetExportedDivergence(twoBarriersImpl, compilation));
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.Boundary)]
+    public async Task ImportedPartialDeviceFunction_CrossAssemblyCall_DiagnosesVariantAndAcceptsUniform(
+        string dialect)
+    {
+        const string LibrarySource = """
+            using Kassyi.GSharp.Core;
+
+            namespace PartialLib;
+
+            public static partial class PartialFunctions
+            {
+                [GpuDeviceFunction]
+                public static partial int PartialCondSyncAttrOnDef(int x);
+
+                public static partial int PartialCondSyncAttrOnDef(int x)
+                {
+                    if (x > 0)
+                    {
+                        Gpu.SyncThreads();
+                    }
+
+                    return x;
+                }
+
+                [GpuDeviceFunction]
+                public static partial int PartialCondTwoBarriersAttrOnDef(int x);
+
+                public static partial int PartialCondTwoBarriersAttrOnDef(int x)
+                {
+                    if (x > 0)
+                    {
+                        Gpu.SyncThreads();
+                    }
+
+                    Gpu.SyncThreads();
+                    return x;
+                }
+            }
+            """;
+
+        const string ConsumerSource = """
+            using Kassyi.GSharp.Core;
+            using PartialLib;
+
+            namespace PartialConsumer;
+
+            public static partial class ConsumerKernels
+            {
+                [GpuKernel]
+                public static void ConsumeUniformPartialCond(int[] o)
+                {
+                    o[0] = PartialFunctions.PartialCondSyncAttrOnDef(1);
+                    Gpu.SyncThreads();
+                }
+
+                [GpuKernel]
+                public static void ConsumeVariantPartialTwoBarriersDef(int[] o)
+                {
+                    o[0] = PartialFunctions.PartialCondTwoBarriersAttrOnDef(ThreadIndex.X);
+                }
+            }
+            """;
+
+        var library = DeviceLibraryBuilder.Build("PartialLib", null, LibrarySource);
+
+        var diagnostics = await RunAsync(dialect, ConsumerSource, library);
+
+        Assert.Equal([(Analyzer, 18, 16, 18, 79)],
+            diagnostics.Ranges(GSharpDiagnostics.LaunchDependentDivergentBarrier.Id));
+        Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.BarrierAfterDivergentExit.Id));
+    }
+
     // The diagnostics of a run and the text of the sources the generator added
     private static async Task<(ImmutableArray<ReportedDiagnostic> Diagnostics, string Generated)>
         RunWithGeneratedSourceAsync(string dialect, string consumer, params MetadataReference[] libraries)

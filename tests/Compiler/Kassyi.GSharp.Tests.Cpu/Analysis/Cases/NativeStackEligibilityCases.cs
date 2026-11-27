@@ -399,6 +399,390 @@ namespace NativeStackEligibilityCases
             Kassyi.GSharp.Core.Gpu.ForUnroll(0, 2, MutualGroupA);
             data[0] = 1;
         }
+
+        [GpuKernel]
+        public static void StructCtorBarrierKernel(int[] data)
+        {
+            var h = new BarrierCtor(1);
+            data[0] = h.Value;
+        }
+
+        [GpuKernel]
+        public static void StructCtorAndDirectBarrierKernel(int[] data)
+        {
+            var h = new BarrierCtor(1);
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            data[0] = h.Value;
+        }
+
+        [GpuDeviceFunction]
+        public static int StructCtorWrapper(int x)
+        {
+            var h = new BarrierCtor(x);
+            return h.Value;
+        }
+
+        [GpuKernel]
+        public static void WrapperCallingStructCtorKernel(int[] data)
+        {
+            data[0] = StructCtorWrapper(1);
+        }
+
+        [GpuKernel]
+        public static void GenericStructBarrierKernel(int[] data)
+        {
+            var h = new GenericWrap<BarrierAction>(1);
+            data[0] = h.Value;
+        }
+
+        [GpuKernel]
+        public static void GenericStructPlainKernel(int[] data)
+        {
+            var h = new GenericWrap<PlainAction>(1);
+            data[0] = h.Value;
+        }
+
+        [GpuKernel]
+        public static void GridSyncStructCtorKernel(int[] data)
+        {
+            var h = new GridSyncCtor(1);
+            data[0] = h.Value;
+        }
+
+        [GpuDeviceFunction]
+        public static int GridSyncStructCtorDeviceFunc(int x)
+        {
+            var h = new GridSyncCtor(x);
+            return h.Value;
+        }
+
+        [GpuKernel]
+        public static void CallsGridSyncStructCtorDeviceKernel(int[] data)
+        {
+            data[0] = GridSyncStructCtorDeviceFunc(1);
+        }
+
+        [GpuDeviceFunction]
+        public static partial void PartialGenericStep<T>() where T : struct, IWrapAction;
+
+        public static partial void PartialGenericStep<T>() where T : struct, IWrapAction => default(T).Run();
+
+        [GpuKernel]
+        public static void ConstrainedGenMethodKernel(int[] data)
+        {
+            var h = new GenericConstrainedGenMethodWrap<ImplWrapActionGen, BarrierAction>(1);
+            data[0] = h.Value;
+        }
+
+        [GpuKernel]
+        public static void ConstrainedGenMethodPlainKernel(int[] data)
+        {
+            var h = new GenericConstrainedGenMethodWrap<ImplWrapActionGen, PlainAction>(1);
+            data[0] = h.Value;
+        }
+
+        [GpuKernel]
+        public static void PartialGenericKernel(int[] data)
+        {
+            var h = new PartialGenericWrap<BarrierAction>(1);
+            data[0] = h.Value;
+        }
+
+        [GpuKernel]
+        public static void PartialGenericPlainKernel(int[] data)
+        {
+            var h = new PartialGenericWrap<PlainAction>(1);
+            data[0] = h.Value;
+        }
+
+        [GpuKernel]
+        public static void PartialStructGenericDeviceFunctionKernel(int[] data)
+        {
+            PartialStructGenericHelper.PartialHelper<int>();
+            data[0] = 1;
+        }
+
+        [GpuKernel]
+        public static void PartialGenericStructDeviceFunctionKernel(int[] data)
+        {
+            PartialGenStruct<int>.PartialHelper();
+            data[0] = 1;
+        }
+
+        [GpuDeviceFunction]
+        public static partial void PartialPolyNonExtAttrDef<T>(int depth);
+
+        public static partial void PartialPolyNonExtAttrDef<T>(int depth)
+        {
+            if (depth <= 0)
+            {
+                return;
+            }
+
+            PartialPolyNonExtAttrDef<PolyWrap<T>>(depth - 1);
+        }
+
+        [GpuKernel]
+        public static void PartialPolyNonExtAttrDefKernel(int[] data)
+        {
+            PartialPolyNonExtAttrDef<int>(2);
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            data[0] = 1;
+        }
+
+        public static partial void PartialPolyNonExtAttrImpl<T>(int depth);
+
+        [GpuDeviceFunction]
+        public static partial void PartialPolyNonExtAttrImpl<T>(int depth)
+        {
+            if (depth <= 0)
+            {
+                return;
+            }
+
+            PartialPolyNonExtAttrImpl<PolyWrap<T>>(depth - 1);
+        }
+
+        [GpuKernel]
+        public static void PartialPolyNonExtAttrImplKernel(int[] data)
+        {
+            PartialPolyNonExtAttrImpl<int>(2);
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            data[0] = 1;
+        }
+
+        [GpuDeviceFunction]
+        public static partial int PartialPolyExtAttrDef<T>(this int depth, T value);
+
+        public static partial int PartialPolyExtAttrDef<T>(this int depth, T value) =>
+            depth <= 0 ? 0 : (depth - 1).PartialPolyExtAttrDef(new PolyWrap<T> { Value = value });
+
+        [GpuKernel]
+        public static void PartialPolyExtAttrDefKernel(int[] data)
+        {
+            data[0] = 2.PartialPolyExtAttrDef(0);
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+        }
+
+        public static partial int PartialPolyExtAttrImpl<T>(this int depth, T value);
+
+        [GpuDeviceFunction]
+        public static partial int PartialPolyExtAttrImpl<T>(this int depth, T value) =>
+            depth <= 0 ? 0 : (depth - 1).PartialPolyExtAttrImpl(new PolyWrap<T> { Value = value });
+
+        [GpuKernel]
+        public static void PartialPolyExtAttrImplKernel(int[] data)
+        {
+            data[0] = 2.PartialPolyExtAttrImpl(0);
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+        }
+
+        [GpuDeviceFunction]
+        public static partial void PartialPolyIndirectAttrDef<T>(int depth);
+
+        public static partial void PartialPolyIndirectAttrDef<T>(int depth)
+        {
+            if (depth <= 0)
+            {
+                return;
+            }
+
+            PartialPolyIndirectHelperDef<T>(depth);
+        }
+
+        [GpuDeviceFunction]
+        public static void PartialPolyIndirectHelperDef<U>(int depth) =>
+            PartialPolyIndirectAttrDef<PolyWrap<U>>(depth - 1);
+
+        [GpuKernel]
+        public static void PartialPolyIndirectAttrDefKernel(int[] data)
+        {
+            PartialPolyIndirectAttrDef<int>(2);
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            data[0] = 1;
+        }
+
+        public static partial void PartialPolyIndirectAttrImpl<T>(int depth);
+
+        [GpuDeviceFunction]
+        public static partial void PartialPolyIndirectAttrImpl<T>(int depth)
+        {
+            if (depth <= 0)
+            {
+                return;
+            }
+
+            PartialPolyIndirectHelperImpl<T>(depth);
+        }
+
+        [GpuDeviceFunction]
+        public static void PartialPolyIndirectHelperImpl<U>(int depth) =>
+            PartialPolyIndirectAttrImpl<PolyWrap<U>>(depth - 1);
+
+        [GpuKernel]
+        public static void PartialPolyIndirectAttrImplKernel(int[] data)
+        {
+            PartialPolyIndirectAttrImpl<int>(2);
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            data[0] = 1;
+        }
+
+        [GpuDeviceFunction]
+        public static partial void PartialPolyBarrierAttrDef<T>(int depth);
+
+        public static partial void PartialPolyBarrierAttrDef<T>(int depth)
+        {
+            if (depth <= 0)
+            {
+                Kassyi.GSharp.Core.Gpu.SyncThreads();
+                return;
+            }
+
+            PartialPolyBarrierAttrDef<PolyWrap<T>>(depth - 1);
+        }
+
+        [GpuKernel]
+        public static void PartialPolyBarrierAttrDefKernel(int[] data)
+        {
+            PartialPolyBarrierAttrDef<int>(2);
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            data[0] = 1;
+        }
+
+        public static partial void PartialPolyIndirectBarrierAttrImpl<T>(int depth);
+
+        [GpuDeviceFunction]
+        public static partial void PartialPolyIndirectBarrierAttrImpl<T>(int depth)
+        {
+            if (depth <= 0)
+            {
+                Kassyi.GSharp.Core.Gpu.SyncThreads();
+                return;
+            }
+
+            PartialPolyIndirectBarrierHelperImpl<T>(depth);
+        }
+
+        [GpuDeviceFunction]
+        public static void PartialPolyIndirectBarrierHelperImpl<U>(int depth) =>
+            PartialPolyIndirectBarrierAttrImpl<PolyWrap<U>>(depth - 1);
+
+        [GpuKernel]
+        public static void PartialPolyIndirectBarrierAttrImplKernel(int[] data)
+        {
+            PartialPolyIndirectBarrierAttrImpl<int>(2);
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            data[0] = 1;
+        }
+    }
+
+    public struct PolyWrap<T>
+    {
+        public T Value;
+    }
+
+    public partial struct PartialStructGenericHelper
+    {
+        public static partial void PartialHelper<T>();
+
+        [GpuDeviceFunction]
+        public static partial void PartialHelper<T>()
+        {
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+        }
+    }
+
+    public partial struct PartialGenStruct<T>
+    {
+        public static partial void PartialHelper();
+
+        [GpuDeviceFunction]
+        public static partial void PartialHelper()
+        {
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+        }
+    }
+
+    public interface IWrapActionGen
+    {
+        void Run<U>() where U : struct, IWrapAction;
+    }
+
+    public struct ImplWrapActionGen : IWrapActionGen
+    {
+        public void Run<U>() where U : struct, IWrapAction => default(U).Run();
+    }
+
+    public struct GenericConstrainedGenMethodWrap<T, U> where T : struct, IWrapActionGen where U : struct, IWrapAction
+    {
+        public int Value;
+
+        public GenericConstrainedGenMethodWrap(int x)
+        {
+            default(T).Run<U>();
+            Value = x;
+        }
+    }
+
+    public struct PartialGenericWrap<T> where T : struct, IWrapAction
+    {
+        public int Value;
+
+        public PartialGenericWrap(int x)
+        {
+            Kernels.PartialGenericStep<T>();
+            Value = x;
+        }
+    }
+
+    public interface IWrapAction
+    {
+        void Run();
+    }
+
+    public struct BarrierAction : IWrapAction
+    {
+        public void Run() => Kassyi.GSharp.Core.Gpu.SyncThreads();
+    }
+
+    public struct PlainAction : IWrapAction
+    {
+        public void Run()
+        {
+        }
+    }
+
+    public struct GenericWrap<T> where T : struct, IWrapAction
+    {
+        public int Value;
+
+        public GenericWrap(int x)
+        {
+            default(T).Run();
+            Value = x;
+        }
+    }
+
+    public struct GridSyncCtor
+    {
+        public int Value;
+
+        public GridSyncCtor(int x)
+        {
+            Kassyi.GSharp.Core.Gpu.SyncGrid();
+            Value = x;
+        }
+    }
+
+    public struct BarrierCtor
+    {
+        public int Value;
+
+        public BarrierCtor(int x)
+        {
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            Value = x;
+        }
     }
 
     public static partial class UsingStaticKernels

@@ -49,6 +49,18 @@ public class ManagedStackEligibilityTests
     [InlineData("EligibilityKernels", "PassesEligiblePartialGroupKernel", true)]
     [InlineData("EligibilityKernels", "PassesIneligiblePartialGroupKernel", false)]
     [InlineData("UserDefinedNameofKernels", "CallsUserNameofWithIneligibleGroupKernel", false)]
+    [InlineData("EligibilityKernels", "StructCtorBarrierKernel", false)]
+    [InlineData("EligibilityKernels", "StructCtorAndDirectBarrierKernel", false)]
+    [InlineData("EligibilityKernels", "GenericStructBarrierKernel", false)]
+    [InlineData("EligibilityKernels", "GenericStructPlainKernel", false)]
+    [InlineData("EligibilityKernels", "GridSyncStructCtorKernel", false)]
+    [InlineData("EligibilityKernels", "CallsGridSyncStructCtorDeviceKernel", false)]
+    [InlineData("EligibilityKernels", "ConstrainedGenMethodKernel", false)]
+    [InlineData("EligibilityKernels", "ConstrainedGenMethodPlainKernel", false)]
+    [InlineData("EligibilityKernels", "PartialGenericKernel", false)]
+    [InlineData("EligibilityKernels", "PartialGenericPlainKernel", false)]
+    [InlineData("EligibilityKernels", "PartialStructGenericDeviceFunctionKernel", true)]
+    [InlineData("EligibilityKernels", "PartialGenericStructDeviceFunctionKernel", true)]
     public void IsStackKernel_VariousShapes_MatchesExpectedEligibility(string typeName, string methodName,
         bool expected)
     {
@@ -73,6 +85,8 @@ public class ManagedStackEligibilityTests
     [InlineData("EligibilityKernels", "IneligibleGenericStep", false)]
     [InlineData("EligibilityKernels", "EligiblePartialStep", true)]
     [InlineData("EligibilityKernels", "IneligiblePartialStep", false)]
+    [InlineData("EligibilityKernels", "StructCtorDeviceWait", false)]
+    [InlineData("EligibilityKernels", "GridSyncStructCtorDeviceFunc", false)]
     public void IsStackFunction_VariousShapes_MatchesExpectedEligibility(string typeName, string methodName,
         bool expected)
     {
@@ -192,6 +206,188 @@ public class ManagedStackEligibilityTests
     {
         var method = GetCooperativeMethod("GridDeviceWait");
         Assert.True(ManagedStackEligibility.IsStackFunction(method, s_cooperativeCompilation));
+    }
+
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("StructCtorBarrierKernel", "StructMemberSplit")]
+    [InlineData("StructCtorAndDirectBarrierKernel", "StructMemberSplit")]
+    [InlineData("GenericStructBarrierKernel", "StructMemberSplit")]
+    [InlineData("GenericStructPlainKernel", "NoBlockBarrier")]
+    [InlineData("GridSyncStructCtorKernel", "StructMemberSplit")]
+    [InlineData("CallsGridSyncStructCtorDeviceKernel", "StructMemberSplit")]
+    [InlineData("ConstrainedGenMethodKernel", "StructMemberSplit")]
+    [InlineData("ConstrainedGenMethodPlainKernel", "NoBlockBarrier")]
+    [InlineData("PartialGenericKernel", "StructMemberSplit")]
+    [InlineData("PartialGenericPlainKernel", "NoBlockBarrier")]
+    public void FindKernelReason_StructMemberSplit_ReturnsStructMemberSplit(string methodName, string expectedReason)
+    {
+        var method = GetMethod("EligibilityKernels", methodName);
+        var reason = ManagedStackEligibility.FindKernelReason(method, s_compilation);
+        Assert.NotNull(reason);
+        Assert.Equal(expectedReason, reason.Value.Name);
+    }
+
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("StructCtorDeviceWait", "StructMemberSplit")]
+    [InlineData("GridSyncStructCtorDeviceFunc", "StructMemberSplit")]
+    public void FindFunctionReason_StructMemberSplit_ReturnsStructMemberSplit(string methodName, string expectedReason)
+    {
+        var method = GetMethod("EligibilityKernels", methodName);
+        var reason = ManagedStackEligibility.FindFunctionReason(method, s_compilation);
+        Assert.NotNull(reason);
+        Assert.Equal(expectedReason, reason.Value.Name);
+    }
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("PartialPolyNonExtAttrDefKernel")]
+    [InlineData("PartialPolyNonExtAttrImplKernel")]
+    [InlineData("PartialPolyExtAttrDefKernel")]
+    [InlineData("PartialPolyExtAttrImplKernel")]
+    [InlineData("PartialPolyIndirectAttrDefKernel")]
+    [InlineData("PartialPolyIndirectAttrImplKernel")]
+    public void IsStackKernel_PartialGenericPolymorphicRecursion_TerminatesAsEligible(string methodName)
+    {
+        const string Source = """
+            using Kassyi.GSharp.Core;
+
+            namespace ManagedPartialPolyCases;
+
+            public struct PolyWrap<T>
+            {
+                public T Value;
+            }
+
+            public static partial class Kernels
+            {
+                [GpuDeviceFunction]
+                public static partial void PartialPolyNonExtAttrDef<T>(int depth);
+
+                public static partial void PartialPolyNonExtAttrDef<T>(int depth)
+                {
+                    if (depth <= 0)
+                    {
+                        return;
+                    }
+
+                    PartialPolyNonExtAttrDef<PolyWrap<T>>(depth - 1);
+                }
+
+                [GpuKernel]
+                public static void PartialPolyNonExtAttrDefKernel(int[] data)
+                {
+                    PartialPolyNonExtAttrDef<int>(2);
+                    Gpu.SyncThreads();
+                    data[0] = 1;
+                }
+
+                public static partial void PartialPolyNonExtAttrImpl<T>(int depth);
+
+                [GpuDeviceFunction]
+                public static partial void PartialPolyNonExtAttrImpl<T>(int depth)
+                {
+                    if (depth <= 0)
+                    {
+                        return;
+                    }
+
+                    PartialPolyNonExtAttrImpl<PolyWrap<T>>(depth - 1);
+                }
+
+                [GpuKernel]
+                public static void PartialPolyNonExtAttrImplKernel(int[] data)
+                {
+                    PartialPolyNonExtAttrImpl<int>(2);
+                    Gpu.SyncThreads();
+                    data[0] = 1;
+                }
+
+                [GpuDeviceFunction]
+                public static partial int PartialPolyExtAttrDef<T>(this int depth, T value);
+
+                public static partial int PartialPolyExtAttrDef<T>(this int depth, T value) =>
+                    depth <= 0 ? 0 : (depth - 1).PartialPolyExtAttrDef(new PolyWrap<T> { Value = value });
+
+                [GpuKernel]
+                public static void PartialPolyExtAttrDefKernel(int[] data)
+                {
+                    data[0] = 2.PartialPolyExtAttrDef(0);
+                    Gpu.SyncThreads();
+                }
+
+                public static partial int PartialPolyExtAttrImpl<T>(this int depth, T value);
+
+                [GpuDeviceFunction]
+                public static partial int PartialPolyExtAttrImpl<T>(this int depth, T value) =>
+                    depth <= 0 ? 0 : (depth - 1).PartialPolyExtAttrImpl(new PolyWrap<T> { Value = value });
+
+                [GpuKernel]
+                public static void PartialPolyExtAttrImplKernel(int[] data)
+                {
+                    data[0] = 2.PartialPolyExtAttrImpl(0);
+                    Gpu.SyncThreads();
+                }
+
+                [GpuDeviceFunction]
+                public static partial void PartialPolyIndirectAttrDef<T>(int depth);
+
+                public static partial void PartialPolyIndirectAttrDef<T>(int depth)
+                {
+                    if (depth <= 0)
+                    {
+                        return;
+                    }
+
+                    PartialPolyIndirectHelperDef<T>(depth);
+                }
+
+                [GpuDeviceFunction]
+                public static void PartialPolyIndirectHelperDef<U>(int depth) =>
+                    PartialPolyIndirectAttrDef<PolyWrap<U>>(depth - 1);
+
+                [GpuKernel]
+                public static void PartialPolyIndirectAttrDefKernel(int[] data)
+                {
+                    PartialPolyIndirectAttrDef<int>(2);
+                    Gpu.SyncThreads();
+                    data[0] = 1;
+                }
+
+                public static partial void PartialPolyIndirectAttrImpl<T>(int depth);
+
+                [GpuDeviceFunction]
+                public static partial void PartialPolyIndirectAttrImpl<T>(int depth)
+                {
+                    if (depth <= 0)
+                    {
+                        return;
+                    }
+
+                    PartialPolyIndirectHelperImpl<T>(depth);
+                }
+
+                [GpuDeviceFunction]
+                public static void PartialPolyIndirectHelperImpl<U>(int depth) =>
+                    PartialPolyIndirectAttrImpl<PolyWrap<U>>(depth - 1);
+
+                [GpuKernel]
+                public static void PartialPolyIndirectAttrImplKernel(int[] data)
+                {
+                    PartialPolyIndirectAttrImpl<int>(2);
+                    Gpu.SyncThreads();
+                    data[0] = 1;
+                }
+            }
+            """;
+        var compilation = RoslynTestUtility.CreateCompilation(Source);
+        var type = compilation.GetTypeByMetadataName("ManagedPartialPolyCases.Kernels")
+            ?? throw new InvalidOperationException("Type 'Kernels' not found.");
+        var method = type.GetMembers(methodName).OfType<IMethodSymbol>().Single();
+
+        Assert.True(ManagedStackEligibility.IsStackKernel(method, compilation));
+        Assert.Null(ManagedStackEligibility.FindKernelReason(method, compilation));
     }
 
     private static IMethodSymbol GetMethod(string typeName, string methodName)
