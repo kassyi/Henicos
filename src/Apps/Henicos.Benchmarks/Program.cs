@@ -11,6 +11,58 @@ namespace Henicos.Benchmarks;
 /// </summary>
 internal class Program
 {
+    private const string UsageText = """
+        Henicos.Benchmarks - High-Performance GPU & CPU Number Theory Suite
+
+        Usage: dotnet run -c Release -- <command> [options]
+
+        Commands:
+          gpu-pi [digits] [options]  GPU Chudnovsky Pi computation (default: 10,000)
+                                     Options:
+                                       --out <path>        Write result digits to file
+                                       --threshold <terms> CPU/GPU hybrid threshold (default: 8192)
+                                       --hex               Output [digits] hexadecimal digits instead
+          cpu-pi [digits]            CPU Chudnovsky Pi baseline computation (default: 10,000)
+          tf [exponent] [maxP]       Mersenne trial factoring benchmark (default: 71428571, 4000000000)
+          prp [exponent] [base]      Fermat PRP test with verified checkpoints (default: 71428571, 3)
+                                     Options:
+                                       --proof <path>      Emit a binary Pietrzak PRP proof to <path>
+                                       --proof-power <k>   Halving tree depth k (default: 8)
+                                       --bench [steps]     Measure steady-state throughput (default: 512 steps)
+          prp-verify <proof-path>    Verify a binary Pietrzak PRP proof file
+          bbp [offset] [count]       Extract hexadecimal Pi digits via BBP (default: offset 0, count 16)
+          compute-bench [suite]      Run compute performance benchmark (sgemm, sha256, bs, reduce, mandelbrot,
+                                     empty, fma, branch, memcopy, transpose, micro, all) (default: all)
+                                     Options:
+                                       --json              Output benchmark results in JSON format
+          gpu-metrics [name]         Run a kernel benchmark under BenchmarkDotNet with GPU event timing
+                                     (mandelbrot, empty, fma, branch, memcopy, transpose)
+          arithmetic [words] [iters] Run GpuBigFloat arithmetic benchmark (default: 2048 words, 1000 iters)
+          arithmetic wide            Divide / Rsqrt with operands much wider than the result, cut on and off
+          arithmetic sqrt-path       GpuBigInt.Sqrt mega-kernel vs precision doubling at NTT boundaries
+          arithmetic ntt-product     Mega-kernel and standalone NTT products (2^10..2^24)
+          gbi-linq [elements] [words] Run GpuBigInt + StackLinq + CUDA Graph benchmark
+                                     Options:
+                                       --benchmark         Run via BenchmarkDotNet instead of instant runner
+          generator-bench [bdn-args] Run in-process Roslyn Source Generator & Analyzer benchmark (no GPU)
+                                     (also accepts BenchmarkDotNet flags directly, e.g. --filter *GeneratorBenchmark*)
+          bench-compare <base> <head> [options]
+                                     Compare the *-report-full.json reports of two runs per benchmark with a
+                                     Mann-Whitney U test; exit 1 on a significant slowdown (bench-compare --help)
+          help, -h, --help           Display this help message
+
+        Digits supports SI prefixes like 100k, 1M, 100M (e.g. `gpu-pi 100M`).
+        """;
+
+    private static readonly (string Target, Type BenchmarkType)[] s_arithmeticBenchmarks =
+    [
+        ("gbf", typeof(GpuBigFloatBenchmark)),
+        ("gbi", typeof(GpuBigIntBenchmark)),
+        ("wide", typeof(GpuBigFloatWideOperandBenchmark)),
+        ("sqrt-path", typeof(GpuBigIntSqrtPathBenchmark)),
+        ("ntt-product", typeof(GpuBigIntNttProductBenchmark))
+    ];
+
     private static int Main(string[] args)
     {
         try
@@ -61,48 +113,7 @@ internal class Program
 
     private static int PrintUsage()
     {
-        const string Usage = """
-            Henicos.Benchmarks - High-Performance GPU & CPU Number Theory Suite
-
-            Usage: dotnet run -c Release -- <command> [options]
-
-            Commands:
-              gpu-pi [digits] [options]  GPU Chudnovsky Pi computation (default: 10,000)
-                                         Options:
-                                           --out <path>        Write result digits to file
-                                           --threshold <terms> CPU/GPU hybrid threshold (default: 8192)
-                                           --hex               Output [digits] hexadecimal digits instead
-              cpu-pi [digits]            CPU Chudnovsky Pi baseline computation (default: 10,000)
-              tf [exponent] [maxP]       Mersenne trial factoring benchmark (default: 71428571, 4000000000)
-              prp [exponent] [base]      Fermat PRP test with verified checkpoints (default: 71428571, 3)
-                                         Options:
-                                           --proof <path>      Emit a binary Pietrzak PRP proof to <path>
-                                           --proof-power <k>   Halving tree depth k (default: 8)
-                                           --bench [steps]     Measure steady-state throughput (default: 512 steps)
-              prp-verify <proof-path>    Verify a binary Pietrzak PRP proof file
-              bbp [offset] [count]       Extract hexadecimal Pi digits via BBP (default: offset 0, count 16)
-              compute-bench [suite]      Run compute performance benchmark (sgemm, sha256, bs, reduce, mandelbrot,
-                                         empty, fma, branch, memcopy, transpose, micro, all) (default: all)
-                                         Options:
-                                           --json              Output benchmark results in JSON format
-              gpu-metrics [name]         Run a kernel benchmark under BenchmarkDotNet with GPU event timing
-                                         (mandelbrot, empty, fma, branch, memcopy, transpose)
-              arithmetic [words] [iters] Run GpuBigFloat arithmetic benchmark (default: 2048 words, 1000 iters)
-              arithmetic wide            Divide / Rsqrt with operands much wider than the result, cut on and off
-              arithmetic sqrt-path       GpuBigInt.Sqrt mega-kernel vs precision doubling at NTT boundaries
-              gbi-linq [elements] [words] Run GpuBigInt + StackLinq + CUDA Graph benchmark
-                                         Options:
-                                           --benchmark         Run via BenchmarkDotNet instead of instant runner
-              generator-bench [bdn-args] Run in-process Roslyn Source Generator & Analyzer benchmark (no GPU)
-                                         (also accepts BenchmarkDotNet flags directly, e.g. --filter *GeneratorBenchmark*)
-              bench-compare <base> <head> [options]
-                                         Compare the *-report-full.json reports of two runs per benchmark with a
-                                         Mann-Whitney U test; exit 1 on a significant slowdown (bench-compare --help)
-              help, -h, --help           Display this help message
-
-            Digits supports SI prefixes like 100k, 1M, 100M (e.g. `gpu-pi 100M`).
-            """;
-        Logger<Program>.Info(Usage);
+        Logger<Program>.Info(UsageText);
         return 0;
     }
 
@@ -193,33 +204,19 @@ internal class Program
 
     private static int RunArithmeticBench(string[] args)
     {
+        var hasTarget = args.Length > 0 && !args[0].StartsWith('-');
 #pragma warning disable RS0030 // CLI argument normalization
-        var target = args.Length > 0 && !args[0].StartsWith('-') ? args[0].ToLowerInvariant() : "all";
+        var target = hasTarget ? args[0].ToLowerInvariant() : "all";
 #pragma warning restore RS0030
-        var bdnArgs = args.Length > 0 && !args[0].StartsWith('-') ? args[1..] : args;
+        var bdnArgs = hasTarget ? args[1..] : args;
 
-        if (target is "all" or "gbf")
+        foreach (var (name, benchmarkType) in s_arithmeticBenchmarks)
         {
-            Logger<Program>.Info("Running GpuBigFloatBenchmark...");
-            BenchmarkRunner.Run<GpuBigFloatBenchmark>(args: bdnArgs);
-        }
-
-        if (target is "all" or "gbi")
-        {
-            Logger<Program>.Info("Running GpuBigIntBenchmark...");
-            BenchmarkRunner.Run<GpuBigIntBenchmark>(args: bdnArgs);
-        }
-
-        if (target is "all" or "wide")
-        {
-            Logger<Program>.Info("Running GpuBigFloatWideOperandBenchmark...");
-            BenchmarkRunner.Run<GpuBigFloatWideOperandBenchmark>(args: bdnArgs);
-        }
-
-        if (target is "all" or "sqrt-path")
-        {
-            Logger<Program>.Info("Running GpuBigIntSqrtPathBenchmark...");
-            BenchmarkRunner.Run<GpuBigIntSqrtPathBenchmark>(args: bdnArgs);
+            if (target == "all" || target == name)
+            {
+                Logger<Program>.Info($"Running {benchmarkType.Name}...");
+                BenchmarkRunner.Run(benchmarkType, args: bdnArgs);
+            }
         }
 
         return 0;
