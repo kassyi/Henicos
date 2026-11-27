@@ -113,8 +113,8 @@ public class GpuBigIntSqrtTests
     public void Sqrt_PrefilledResultBuffer_IsOverwritten(uint value, uint expectedRoot)
     {
         // The result buffer is filled with 0xFFFFFFFF first; every word above the root must be cleared.
-        // mutant: GpuBigIntDivRem.Sqrt.cs:233 `resultBuffer.Clear()` removed (value 0)
-        // mutant: GpuBigIntDivRem.Sqrt.cs:256 `resultBuffer.Clear()` removed (value 10000)
+        // mutant: GpuBigIntDivRem.Sqrt.cs:240 `resultBuffer.Clear()` removed (value 0)
+        // mutant: GpuBigIntDivRem.Sqrt.cs:263 `resultBuffer.Clear()` removed (value 10000)
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         using var a = new GpuBigUInt(ctx, new uint[] { value, 0, 0, 0 });
@@ -146,8 +146,8 @@ public class GpuBigIntSqrtTests
     // SqrtFloor gives floor(sqrt(a)) for an operand of 2n words with bit length 64n or 64n - 1 (the input of the
     // big-float Sqrt): the root agrees with the test's own integer square root and satisfies r² <= a < (r + 1)².
     // The squares, r² - 1 and r² + 2r are where an approximation one below the floor has to step up, or must not.
-    // mutant: GpuBigIntDivRem.Sqrt.cs:188 `SqrtFloorCorrection(...)` removed (Square, n = 8, 16, 17)
-    // mutant: GpuBigIntDivRem.Sqrt.cs:196 `(rootWords + 1) / 2` -> `Math.Max(1, (rootWords + 1) / 2 - 1)` (SquarePlus2R
+    // mutant: GpuBigIntDivRem.Sqrt.cs:195 `SqrtFloorCorrection(...)` removed (Square, n = 8, 16, 17)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:203 `(rootWords + 1) / 2` -> `Math.Max(1, (rootWords + 1) / 2 - 1)` (SquarePlus2R
     //         and SquareMinus1 at
     // n = 4, 8, 16: the estimate is more than one below, beyond what the design allows)
     // mutant: GpuBigIntSqrtKernels.cu.cs:178 `AddSmallSigned(trial, slackWords, -1)` removed (Highest, n = 16, 17)
@@ -170,13 +170,19 @@ public class GpuBigIntSqrtTests
         Assert.True(r * r <= a && a < (r + 1) * (r + 1), $"{kind} n={n}: {r:X} is not floor(sqrt({a:X}))");
     }
 
+    /// <summary>The structured operand kinds accepted by <see cref="BuildSqrtFloorOperand"/>.</summary>
+    internal static readonly string[] SqrtFloorOperandKinds =
+    [
+        "Random", "RandomOddLength", "Square", "SquareMinus1", "SquarePlus2R", "TopSquareMaxLow", "Lowest", "Highest",
+    ];
+
     /// <summary>
     /// Inputs of the SqrtFloor estimate: the kind of operand and the root words <c>n</c> (1 to 17, 32 and 33).
     /// </summary>
     public static TheoryData<string, int> SqrtFloorEstimateInputs()
     {
         var data = new TheoryData<string, int>();
-        foreach (var kind in new[] { "Random", "RandomOddLength", "Square", "SquareMinus1", "SquarePlus2R", "TopSquareMaxLow", "Lowest", "Highest" })
+        foreach (var kind in SqrtFloorOperandKinds)
         {
             for (var n = 1; n <= 17; n++)
             {
@@ -196,10 +202,10 @@ public class GpuBigIntSqrtTests
     // P2: the error of the approximation, sqrt(A) - A_top·x / 2^s, lies in [0, 2^-16 + 2^-32), the bound the design
     // derives. With a margin one word smaller (odd n) the error can reach 1; a gap of 2 then needs an input that no seeded
     // search found, so P2 is what catches it.
-    // mutant: GpuBigIntDivRem.Sqrt.cs:196 `(rootWords + 1) / 2` -> `rootWords / 2` (every odd n with TopSquareMaxLow
+    // mutant: GpuBigIntDivRem.Sqrt.cs:203 `(rootWords + 1) / 2` -> `rootWords / 2` (every odd n with TopSquareMaxLow
     //         and others:
     // P2; P1 holds for every input here)
-    // mutant: GpuBigIntDivRem.Sqrt.cs:203 `+ 48` -> `+ 47` (every input: the estimate is twice the root)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:210 `+ 48` -> `+ 47` (every input: the estimate is twice the root)
     [Theory]
     [Category(TestCategory.Stdlib)]
     [TestTarget(ExecutionTarget.CpuExecution)]
@@ -305,10 +311,10 @@ public class GpuBigIntSqrtTests
     // Sqrt of an operand above 32 bits normalizes it with an even shift for SqrtFloor and shifts the root back. The
     // squares and their neighbours are where a root one off shows; PowerOfTwoMinusOne and OddBitLength have an odd bit
     // length (64r - L odd), PowerOfTwo, AllOnes and EvenBitLength an even one.
-    // mutant: GpuBigIntDivRem.Sqrt.cs:273 `/ 2` -> `/ 2 + 1` (every input: the top bit leaves the 2r words)
-    // mutant: GpuBigIntDivRem.Sqrt.cs:284 `-halfShift` -> `0` (every input with 64r - L >= 2: odd word counts and
+    // mutant: GpuBigIntDivRem.Sqrt.cs:280 `/ 2` -> `/ 2 + 1` (every input: the top bit leaves the 2r words)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:291 `-halfShift` -> `0` (every input with 64r - L >= 2: odd word counts and
     //         EvenBitLength; OddBitLength of an even word count has 64r - L = 1, so k = 0)
-    // mutant: GpuBigIntDivRem.Sqrt.cs:272 `(actualBits + 63) / 64` -> `actualBits / 64` (every input whose bit length
+    // mutant: GpuBigIntDivRem.Sqrt.cs:279 `(actualBits + 63) / 64` -> `actualBits / 64` (every input whose bit length
     //         is not a multiple of 64)
     [SkippableTheory]
     [Category(TestCategory.Stdlib)]
@@ -330,9 +336,9 @@ public class GpuBigIntSqrtTests
     // The gap 64r - L between the bit length and the root words: 0 (no shift), 1 (odd, k = 0 keeps the bit length
     // 64r - 1), 2 (k = 1) and 63 (the largest, k = 31), each in a 4-word operand; and the one-word roots (L = 33 to
     // 64, k = 15 down to 0), the shortest operands that take this path.
-    // mutant: GpuBigIntDivRem.Sqrt.cs:273 `/ 2` -> `/ 2 + 1` (every bit length)
-    // mutant: GpuBigIntDivRem.Sqrt.cs:284 `-halfShift` -> `0` (126, 65 and the one-word roots below 63)
-    // mutant: GpuBigIntDivRem.Sqrt.cs:272 `(actualBits + 63) / 64` -> `actualBits / 64` (127, 126, 65 and the
+    // mutant: GpuBigIntDivRem.Sqrt.cs:280 `/ 2` -> `/ 2 + 1` (every bit length)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:291 `-halfShift` -> `0` (126, 65 and the one-word roots below 63)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:279 `(actualBits + 63) / 64` -> `actualBits / 64` (127, 126, 65 and the
     //         one-word roots below 64)
     [SkippableTheory]
     [Category(TestCategory.Stdlib)]
@@ -381,7 +387,7 @@ public class GpuBigIntSqrtTests
 
     // Any result buffer from ceil(8 / 2) = 4 words up receives the root and zeros above it: each separate buffer is
     // filled with ones first, and the whole buffer is read back. The operand itself may also be the result buffer.
-    // mutant: GpuBigIntDivRem.Sqrt.cs:284 `resultBuffer` -> `ResultBuffers.Head(resultBuffer, rootWords)` (131 with
+    // mutant: GpuBigIntDivRem.Sqrt.cs:291 `resultBuffer` -> `ResultBuffers.Head(resultBuffer, rootWords)` (131 with
     //         SameWidth, Wider, MinimumWidth and OperandItself: the words above the root keep their old value)
     [SkippableTheory]
     [Category(TestCategory.Stdlib)]
@@ -412,7 +418,7 @@ public class GpuBigIntSqrtTests
 
     // The minimum result width follows from the operand's width, not from its value: one word below ceil(8 / 2) = 4 is
     // rejected although the root of this 131-bit value fits in 3 words.
-    // mutant: GpuBigIntDivRem.Sqrt.cs:228 `ResultBuffers.ThrowIfNarrower(...)` removed (the root is written into 3
+    // mutant: GpuBigIntDivRem.Sqrt.cs:235 `ResultBuffers.ThrowIfNarrower(...)` removed (the root is written into 3
     //         words without an exception)
     [SkippableFact]
     [Category(TestCategory.Stdlib)]

@@ -764,8 +764,8 @@ public class GpuBigIntDivRemTests : IDisposable
         "Words33"
     ];
 
-    // Zero / One / MaxSingleWord take the single-word path (GpuBigIntDivRem.Sqrt.cs:237); the others are normalized
-    // for SqrtFloor. Even / odd leading zeros reach both parities of 64r - L in the normalization shift (line 273).
+    // Zero / One / MaxSingleWord take the single-word path (GpuBigIntDivRem.Sqrt.cs:244); the others are normalized
+    // for SqrtFloor. Even / odd leading zeros reach both parities of 64r - L in the normalization shift (line 280).
     [SkippableTheory]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stdlib)]
@@ -1247,11 +1247,11 @@ public class GpuBigIntDivRemTests : IDisposable
     private static void AssertFloorSquareRoot(BigInteger value, BigInteger root)
     {
         // s * s <= a < (s + 1) * (s + 1) defines floor(sqrt(a)) without a reference implementation.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:284
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:291
         //         `ShiftAndResize(scaledRoot, -halfShift, resultBuffer)` ->
         //         `ShiftAndResize(scaledRoot, 0, resultBuffer)`
         // input: Sqrt SmallestTwoWord, EvenLeadingZeros, OddLeadingZeros
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:255 `(uint)Math.Sqrt(val)`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:262 `(uint)Math.Sqrt(val)`
         //         -> `(uint)Math.Sqrt(val) + 1`
         // input: Sqrt One, MaxSingleWord
         Assert.True(root.Sign >= 0 && root * root <= value, $"{root}^2 exceeds {value}");

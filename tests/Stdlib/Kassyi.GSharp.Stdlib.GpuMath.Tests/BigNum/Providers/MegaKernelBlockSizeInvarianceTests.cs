@@ -165,7 +165,7 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
         }
 
         // Algebraic defining inequality: floor(sqrt(a)) satisfies r^2 <= a < (r + 1)^2.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:272
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:279
         //         `(actualBits + 63) / 64` -> `actualBits / 64`
         // input: 33
         var cpuRoot = FromWords(cpuWords);
