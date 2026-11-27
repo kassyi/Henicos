@@ -196,7 +196,8 @@ function buildPairwiseCases(shell: ShellName, absRedirectPrefix: string): string
       (opt2.startsWith("-v") && opt1.startsWith("--verbosity"));
     const filt = filters[i % filters.length] as string | null;
     const logOpt = LoggerChoices[i % LoggerChoices.length] as string | null;
-    const redir = redirectKinds[i % redirectKinds.length] as string;
+    const rawRedir = redirectKinds[i % redirectKinds.length] as string;
+    const redir = rawRedir.replace("/abs.log", `/abs_${i}.log`);
 
     const items: string[] = [];
     if (i % 3 === 0) {
