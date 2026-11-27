@@ -214,7 +214,7 @@ internal static class CyclePlanner
         }
 
         var loopCycles = new Dictionary<StatementSyntax, LoopCycle>();
-        PlanLoopCycles(allLoops.ToImmutable(), flow, holdsSplitPoint, enterScopedStatements, loopCycles);
+        PlanLoopCycles(allLoops.ToImmutable(), flow, holdsSplitPoint, constantCondition, enterScopedStatements, loopCycles);
 
         return new CyclePlan(flow, cycles, orderedCycles.ToImmutable(), loopCycles);
     }
@@ -741,11 +741,12 @@ internal static class CyclePlanner
     }
 
     // The first statement of one branch of a latch if whose other branch only goes back: lanes leave the loop there
-    private static ImmutableHashSet<StatementSyntax> FindBranchGates(
+    private static ImmutableHashSet<StatementSyntax> FindBranchGates<TJump>(
         ImmutableHashSet<FlowNode> members,
-        ImmutableArray<GotoStatementSyntax> backJumps,
+        ImmutableArray<TJump> backJumps,
         Func<ExpressionSyntax, bool?> constantCondition,
         bool enterScopedStatements)
+        where TJump : SyntaxNode
     {
         var gates = ImmutableHashSet.CreateBuilder<StatementSyntax>();
         foreach (var member in members)
@@ -1327,6 +1328,7 @@ internal static class CyclePlanner
         ImmutableArray<StatementSyntax> allLoops,
         StatementFlow flow,
         Func<StatementSyntax, bool> holdsSplitPoint,
+        Func<ExpressionSyntax, bool?> constantCondition,
         bool enterScopedStatements,
         Dictionary<StatementSyntax, LoopCycle> loopCycles)
     {
@@ -1421,6 +1423,24 @@ internal static class CyclePlanner
                     }
 
                     gates.Add(candidateGate);
+                }
+            }
+
+            // The first statement of the other branch of an if whose one branch only continues: lanes leave there
+            if (!hasDisallowedGate)
+            {
+                foreach (var branchGate in FindBranchGates(members, backJumps, constantCondition, enterScopedStatements))
+                {
+                    if (members.Contains(StatementFlow.EntryOf(branchGate)))
+                    {
+                        continue;
+                    }
+
+                    // A branch gate under a form the planner cannot rewrite is skipped; the loop keeps its other gates
+                    if (HasAllowedLoopGateAncestors(branchGate, loop, enterScopedStatements))
+                    {
+                        gates.Add(branchGate);
+                    }
                 }
             }
 

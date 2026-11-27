@@ -2149,4 +2149,132 @@ public class WarpActiveMaskDifferentialTests
             static i => i & 31,
             boundsFrom: 0,
             boundsTo: 96);
+
+    // Lane n leaves the loop at the else branch after n continues: n = trailing ones of the lane id, at most 2
+    private static uint[] ElseBreakAfterContinueExpected(uint after, int length)
+    {
+        var expected = new uint[length];
+        for (int t = 0; t < 32; t++)
+        {
+            int n = (t & 1) == 0 ? 0 : (t & 2) == 0 ? 1 : 2;
+            expected[t + 32 * n] = 0xFFFFFFFFu;
+            expected[t + 96] = (uint)n;
+            if (length > 128)
+            {
+                expected[t + 128] = after;
+            }
+        }
+
+        return expected;
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_ElseBreakAfterContinueInWhileTrue_MeetsTheLanesAtTheElse() =>
+        RunOnEveryPath(160,
+            static output => WarpActiveMaskDifferentialKernels.LaunchElseBreakAfterContinueWhileTrueKernel(
+                output, 0, blockDimX: 32),
+            ElseBreakAfterContinueExpected(0xFFFFFFFFu, 160));
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_ElseBreakAfterContinueInForWithRuntimeTrip_MeetsTheLanesAtTheElseOnTheCpuPaths() =>
+        RunWithinClassicBounds(160,
+            static output => WarpActiveMaskDifferentialKernels.LaunchElseBreakAfterContinueCounterForKernel(
+                output, 0, blockDimX: 32),
+            ElseBreakAfterContinueExpected(0xFFFFFFFFu, 160),
+            static i => i & 31,
+            classicBoundsFrom: 0,
+            classicBoundsTo: 96);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_ElseBreakAfterContinueWithIndexCondition_MeetsTheLanesAtTheElseOnTheCpuPaths()
+    {
+        // Heads: pass 0 holds every lane, pass 1 the lanes that continued once, pass 2 the lanes that continued twice
+        var expected = new uint[160];
+        uint[] heads = [0xFFFFFFFFu, 0xAAAAAAAAu, 0x88888888u];
+        for (int t = 0; t < 32; t++)
+        {
+            int n = (t & 1) == 0 ? 0 : (t & 2) == 0 ? 1 : 2;
+            for (int i = 0; i <= n; i++)
+            {
+                expected[t + 32 * i] = heads[i];
+            }
+
+            expected[t + 96] = 0xFFFFFFFFu;
+            expected[t + 128] = 0xFFFFFFFFu;
+        }
+
+        RunWithinClassicBounds(160,
+            static output => WarpActiveMaskDifferentialKernels.LaunchElseBreakAfterContinueIndexConditionKernel(
+                output, 0, blockDimX: 32),
+            expected,
+            static i => i & 31,
+            classicBoundsFrom: 0,
+            classicBoundsTo: 128);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_ElseFallsToLoopEndAfterContinue_KeepsThePassesApart()
+    {
+        // The else branch can come back to the start of the loop, so it is no exit: the mask is the lanes of the pass
+        uint[] passes = [0x55555555u, 0x33333333u, 0xFFFFFFFFu];
+        var expected = new uint[160];
+        for (int t = 0; t < 32; t++)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                bool continues = ((t >> i) & 1) != 0 && i < 2;
+                expected[t + 32 * i] = continues ? 0u : passes[i];
+            }
+
+            expected[t + 96] = (uint)((t & 1) + ((t >> 1) & 1));
+            expected[t + 128] = 0xFFFFFFFFu;
+        }
+
+        RunWithinClassicBounds(160,
+            static output => WarpActiveMaskDifferentialKernels.LaunchElseFallsToLoopEndAfterContinueKernel(
+                output, 0, blockDimX: 32),
+            expected,
+            static i => i & 31,
+            classicBoundsFrom: 0,
+            classicBoundsTo: 96);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_ElseReturnAfterContinue_MeetsTheLanesAtTheElse() =>
+        RunOnEveryPath(128,
+            static output => WarpActiveMaskDifferentialKernels.LaunchElseReturnAfterContinueKernel(
+                output, 0, blockDimX: 32),
+            ElseBreakAfterContinueExpected(0u, 128));
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_ElseExitInSwitchSectionWithGateAfterContinue_KeepsTheGateOfTheLoop()
+    {
+        // Even lanes leave by the else branch in the pass they stop continuing (lanes 0 mod 4 in pass 0, 2 mod 4 in
+        // pass 1); odd lanes meet at the statement after the continue of the second if, whatever pass they leave in
+        var expected = new uint[96];
+        for (int t = 0; t < 32; t++)
+        {
+            if ((t & 1) == 0)
+            {
+                expected[t] = (t & 2) == 0 ? 0x11111111u : 0x44444444u;
+            }
+            else
+            {
+                expected[t + 32] = 0xAAAAAAAAu;
+                expected[t + 64] = 0xAAAAAAAAu;
+            }
+        }
+
+        RunWithinClassicBounds(96,
+            static output => WarpActiveMaskDifferentialKernels.LaunchElseExitInSwitchSectionAndGateAfterContinueKernel(
+                output, 0, blockDimX: 32),
+            expected,
+            static i => i & 31);
+    }
 }

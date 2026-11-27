@@ -254,6 +254,7 @@ Launcher:
     AliasPinPrefix: __gsharp_alias_pin_
     AliasCopyPrefix: __gsharp_alias_copy_
     AliasStartPrefix: __gsharp_alias_start_
+    AliasReferencePrefix: __gsharp_alias_ref_
     # A group of converted elements (HostAliasStaging): the loop over the groups, the host elements and their device
     # layout of one group, the loop over its elements, and the handles that the CPU Marshal_ calls pin
     AliasGroup: __gsharp_alias_group

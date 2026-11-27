@@ -56,6 +56,7 @@ internal static class CpuHostLaunchEmitter
             LaunchLimitEmitter.WriteCpuCheck(writer, kernel.Host, targetLimits);
             AutoResultEmitter.WriteAllocation(writer, kernel.Host);
             CSharpExecutionEmitter.WriteBranch(writer, CSharpExecutionPlan.Create(kernel.Host, isDevicePtr: false));
+            AliasGroupEmitter.WriteCpuInReferenceDeclarations(writer, sharing);
             using (AliasGroupEmitter.WriteCpuHeldTry(writer, sharing.Aliases))
             {
                 using (AliasGroupEmitter.WriteCpuGroups(writer, sharing))
@@ -67,7 +68,7 @@ internal static class CpuHostLaunchEmitter
             AliasGroupEmitter.WriteCpuHeldRelease(writer, sharing.Aliases);
 
             WriteDllPath(writer, moduleName);
-            ManagedFallbackEmitter.WriteManagedExecutionFallback(writer, kernel.Host, useStack);
+            ManagedFallbackEmitter.WriteManagedExecutionFallback(writer, kernel.Host, sharing, useStack);
 
             // [WHY] Only the native launcher reads the host bytes as the C++ layout; the managed fallback uses the values
             WrapperEmitter.WriteLayoutGuards(writer, kernel.Host.CpuLayoutGuards, kernel.MemberKey);
@@ -180,7 +181,7 @@ internal static class CpuHostLaunchEmitter
 
         if (!hasConverted)
         {
-            WriteFixedBlocksAndInvoke(writer, kernel, arguments);
+            WriteFixedBlocksAndInvoke(writer, kernel, sharing, arguments);
             AutoResultEmitter.WriteReturn(writer, kernel);
             return;
         }
@@ -209,7 +210,7 @@ internal static class CpuHostLaunchEmitter
             }
 
             AutoResultEmitter.WriteCpuConvertedMarshal(writer, kernel);
-            WriteFixedBlocksAndInvoke(writer, kernel, arguments);
+            WriteFixedBlocksAndInvoke(writer, kernel, sharing, arguments);
             for (var i = 0; i < parameters.Length; i++)
             {
                 WriteConvertedUnmarshal(writer, sharing, i);
@@ -415,7 +416,7 @@ internal static class CpuHostLaunchEmitter
     }
 
     private static void WriteFixedBlocksAndInvoke(SourceWriter writer, in KernelHostModel kernel,
-        in CpuNativeArgumentPlan arguments)
+        in ArraySharingPlan sharing, in CpuNativeArgumentPlan arguments)
     {
         var hasFixed = false;
 
@@ -437,7 +438,10 @@ internal static class CpuHostLaunchEmitter
             }
             else if (shape is { IsByRef: true, IsCpuConvertedStruct: false })
             {
-                writer.AppendLine($"fixed ({shape.TypeName}* {pinned} = &{shape.Identifier})");
+                var target = sharing.TakesInReferenceGroupCopy(shape.Ordinal)
+                    ? KernelHostNames.GetLocal(LauncherLocal.AliasReference, shape)
+                    : shape.Identifier;
+                writer.AppendLine($"fixed ({shape.TypeName}* {pinned} = &{target})");
                 hasFixed = true;
             }
         }

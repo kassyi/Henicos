@@ -22,8 +22,8 @@ internal sealed class StatePlan(
 
     /// <summary>
     /// The gotos that reach an inner label of chained labels from another state, which the state machine cannot jump
-    /// (GSH0121, or GSH0040 across a barrier): the generator reports them, and the managed output of
-    /// the method is not written.
+    /// (GSH0121, or GSH0040 across a barrier): the generator reports the first, the analyzer the second, and the
+    /// managed output of the method is not written.
     /// </summary>
     public ImmutableArray<ChainedLabelGoto> GotosToChainedLabelsAcrossStates { get; init; } =
         ImmutableArray<ChainedLabelGoto>.Empty;

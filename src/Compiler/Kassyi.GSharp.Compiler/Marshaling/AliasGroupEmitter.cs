@@ -449,6 +449,37 @@ internal static class AliasGroupEmitter
         }
     }
 
+    /// <summary>
+    /// CPU: declares the <c>ref readonly</c> locals for <c>in</c> parameters that may rebind to an all-<c>[In]</c>
+    /// group copy, initialized to the caller's variables before <see cref="WriteCpuHeldTry"/> opens its scope.
+    /// </summary>
+    public static void WriteCpuInReferenceDeclarations(SourceWriter writer, in ArraySharingPlan sharing)
+    {
+        for (var i = 0; i < sharing.Parameters.Length; i++)
+        {
+            if (!sharing.TakesInReferenceGroupCopy(i))
+            {
+                continue;
+            }
+
+            var shape = sharing.Parameters[i];
+            var local = KernelHostNames.GetLocal(LauncherLocal.AliasReference, shape);
+            writer.AppendLine($"ref readonly {shape.TypeName} {local} = ref {shape.Identifier};");
+        }
+    }
+
+    /// <summary>
+    /// CPU: rebinds the <c>ref readonly</c> local of <c>in</c> parameter <paramref name="parameterIndex"/> into its
+    /// group's copy when every member of the group is copied in only.
+    /// </summary>
+    public static void WriteCpuInReferenceCopy(SourceWriter writer, in ArraySharingPlan sharing, int parameterIndex)
+    {
+        var shape = sharing.Parameters[parameterIndex];
+        var local = KernelHostNames.GetLocal(LauncherLocal.AliasReference, shape);
+        var call = CopyCall(sharing, parameterIndex, "GetHostReference", shape.TypeName);
+        writer.AppendLine($"{local} = ref {call}in {local});");
+    }
+
     // Span: if (HostAliasCopies.TryGetHostView<T>(__gsharp_aliases, <k>, <ranges>, out Span<T> copy))
     //     { <name> = copy; }
     // Memory: if (HostAliasCopies.TryGetHostMemory<T>(..., out Memory<T> copy[, <copies>, <CopyArrays_>]))
