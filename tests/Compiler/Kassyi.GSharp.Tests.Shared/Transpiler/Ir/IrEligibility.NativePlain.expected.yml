@@ -10,9 +10,9 @@
 #   occurrences:  every node the C++ writer cannot spell, most first
 #   eligible:     the methods of the population with an IR body
 kinds:
-  Kernel: 4350
-  DeviceFunction: 1222
-  SuspendingDeviceFunction: 448
+  Kernel: 4358
+  DeviceFunction: 1223
+  SuspendingDeviceFunction: 452
   Iterator: 120
 reasons:
   None: 98
@@ -23,7 +23,7 @@ reasons:
   RemovedCall: 3
   Macro: 6
   SharedMemoryLocal: 26
-  UnsupportedForm: 902
+  UnsupportedForm: 903
 opaque:
   - {key: "UnsupportedOperation/ForStatement", count: 18}
   - {key: "UnsupportedOperation/SimpleLambdaExpression", count: 17}
@@ -61,7 +61,7 @@ split:
   - {key: "WarpShuffle", count: 1}
 firstHit:
   - {key: "NativePlain:IrBinary/-", count: 321}
-  - {key: "NativePlain:IrAssignment/-", count: 180}
+  - {key: "NativePlain:IrAssignment/-", count: 181}
   - {key: "NativePlain:IrCompoundAssignment/-", count: 96}
   - {key: "NativePlain:IrCall/DeviceFunction", count: 38}
   - {key: "NativePlain:IrIncrement/-", count: 36}
@@ -91,10 +91,10 @@ firstHit:
   - {key: "NativePlain:IrUnary/-", count: 1}
   - {key: "NativePlain:IrVariableReference/Type:Pointer", count: 1}
 occurrences:
-  - {key: "NativePlain:IrBinary/-", count: 1163}
-  - {key: "NativePlain:IrAssignment/-", count: 513}
-  - {key: "NativePlain:IrFieldReference/-", count: 511}
-  - {key: "NativePlain:IrVariableReference/Ref", count: 445}
+  - {key: "NativePlain:IrBinary/-", count: 1164}
+  - {key: "NativePlain:IrAssignment/-", count: 514}
+  - {key: "NativePlain:IrFieldReference/-", count: 514}
+  - {key: "NativePlain:IrVariableReference/Ref", count: 446}
   - {key: "NativePlain:IrElementReference/NullChecked", count: 365}
   - {key: "NativePlain:IrConversion/Transparent", count: 317}
   - {key: "NativePlain:IrCall/DeviceFunction", count: 173}
