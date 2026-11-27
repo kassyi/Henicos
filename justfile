@@ -21,12 +21,12 @@ test *args="":
 
 # Run tests with code coverage collection
 test-coverage *args="":
-    {{queue}} --gpu -- dotnet test -s coverage.runsettings \
+    {{queue}} --gpu-exclusive -- dotnet test -s coverage.runsettings \
         --filter "{{normal_tests}}" {{blame_crash}} {{args}}
 
 # Run the tests with coverage and list the lines changed since base that no test executed
 coverage-diff base="main":
-    {{queue}} --gpu -- node scripts/human/coverage-diff.js --run --base {{base}}
+    {{queue}} --gpu-exclusive -- node scripts/human/coverage-diff.js --run --base {{base}}
 
 # Differential tests: C# oracle vs managed vs native CPU (no GPU)
 test-differential-cpu *args="":
@@ -67,7 +67,7 @@ test-differential-cuda *args="":
 # (dotnet test takes one --filter, so it is joined to the fixed one): `just test-checked "FullyQualifiedName~X"`.
 # Arguments without a filter go after an empty one: `just test-checked "" --no-build`
 test-checked filter="" *args="":
-    {{queue}} --gpu -- dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj \
+    {{queue}} --gpu-exclusive -- dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj \
         -p:GSharpCheckedBuild=true -p:GSharpOutputVariant=checked \
         --filter "{{normal_tests}}{{ if filter == "" { "" } else { "&(" + filter + ")" } }}" \
         {{blame_crash}} {{args}}
@@ -75,7 +75,7 @@ test-checked filter="" *args="":
 # Tests that raise a real GPU fault (a CUDA trap of a cooperative launch or an mbarrier wait), each in a child process,
 # one at a time pause_ms apart, plus the CUDA fault seeds of the differential tests that CUDA does not check
 test-gpu-trap pause_ms="3000" *args="":
-    {{queue}} --gpu -- dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj \
+    {{queue}} --gpu-exclusive -- dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj \
         --filter "(Category=GpuTrap|Category=Differential)&Category!=Stress" \
         -e GSHARP_CUDA_TRAP_TESTS=1 -e GSHARP_CUDA_TRAP_PAUSE_MS={{pause_ms}} {{blame_crash}} {{args}}
 
@@ -91,7 +91,7 @@ fuzz-compare base="origin/main" batches="20" *args="":
 # count can take the time: `test-stability 5h15m` for 5 hours 15 minutes, `test-stability 10000` for 10000 times
 # Run tests multiple times to detect flaky tests; see scripts/human/test-stability.js --help
 test-stability count="10" continue_on_error="false" shuffle="true" seed="" *args="":
-    {{queue}} --gpu -- node scripts/human/test-stability.js --count "{{count}}" \
+    {{queue}} --gpu-exclusive -- node scripts/human/test-stability.js --count "{{count}}" \
         {{ if continue_on_error == "true" { "--continue-on-error" } else { "" } }} \
         {{ if shuffle == "true" { "" } else { "--no-shuffle" } }} \
         {{ if seed == "" { "" } else { "--seed " + seed } }} \
@@ -99,25 +99,25 @@ test-stability count="10" continue_on_error="false" shuffle="true" seed="" *args
 
 # Run the tests of one TestCategory (values: the TestCategory enum), e.g. `just test-category Stress`
 test-category category *args="":
-    {{queue}} --gpu -- dotnet test --filter "Category={{category}}" {{blame_crash}} {{args}}
+    {{queue}} --gpu-exclusive -- dotnet test --filter "Category={{category}}" {{blame_crash}} {{args}}
 
 # e.g. `just test-memory Kassyi.GSharp.Tests.Cpu -c Release --filter "Category!=GpuExecution"`; test-memory.js --help
 # One run of a test project: its memory peak, the tests that raised it, dotnet-counters and a gcdump at the end; a
 # Cuda project runs under the GPU lock
 test-memory project *args="":
-    {{queue}} {{ if project =~ "Cuda" { "--gpu" } else { "" } }} -- \
+    {{queue}} {{ if project =~ "Cuda" { "--gpu-exclusive" } else { "" } }} -- \
         node scripts/human/test-memory.js {{project}} {{args}}
 
 # Run compute benchmarks (sgemm, sha256, bs, reduce, all)
 bench suite="all" *args="":
-    {{queue}} --gpu -- dotnet run --project src/Apps/Henicos.Benchmarks -c Release -- compute-bench {{suite}} {{args}}
+    {{queue}} --gpu-exclusive -- dotnet run --project src/Apps/Henicos.Benchmarks -c Release -- compute-bench {{suite}} {{args}}
 
 update-agents:
     npx --yes "git+ssh://git@github.com/kassyi/antigravity-global-agents.git" --copy
 
 # Run GPU Pi Benchmark (e.g. `just bench-pi 100k`, `just bench-pi 1M`, `just bench-pi 1M --hex`)
 bench-pi digits="100k" *args="":
-    {{queue}} --gpu -- dotnet run --project src/Apps/Henicos.Benchmarks -c Release -- gpu-pi {{digits}} {{args}}
+    {{queue}} --gpu-exclusive -- dotnet run --project src/Apps/Henicos.Benchmarks -c Release -- gpu-pi {{digits}} {{args}}
 
 # Run a C# code snippet as a DocTest with explicitly defined dependencies
 doctest file_path assemblies="":

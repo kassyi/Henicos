@@ -78,14 +78,14 @@ export async function checkGpuTurnsEndToEnd(fixture: QueueFixture, port: number)
   const turnOf = (command: string) =>
     waitFor(port, `the GPU turn waits: ${command}`, (s) => s.waiting.find((j) => j.command === command && j.gpuTurn));
   // The first --gpu job takes the GPU: its turn runs, and the command under the lock registers as a GPU holder
-  const first = client(port, gated(0, gate("a")), ["--gpu"]);
+  const first = client(port, gated(0, gate("a")), ["--gpu-exclusive"]);
   await waitFor(port, "the first job holds the GPU", (s) =>
     s.running.some((j) => j.command === gated(0, gate("a")) && j.gpu) ? true : undefined,
   );
   // Later --gpu jobs wait in the scheduler, in arrival order
-  const second = client(port, gated(0, gate("b")), ["--gpu"]);
+  const second = client(port, gated(0, gate("b")), ["--gpu-exclusive"]);
   const secondTurn = await turnOf(gated(0, gate("b")));
-  const third = client(port, gated(0, gate("c")), ["--gpu"]);
+  const third = client(port, gated(0, gate("c")), ["--gpu-exclusive"]);
   const thirdTurn = await turnOf(gated(0, gate("c")));
   assert.strictEqual(secondTurn.weight, 0, "a waiting turn takes no slots");
   // A job waiting for the GPU can be cancelled (it is known to the scheduler before it holds the lock)
@@ -93,7 +93,7 @@ export async function checkGpuTurnsEndToEnd(fixture: QueueFixture, port: number)
   assert.deepStrictEqual(cancelled?.cancelled, [thirdTurn.id]);
   assert.strictEqual(await third.done, 4, "a cancelled waiting --gpu job exits with 4");
   // A later job does not pass the one that waited longer
-  const fourth = client(port, gated(0, gate("d")), ["--gpu"]);
+  const fourth = client(port, gated(0, gate("d")), ["--gpu-exclusive"]);
   await turnOf(gated(0, gate("d")));
   open(gate("a"));
   assert.strictEqual(await first.done, 0);
@@ -138,7 +138,7 @@ export async function checkGpuTurnsEndToEnd(fixture: QueueFixture, port: number)
 async function checkCancelGpuHolder(fixture: QueueFixture, port: number): Promise<void> {
   const { client, sleeper, waitFor, waiter } = fixture;
   const command = sleeper(60001);
-  const run = client(port, command, ["--gpu"]);
+  const run = client(port, command, ["--gpu-exclusive"]);
   const [turn, holder] = await waitFor(port, "the turn and its GPU holder run", (s) => {
     const jobs = s.running.filter((j) => j.command === command && j.commandPid !== null);
     const turnJob = jobs.find((j) => j.gpuTurn);
