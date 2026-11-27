@@ -46,9 +46,12 @@ public class GpuBigIntNttProductBenchmarkTests
             var operandWords = GpuBigIntNttProductBenchmark.OperandWordsFor(entry.Kernel, entry.Log2Points);
 
             // Both the closed-form formula and the live launcher must yield exactly 2^k at operandWords.
-            // mutant: src/Apps/Henicos.Benchmarks/GpuBigIntNttProductBenchmark.cs:126 `half - 6` -> `half - 4`
+            // mutant: src/Apps/Henicos.Benchmarks/GpuBigIntNttProductBenchmark.cs:127 `half - 6` -> `half - 4`
+            // mutant: CooperativeMegaKernelLauncher.cs:262 `+ 2 * ((targetBits + 31) / 32)` -> `+ 1`
             Assert.Equal(expectedTransformLength, ClosedFormTransformLength(entry.Kernel, operandWords));
-            Assert.Equal(expectedTransformLength, GpuBigIntNttProductBenchmark.LiveTransformLengthFor(entry.Kernel, operandWords));
+            Assert.Equal(
+                expectedTransformLength,
+                GpuBigIntNttProductBenchmark.LiveTransformLengthFor(entry.Kernel, operandWords));
 
             // Stepping up by one word must double the transform length to 2^(k + 1), except for Multiply/Square
             // at k = 24 where operandWords sits at the 2^23-word product cap and n + 1 must be rejected.

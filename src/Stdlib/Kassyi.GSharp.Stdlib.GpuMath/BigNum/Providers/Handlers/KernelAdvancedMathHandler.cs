@@ -269,10 +269,7 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
     {
         ThrowIfInvalidMegaKernelBlockDim(blockDim);
 
-        var aActualWords = 2 * n;
-        var targetWords = (targetBits + 31) / 32;
-
-        var outWords = aActualWords + targetWords;
+        var outWords = CooperativeMegaKernelLauncher.ModPowMegaProductWords(n, targetBits);
         var requiredLen = outWords;
         var transformLength = CooperativeMegaKernelLauncher.TransformLengthFor(requiredLen);
         ThrowIfStridedColumnBlockDimTooSmall(blockDim, transformLength);

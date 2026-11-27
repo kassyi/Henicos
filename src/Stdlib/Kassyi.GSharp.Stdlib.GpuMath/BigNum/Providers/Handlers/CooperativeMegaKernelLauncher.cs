@@ -86,7 +86,7 @@ internal static class CooperativeMegaKernelLauncher
     {
         var n = targetOperand.NumWords;
         var resultWords = (targetBits + 31) / 32;
-        var maxOutWords = n + 2 * resultWords;
+        var maxOutWords = ReciprocalMegaProductWords(n, targetBits);
 
         var shape = PrepareLaunchShape(
             workspace,
@@ -253,6 +253,34 @@ internal static class CooperativeMegaKernelLauncher
     /// </summary>
     internal static int InverseSqrtMegaProductWords(int numberOfWords, int marginWords) =>
         4 * numberOfWords + 3 * marginWords;
+
+    /// <summary>
+    /// The widest product of the reciprocal mega-kernel, in words, for an operand of
+    /// <paramref name="numberOfWords"/> words and <paramref name="targetBits"/> target precision bits.
+    /// </summary>
+    internal static int ReciprocalMegaProductWords(int numberOfWords, int targetBits) =>
+        numberOfWords + 2 * ((targetBits + 31) / 32);
+
+    /// <summary>
+    /// The Barrett reciprocal target precision, in bits, used by the modular exponentiation mega-kernel for a modulus
+    /// of <paramref name="numberOfWords"/> words.
+    /// </summary>
+    internal static int ModPowMegaTargetBits(int numberOfWords) =>
+        3 * numberOfWords * 32 + 512;
+
+    /// <summary>
+    /// The widest product of the modular exponentiation mega-kernel, in words, for a modulus of
+    /// <paramref name="numberOfWords"/> words and a Barrett reciprocal scaled to <paramref name="targetBits"/> bits.
+    /// </summary>
+    internal static int ModPowMegaProductWords(int numberOfWords, int targetBits) =>
+        2 * numberOfWords + (targetBits + 31) / 32;
+
+    /// <summary>
+    /// The widest product of the modular exponentiation mega-kernel, in words, for a modulus of
+    /// <paramref name="numberOfWords"/> words at the default Barrett reciprocal precision.
+    /// </summary>
+    internal static int ModPowMegaProductWords(int numberOfWords) =>
+        ModPowMegaProductWords(numberOfWords, ModPowMegaTargetBits(numberOfWords));
 
     /// <summary>
     /// The transform length for a product of <paramref name="requiredLen"/> words: the power of two that holds its
