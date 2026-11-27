@@ -656,6 +656,7 @@ try
 void** __gsharp_kernel_params = stackalloc void*[2];
 // Find the arguments that overlap and give each group one device region
 __gsharp_alias_held = new();
+__gsharp_alias_held.MapConversion(typeof(global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateJob), 1, sizeof(global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateKernels.AotContexts.EnumFieldPrivateJob));
 __gsharp_alias_held.CopiesBack = true;
 global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateKernels.AotContexts.AliasHeldArrays_EnumFieldPrivateJob(ref job, __gsharp_alias_held);
 __gsharp_alias_held.Pin();

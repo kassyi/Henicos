@@ -23,8 +23,17 @@ internal static class CpuArrayCopyEmitter
     public static void WriteKernelCopies(SourceWriter writer, in ArraySharingPlan plan)
     {
         WriteCopyTable(writer, plan);
-        AliasGroupEmitter.WriteCpuHeldCopies(writer, plan);
-        AliasGroupEmitter.WriteCpuTypedCopiesFirst(writer, plan);
+        if (AliasGroupEmitter.HasHeldViewSources(plan))
+        {
+            AliasGroupEmitter.WriteCpuTypedCopiesFirst(writer, plan, withCopyArrays: false);
+            AliasGroupEmitter.WriteCpuHeldCopies(writer, plan);
+            AliasGroupEmitter.WriteCpuTypedCopiesFirst(writer, plan, withCopyArrays: true);
+        }
+        else
+        {
+            AliasGroupEmitter.WriteCpuHeldCopies(writer, plan);
+            AliasGroupEmitter.WriteCpuTypedCopiesFirst(writer, plan);
+        }
         for (var i = 0; i < plan.Parameters.Length; i++)
         {
             var shape = plan.Parameters[i];
