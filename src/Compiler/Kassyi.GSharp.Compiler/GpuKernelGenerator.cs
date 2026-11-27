@@ -136,12 +136,15 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 options.GlobalOptions.TryGetValue("build_property.GSharpTargetArchitectures", out var architectures);
                 var targetLimits = GpuArchitectureLimits.Resolve(architectures);
                 var managedBarrierModel = ManagedBarrierModels.Read(options.GlobalOptions);
+                options.GlobalOptions.TryGetValue("build_property.GSharpNativeStackBytes", out var stackBytesStr);
+                uint? nativeStackBytes = ParseNativeStackBytes(stackBytesStr);
 
                 return new GeneratorConfig(dialect, emitSource, intermediatePath, exportDeviceCode, isCheckedBuild,
                     targetLimits)
                 {
                     ManagedBarrierModel = managedBarrierModel,
-                    NativeBarrierModel = NativeBarrierModels.Read(options.GlobalOptions)
+                    NativeBarrierModel = NativeBarrierModels.Read(options.GlobalOptions),
+                    NativeStackBytes = nativeStackBytes
                 };
             });
 
@@ -896,5 +899,30 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         context.AddSource("GSharpSharedTypeKeyedSites.g.cs",
             SourceText.From(writer.ToString(), Encoding.UTF8));
+    }
+
+    private static uint? ParseNativeStackBytes(string? value)
+    {
+        var span = value.AsSpan().Trim();
+        if (span.Length is < 6 or > 10 || span[0] == '0')
+        {
+            return null;
+        }
+
+        ulong parsed = 0;
+        for (int i = 0; i < span.Length; i++)
+        {
+            uint digit = (uint)(span[i] - '0');
+            if (digit > 9u)
+            {
+                return null;
+            }
+
+            parsed = parsed * 10u + digit;
+        }
+
+        return parsed is >= 131072ul and <= 1073741824ul && parsed % 65536ul == 0ul
+            ? (uint)parsed
+            : null;
     }
 }

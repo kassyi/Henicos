@@ -19,7 +19,8 @@ enum class GSharpErrorCode : int32_t {
     DataRace = 9,
     SwitchExpression = 10,
     ArgumentNull = 11,
-    Throw = 12
+    Throw = 12,
+    InsufficientExecutionStack = 13
 };
 // A failed C# check: records the error and ends the thread's kernel step (ErrorChannel.hpp). [[noreturn]] belongs on
 // the first declaration, so that every check below already knows that the call does not return. inline and the cold

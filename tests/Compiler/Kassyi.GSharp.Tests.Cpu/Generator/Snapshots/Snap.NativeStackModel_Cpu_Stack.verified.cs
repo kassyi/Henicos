@@ -1182,7 +1182,7 @@ int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % _
 int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
 __gsharp_reset_smem(__gsharp_shared_mem_bytes);
 __gsharp_active_error_slot = &__gsharp_launch_error;
-__gsharp_stack_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body);
+__gsharp_stack_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body, ""NativeStackKernels.NeighbourKernel"");
 __gsharp_stack_thread* __gsharp_contexts = __gsharp_stack.threads.data();
 std::atomic<bool> __gsharp_any_active{true};
 while (__gsharp_any_active)
@@ -1487,7 +1487,7 @@ int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % _
 int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
 __gsharp_reset_smem(__gsharp_shared_mem_bytes);
 __gsharp_active_error_slot = &__gsharp_launch_error;
-__gsharp_stack_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body);
+__gsharp_stack_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body, ""NativeStackKernels.MultiBlockNeighbourKernel"");
 __gsharp_stack_thread* __gsharp_contexts = __gsharp_stack.threads.data();
 std::atomic<bool> __gsharp_any_active{true};
 while (__gsharp_any_active)
@@ -1802,7 +1802,7 @@ int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % _
 int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
 __gsharp_reset_smem(__gsharp_shared_mem_bytes);
 __gsharp_active_error_slot = &__gsharp_launch_error;
-__gsharp_stack_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body);
+__gsharp_stack_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body, ""NativeStackKernels.LoopBarrierLocalsKernel"");
 __gsharp_stack_thread* __gsharp_contexts = __gsharp_stack.threads.data();
 std::atomic<bool> __gsharp_any_active{true};
 while (__gsharp_any_active)
@@ -2145,7 +2145,7 @@ int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % _
 int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
 __gsharp_reset_smem(__gsharp_shared_mem_bytes);
 __gsharp_active_error_slot = &__gsharp_launch_error;
-__gsharp_stack_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body);
+__gsharp_stack_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body, ""NativeStackKernels.EarlyReturnBeforeBarrierKernel"");
 __gsharp_stack_thread* __gsharp_contexts = __gsharp_stack.threads.data();
 std::atomic<bool> __gsharp_any_active{true};
 while (__gsharp_any_active)
@@ -2461,7 +2461,7 @@ int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % _
 int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
 __gsharp_reset_smem(__gsharp_shared_mem_bytes);
 __gsharp_active_error_slot = &__gsharp_launch_error;
-__gsharp_stack_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body);
+__gsharp_stack_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body, ""NativeStackKernels.ReturningBarrierKernel"");
 __gsharp_stack_thread* __gsharp_contexts = __gsharp_stack.threads.data();
 std::atomic<bool> __gsharp_any_active{true};
 while (__gsharp_any_active)
@@ -2771,7 +2771,7 @@ int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % _
 int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
 __gsharp_reset_smem(__gsharp_shared_mem_bytes);
 __gsharp_active_error_slot = &__gsharp_launch_error;
-__gsharp_stack_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body);
+__gsharp_stack_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body, ""NativeStackKernels.SharedMemoryBarrierKernel"");
 __gsharp_stack_thread* __gsharp_contexts = __gsharp_stack.threads.data();
 std::atomic<bool> __gsharp_any_active{true};
 while (__gsharp_any_active)
@@ -3095,7 +3095,7 @@ int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % _
 int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
 __gsharp_reset_smem(__gsharp_shared_mem_bytes);
 __gsharp_active_error_slot = &__gsharp_launch_error;
-__gsharp_stack_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body);
+__gsharp_stack_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body, ""NativeStackKernels.FailureAfterBarrierKernel"");
 __gsharp_stack_thread* __gsharp_contexts = __gsharp_stack.threads.data();
 std::atomic<bool> __gsharp_any_active{true};
 while (__gsharp_any_active)
@@ -3402,7 +3402,7 @@ int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % _
 int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
 __gsharp_reset_smem(__gsharp_shared_mem_bytes);
 __gsharp_active_error_slot = &__gsharp_launch_error;
-__gsharp_stack_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body);
+__gsharp_stack_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body, ""NativeStackKernels.TwoThreadsFailAfterBarrierKernel"");
 __gsharp_stack_thread* __gsharp_contexts = __gsharp_stack.threads.data();
 std::atomic<bool> __gsharp_any_active{true};
 while (__gsharp_any_active)
@@ -3756,7 +3756,7 @@ int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % _
 int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
 __gsharp_reset_smem(__gsharp_shared_mem_bytes);
 __gsharp_active_error_slot = &__gsharp_launch_error;
-__gsharp_stack_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body);
+__gsharp_stack_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body, ""NativeStackKernels.UsingUnwindAfterBarrierKernel"");
 __gsharp_stack_thread* __gsharp_contexts = __gsharp_stack.threads.data();
 std::atomic<bool> __gsharp_any_active{true};
 while (__gsharp_any_active)
@@ -4076,7 +4076,7 @@ int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % _
 int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
 __gsharp_reset_smem(__gsharp_shared_mem_bytes);
 __gsharp_active_error_slot = &__gsharp_launch_error;
-__gsharp_stack_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body);
+__gsharp_stack_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body, ""NativeStackKernels.OneLevelSuspendingDeviceKernel"");
 __gsharp_stack_thread* __gsharp_contexts = __gsharp_stack.threads.data();
 std::atomic<bool> __gsharp_any_active{true};
 while (__gsharp_any_active)
@@ -4389,7 +4389,7 @@ int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % _
 int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
 __gsharp_reset_smem(__gsharp_shared_mem_bytes);
 __gsharp_active_error_slot = &__gsharp_launch_error;
-__gsharp_stack_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body);
+__gsharp_stack_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body, ""NativeStackKernels.MultiLevelSuspendingDeviceKernel"");
 __gsharp_stack_thread* __gsharp_contexts = __gsharp_stack.threads.data();
 std::atomic<bool> __gsharp_any_active{true};
 while (__gsharp_any_active)
@@ -4698,7 +4698,7 @@ int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % _
 int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
 __gsharp_reset_smem(__gsharp_shared_mem_bytes);
 __gsharp_active_error_slot = &__gsharp_launch_error;
-__gsharp_stack_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body);
+__gsharp_stack_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body, ""NativeStackKernels.SuspendingDeviceUsingKernel"");
 __gsharp_stack_thread* __gsharp_contexts = __gsharp_stack.threads.data();
 std::atomic<bool> __gsharp_any_active{true};
 while (__gsharp_any_active)
@@ -4989,7 +4989,7 @@ int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % _
 int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
 __gsharp_reset_smem(__gsharp_shared_mem_bytes);
 __gsharp_active_error_slot = &__gsharp_launch_error;
-__gsharp_stack_warp_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body);
+__gsharp_stack_warp_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body, ""NativeStackKernels.ShuffleDeviceFallbackKernel"");
 __gsharp_stack_warp_thread* __gsharp_contexts = __gsharp_stack.threads.data();
 std::atomic<bool> __gsharp_any_active{true};
 uint32_t __gsharp_round = 0;
@@ -5324,7 +5324,7 @@ int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % _
 int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
 __gsharp_reset_smem(__gsharp_shared_mem_bytes);
 __gsharp_active_error_slot = &__gsharp_launch_error;
-__gsharp_stack_warp_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body);
+__gsharp_stack_warp_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body, ""NativeStackKernels.ShuffleAndBarrierKernel"");
 __gsharp_stack_warp_thread* __gsharp_contexts = __gsharp_stack.threads.data();
 std::atomic<bool> __gsharp_any_active{true};
 uint32_t __gsharp_round = 0;

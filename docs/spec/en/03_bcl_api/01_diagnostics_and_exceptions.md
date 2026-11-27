@@ -211,7 +211,7 @@ When a kernel fault comes with an error that G# device code recorded before it s
 
 ### Exceptions raised by device code
 
-G# does not compile kernels at run time; they are compiled when the project is built. A check that fails in device code (an index out of range, a division by zero, a `checked` overflow, a null reference) records an error code and its source location, and the launcher throws the matching .NET exception on the host: `IndexOutOfRangeException`, `DivideByZeroException`, `OverflowException`, `NullReferenceException`, `ArgumentException`, `ArgumentOutOfRangeException`, `NotSupportedException` or `InvalidOperationException` (`GSharpErrorMapper` in `Kassyi.GSharp.Runtime.Aot`). See the [Exception Handling and Diagnostics Guide](../04_guides/03_exception_handling_guide.md).
+G# does not compile kernels at run time; they are compiled when the project is built. A check that fails in device code (an index out of range, a division by zero, a `checked` overflow, a null reference) records an error code and its source location, and the launcher throws the matching .NET exception on the host: `IndexOutOfRangeException`, `DivideByZeroException`, `OverflowException`, `NullReferenceException`, `ArgumentException`, `ArgumentOutOfRangeException`, `NotSupportedException`, `InvalidOperationException` or `InsufficientExecutionStackException` (when a thread overflows its native stack under `GSharpNativeBarrierModel=Stack`) (`GSharpErrorMapper` in `Kassyi.GSharp.Runtime.Aot`). See the [Exception Handling and Diagnostics Guide](../04_guides/03_exception_handling_guide.md).
 
 ---
 

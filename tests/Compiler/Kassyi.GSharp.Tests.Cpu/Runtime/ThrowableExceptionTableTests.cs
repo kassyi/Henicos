@@ -11,8 +11,32 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 [Category(TestCategory.Runtime)]
 public class ThrowableExceptionTableTests
 {
-    // None is no error; DataRace is an InvalidOperationException that no throw writes; Throw names its type in the error site
-    private static readonly string[] s_notThrowable = [nameof(GSharpErrorCode.None), nameof(GSharpErrorCode.DataRace), nameof(GSharpErrorCode.Throw)];
+    // None is no error; DataRace and InsufficientExecutionStack are recorded by the runtime (no throw writes them);
+    // Throw names its type in the error site
+    private static readonly string[] s_notThrowable =
+    [
+        nameof(GSharpErrorCode.None),
+        nameof(GSharpErrorCode.DataRace),
+        nameof(GSharpErrorCode.Throw),
+        nameof(GSharpErrorCode.InsufficientExecutionStack)
+    ];
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void InsufficientExecutionStack_CreateException_BuildsInsufficientExecutionStackException()
+    {
+        var exception = GSharpErrorMapper.CreateException(
+            GSharpErrorCode.InsufficientExecutionStack, 0u, 0u, 0u, (0, 0, 0));
+
+        Assert.IsType<InsufficientExecutionStackException>(exception);
+        Assert.Equal(
+            "Insufficient stack to continue executing the program.",
+            GSharpErrorMapper.GetDefaultMessage(GSharpErrorCode.InsufficientExecutionStack));
+        Assert.Contains(
+            "Insufficient stack to continue executing the program.",
+            exception.Message,
+            StringComparison.Ordinal);
+    }
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]

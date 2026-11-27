@@ -95,7 +95,7 @@ internal static class NativeUnitBuildPlanner
         }
 
         var compileArgs = toolchain.BuildCompileObjectArguments(
-            unit.SourcePath, objPath, arch, settings.Sanitizers, vcPdbPath);
+            unit.SourcePath, objPath, arch, settings.Sanitizers, vcPdbPath, settings.RunsOnNativeStacks);
         var unitHash = CppObjectCommandRecord.ComputeFileSha256Hex(
             unit.SourcePath,
             CppObjectCommandRecord.MissingUnitSentinel);
