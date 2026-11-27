@@ -158,9 +158,9 @@ internal static class StructConstructorEmitter
         ParameterListSyntax parameterList, ConstructorDeclarationSyntax? declaration, ref TranspileContext context)
     {
         var saved = SemanticModelSwitch.Enter(ref context, parameterList.SyntaxTree);
-        var previousCtorType = context.Emitter.StructConstructorType;
+        var previousSelf = context.Emitter.StructSelf;
         var previousCallableDepth = context.Emitter.CallableDepth;
-        context.Emitter.StructConstructorType = structSym;
+        context.Emitter.StructSelf = new StructSelfReference(structSym, SelfForm.ConstructorSelf);
         context.Emitter.CallableDepth = 1;
 
         try
@@ -181,7 +181,7 @@ internal static class StructConstructorEmitter
         }
         finally
         {
-            context.Emitter.StructConstructorType = previousCtorType;
+            context.Emitter.StructSelf = previousSelf;
             context.Emitter.CallableDepth = previousCallableDepth;
             saved.Restore(ref context);
         }

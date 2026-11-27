@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis.Operations;
+
 namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.Calls;
 
 /// <summary>
@@ -42,9 +44,19 @@ internal static class RefSyntaxHelper
             return;
         }
 
-        // An auto-property is emitted as its backing field (a C++ lvalue of the target type), so binding const T&
-        // directly in __gsharp_temp_address<T> would alias the field instead of copying the getter's return value (#999).
-        var forceValueCopy = IsAutoPropertyOrMemberOfAutoProperty(expression, semanticModel);
+        // An auto-property (emitted as its backing field) or a conditional / assignment expression (or member chain on one)
+        // is a C++ lvalue even though it is a C# value, so copy it into a temporary rather than aliasing it (#999).
+        AppendTempAddress(ref context, expression, semanticModel, NeedsTemporaryValueCopy(expression, semanticModel));
+    }
+
+    /// <summary>
+    /// Emits <c>__gsharp_temp_address&lt;T&gt;(...)</c> for <paramref name="expression"/>, copying through
+    /// <c>static_cast&lt;T&gt;(...)</c> when <paramref name="forceValueCopy"/> is <see langword="true"/> so a C++
+    /// lvalue does not alias underlying storage.
+    /// </summary>
+    public static void AppendTempAddress(ref TranspileContext context, ExpressionSyntax expression,
+        SemanticModel semanticModel, bool forceValueCopy)
+    {
         context.Emitter.Writer.Append(GSharpInternalNames.Prelude.TempAddress);
         AppendTempAddressTypeArgument(ref context, expression, semanticModel);
         using (context.Emitter.Writer.Parentheses())
@@ -147,6 +159,12 @@ internal static class RefSyntaxHelper
         return expression.UnwrapParentheses() switch
         {
             DeclarationExpressionSyntax => CppLocation.Storage,
+            ThisExpressionSyntax => CppLocation.Storage,
+            // [WHY] A condition temporary declared by lowering has no symbol; in C++ it is a local variable or context
+            // field (not a temporary rvalue), so passing it by reference takes its address directly.
+            IdentifierNameSyntax identifier when model.GetSymbol(identifier) is null &&
+                                                 LoweringTempNames.IsConditionTemp(identifier.Identifier.ValueText) =>
+                CppLocation.Storage,
             IdentifierNameSyntax identifier => ClassifySymbol(model.GetSymbol(identifier) ?? model.GetDeclaredSymbol<ISymbol>(identifier)),
             MemberAccessExpressionSyntax access => ClassifyMemberAccess(access, model),
             ElementAccessExpressionSyntax element => ClassifyElementAccess(element, model),
@@ -181,7 +199,7 @@ internal static class RefSyntaxHelper
             return CppLocation.None;
         }
 
-        if (access.Expression is ThisExpressionSyntax ||
+        if (access.Expression.UnwrapParentheses() is ThisExpressionSyntax ||
             model.GetTypeSymbol(access.Expression) is not { IsValueType: true })
         {
             return memberLoc;
@@ -245,4 +263,66 @@ internal static class RefSyntaxHelper
     /// </summary>
     public static bool IsAutoPropertyOrMemberOfAutoProperty(ExpressionSyntax expression, SemanticModel semanticModel) =>
         ClassifyLocation(expression, semanticModel) is CppLocation.AutoPropertyStorage;
+
+    /// <summary>
+    /// Whether <paramref name="expression"/>, a C# value/rvalue, emits as a C++ lvalue (an auto-property or member
+    /// chain on one, a non-variable inline array element access, or a conditional or assignment expression or member
+    /// chain on one) and must therefore be copied into a temporary before taking its address.
+    /// </summary>
+    public static bool NeedsTemporaryValueCopy(ExpressionSyntax expression, SemanticModel semanticModel)
+    {
+        if (IsAutoPropertyOrMemberOfAutoProperty(expression, semanticModel))
+        {
+            return true;
+        }
+
+        var current = UnwrapParensAndChecked(expression);
+        while (current is MemberAccessExpressionSyntax or ElementAccessExpressionSyntax)
+        {
+            if (current is MemberAccessExpressionSyntax access)
+            {
+                current = UnwrapParensAndChecked(access.Expression);
+            }
+            else if (current is ElementAccessExpressionSyntax element)
+            {
+                if (IsAutoPropertyOrMemberOfAutoProperty(element.Expression, semanticModel))
+                {
+                    return true;
+                }
+
+                // [WHY] An element of a non-variable [InlineArray] (such as MakeBuf(10)[0]) calls C++ operator[]
+                // returning S&, which would dangle under auto&& and fail T&& deduction in __gsharp_temp_mutable_address.
+                if (semanticModel.GetTypeSymbol(element.Expression) is { } receiverType &&
+                    receiverType.HasAttribute(KnownAttributes.InlineArray))
+                {
+                    var isInlineArrayVar = semanticModel.GetSafeOperation(element) is IInlineArrayAccessOperation inlineArray
+                        ? inlineArray.Instance.IsVariable()
+                        : ClassifyLocation(element.Expression, semanticModel) is CppLocation.Storage;
+                    if (!isInlineArrayVar)
+                    {
+                        return true;
+                    }
+                }
+
+                current = UnwrapParensAndChecked(element.Expression);
+            }
+        }
+
+        return current is ConditionalExpressionSyntax or AssignmentExpressionSyntax;
+    }
+
+    private static ExpressionSyntax UnwrapParensAndChecked(ExpressionSyntax expression)
+    {
+        while (true)
+        {
+            expression = expression.UnwrapParentheses();
+            if (expression is CheckedExpressionSyntax checkedExpression)
+            {
+                expression = checkedExpression.Expression;
+                continue;
+            }
+
+            return expression;
+        }
+    }
 }

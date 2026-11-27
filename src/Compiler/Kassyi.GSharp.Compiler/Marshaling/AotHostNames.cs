@@ -123,16 +123,15 @@ internal static class AotHostNames
         if (symbol is ITypeSymbol type && HostShadowStructs.TryGetNullableValue(type, out var value))
         {
             writer.Append(GSharpInternalNames.Launcher.NullableShadowPrefix);
-
-            // [WHY] The name of an array-like type says nothing of its element: Memory<int>? and Memory<float>? need
-            // keys of their own
-            if (value.TryGetArrayLikeElementType(out var element))
-            {
-                writer.Append(value is IArrayTypeSymbol ? "Array" : value.Name).Append('_');
-                return ref writer.AppendMarshalTypeKey(element);
-            }
-
             return ref writer.AppendMarshalTypeKey(value);
+        }
+
+        // [WHY] The name of an array-like type says nothing of its element: Memory<int>? and Memory<float>?, and nested
+        // Memory<Memory<T>>?, need keys of their own
+        if (symbol is ITypeSymbol arrayLike && arrayLike.TryGetArrayLikeElementType(out var element))
+        {
+            writer.Append(arrayLike is IArrayTypeSymbol ? "Array" : arrayLike.Name).Append('_');
+            return ref writer.AppendMarshalTypeKey(element);
         }
 
         if (symbol.ContainingType is { } parentType)

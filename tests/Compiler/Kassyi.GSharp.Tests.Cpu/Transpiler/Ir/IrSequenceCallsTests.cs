@@ -266,6 +266,128 @@ public class IrSequenceCallsTests
             ir.Declarations.ToArray());
     }
 
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Sequence_InstanceInReceiverCopy_SpillsDeducedCopyBeforeArgument()
+    {
+        var (_, sequenced) = Run("InstanceInReceiverCopy");
+        var sequence = Assert.Single(SequencesOf(sequenced.Body));
+        var declarations = DeclarationsOf(sequence);
+
+        Assert.Equal(2, declarations.Length);
+        Assert.Equal(RefKind.None, declarations[0].Variable.RefKind);
+        Assert.Equal(IrDeclaredTypeForm.Deduced, declarations[0].Variable.DeclaredTypeForm);
+        AssertNamedInt(declarations[1]);
+        var call = Assert.IsType<IrCall>(sequence.Value);
+        AssertReads(call.Receiver, declarations[0]);
+        AssertReads(call.Arguments[0].Value, declarations[1]);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Sequence_InstanceRefReadOnlyLocalCopy_SpillsDeducedCopyBeforeArgument()
+    {
+        var (_, sequenced) = Run("InstanceRefReadOnlyLocalCopy");
+        var sequence = Assert.Single(SequencesOf(sequenced.Body));
+        var declarations = DeclarationsOf(sequence);
+
+        Assert.Equal(2, declarations.Length);
+        Assert.Equal(RefKind.None, declarations[0].Variable.RefKind);
+        Assert.Equal(IrDeclaredTypeForm.Deduced, declarations[0].Variable.DeclaredTypeForm);
+        AssertNamedInt(declarations[1]);
+        var call = Assert.IsType<IrCall>(sequence.Value);
+        AssertReads(call.Receiver, declarations[0]);
+        AssertReads(call.Arguments[0].Value, declarations[1]);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Sequence_InstanceRefStructReceiver_SpillsReferenceBeforeArgument()
+    {
+        var (_, sequenced) = Run("InstanceRefStructReceiver");
+        var sequence = Assert.Single(SequencesOf(sequenced.Body));
+        var declarations = DeclarationsOf(sequence);
+
+        Assert.Equal(2, declarations.Length);
+        Assert.Equal(RefKind.Ref, declarations[0].Variable.RefKind);
+        Assert.Equal(IrDeclaredTypeForm.Deduced, declarations[0].Variable.DeclaredTypeForm);
+        AssertNamedInt(declarations[1]);
+        var call = Assert.IsType<IrCall>(sequence.Value);
+        AssertReads(call.Receiver, declarations[0]);
+        AssertReads(call.Arguments[0].Value, declarations[1]);
+
+        var (decidedNoSpill, sequencedNoSpill) = Run("InstanceRefStructLocalNoSpill");
+        Assert.Same(decidedNoSpill, sequencedNoSpill);
+        Assert.Empty(SequencesOf(sequencedNoSpill.Body));
+    }
+
+    [Theory]
+    [InlineData("InstanceRefReadOnlyConditionalCopy")]
+    [InlineData("InstanceMixedRefReadOnlyConditionalCopy")]
+    [InlineData("InstanceConstTrueRefConditionalReadOnlyCopy")]
+    [Scenario(TestScenario.Boundary)]
+    public void Sequence_InstanceRefReadOnlyConditionalReceiver_SpillsCopyBeforeArgument(string name)
+    {
+        var (_, sequenced) = Run(name);
+        var sequence = Assert.Single(SequencesOf(sequenced.Body));
+        var declarations = DeclarationsOf(sequence);
+
+        Assert.Equal(2, declarations.Length);
+        Assert.Equal(RefKind.None, declarations[0].Variable.RefKind);
+        Assert.Equal(IrDeclaredTypeForm.Deduced, declarations[0].Variable.DeclaredTypeForm);
+        AssertNamedInt(declarations[1]);
+        var call = Assert.IsType<IrCall>(sequence.Value);
+        AssertReads(call.Receiver, declarations[0]);
+        AssertReads(call.Arguments[0].Value, declarations[1]);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Sequence_InstanceInInlineArrayElement_SpillsCopyBeforeArgument()
+    {
+        var (_, sequenced) = Run("InstanceInInlineArrayElementCopy", type: "IrSequenceCases.InlineArrayForms");
+        var sequence = Assert.Single(SequencesOf(sequenced.Body));
+        var declarations = DeclarationsOf(sequence);
+
+        Assert.Equal(2, declarations.Length);
+        Assert.Equal(RefKind.None, declarations[0].Variable.RefKind);
+        Assert.Equal(IrDeclaredTypeForm.Deduced, declarations[0].Variable.DeclaredTypeForm);
+        AssertNamedInt(declarations[1]);
+        var call = Assert.IsType<IrCall>(sequence.Value);
+        AssertReads(call.Receiver, declarations[0]);
+        AssertReads(call.Arguments[0].Value, declarations[1]);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Sequence_InstanceConstFalseRefConditionalReceiver_SpillsAddressBeforeArgument()
+    {
+        var (_, sequenced) = Run("InstanceConstFalseRefConditionalAddress");
+        var sequence = Assert.Single(SequencesOf(sequenced.Body));
+        var declarations = DeclarationsOf(sequence);
+
+        Assert.Equal(2, declarations.Length);
+        Assert.Equal(RefKind.Ref, declarations[0].Variable.RefKind);
+        Assert.Equal(IrDeclaredTypeForm.Deduced, declarations[0].Variable.DeclaredTypeForm);
+        AssertNamedInt(declarations[1]);
+        var call = Assert.IsType<IrCall>(sequence.Value);
+        AssertReads(call.Receiver, declarations[0]);
+        AssertReads(call.Arguments[0].Value, declarations[1]);
+    }
+
+    [Theory]
+    [InlineData("ParenthesizedInstanceCallOrder")]
+    [InlineData("ParenthesizedInstanceCallOrderFirst")]
+    [InlineData("ParenthesizedExtensionCallOrder")]
+    [Scenario(TestScenario.Boundary)]
+    public void Sequence_ParenthesizedMemberAndExtensionCall_SpillsOperandsInOrder(string name)
+    {
+        var (_, sequenced) = Run(name);
+        var sequence = Assert.Single(SequencesOf(sequenced.Body));
+
+        Assert.Equal(2, DeclarationsOf(sequence).Length);
+    }
+
     // The call of <name> in the method
     private static IrCall OuterCall(IrMethod method, string name) =>
         IrNodeChildren.DescendantsAndSelf(method.Body).OfType<IrCall>().First(call => call.Method.Name == name);

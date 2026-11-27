@@ -63,8 +63,10 @@ internal static class IrExpressionBuilder
             new IrConstant(operation.ConstantValue.Value, local.Local, type, source),
         ILocalReferenceOperation local => new IrVariableReference(context.Variables.GetLocal(local.Local),
             local.IsDeclaration, category, operation.ConstantValue, source),
-        IParameterReferenceOperation parameter => new IrVariableReference(
-            context.Variables.GetParameter(parameter.Parameter), false, category, operation.ConstantValue, source),
+        IParameterReferenceOperation parameter => parameter.Parameter.ContainingSymbol.IsEqualTo(context.Method)
+            ? new IrVariableReference(context.Variables.GetParameter(parameter.Parameter), false, category,
+                operation.ConstantValue, source)
+            : Opaque(operation, IrOpaqueReason.UnsupportedShape, category, context),
         IInstanceReferenceOperation instance => BuildInstance(instance, type, category, source, context),
         IArrayElementReferenceOperation element => BuildElement(element, type, category, source, context),
         IPropertyReferenceOperation property => BuildProperty(property, category, source, context),
@@ -219,7 +221,8 @@ internal static class IrExpressionBuilder
         ImmutableArray<IrArgument> arguments)
     {
         if (!operation.TargetMethod.IsExtensionMethod ||
-            operation.Syntax is not InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access } ||
+            operation.Syntax is not InvocationExpressionSyntax invocation ||
+            invocation.Expression.UnwrapParentheses() is not MemberAccessExpressionSyntax access ||
             arguments.IsEmpty)
         {
             return arguments;

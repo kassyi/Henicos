@@ -22,14 +22,14 @@ internal static class SuspensionAnalysis
     private static readonly BarrierQuery s_splitting = new(
         alsoKernels: false,
         static intrinsic => intrinsic.SplitsStateMachine,
-        static traits => traits.Suspends
+        static (traits, _) => traits.Suspends
     );
 
     // Gpu.SyncThreads() and Gpu.SyncGrid(), which every thread of the block must reach
     private static readonly BarrierQuery s_block = new(
         alsoKernels: false,
         static intrinsic => intrinsic.Kind is SyncIntrinsicKind.BlockBarrier or SyncIntrinsicKind.GridBarrier,
-        static traits => traits.ReachesBlockBarrier
+        static (traits, _) => traits.ReachesBlockBarrier
     );
 
     // Gpu.SyncGrid(), which every thread of the grid must reach. The export record does not say whether a device
@@ -37,14 +37,14 @@ internal static class SuspensionAnalysis
     private static readonly BarrierQuery s_grid = new(
         alsoKernels: false,
         static intrinsic => intrinsic.Kind == SyncIntrinsicKind.GridBarrier,
-        static _ => false
+        static (_, _) => false
     );
 
     // Warp.Shuffle*Sync and Gpu.Match*Sync. The export record says only whether the function suspends
     private static readonly BarrierQuery s_warpShuffle = new(
         alsoKernels: true,
         static intrinsic => intrinsic.Kind == SyncIntrinsicKind.WarpShuffle,
-        static traits => traits.Suspends
+        static (traits, _) => traits.Suspends
     );
 
     // Warp.ActiveMask(). The export record does not say whether the function reaches it; one that suspends is taken
@@ -52,14 +52,36 @@ internal static class SuspensionAnalysis
     private static readonly BarrierQuery s_activeMask = new(
         alsoKernels: true,
         static intrinsic => intrinsic.Shuffle == WarpShuffleKind.ActiveMask,
-        static traits => traits.Suspends
+        static (traits, _) => traits.Suspends
+    );
+
+    // Gpu.SyncGrid(), for the CPU stack models: answered from the export record when compatible, else Suspends
+    private static readonly BarrierQuery s_gridOnStack = new(
+        alsoKernels: false,
+        static intrinsic => intrinsic.Kind == SyncIntrinsicKind.GridBarrier,
+        static (traits, isCompatible) => isCompatible ? traits.ReachesGridBarrier : traits.Suspends
+    );
+
+    // Warp.Shuffle*Sync and Gpu.Match*Sync, for the CPU stack models: answered from the export record when compatible,
+    // else Suspends
+    private static readonly BarrierQuery s_warpShuffleOnStack = new(
+        alsoKernels: true,
+        static intrinsic => intrinsic.Kind == SyncIntrinsicKind.WarpShuffle,
+        static (traits, isCompatible) => isCompatible ? traits.ReachesWarpShuffle : traits.Suspends
+    );
+
+    // Warp.ActiveMask(), for the CPU stack models: answered from the export record when compatible, else Suspends
+    private static readonly BarrierQuery s_activeMaskOnStack = new(
+        alsoKernels: true,
+        static intrinsic => intrinsic.Shuffle == WarpShuffleKind.ActiveMask,
+        static (traits, isCompatible) => isCompatible ? traits.ReachesActiveMask : traits.Suspends
     );
 
     // Gpu.SyncGrid() and the mbarrier intrinsics, which wait for a fixed number of arrivals
     private static readonly BarrierQuery s_arrival = new(
         alsoKernels: true,
         static intrinsic => intrinsic.Kind is SyncIntrinsicKind.GridBarrier or SyncIntrinsicKind.AsyncBarrier,
-        static traits => traits.ReachesArrivalBarrier
+        static (traits, _) => traits.ReachesArrivalBarrier
     );
 
     /// <summary>Whether <paramref name="method"/> is a device function that reaches a phase barrier.</summary>
@@ -90,6 +112,17 @@ internal static class SuspensionAnalysis
         Reaches(method, s_grid, compilation);
 
     /// <summary>
+    /// Whether <paramref name="method"/> is a device function that reaches a grid barrier (<c>Gpu.SyncGrid()</c>),
+    /// directly or through other device functions, answered for the CPU stack models.
+    /// </summary>
+    /// <remarks>
+    /// These are the answers the stack models use; they equal <see cref="ReachesGridBarrier"/> for methods that call
+    /// no device function of another assembly.
+    /// </remarks>
+    public static bool ReachesGridBarrierOnStack(IMethodSymbol method, Compilation compilation) =>
+        Reaches(method, s_gridOnStack, compilation);
+
+    /// <summary>
     /// The barrier scope of a call to <paramref name="method"/>, a device function that reaches a block barrier: the grid
     /// when it also reaches a grid barrier.
     /// </summary>
@@ -102,6 +135,18 @@ internal static class SuspensionAnalysis
     /// </summary>
     public static bool ReachesWarpShuffle(IMethodSymbol method, Compilation compilation) =>
         Reaches(method, s_warpShuffle, compilation);
+
+    /// <summary>
+    /// Whether <paramref name="method"/> (a kernel or a device function) reaches a warp shuffle or warp match
+    /// (<see cref="SyncIntrinsicKind.WarpShuffle"/>), directly or through device functions it calls, answered for the
+    /// CPU stack models.
+    /// </summary>
+    /// <remarks>
+    /// These are the answers the stack models use; they equal <see cref="ReachesWarpShuffle"/> for methods that call
+    /// no device function of another assembly.
+    /// </remarks>
+    public static bool ReachesWarpShuffleOnStack(IMethodSymbol method, Compilation compilation) =>
+        Reaches(method, s_warpShuffleOnStack, compilation);
 
     /// <summary>
     /// Whether <paramref name="method"/> (a kernel or a device function) reaches a barrier that waits for a fixed
@@ -129,6 +174,17 @@ internal static class SuspensionAnalysis
     /// </remarks>
     public static bool ReachesActiveMask(IMethodSymbol method, Compilation compilation) =>
         Reaches(method, s_activeMask, compilation);
+
+    /// <summary>
+    /// Whether <paramref name="method"/> (a kernel or a device function) reaches <c>Warp.ActiveMask()</c>, directly or
+    /// through device functions it calls, answered for the CPU stack models.
+    /// </summary>
+    /// <remarks>
+    /// These are the answers the stack models use; they equal <see cref="ReachesActiveMask"/> for methods that call
+    /// no device function of another assembly.
+    /// </remarks>
+    public static bool ReachesActiveMaskOnStack(IMethodSymbol method, Compilation compilation) =>
+        Reaches(method, s_activeMaskOnStack, compilation);
 
     /// <summary>
     /// Whether <paramref name="method"/> reaches a phase barrier and calls itself, directly or through other device
@@ -282,7 +338,7 @@ internal static class SuspensionAnalysis
     // A device function of another assembly: what its assembly recorded
     private static bool ImportedReaches(IMethodSymbol method, BarrierQuery query, Compilation compilation) =>
         DeviceExportTable.TryFindFunction(method, compilation, out var imported) &&
-        query.Imported(imported.Record.Traits);
+        query.Imported(imported.Record.Traits, imported.IsCompatible);
 
     // One walk of the body: a barrier answers at once, and a device function or emitted struct member it calls is walked
     // where it is called. The answer for the queried function does not depend on that order: a walk that stops at a
@@ -518,13 +574,13 @@ internal static class SuspensionAnalysis
     private sealed class BarrierQuery(
         bool alsoKernels,
         Func<SyncIntrinsicInfo, bool> matches,
-        Func<DeviceExportRecord.FunctionTraits, bool> imported)
+        Func<DeviceExportRecord.FunctionTraits, bool, bool> imported)
     {
         public bool AlsoKernels { get; } = alsoKernels;
 
         public Func<SyncIntrinsicInfo, bool> Matches { get; } = matches;
 
-        public Func<DeviceExportRecord.FunctionTraits, bool> Imported { get; } = imported;
+        public Func<DeviceExportRecord.FunctionTraits, bool, bool> Imported { get; } = imported;
 
         public PerCompilationSymbolCache<IMethodSymbol, bool> Answers { get; } = new();
     }

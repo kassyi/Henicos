@@ -200,6 +200,114 @@ public class ManagedStackEligibilityTests
         Assert.Equal(expected, ManagedStackEligibility.IsStackKernel(method, s_cooperativeCompilation));
     }
 
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("StackConsumerKernels", "CallsBlockBarrierKernel", true)]
+    [InlineData("StackConsumerKernels", "CallsThroughLocalDeviceKernel", true)]
+    [InlineData("DerivedStackConsumer", "CallsProtectedBarrierKernel", true)]
+    [InlineData("StackConsumerKernels", "CallsGridBarrierKernel", false)]
+    [InlineData("StackConsumerKernels", "CallsWarpShuffleKernel", false)]
+    [InlineData("StackConsumerKernels", "CallsActiveMaskKernel", false)]
+    [InlineData("StackConsumerKernels", "CallsNonPartialKernel", false)]
+    public void IsStackKernel_ConsumerCallingDefaultConfigLibrary_MatchesImportedStackEligibility(
+        string typeName,
+        string methodName,
+        bool expected)
+    {
+        var library = DeviceLibraryBuilder.Build(
+            "StackTraitsLib",
+            null,
+            RoslynTestUtility.ReadTestCase("Generators/DeviceExportStackTraitsLibrary.cs"));
+        var consumer = DeviceLibraryBuilder.CreateConsumer(
+            RoslynTestUtility.ReadTestCase("Analysis/CrossAssemblyStackConsumer.cs"),
+            library);
+
+        var type = consumer.GetTypeByMetadataName($"CrossAssemblyStackConsumerCase.{typeName}")
+            ?? throw new InvalidOperationException($"Type '{typeName}' not found.");
+        var method = type.GetMembers(methodName).OfType<IMethodSymbol>().Single();
+
+        Assert.Equal(expected, ManagedStackEligibility.IsStackKernel(method, consumer));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void ManagedStackFailures_ConsumerCallingNonPartialLibraryFunction_ListsMissingFormWithAssembly()
+    {
+        var library = DeviceLibraryBuilder.Build(
+            "StackTraitsLib",
+            null,
+            RoslynTestUtility.ReadTestCase("Generators/DeviceExportStackTraitsLibrary.cs"));
+        var consumer = DeviceLibraryBuilder.CreateConsumer(
+            RoslynTestUtility.ReadTestCase("Analysis/CrossAssemblyStackConsumer.cs"),
+            library);
+
+        var driver = CSharpGeneratorDriver.Create(
+                generators: [new GpuKernelGenerator().AsSourceGenerator()],
+                additionalTexts: null,
+                parseOptions: new CSharpParseOptions(LanguageVersion.Preview),
+                optionsProvider: new TestAnalyzerConfigOptionsProvider("Cpu",
+                    new Dictionary<string, string> { ["build_property.GSharpManagedBarrierModel"] = "Stack" }))
+            .RunGenerators(consumer);
+
+        var result = driver.GetRunResult().Results.Single();
+        var failures = Assert.Single(result.GeneratedSources,
+            static s => s.HintName == StateMachineFallbackPipeline.HintName).SourceText.ToString();
+        Assert.Contains(
+            "// managed\tStackConsumerKernels.CallsNonPartialKernel\tImportedSuspendingCall: calls ClosedStackLib.WaitClosed of StackTraitsLib, which has no stack form",
+            failures, StringComparison.Ordinal);
+
+        var kernelWrapper = Assert.Single(result.GeneratedSources,
+            static s => s.HintName.EndsWith("__StackConsumerKernels.g.cs", StringComparison.Ordinal))
+            .SourceText.ToString();
+        Assert.Contains("ManagedStackRunner.Run(", kernelWrapper, StringComparison.Ordinal);
+        Assert.Contains("\"StackConsumerKernels.CallsBlockBarrierKernel\"", kernelWrapper, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void IsStackKernel_StackOnlyLibraryFunction_RunsOnManagedStackWhenBothModelsStack()
+    {
+        var library = DeviceLibraryBuilder.Build(
+            "XasmLib",
+            new Dictionary<string, string> { ["build_property.GSharpExportDeviceCode"] = "false" },
+            RoslynTestUtility.ReadTestCase("Diagnostics/CrossAssembly/Library.cs"),
+            HandWrittenExportRecords.Read("Diagnostics/CrossAssembly/HandWrittenStackOnlyRecord.cs"));
+        var consumer = DeviceLibraryBuilder.CreateConsumer(
+            RoslynTestUtility.ReadTestCase("Diagnostics/CrossAssembly/Consumer.cs"),
+            library);
+
+        var type = consumer.GetTypeByMetadataName("CrossAssemblyConsumer.ConsumerKernels")
+            ?? throw new InvalidOperationException("ConsumerKernels not found.");
+        var method = type.GetMembers("CallKernel").OfType<IMethodSymbol>().Single();
+
+        Assert.True(ManagedStackEligibility.IsStackKernel(method, consumer));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void IsStackFunction_CppFailedLibraryFunctionWithManagedStackForm_ReturnsFalse()
+    {
+        var library = DeviceLibraryBuilder.Build(
+            "XasmLib",
+            new Dictionary<string, string> { ["build_property.GSharpExportDeviceCode"] = "false" },
+            RoslynTestUtility.ReadTestCase("Diagnostics/CrossAssembly/Library.cs"),
+            HandWrittenExportRecords.Read("Diagnostics/CrossAssembly/HandWrittenCppFailedStackFormRecord.cs"));
+        var consumer = DeviceLibraryBuilder.CreateConsumer(
+            RoslynTestUtility.ReadTestCase("Diagnostics/CrossAssembly/Consumer.cs"),
+            library);
+
+        var libType = consumer.GetTypeByMetadataName("XasmLib.LibMath")
+            ?? throw new InvalidOperationException("LibMath not found.");
+        var twice = libType.GetMembers("Twice").OfType<IMethodSymbol>().Single();
+        var consumerType = consumer.GetTypeByMetadataName("CrossAssemblyConsumer.ConsumerKernels")
+            ?? throw new InvalidOperationException("ConsumerKernels not found.");
+        var kernel = consumerType.GetMembers("CallKernel").OfType<IMethodSymbol>().Single();
+
+        Assert.False(ImportedStackForms.HasManagedForm(twice, consumer));
+        Assert.False(ManagedStackEligibility.IsStackFunction(twice, consumer));
+        Assert.False(ManagedStackEligibility.IsStackKernel(kernel, consumer));
+    }
+
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void IsStackFunction_ReachesGridBarrier_ReturnsTrue()
@@ -388,6 +496,19 @@ public class ManagedStackEligibilityTests
 
         Assert.True(ManagedStackEligibility.IsStackKernel(method, compilation));
         Assert.Null(ManagedStackEligibility.FindKernelReason(method, compilation));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void IsStackFunction_LeftOutGenericDeviceFunction_ReturnsFalse()
+    {
+        var library = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Generators/DeviceExportStackTraitsLibrary.cs"));
+        var libType = library.GetTypeByMetadataName("StackTraitsCase.StackTraitsLib")
+            ?? throw new InvalidOperationException("StackTraitsLib not found.");
+        var waitGeneric = libType.GetMembers("WaitGeneric").OfType<IMethodSymbol>().Single();
+
+        Assert.False(ManagedStackEligibility.IsStackFunction(waitGeneric, library));
     }
 
     private static IMethodSymbol GetMethod(string typeName, string methodName)

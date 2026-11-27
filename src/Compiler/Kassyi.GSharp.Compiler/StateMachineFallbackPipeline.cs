@@ -58,10 +58,14 @@ internal static class StateMachineFallbackPipeline
             return builder.ToImmutable().AsEquatableArray();
         });
 
-        var managedFallbacks = stackForms.Select(static (value, _) => value.Fallbacks);
         var fallbackConfig = config.Select(static (value, _) =>
-            (Active: value.RunsOnNativeStacks || value.ManagedBarrierModel == ManagedBarrierModel.Stack,
+            (RunsOnNativeStacks: value.RunsOnNativeStacks,
+                ManagedOnStack: value.ManagedBarrierModel == ManagedBarrierModel.Stack,
+                Active: value.RunsOnNativeStacks || value.ManagedBarrierModel == ManagedBarrierModel.Stack,
                 value.EmitSource));
+        var managedFallbacks = stackForms
+            .Combine(fallbackConfig)
+            .Select(static (input, _) => input.Right.ManagedOnStack ? input.Left.Fallbacks : default);
 
         var outputInput = nativeKernelFallbacks
             .Combine(nativeDeviceFallbacks)

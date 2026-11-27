@@ -64,7 +64,7 @@ public static class AstLoweringPipeline
         IBlockLoweringPass? beforeRegions = null)
     {
         var structuredBody = PrepareBody(body, returnsValue, bodyModel);
-        var passes = CreateStructuredPasses(new ConditionalEvaluationRewriter(names),
+        var passes = CreateStructuredPasses(new ConditionalEvaluationRewriter(names, bodyModel),
             new WarpInstructionRewriter(bodyModel, names), reconvergence, irPass, beforeRegions);
         foreach (var pass in passes)
         {
@@ -171,7 +171,7 @@ public static class AstLoweringPipeline
     private static ImmutableArray<IBlockLoweringPass> CreatePasses(SemanticModel? bodyModel,
         ReconvergenceInserter? reconvergence, LoweringTempNames names, IrSplitLoweringPass? irPass)
     {
-        var conditionalRewriter = new ConditionalEvaluationRewriter(names);
+        var conditionalRewriter = new ConditionalEvaluationRewriter(names, bodyModel);
         var warpRewriter = new WarpInstructionRewriter(bodyModel, names);
         var branchRewriter = new BranchRewriter(bodyModel);
         var passes = ImmutableArray.CreateBuilder<IBlockLoweringPass>(12);
@@ -256,7 +256,7 @@ public static class AstLoweringPipeline
     {
         var bodyModel = ResolveBodyModel(body, semanticModel);
         var prepared = PrepareBody(body, returnsValue, bodyModel);
-        var conditionalsLowered = new ConditionalEvaluationRewriter().Rewrite(prepared);
+        var conditionalsLowered = new ConditionalEvaluationRewriter(semanticModel: bodyModel).Rewrite(prepared);
         return new WarpInstructionRewriter(bodyModel).Rewrite(conditionalsLowered);
     }
 

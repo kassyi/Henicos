@@ -111,7 +111,7 @@ internal static class DynamicSharedMemoryEmitter
             return;
         }
 
-        context.Emitter.Writer.AppendIf(callee.Parameters.Length > 0, ",");
+        context.Emitter.Writer.AppendIf(!callee.IsStatic || callee.Parameters.Length > 0, ",");
         context.Emitter.Writer.Append(GSharpInternalNames.DynamicSharedMemory.Table);
     }
 

@@ -242,7 +242,7 @@ internal static class ManagedCSharpTranspiler
             : null;
         var rewriter = new ManagedExecutionRewriter(semanticModel, bodyKind, accessors) { WarpLayout = warpLayout };
         var stackBody = bodyKind == ManagedBodyKind.StackBody &&
-                        SuspensionAnalysis.ReachesActiveMask(methodSymbol, semanticModel.Compilation)
+                        SuspensionAnalysis.ReachesActiveMaskOnStack(methodSymbol, semanticModel.Compilation)
             ? GetStackBody(in plan, methodSymbol)
             : null;
 

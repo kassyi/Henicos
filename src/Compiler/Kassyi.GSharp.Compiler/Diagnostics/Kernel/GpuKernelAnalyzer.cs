@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Compiler.Instantiation;
+using Kassyi.GSharp.Compiler.Models;
 using Kassyi.GSharp.Compiler.Targets;
 
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
@@ -19,16 +20,16 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(static start =>
         {
+            var globalOptions = start.Options.AnalyzerConfigOptionsProvider.GlobalOptions;
             // The checks that depend on the dialect see the one the generator emits for
-            var dialect = TranspilerDialects.Create(
-                TranspilerDialects.GetName(start.Options.AnalyzerConfigOptionsProvider.GlobalOptions));
+            var dialect = TranspilerDialects.Create(TranspilerDialects.GetName(globalOptions));
             // Exported unless the project turns it off, as the generator reads it
-            var exports = !(start.Options.AnalyzerConfigOptionsProvider.GlobalOptions
-                                .TryGetValue("build_property.GSharpExportDeviceCode", out var export) &&
+            var exports = !(globalOptions.TryGetValue("build_property.GSharpExportDeviceCode", out var export) &&
                             string.Equals(export, "false", StringComparison.OrdinalIgnoreCase));
+            var bothOnStacks = NativeBarrierModels.Read(globalOptions) == NativeBarrierModel.Stack &&
+                               ManagedBarrierModels.Read(globalOptions) == ManagedBarrierModel.Stack;
             // The launch limits of the target GPUs, resolved once per compilation from the MSBuild property
-            start.Options.AnalyzerConfigOptionsProvider.GlobalOptions
-                .TryGetValue("build_property.GSharpTargetArchitectures", out var architectures);
+            globalOptions.TryGetValue("build_property.GSharpTargetArchitectures", out var architectures);
             var targetLimits = GpuArchitectureLimits.Resolve(architectures);
             // One GSH0036 per type declaration, however many GPU methods it holds or encloses
             var reportedTypes = new ConcurrentDictionary<TypeDeclarationSyntax, byte>();
@@ -36,7 +37,8 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
             // that several GPU methods write
             var reportedOutside = new ConcurrentDictionary<(string Id, Location Location), byte>();
             start.RegisterSyntaxNodeAction(
-                context => AnalyzeMethod(context, dialect, exports, targetLimits, reportedTypes, reportedOutside),
+                context => AnalyzeMethod(context, dialect, exports, targetLimits, bothOnStacks, reportedTypes,
+                    reportedOutside),
                 SyntaxKind.MethodDeclaration);
             // An operator or an accessor that is GPU code is a method of its type as well: that type is reopened too
             start.RegisterSyntaxNodeAction(context => AnalyzeOtherMember(context, reportedTypes),
@@ -47,14 +49,15 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
                 SyntaxKind.InitAccessorDeclaration,
                 SyntaxKind.AddAccessorDeclaration,
                 SyntaxKind.RemoveAccessorDeclaration);
-            start.RegisterSyntaxNodeAction(context => AnalyzeDestructor(context, dialect, exports, targetLimits),
+            start.RegisterSyntaxNodeAction(
+                context => AnalyzeDestructor(context, dialect, exports, targetLimits, bothOnStacks),
                 SyntaxKind.DestructorDeclaration);
         });
     }
 
     // A finalizer marked as GPU code is reported by its rule (GpuFinalizerRule); the generator does not emit it
     private static void AnalyzeDestructor(SyntaxNodeAnalysisContext context, ITranspilerDialect dialect, bool exports,
-        in TargetLimits targetLimits)
+        in TargetLimits targetLimits, bool bothOnStacks)
     {
         var destructor = (DestructorDeclarationSyntax)context.Node;
         if (context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(destructor) is not { } symbol ||
@@ -64,7 +67,7 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
         }
 
         var validationContext = new ValidationContext(context.SemanticModel, symbol, context.ReportDiagnostic, dialect,
-            exports, targetLimits);
+            exports, targetLimits, bothOnStacks);
         using var walker = GpuKernelValidationWalker.Rent(validationContext);
         walker.Visit(destructor);
     }
@@ -121,7 +124,7 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
     }
 
     private static void AnalyzeMethod(SyntaxNodeAnalysisContext context, ITranspilerDialect dialect, bool exports,
-        in TargetLimits targetLimits, ConcurrentDictionary<TypeDeclarationSyntax, byte> reportedTypes,
+        in TargetLimits targetLimits, bool bothOnStacks, ConcurrentDictionary<TypeDeclarationSyntax, byte> reportedTypes,
         ConcurrentDictionary<(string Id, Location Location), byte> reportedOutside)
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
@@ -161,7 +164,7 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
 
         // Single-pass traversal of the AST to minimize time complexity and zero allocations
         var validationContext = new ValidationContext(context.SemanticModel, methodSymbol, diagnostics.Add, dialect,
-            exports, targetLimits);
+            exports, targetLimits, bothOnStacks);
         using (var walker = GpuKernelValidationWalker.Rent(validationContext))
         {
             walker.Visit(methodDeclaration);

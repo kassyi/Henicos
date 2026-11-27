@@ -129,6 +129,13 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static uint __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__MaskViaDevice(int __gsharp_warp_frame)
+{
+uint __gsharp_warp_temp_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_active_mask(__gsharp_warp_frame, 0, "PartialWarpShuffleKernels.cs(91,43)");
+return __gsharp_warp_temp_0;
+}
+
 }
 }
 

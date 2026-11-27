@@ -107,6 +107,16 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__StructHostOnlyMemberKernels__TaggedRotate(int tag)
+{
+global::Kassyi.GSharp.Core.SharedMemory<int> shared = new(256, 0x29dba61783aa753fUL);
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+shared[tid] = tag + tid;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return shared[tid ^ 1];
+}
+
 }
 }
 

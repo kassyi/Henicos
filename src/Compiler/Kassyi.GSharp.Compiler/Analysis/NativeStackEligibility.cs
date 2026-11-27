@@ -194,7 +194,7 @@ internal static class NativeStackEligibility
         targetType.GetMembers(targetName)
             .AsStackEnumerable()
             .Any(compilation, static (member, c) =>
-                member is IMethodSymbol target && SuspensionAnalysis.ReachesWarpShuffle(target, c));
+                member is IMethodSymbol target && SuspensionAnalysis.ReachesWarpShuffleOnStack(target, c));
 
     private static void EnqueueSuspendingCallees(
         MethodDeclarationSyntax declaration,
@@ -281,7 +281,7 @@ internal static class NativeStackEligibility
         }
 
         var facts = ScanBody(declaration, TypeArgumentMap.Of(method), semanticModel);
-        if (SuspensionAnalysis.ReachesActiveMask(method, semanticModel.Compilation) &&
+        if (SuspensionAnalysis.ReachesActiveMaskOnStack(method, semanticModel.Compilation) &&
             !CanLowerForStack(method, declaration, semanticModel))
         {
             facts |= BodyFacts.StackBodyLowering;
@@ -322,7 +322,7 @@ internal static class NativeStackEligibility
         {
             var (method, methodDeclaration) = queue.Dequeue();
             var model = compilation.GetCachedSemanticModel(methodDeclaration.SyntaxTree);
-            if (methodDeclaration.HasBody() && SuspensionAnalysis.ReachesActiveMask(method, compilation) &&
+            if (methodDeclaration.HasBody() && SuspensionAnalysis.ReachesActiveMaskOnStack(method, compilation) &&
                 GetStackBody(method, methodDeclaration, model).Reason is { } reason)
             {
                 return MessageText.Name(method) + ": " + reason;
@@ -406,7 +406,7 @@ internal static class NativeStackEligibility
         foreach (var (referenced, isMethodGroup) in
                  SuspensionAnalysis.GetReferencedSuspendingFunctions(body, compilation, semanticModel))
         {
-            if (isMethodGroup && SuspensionAnalysis.ReachesWarpShuffle(referenced, compilation))
+            if (isMethodGroup && SuspensionAnalysis.ReachesWarpShuffleOnStack(referenced, compilation))
             {
                 return BodyFacts.WarpMethodGroup;
             }
