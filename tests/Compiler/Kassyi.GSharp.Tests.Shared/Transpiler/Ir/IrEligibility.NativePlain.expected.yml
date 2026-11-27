@@ -10,7 +10,7 @@
 #   occurrences:  every node the C++ writer cannot spell, most first
 #   eligible:     the methods of the population with an IR body
 kinds:
-  Kernel: 4265
+  Kernel: 4271
   DeviceFunction: 1202
   SuspendingDeviceFunction: 438
   Iterator: 120
