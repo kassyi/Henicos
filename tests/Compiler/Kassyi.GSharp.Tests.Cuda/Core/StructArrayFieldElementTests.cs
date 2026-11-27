@@ -1,3 +1,6 @@
+using System;
+using System.Numerics;
+using Kassyi.GSharp.Tests.Shared.Differential;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Core;
@@ -24,5 +27,38 @@ public class StructArrayFieldElementTests
         Assert.Equal([3, 4], o);
         Assert.Equal(42, h.Items[0].X);
         Assert.Equal(3, h.Items[1].X);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(1, 3)]
+    [InlineData(2, 2)]
+    public void LaunchConvertedElementsKernel_OverlappingHeldViews_ThrowsNotSupportedException(
+        int secondStart,
+        int secondLength)
+    {
+        CudaCapability.EnsureGpuAvailable();
+        var elements = new ArrayViewElement[5];
+        for (var i = 0; i < elements.Length; i++)
+        {
+            elements[i] = new ArrayViewElement { X = i + 1f, V = new Vector2(i, -i) };
+        }
+
+        int[] managed = [1, 2];
+        var fields = new ArrayViewElementFields
+        {
+            Elements = elements.AsMemory(0, 4),
+            ElementSegment = new ArraySegment<ArrayViewElement>(elements, secondStart, secondLength),
+            Managed = managed.AsMemory(),
+        };
+        var r = new float[4];
+
+        var exception = Assert.Throws<NotSupportedException>(
+            () => ArrayViewFieldDifferentialKernels.LaunchConvertedElementsKernel(
+                fields, r, gridDimX: 1, blockDimX: 4));
+
+        Assert.Contains("converted between the host and device layouts", exception.Message,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("not aligned", exception.Message, StringComparison.Ordinal);
     }
 }

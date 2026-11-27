@@ -68,6 +68,12 @@ internal static class IrEffectDifferences
         IrFieldReference { Receiver: { Type.IsValueType: true } receiver }
             when !IrMemberEffects.IsVariable(receiver) && Differs(ir, old, reads: Memory()) =>
             IrClassificationEquivalence.KnownPrefix + "a field of a struct temporary reads no memory",
+        // The syntax walk writes the location of a mutating call on a struct temporary (a field of a conditional or
+        // assignment) as memory
+        IrCall { Receiver: { Type.IsValueType: true } receiver }
+            when !IrMemberEffects.IsVariable(receiver) && !WritesMemoryBelow(node, compilation) &&
+                 Differs(ir, old, writes: Memory()) =>
+            IrClassificationEquivalence.KnownPrefix + "a mutating call on a struct temporary writes no memory",
         // The syntax walk does not list nameof among the operations that raise nothing; it is a constant
         IrConstant or IrConversion { IsImplicit: true, Operand: IrConstant } when Differs(ir, old, throws: true) =>
             IrClassificationEquivalence.KnownPrefix + "a nameof is a constant",

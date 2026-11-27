@@ -2401,6 +2401,8 @@ try
 void** __gsharp_kernel_params = stackalloc void*[4];
 // Find the arguments that overlap and give each group one device region
 __gsharp_alias_held = new();
+__gsharp_alias_held.MapConversion(typeof(global::System.Nullable<global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffBag>), 1, sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingNullableDifferentialKernels.AotContexts.__gsharp_nullable_of_NullableDiffBag));
+__gsharp_alias_held.MapConversion(typeof(global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffBagHolder), 2, sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingNullableDifferentialKernels.AotContexts.NullableDiffBagHolder));
 __gsharp_alias_held.CopiesBack = true;
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingNullableDifferentialKernels.AotContexts.AliasHeldArrays___gsharp_nullable_of_NullableDiffBag(ref bag, __gsharp_alias_held);
 __gsharp_alias_held.CopiesBack = true;

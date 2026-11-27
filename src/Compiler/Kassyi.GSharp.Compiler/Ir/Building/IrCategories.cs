@@ -34,19 +34,30 @@ internal static class IrCategories
     };
 
     /// <summary>
-    /// The receiver of an instance method or property accessor: the value of a reference type or of a ref struct (a
-    /// span is a view, so a copy of it is the same span); for any other struct the location (read-only for a
+    /// The receiver of an instance method or property accessor: the value of a reference type or of a
+    /// <see cref="System.Span{T}"/> / <see cref="System.ReadOnlySpan{T}"/> (a span is a view, so a copy of it is the
+    /// same span); for any other struct (including user <see langword="ref"/> structs) the location (read-only for a
     /// <see langword="readonly"/> member) when it is a variable, otherwise the value that C# copies.
     /// </summary>
     public static IrCategory ForReceiver(IOperation receiver, IMethodSymbol? accessor)
     {
-        if (receiver.Type is not { IsValueType: true, IsRefLikeType: false } || !receiver.IsVariable())
+        if (receiver.Type is not { IsValueType: true } type ||
+            IsSpanType(type) ||
+            !receiver.IsVariable())
         {
             return ForRead(receiver.Type);
         }
 
         return accessor is { IsReadOnly: true } ? IrCategory.ReadOnlyLocation : IrCategory.Location;
     }
+
+    private static bool IsSpanType(ITypeSymbol type) =>
+        type is INamedTypeSymbol
+        {
+            IsGenericType: true,
+            Name: TypeConstants.SpanType or TypeConstants.ReadOnlySpanType
+        } named &&
+        named.ContainingNamespace.IsSystemNamespace();
 
     /// <summary>
     /// The receiver of a field: the value of a reference type; for a struct variable the category of the field itself

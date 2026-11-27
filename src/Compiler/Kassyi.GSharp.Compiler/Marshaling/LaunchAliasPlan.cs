@@ -22,8 +22,9 @@ internal readonly struct LaunchAliasPlan
 
     private LaunchAliasPlan(ImmutableArray<int> candidates, ImmutableArray<byte> traits,
         ImmutableArray<AliasRange> ranges, ImmutableArray<AliasConversion> conversions,
-        ImmutableArray<int> heldSources)
+        ImmutableArray<int> heldSources, bool checksAlignmentOnly)
     {
+        ChecksAlignmentOnly = checksAlignmentOnly;
         Candidates = candidates;
         Traits = traits;
         Ranges = ranges;
@@ -53,8 +54,15 @@ internal readonly struct LaunchAliasPlan
     /// <summary>The converted element types among the candidates, one per type.</summary>
     public ImmutableArray<AliasConversion> Conversions { get; }
 
-    /// <summary>Whether the launcher compares any arguments.</summary>
-    public bool IsActive => !Candidates.IsDefaultOrEmpty;
+    /// <summary>
+    /// CPU: whether the launcher compares its arguments only to throw for an overlap that no CUDA address aligns
+    /// (<c>HostAliasGroups.ThrowIfNoDeviceAlignment</c>): no argument takes a copy, a shadow or a held array, so the
+    /// kernel uses the caller's memory and no group is kept.
+    /// </summary>
+    public bool ChecksAlignmentOnly { get; }
+
+    /// <summary>Whether the launcher compares any arguments or held arrays/views.</summary>
+    public bool IsActive => !Candidates.IsDefaultOrEmpty || HasHeldArrays;
 
     /// <summary>Whether a candidate's elements are converted, so that its group may be converted as a whole.</summary>
     public bool HasConversions => !Conversions.IsDefaultOrEmpty;
@@ -86,8 +94,9 @@ internal readonly struct LaunchAliasPlan
     /// <summary>
     /// The plan of the CPU launcher, which hands the kernel the caller's memory except the copies of <c>[In]</c>
     /// arguments (<see cref="ArraySharingPlan.NeedsKernelCopy"/>) and the shadows of converted elements: an <c>[In]</c>
-    /// or read-only argument is copied in only, any other one is the caller's memory, read and written. Without a copy
-    /// or a shadow the caller's memory already overlaps as in C#, so the launcher compares nothing.
+    /// or read-only argument is copied in only, any other one is the caller's memory, read and written. Any launch
+    /// with a partial candidate is still compared so that overlapping arguments that no device address aligns throw
+    /// <see cref="NotSupportedException"/> on the CPU paths as on CUDA.
     /// </summary>
     public static LaunchAliasPlan ForCpu(in ArraySharingPlan sharing)
     {
@@ -110,17 +119,18 @@ internal readonly struct LaunchAliasPlan
             var readOnly = shape.IsArray && (sharing.NeedsKernelCopy(i) || shape.IsReadOnlyContainer);
             var spanView = shape.Container is ArrayContainerKind.Span or ArrayContainerKind.ReadOnlySpan;
             // An out struct that holds arrays is compared as well: it keeps the caller's value when another argument
-            // refers to the same variable (#1841) and is cleared otherwise, which only the comparison can tell
+            // refers to the same variable (#1841) and is cleared otherwise, which only the groups can tell
             copies |= IsConverted(shape, HostDialects.Cpu) || (shape.IsArray && sharing.NeedsKernelCopy(i)) ||
                 shape.HeldArraysMethodName is not null || (shape.RefKind == RefKind.Out && shape.HasArrayFields);
             builder.Add(i, GetTraits(shape, copiesIn: true, copiesBack: !readOnly && !shape.IsInReference, spanView));
         }
 
-        return copies ? builder.ToPlan() : default;
+        return builder.ToPlan(checksAlignmentOnly: !copies && GetHeldSources(parameters).IsEmpty);
     }
 
     /// <summary>The candidate number of parameter <paramref name="parameterIndex"/>, or -1.</summary>
-    public int MemberIndexOf(int parameterIndex) => IsActive ? Candidates.IndexOf(parameterIndex) : -1;
+    public int MemberIndexOf(int parameterIndex) =>
+        IsActive && !ChecksAlignmentOnly ? Candidates.IndexOf(parameterIndex) : -1;
 
     /// <summary>Whether parameter <paramref name="parameterIndex"/> is a candidate of converted elements.</summary>
     public bool IsConvertedMember(int parameterIndex) =>
@@ -136,17 +146,35 @@ internal readonly struct LaunchAliasPlan
         return index >= 0 && (Traits[index] & (CopiesIn | CopiesBack)) == CopiesIn;
     }
 
-    // [WHY] Without a slice or a by-reference argument, only T[] arguments can share memory, and two of them overlap
-    // only when they are one array, which ArraySharingPlan already compares by identity
-    // [WHY] A slice or a by-reference argument beside a struct that holds arrays is compared with those arrays (#1849)
-    private static bool HasPartialCandidate(EquatableArray<KernelParameterShape> parameters) =>
-        parameters
+    // [WHY] Without a slice, a by-reference argument, or a struct holding view fields, only T[] arguments can share
+    // memory, and two of them overlap only when they are one array, which ArraySharingPlan already compares by
+    // identity
+    // [WHY] A slice or a by-reference argument beside a struct that holds arrays is compared with those arrays (#1849),
+    // and a view held by a struct field has no array identity, so it is compared whenever another candidate, another
+    // held-array source, or a second array-like inside the same struct is present
+    private static bool HasPartialCandidate(EquatableArray<KernelParameterShape> parameters)
+    {
+        var candidateCount = parameters
             .AsStackEnumerable()
-            .Any(static shape => IsCandidate(shape) && !shape.IsSharableArray) &&
-        (parameters
-            .AsStackEnumerable()
-            .Count(static shape => IsCandidate(shape)) > 1 ||
-         !GetHeldSources(parameters).IsEmpty);
+            .Count(static shape => IsCandidate(shape));
+        var heldSources = GetHeldSources(parameters);
+        if (parameters
+                .AsStackEnumerable()
+                .Any(static shape => IsCandidate(shape) && !shape.IsSharableArray) &&
+            (candidateCount > 1 || !heldSources.IsEmpty))
+        {
+            return true;
+        }
+
+        return heldSources
+                   .AsStackEnumerable()
+                   .Any(parameters, static (index, ps) => ps[index].HoldsViewFields) &&
+               (candidateCount >= 1 ||
+                heldSources.Length >= 2 ||
+                heldSources
+                    .AsStackEnumerable()
+                    .Any(parameters, static (index, ps) => ps[index].HoldsSeveralArrayLikes));
+    }
 
     // The parameters that hold arrays in the fields of their structs
     // [WHY] An out struct is cleared before the kernel reads it (#1841), so its arrays are not held. A read-only
@@ -204,21 +232,22 @@ internal readonly struct LaunchAliasPlan
                 : AliasRange.ForReference(pinned, shape.ReferenceExpression, element, traits, shape.Name));
         }
 
-        public LaunchAliasPlan ToPlan() =>
+        public LaunchAliasPlan ToPlan(bool checksAlignmentOnly = false) =>
             new(_candidates.ToImmutable(), _traits.ToImmutable(), _ranges.ToImmutable(), _conversions.ToImmutable(),
-                GetHeldSources(parameters));
+                GetHeldSources(parameters), checksAlignmentOnly);
 
         private AliasElement GetElement(in KernelParameterShape shape)
         {
             var host = shape.IsArray ? ConvertedArrayEmitter.GetElementTypeName(shape) : shape.TypeName;
             var alignment = dialect.IsCuda ? shape.CudaAliasAlignment : shape.CpuAliasAlignment;
+            var deviceAlignment = IsConverted(shape, HostDialects.Cuda) ? -1 : shape.CudaAliasAlignment;
             if (!IsConverted(shape, dialect))
             {
-                return AliasElement.Raw(host, alignment);
+                return AliasElement.Raw(host, alignment, deviceAlignment);
             }
 
             var conversion = GetConversion(shape, host);
-            return new AliasElement(host, conversion.ShadowType, alignment, conversion.Key);
+            return new AliasElement(host, conversion.ShadowType, alignment, deviceAlignment, conversion.Key);
         }
 
         // The conversion of the element type of <shape>, numbered on its first use
