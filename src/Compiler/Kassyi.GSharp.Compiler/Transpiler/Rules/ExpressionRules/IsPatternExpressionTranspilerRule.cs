@@ -30,7 +30,7 @@ public sealed class IsPatternExpressionTranspilerRule : SyntaxNodeTranspilerRule
             if (node.Pattern is ConstantPatternSyntax { Expression: LiteralExpressionSyntax literal } &&
                 literal.IsKind(SyntaxKind.NullLiteralExpression))
             {
-                NullRepresentation.AppendNullTest(node.Expression, isNull: true, ref context);
+                NullRepresentationEmitter.AppendNullTest(node.Expression, isNull: true, ref context);
                 return;
             }
 
@@ -38,7 +38,7 @@ public sealed class IsPatternExpressionTranspilerRule : SyntaxNodeTranspilerRule
                 notPattern.Pattern is ConstantPatternSyntax { Expression: LiteralExpressionSyntax notLiteral } &&
                 notLiteral.IsKind(SyntaxKind.NullLiteralExpression))
             {
-                NullRepresentation.AppendNullTest(node.Expression, isNull: false, ref context);
+                NullRepresentationEmitter.AppendNullTest(node.Expression, isNull: false, ref context);
                 return;
             }
         }
@@ -62,7 +62,7 @@ public sealed class IsPatternExpressionTranspilerRule : SyntaxNodeTranspilerRule
             return false;
         }
 
-        NullRepresentation.AppendNullTest(node.Expression, isNull: negated, ref context);
+        NullRepresentationEmitter.AppendNullTest(node.Expression, isNull: negated, ref context);
         return true;
     }
 

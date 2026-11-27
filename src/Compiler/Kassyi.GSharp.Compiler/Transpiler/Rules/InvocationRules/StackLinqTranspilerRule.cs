@@ -67,7 +67,7 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
     // The check of the array a query starts from: AsStackEnumerable rejects a null array as C# does (null: no check)
     private static NullCheckSite? PlanSourceCheck(string methodName, ExpressionSyntax source,
         ref TranspileContext context) =>
-        methodName == "AsStackEnumerable" ? ArrayNullCheck.PlanLinqSource(source, ref context) : null;
+        methodName == "AsStackEnumerable" ? ArrayNullCheckEmitter.PlanLinqSource(source, ref context) : null;
 
     // Registers the error sites of a trapping terminal; the ids are appended after its arguments (zero: no site)
     private static (uint First, uint Second) RegisterErrorSites(

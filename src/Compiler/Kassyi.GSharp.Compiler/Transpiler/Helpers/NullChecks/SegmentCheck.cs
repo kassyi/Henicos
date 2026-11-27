@@ -5,7 +5,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.NullChecks;
 /// default segment, which has no array, with <see cref="InvalidOperationException"/>. The source goes through the
 /// Prelude helper <c>__gsharp_segment_ref(&lt;source&gt;, &lt;site&gt;)</c>, which fails on every build; the site is
 /// planned as for the null check of an array. The lowered <c>foreach</c> carries the same check in an annotation
-/// (<see cref="ArrayNullCheck.TryAppendAnnotatedCheck"/>).
+/// (<see cref="ArrayNullCheckEmitter.TryAppendAnnotatedCheck"/>).
 /// </summary>
 internal static class SegmentCheck
 {
@@ -18,18 +18,18 @@ internal static class SegmentCheck
     /// <summary>
     /// Writes the source <paramref name="receiver"/> of a <c>foreach</c>: an <c>ArraySegment&lt;T&gt;</c> through
     /// <c>__gsharp_segment_ref(&lt;receiver&gt;, &lt;site&gt;)</c>, as C# enters the loop over a default one with
-    /// <see cref="InvalidOperationException"/>; any other source as <see cref="ArrayNullCheck.AppendReceiver"/> writes
+    /// <see cref="InvalidOperationException"/>; any other source as <see cref="ArrayNullCheckEmitter.AppendReceiver"/> writes
     /// it.
     /// </summary>
     public static void AppendForEachSource(ExpressionSyntax receiver, ref TranspileContext context)
     {
         if (!ArrayViewMethods.IsArraySegment(context.Query.SemanticModel.GetTypeSymbol(receiver)))
         {
-            ArrayNullCheck.AppendReceiver(receiver, ref context);
+            ArrayNullCheckEmitter.AppendReceiver(receiver, ref context);
             return;
         }
 
-        var site = ArrayNullCheck.PlanSite(receiver, null, SiteMessage, TrapKind, ref context);
-        ArrayNullCheck.AppendHelperCall(GSharpInternalNames.Prelude.SegmentRef, receiver, site, ref context);
+        var site = ArrayNullCheckEmitter.PlanSite(receiver, null, SiteMessage, TrapKind, ref context);
+        ArrayNullCheckEmitter.AppendHelperCall(GSharpInternalNames.Prelude.SegmentRef, receiver, site, ref context);
     }
 }

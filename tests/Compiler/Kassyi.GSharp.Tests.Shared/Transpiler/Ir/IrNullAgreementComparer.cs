@@ -106,7 +106,7 @@ internal static class IrNullAgreementComparer
             return;
         }
 
-        var legacyPlan = ArrayNullCheck.PlanElementStore(leftElem, model, table: null, currentMemberName: null);
+        var legacyPlan = ArrayNullCheckEmitter.PlanElementStore(leftElem, model, table: null, currentMemberName: null);
         if (store.BindsArrayByReference != legacyPlan.BindsArrayByReference)
         {
             counts.Mismatches.Add(

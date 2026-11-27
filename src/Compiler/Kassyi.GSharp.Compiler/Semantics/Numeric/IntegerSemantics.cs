@@ -226,35 +226,6 @@ internal static class IntegerSemantics
     }
 
     /// <summary>
-    /// The Prelude function of the step of the increment or decrement <paramref name="operation"/> of an integer type
-    /// that promotes to <see langword="int"/> or is <see langword="int"/> or <see langword="long"/>
-    /// (<paramref name="node"/>): <c>__gsharp_add_i32</c> for <c>++</c>, <c>__gsharp_sub_i32</c> for <c>--</c> (#722,
-    /// #1079); null when the C++ operator cannot overflow there (<see cref="IntegerSemanticsEmitter.AppendStep"/> writes
-    /// the step).
-    /// </summary>
-    /// <remarks>
-    /// The analysis of a for loop step runs once per step: its result is kept in
-    /// <see cref="Emitter.BoundedLoopSteps"/>.
-    /// </remarks>
-    public static string? GetIncrementHelper(IIncrementOrDecrementOperation operation, ExpressionSyntax node,
-        ref TranspileContext context)
-    {
-        if (GetStepHelper(IntegerStepFacts.Of(operation), undo: false) is not { } helper)
-        {
-            return null;
-        }
-
-        var steps = context.Emitter.BoundedLoopSteps;
-        if (!steps.TryGetValue(node, out var bounded))
-        {
-            bounded = BoundedLoopStep.IsBounded(operation, node, context.Query.SemanticModel);
-            steps[node] = bounded;
-        }
-
-        return bounded ? null : helper;
-    }
-
-    /// <summary>
     /// The Prelude function that steps the value of the increment or decrement <paramref name="operation"/> back
     /// (<c>__gsharp_sub_i32</c> for <c>++</c>), which gives the old value of a postfix step that wraps.
     /// </summary>

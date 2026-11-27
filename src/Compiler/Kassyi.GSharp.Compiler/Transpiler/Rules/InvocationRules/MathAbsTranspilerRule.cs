@@ -42,12 +42,12 @@ internal sealed class MathAbsTranspilerRule : IInvocationTranspilerRule
         }
 
         var parameterType = symbol.Parameters[0].Type;
-        var site = ArrayNullCheck.PlanSite(node, null, Message, TrapKind, ref context);
+        var site = ArrayNullCheckEmitter.PlanSite(node, null, Message, TrapKind, ref context);
         var writer = context.Emitter.Writer;
         writer.Append(GetHelper(parameterType.SpecialType));
         using (writer.Parentheses())
         {
-            ArithmeticConversions.AppendArgument(argument, parameterType, ref context);
+            ArithmeticConversionsEmitter.AppendArgument(argument, parameterType, ref context);
             writer.Append(',');
             NullCheckSiteWriter.AppendSite(writer, site);
         }

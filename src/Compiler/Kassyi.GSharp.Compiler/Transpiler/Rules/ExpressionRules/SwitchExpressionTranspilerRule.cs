@@ -289,7 +289,7 @@ public sealed class SwitchExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         {
             // GetArmConversion returns these only for a bound operation with a type
             case ArmConversion.Primitive when plan.Operation is { Type: { } type } operation:
-                ArithmeticConversions.AppendImplicitlyConverted(operation.Arms[index].Value, arm.Expression, type,
+                ArithmeticConversionsEmitter.AppendImplicitlyConverted(operation.Arms[index].Value, arm.Expression, type,
                     ref context);
                 break;
             case ArmConversion.Constant when plan.Operation is { Type: { } type } operation:
@@ -308,7 +308,7 @@ public sealed class SwitchExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
                 break;
             default:
                 // A stack array arm is the span it converts to, as the arms of a conditional are
-                StackArrayLocals.AppendView(arm.Expression, ref context);
+                StackArrayLocalsEmitter.AppendView(arm.Expression, ref context);
                 break;
         }
 

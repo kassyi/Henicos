@@ -35,7 +35,7 @@ public sealed class ConditionalExpressionTranspilerRule : SyntaxNodeTranspilerRu
                     }
                     else
                     {
-                        StackArrayLocals.AppendView(chosen, ref context);
+                        StackArrayLocalsEmitter.AppendView(chosen, ref context);
                     }
                 }
 
@@ -86,9 +86,9 @@ public sealed class ConditionalExpressionTranspilerRule : SyntaxNodeTranspilerRu
             {
                 context.Visitor.Visit(node.Condition);
                 context.Emitter.Writer.Append('?');
-                ArithmeticConversions.AppendOperand(operation.WhenTrue, node.WhenTrue, type, ref context);
+                ArithmeticConversionsEmitter.AppendOperand(operation.WhenTrue, node.WhenTrue, type, ref context);
                 context.Emitter.Writer.Append(':');
-                ArithmeticConversions.AppendOperand(whenFalse, node.WhenFalse, type, ref context);
+                ArithmeticConversionsEmitter.AppendOperand(whenFalse, node.WhenFalse, type, ref context);
             }
 
             return;
@@ -144,7 +144,7 @@ public sealed class ConditionalExpressionTranspilerRule : SyntaxNodeTranspilerRu
             }
             else
             {
-                StackArrayLocals.AppendView(node.WhenTrue, ref context);
+                StackArrayLocalsEmitter.AppendView(node.WhenTrue, ref context);
             }
 
             context.Emitter.Writer.Append(':');
@@ -155,7 +155,7 @@ public sealed class ConditionalExpressionTranspilerRule : SyntaxNodeTranspilerRu
             }
             else
             {
-                StackArrayLocals.AppendView(node.WhenFalse, ref context);
+                StackArrayLocalsEmitter.AppendView(node.WhenFalse, ref context);
             }
         }
     }

@@ -982,9 +982,9 @@ public class ReceiverPlannerTests
         var (sumDecl, sumSym, sumModel) = FindMethod(compilation, "ArrWorker", "SumArray");
         var (_, writtenSym, _) = FindMethod(compilation, "ArrWorker", "WrittenArray");
 
-        Assert.True(Kassyi.GSharp.Compiler.Transpiler.Helpers.NullChecks.NonNullProof.IsCheckedParameter(
+        Assert.True(NonNullProof.IsCheckedParameter(
             sumSym.Parameters[0], compilation));
-        Assert.False(Kassyi.GSharp.Compiler.Transpiler.Helpers.NullChecks.NonNullProof.IsCheckedParameter(
+        Assert.False(NonNullProof.IsCheckedParameter(
             writtenSym.Parameters[0], compilation));
 
         var emitted = MethodTranspiler.GenerateCudaSource(

@@ -95,7 +95,7 @@ public sealed class ConditionalAccessExpressionTranspilerRule
     private static void EmitValue(ConditionalAccessPlan plan, ExpressionSyntax receiver, ExpressionSyntax access,
         ref TranspileContext context)
     {
-        NullRepresentation.AppendNullTest(receiver, isNull: false, ref context);
+        NullRepresentationEmitter.AppendNullTest(receiver, isNull: false, ref context);
         context.Emitter.Writer.Append(" ? ");
         if (plan.Form == ConditionalResultForm.Lifted)
         {
@@ -131,7 +131,7 @@ public sealed class ConditionalAccessExpressionTranspilerRule
         context.Emitter.Writer.Append("if");
         using (context.Emitter.Writer.Parentheses())
         {
-            NullRepresentation.AppendNullTest(receiver, isNull: false, ref context);
+            NullRepresentationEmitter.AppendNullTest(receiver, isNull: false, ref context);
         }
 
         using (context.Emitter.Writer.Scope())

@@ -120,22 +120,6 @@ internal static class NonNullProof
     public const string PassedAsDelegate =
         "a [GpuDeviceFunction] with a non-nullable array parameter (or a struct parameter that holds one) passed as a delegate";
 
-    /// <summary>
-    /// Records a failure (GSH0003) when <paramref name="reference"/> names <paramref name="method"/> without calling it
-    /// (a method group) and a call of the method checks its arguments: a call through a delegate cannot check them, and
-    /// the method reads them without a check.
-    /// </summary>
-    public static void FailIfReferencedWithoutCall(ExpressionSyntax reference, IMethodSymbol method,
-        ref TranspileContext context)
-    {
-        if (!CallTargetClassifier.IsCalledReference(reference) &&
-            !method.IsExtensionMethod &&
-            CppNameResolver.IsEmittedDeviceFunction(method, context.Emitter.Dialect) && ChecksArguments(method))
-        {
-            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, reference, PassedAsDelegate);
-        }
-    }
-
     /// <summary>Whether <paramref name="type"/> with <paramref name="annotation"/> is a non-nullable array.</summary>
     public static bool IsNonNullableArray(ITypeSymbol type, NullableAnnotation annotation) =>
         type is IArrayTypeSymbol && annotation == NullableAnnotation.NotAnnotated;

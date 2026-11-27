@@ -59,7 +59,7 @@ internal static class ConstantStringElement
                 // The node's own type is char; ConstantAtUse writes the type of an implicit conversion around it
                 var type = context.Query.SemanticModel.GetTypeSymbol(node) ??
                            context.Query.SemanticModel.Compilation.GetSpecialType(SpecialType.System_Char);
-                ConstantAtUse.Append(node, type, plan.Value, ref context);
+                ConstantAtUseEmitter.Append(node, type, plan.Value, ref context);
                 return true;
             case Shape.RuntimeIndex when plan.Index is { } index:
                 // __gsharp_string_char(u"<text>", <index>)

@@ -1,4 +1,3 @@
-using Kassyi.GSharp.Compiler.Backends.Cpp;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Compiler.Semantics;
@@ -48,16 +47,5 @@ internal static class ConstantAtUse
         }
 
         return GetTypeAtUse(ownType, null, false);
-    }
-
-    /// <summary>
-    /// Writes <paramref name="value"/>, the constant of <paramref name="expression"/>, as the C++ literal of
-    /// <see cref="GetTypeAtUse"/>.
-    /// </summary>
-    public static void Append(ExpressionSyntax expression, ITypeSymbol ownType, object? value,
-        ref TranspileContext context)
-    {
-        var type = GetTypeAtUse(expression, ownType, context.Query.SemanticModel);
-        context.Emitter.Writer.Append(ConstexprLiteral.FormatCppConstant(type, value));
     }
 }
