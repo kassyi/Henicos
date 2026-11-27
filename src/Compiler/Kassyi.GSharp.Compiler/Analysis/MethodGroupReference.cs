@@ -18,6 +18,11 @@ internal static class MethodGroupReference
             MemberBindingExpressionSyntax binding => binding,
             _ => node
         };
+        while (name.Parent is ParenthesizedExpressionSyntax parenthesized)
+        {
+            name = parenthesized;
+        }
+
         if (name.Parent is InvocationExpressionSyntax invocation && invocation.Expression == name)
         {
             return false;

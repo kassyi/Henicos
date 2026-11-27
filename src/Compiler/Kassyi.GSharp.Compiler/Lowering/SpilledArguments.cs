@@ -73,10 +73,10 @@ internal static class SpilledArguments
     /// a pointer (<see cref="IsValueReceiver"/>) that cannot stay in place. Without a semantic model no receiver is.
     /// </summary>
     public static bool IsSpilledReceiver(ExpressionSyntax receiver, SeparatedSyntaxList<ArgumentSyntax> arguments,
-        int index, SemanticModel? model) =>
+        int index, SemanticModel? model, bool laterOnly = false) =>
         model != null &&
         IsValueReceiver(receiver, model) &&
-        !CanStayInPlace(receiver, arguments, index, model);
+        !CanStayInPlace(receiver, arguments, index, model, laterOnly);
 
     /// <summary>
     /// Whether the receiver of an element access is a value that selects the element: an array (a reference) or a
@@ -119,12 +119,78 @@ internal static class SpilledArguments
             return ByReferencePassing.Location;
         }
 
-        return RootOf(argument.Expression, model) switch
+        var root = RootOf(argument.Expression, model);
+        if (root == LocationRoot.SpanElement && !hasKeyword)
         {
-            LocationRoot.SpanElement when !hasKeyword => ByReferencePassing.Value,
-            LocationRoot.Selected => ByReferencePassing.ReselectedLocation,
-            _ => ByReferencePassing.Location
+            return ByReferencePassing.Value;
+        }
+
+        return IsReselectedLocationRoot(root, argument.Expression, model)
+            ? ByReferencePassing.ReselectedLocation
+            : ByReferencePassing.Location;
+    }
+
+    /// <summary>
+    /// Whether <paramref name="operation"/> calls an ordinary instance <c>[GpuDeviceFunction]</c> on a struct.
+    /// </summary>
+    internal static bool IsStructInstanceDeviceFunctionCall(IInvocationOperation? operation) =>
+        operation?.TargetMethod is
+        {
+            MethodKind: MethodKind.Ordinary,
+            IsStatic: false,
+            ReducedFrom: null,
+            ContainingType.IsValueType: true
+        } method &&
+        method.OriginalDefinition.HasAttribute(KnownAttributes.GpuDeviceFunction);
+
+    /// <summary>
+    /// Whether the receiver of a struct instance call <paramref name="operation"/> is evaluated as a value or defensive
+    /// copy (rvalue, or <c>readonly</c> variable invoking a non-<c>readonly</c> method) rather than by reference.
+    /// </summary>
+    internal static bool IsCopiedOrValueReceiver(IInvocationOperation operation) =>
+        operation.Instance is null ||
+        !operation.Instance.IsVariable() ||
+        (ReadOnlyReceivers.IsReadOnlyVariable(operation.Instance) &&
+         !operation.TargetMethod.IsReadOnly);
+
+    /// <summary>
+    /// Whether <paramref name="location"/> is selected by a call, a property, a <c>ref</c> conditional, or an element
+    /// of a <c>Span&lt;T&gt;</c> whose own receiver does not resolve to a kept variable or array/pointer value, so a
+    /// state machine cannot spill its selection parts without re-evaluating it.
+    /// </summary>
+    internal static bool IsReselectedLocation(ExpressionSyntax location, SemanticModel model) =>
+        IsReselectedLocationRoot(RootOf(location, model), location, model);
+
+    private static bool IsReselectedLocationRoot(LocationRoot root, ExpressionSyntax location, SemanticModel model) =>
+        root switch
+        {
+            LocationRoot.Selected => true,
+            LocationRoot.SpanElement => TryFindSpanReceiver(location, model) is not { } spanReceiver ||
+                                        RootOf(spanReceiver, model) != LocationRoot.Kept,
+            _ => false
         };
+
+    private static ExpressionSyntax? TryFindSpanReceiver(ExpressionSyntax location, SemanticModel model)
+    {
+        while (true)
+        {
+            switch (location)
+            {
+                case ParenthesizedExpressionSyntax parenthesized:
+                    location = parenthesized.Expression;
+                    continue;
+                case MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } member
+                    when model.GetSymbol(member) is not IPropertySymbol:
+                    location = member.Expression;
+                    continue;
+                case ElementAccessExpressionSyntax elementAccess
+                    when !IsValueReceiver(elementAccess.Expression, model) &&
+                         model.GetSymbol(elementAccess) is IPropertySymbol { ContainingType.IsRefLikeType: true }:
+                    return elementAccess.Expression;
+                default:
+                    return null;
+            }
+        }
     }
 
     // An argument of an in / ref readonly parameter that names a variable. The operation of the expression is the
@@ -184,14 +250,16 @@ internal static class SpilledArguments
     /// parameter that no other argument writes.
     /// </summary>
     public static bool CanStayInPlace(ExpressionSyntax expression, SeparatedSyntaxList<ArgumentSyntax> arguments,
-        int index, SemanticModel? model) =>
+        int index, SemanticModel? model, bool laterOnly = false) =>
         expression is LiteralExpressionSyntax ||
         (model != null && model.GetSafeConstantValue(expression).HasValue) ||
         (expression is IdentifierNameSyntax identifier &&
          (IsRefLike(identifier, model)
              ? !IsWrittenByLaterArgument(identifier, arguments, index, model)
              : IsUnaliasedVariable(identifier, model) &&
-               !IsWrittenByOtherArgument(identifier, arguments, index, model)));
+               !(laterOnly
+                   ? IsWrittenByLaterArgument(identifier, arguments, index, model, includeByRefWrites: true)
+                   : IsWrittenByOtherArgument(identifier, arguments, index, model))));
 
     /// <summary>
     /// Whether the left operand of <paramref name="binary"/>, whose right operand holds a call that splits, is
@@ -238,7 +306,8 @@ internal static class SpilledArguments
 
     // Whether an argument after index writes the variable of identifier (the rule of #608, kept for ref structs)
     private static bool IsWrittenByLaterArgument(IdentifierNameSyntax identifier,
-        SeparatedSyntaxList<ArgumentSyntax> arguments, int index, SemanticModel? model)
+        SeparatedSyntaxList<ArgumentSyntax> arguments, int index, SemanticModel? model,
+        bool includeByRefWrites = false)
     {
         if (model == null)
         {
@@ -252,11 +321,14 @@ internal static class SpilledArguments
         return arguments
             .AsStackEnumerable()
             .Skip(index + 1)
-            .Any((Read: read, Model: model), static (later, s) => s.Read.InterferesWith(
-                later.RefKindKeyword.IsKind(SyntaxKind.None)
-                    ? ExpressionEffects.Of(later.Expression, s.Model)
-                    : ExpressionEffects.OfLocation(later.Expression, s.Model)
-            ));
+            .Any((Read: read, Model: model, IncludeByRefWrites: includeByRefWrites), static (later, s) =>
+                s.Read.InterferesWith(
+                    s.IncludeByRefWrites
+                        ? GetArgumentEffects(later, s.Model)
+                        : later.RefKindKeyword.IsKind(SyntaxKind.None)
+                            ? ExpressionEffects.Of(later.Expression, s.Model)
+                            : ExpressionEffects.OfLocation(later.Expression, s.Model)
+                ));
     }
 
     // A local or by-value parameter that has no other name. A name without a symbol is a temporary of lowering.

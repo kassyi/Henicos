@@ -37,6 +37,11 @@ internal static class TranspilerFailureCheck
         // UserDefinedOperatorRule reports an operator without a device definition from the same decision, with the
         // project's dialect
         (GSharpDiagnostics.UserDefinedOperatorNotSupported.Id, static _ => true),
+        // CallTargetRule reports instance device function method groups from CallTargetClassifier
+        (
+            GSharpDiagnostics.UnsupportedSyntax.Id,
+            static args => args is [CallTargetClassifier.InstanceDeviceFunctionMethodGroup]
+        ),
     ];
 
     /// <summary>Adds a diagnostic for each failure of the CUDA transpilation that the generator runs for <paramref name="method"/>.</summary>

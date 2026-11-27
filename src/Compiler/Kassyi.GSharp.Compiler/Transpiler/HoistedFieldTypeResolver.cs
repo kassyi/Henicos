@@ -83,6 +83,15 @@ internal static class HoistedFieldTypeResolver
             return convertedType;
         }
 
+        if (initializer is ThisExpressionSyntax &&
+            semanticModel.GetCompilationNode(initializer) is { } compilationNode &&
+            SemanticModelExtensions.GetSemanticModelForTree(semanticModel, compilationNode.SyntaxTree)
+                .GetEnclosingSymbol(compilationNode.SpanStart)?.ContainingType is { } containingType &&
+            IsAcceptable(containingType))
+        {
+            return containingType;
+        }
+
         return naturalType ?? convertedType;
     }
 
