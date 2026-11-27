@@ -1429,4 +1429,25 @@ public class CyclePlannerTests
 
         Assert.Null(plan.FindLoop(whileStatement));
     }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_BranchGateUnderSwitch_KeepsTheSerialGateOfTheLoop()
+    {
+        var body = ParseBlock(
+            "while (true) { switch (x) { case 0: if (d) { continue; } else { Split(); return; } default: break; } " +
+            "if (a) continue; Split(); break; } Split();");
+        var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        var whileStatement = Assert.IsType<WhileStatementSyntax>(body.Statements[0]);
+        var cycle = plan.FindLoop(whileStatement);
+
+        Assert.NotNull(cycle);
+        var loopBlock = Assert.IsType<BlockSyntax>(whileStatement.Statement);
+        var switchStatement = Assert.IsType<SwitchStatementSyntax>(loopBlock.Statements[0]);
+        var caseIf = Assert.IsType<IfStatementSyntax>(switchStatement.Sections[0].Statements[0]);
+        var elseBlock = Assert.IsType<BlockSyntax>(caseIf.Else?.Statement);
+
+        Assert.True(plan.IsGateStatement(cycle, loopBlock.Statements[2]));
+        Assert.False(plan.IsGateStatement(cycle, elseBlock.Statements[0]));
+    }
 }

@@ -1436,13 +1436,11 @@ internal static class CyclePlanner
                         continue;
                     }
 
-                    if (!HasAllowedLoopGateAncestors(branchGate, loop, enterScopedStatements))
+                    // A branch gate under a form the planner cannot rewrite is skipped; the loop keeps its other gates
+                    if (HasAllowedLoopGateAncestors(branchGate, loop, enterScopedStatements))
                     {
-                        hasDisallowedGate = true;
-                        break;
+                        gates.Add(branchGate);
                     }
-
-                    gates.Add(branchGate);
                 }
             }
 

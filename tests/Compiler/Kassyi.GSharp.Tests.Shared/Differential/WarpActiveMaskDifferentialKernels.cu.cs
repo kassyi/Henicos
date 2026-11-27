@@ -3463,4 +3463,43 @@ public static partial class WarpActiveMaskDifferentialKernels
             }
         }
     }
+
+    // The else branch that leaves is inside a switch section, where no gate can be placed; the gate after the
+    // continue of the second if stays
+    [GpuKernel]
+    public static void ElseExitInSwitchSectionAndGateAfterContinueKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        while (true)
+        {
+            switch (t & 1)
+            {
+                case 0:
+                    if (n < ((t >> 1) & 1))
+                    {
+                        n++;
+                        continue;
+                    }
+                    else
+                    {
+                        result[t] = Warp.ActiveMask();
+                        return;
+                    }
+                default:
+                    break;
+            }
+
+            if (n < 2 && ((t >> 1) & 1) != 0)
+            {
+                n++;
+                continue;
+            }
+
+            result[t + 32] = Warp.ActiveMask();
+            break;
+        }
+
+        result[t + 64] = Warp.ActiveMask();
+    }
 }

@@ -2250,4 +2250,31 @@ public class WarpActiveMaskDifferentialTests
             static output => WarpActiveMaskDifferentialKernels.LaunchElseReturnAfterContinueKernel(
                 output, 0, blockDimX: 32),
             ElseBreakAfterContinueExpected(0u, 128));
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_ElseExitInSwitchSectionWithGateAfterContinue_KeepsTheGateOfTheLoop()
+    {
+        // Even lanes leave by the else branch in the pass they stop continuing (lanes 0 mod 4 in pass 0, 2 mod 4 in
+        // pass 1); odd lanes meet at the statement after the continue of the second if, whatever pass they leave in
+        var expected = new uint[96];
+        for (int t = 0; t < 32; t++)
+        {
+            if ((t & 1) == 0)
+            {
+                expected[t] = (t & 2) == 0 ? 0x11111111u : 0x44444444u;
+            }
+            else
+            {
+                expected[t + 32] = 0xAAAAAAAAu;
+                expected[t + 64] = 0xAAAAAAAAu;
+            }
+        }
+
+        RunWithinClassicBounds(96,
+            static output => WarpActiveMaskDifferentialKernels.LaunchElseExitInSwitchSectionAndGateAfterContinueKernel(
+                output, 0, blockDimX: 32),
+            expected,
+            static i => i & 31);
+    }
 }
