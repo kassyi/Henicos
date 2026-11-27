@@ -381,10 +381,15 @@ export async function checkCommandLanguage(assert: AssertModule, maxPerShell?: n
     fs.mkdirSync(stubDir, { recursive: true });
     const stubName = process.platform === "win32" ? "dotnet.exe" : "dotnet";
     const stubExe = path.join(stubDir, stubName);
-    try {
-      fs.linkSync(process.execPath, stubExe);
-    } catch {
-      fs.copyFileSync(process.execPath, stubExe);
+    // A hard link shares node's inode: the cleanup's chmod 0o600 would clear node's own execute bits off Windows.
+    if (process.platform === "win32") {
+      try {
+        fs.linkSync(process.execPath, stubExe);
+      } catch {
+        fs.copyFileSync(process.execPath, stubExe);
+      }
+    } else {
+      fs.symlinkSync(process.execPath, stubExe);
     }
     const testScriptBody = [
       'const fs = require("node:fs");',
