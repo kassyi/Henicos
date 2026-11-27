@@ -488,10 +488,10 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                 switch (elements[i])
                 {
                     case ExpressionElementSyntax element:
-                        ArithmeticConversions.AppendElement(element.Expression, ref Context);
+                        ArithmeticConversionsEmitter.AppendElement(element.Expression, ref Context);
                         break;
                     case ExpressionSyntax expression:
-                        ArithmeticConversions.AppendElement(expression, ref Context);
+                        ArithmeticConversionsEmitter.AppendElement(expression, ref Context);
                         break;
                     default:
                         Visit(elements[i]);

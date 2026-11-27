@@ -35,7 +35,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
 
         if (symbol is IFieldSymbol { IsConst: true, HasConstantValue: true } field)
         {
-            ConstantAtUse.Append(node, field.Type, field.ConstantValue, ref context);
+            ConstantAtUseEmitter.Append(node, field.Type, field.ConstantValue, ref context);
             return;
         }
 
@@ -109,7 +109,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         if (symbol is IMethodSymbol method && CppNameResolver.IsEmittedDeviceFunction(method, context.Emitter.Dialect))
         {
             DynamicSharedMemoryEmitter.FailIfReferencedWithoutCall(node, method, ref context);
-            NonNullProof.FailIfReferencedWithoutCall(node, method, ref context);
+            NonNullProofEmitter.FailIfReferencedWithoutCall(node, method, ref context);
             SuspendingCallReference.FailIfReferencedWithoutCall(node, method, ref context);
             context.Emitter.Writer.AppendCppName(CppNameResolver.Resolve(method, method.Name, context.Emitter.Dialect));
             return true;
@@ -218,7 +218,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             context.Emitter.Writer.Append(" = ");
             using (context.Emitter.Writer.Parentheses())
             {
-                StackArrayLocals.AppendView(receiver, ref context);
+                StackArrayLocalsEmitter.AppendView(receiver, ref context);
             }
         }
     }
@@ -367,9 +367,9 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
     private static void AppendMemberReceiver(MemberAccessExpressionSyntax node, ISymbol? memberSymbol,
         ref TranspileContext context)
     {
-        if (!ArrayNullCheck.TryAppendMemberReceiver(node, memberSymbol, ref context))
+        if (!ArrayNullCheckEmitter.TryAppendMemberReceiver(node, memberSymbol, ref context))
         {
-            StackArrayLocals.AppendView(node.Expression, ref context);
+            StackArrayLocalsEmitter.AppendView(node.Expression, ref context);
         }
     }
 
@@ -475,7 +475,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         {
             case MemberNameShape.Resolved:
                 context.Emitter.Writer.AppendCppName(member.CppName);
-                PropertyAccessorCall.AppendCallIfGetter(node, member.Symbol, ref context);
+                PropertyAccessorCallEmitter.AppendCallIfGetter(node, member.Symbol, ref context);
                 break;
             case MemberNameShape.ForEachArrayLength:
                 context.Emitter.Writer.Append("length");

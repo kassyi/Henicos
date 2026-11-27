@@ -105,6 +105,9 @@ Unmarshal_EnumFieldInner(ref host.Nested, ref native.Nested, hStream);
 host.SByteMode = native.SByteMode;
 host.ULongMode = native.ULongMode;
 }
+public static unsafe void UnmarshalArrays_EnumFieldJob(in global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldJob host, ref AotContexts.EnumFieldJob native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_EnumFieldJob(ref global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldJob host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Data != null)

@@ -3,6 +3,8 @@ using System;
 using System.Linq;
 using System.Reflection;
 using Kassyi.GSharp.Tests.Shared.Differential;
+using Kassyi.GSharp.Tests.Shared.Stdlib;
+using Kassyi.GSharp.Tests.Shared.Syntax;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Cpu.Core;
@@ -294,6 +296,34 @@ public class NativeStackTests
         Assert.Contains(
             GSharpInternalNames.StackWarp.ShuffleXorSync,
             NativeStackKernels.ShuffleAndBarrierKernel_Source,
+            StringComparison.Ordinal);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void CrossAssemblyBlockBarrierKernels_StackModelBuild_UseStackLauncherWithoutContext()
+    {
+        Skip.IfNot(IsStackBuild(), "Runs only when GSharpNativeBarrierModel=Stack.");
+
+        string[] stackSources =
+        [
+            CrossAssemblyKernels.ExchangeKernel_Source,
+            CrossAssemblyDifferentialKernels.CrossAssemblyBarrierExchangeKernel_Source,
+            CrossAssemblyPrivateFrameKernels.PrivateFrameKernel_Source,
+            CrossAssemblyPrivateFrameKernels.PrivateFrameRelayKernel_Source,
+            CrossAssemblyPrivateFrameKernels.PrivateFrameThroughFunctionKernel_Source,
+            CrossAssemblyProtectedFrameKernels.ProtectedFrameKernel_Source
+        ];
+
+        foreach (var source in stackSources)
+        {
+            Assert.Contains(GSharpInternalNames.NativeStack.Resume, source, StringComparison.Ordinal);
+            Assert.DoesNotContain("__gsharp_yielded_for_block_barrier=true", source, StringComparison.Ordinal);
+        }
+
+        Assert.DoesNotContain(
+            GSharpInternalNames.NativeStack.Resume,
+            CrossAssemblyStdlibKernels.WarpScanKernel_Source,
             StringComparison.Ordinal);
     }
 }

@@ -132,6 +132,9 @@ if (native.UInt64Values.Data == global::System.IntPtr.Zero)
 host.UInt64Values = default;
 }
 }
+public static unsafe void UnmarshalArrays_PowerOfTwoCheckOperands(in global::Kassyi.GSharp.Tests.Shared.Differential.PowerOfTwoCheckOperands host, ref AotContexts.PowerOfTwoCheckOperands native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_PowerOfTwoCheckOperands(ref global::Kassyi.GSharp.Tests.Shared.Differential.PowerOfTwoCheckOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Int32Values != null)
@@ -230,6 +233,9 @@ if (native.UInt64Values.Data == global::System.IntPtr.Zero)
 host.UInt64Values = default;
 }
 }
+public static unsafe void UnmarshalArrays_UnsignedPowerOfTwoOperands(in global::Kassyi.GSharp.Tests.Shared.Differential.UnsignedPowerOfTwoOperands host, ref AotContexts.UnsignedPowerOfTwoOperands native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_UnsignedPowerOfTwoOperands(ref global::Kassyi.GSharp.Tests.Shared.Differential.UnsignedPowerOfTwoOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.UInt32Values != null)
@@ -324,6 +330,9 @@ if (native.NUIntResults.Data == global::System.IntPtr.Zero)
 {
 host.NUIntResults = default;
 }
+}
+public static unsafe void UnmarshalArrays_UnsignedPowerOfTwoResults(in global::Kassyi.GSharp.Tests.Shared.Differential.UnsignedPowerOfTwoResults host, ref AotContexts.UnsignedPowerOfTwoResults native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_UnsignedPowerOfTwoResults(ref global::Kassyi.GSharp.Tests.Shared.Differential.UnsignedPowerOfTwoResults host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

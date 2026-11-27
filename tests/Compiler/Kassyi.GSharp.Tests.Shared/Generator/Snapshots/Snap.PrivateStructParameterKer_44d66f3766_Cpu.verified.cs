@@ -70,6 +70,9 @@ host.Values = default;
 }
 host.Scale = native.Scale;
 }
+public static unsafe void UnmarshalArrays_PrivateStructParameterKernels_Bag(in global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateStructParameterKernels.Bag host, ref AotContexts.Bag native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_PrivateStructParameterKernels_Bag(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateStructParameterKernels.Bag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Values != null)

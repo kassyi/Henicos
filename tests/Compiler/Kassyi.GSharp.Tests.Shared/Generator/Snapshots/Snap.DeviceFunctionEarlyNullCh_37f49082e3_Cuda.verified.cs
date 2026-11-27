@@ -213,6 +213,26 @@ handle.Free();
 }
 }
 }
+public static unsafe void UnmarshalArrays_DeviceFunctionOuterBag(in global::Kassyi.GSharp.Tests.Shared.Core.DeviceFunctionOuterBag host, ref AotContexts.DeviceFunctionOuterBag native, global::System.IntPtr hStream = default)
+{
+UnmarshalArrays_DeviceFunctionInnerBag(in host.Inner, ref native.Inner, hStream);
+if (native.Other.Data != global::System.IntPtr.Zero && host.Other != null)
+{
+int size = checked(host.Other.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Other, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Other.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
 public static void AliasHeldArrays_DeviceFunctionOuterBag(ref global::Kassyi.GSharp.Tests.Shared.Core.DeviceFunctionOuterBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 AliasHeldArrays_DeviceFunctionInnerBag(ref host.Inner, held);
@@ -269,6 +289,25 @@ if (native.Data.Data == global::System.IntPtr.Zero)
 host.Data = default;
 }
 else if (host.Data != null)
+{
+int size = checked(host.Data.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Data, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Data.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
+public static unsafe void UnmarshalArrays_DeviceFunctionInnerBag(in global::Kassyi.GSharp.Tests.Shared.Core.DeviceFunctionInnerBag host, ref AotContexts.DeviceFunctionInnerBag native, global::System.IntPtr hStream = default)
+{
+if (native.Data.Data != global::System.IntPtr.Zero && host.Data != null)
 {
 int size = checked(host.Data.Length * sizeof(global::System.Int32));
 if (size > 0)

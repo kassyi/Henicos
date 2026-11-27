@@ -23,6 +23,9 @@ internal sealed class DiffRecordWriter
 {
     internal const string EnvironmentVariableName = "GSHARP_DIFF_RECORD";
     private const string NativeGetLaunchCountExport = "__gsharp_stack_get_launch_count";
+    private const uint CanonicalSingleNaNBits = 0x7FC0_0000u;
+    private const ulong CanonicalDoubleNaNBits = 0x7FF8_0000_0000_0000UL;
+    private const ushort CanonicalHalfNaNBits = 0x7E00;
 
     private static readonly DiffRecordWriter? s_envWriter =
         TryCreate(Environment.GetEnvironmentVariable(EnvironmentVariableName));
@@ -235,6 +238,12 @@ internal sealed class DiffRecordWriter
             !HasAllCustomColumnComparers(effectiveBuffer.ColumnPolicies) &&
             effectiveBuffer.CanPinAsBytes)
         {
+            if (HasAnyCanonicalNaNPolicy(effectiveBuffer) &&
+                TryAppendCanonicalNaNFloatingBytes(hash, effectiveBuffer, intBuf, tagBuf))
+            {
+                return;
+            }
+
             tagBuf[0] = 1;
             hash.AppendData(tagBuf);
             var bytes = effectiveBuffer.AsReadOnlyBytes();
@@ -317,6 +326,109 @@ internal sealed class DiffRecordWriter
         return anyCustom && !allCustom;
     }
 
+    private static bool UsesCanonicalNaN(OutputPolicyKind kind) =>
+        kind is OutputPolicyKind.Bitwise or OutputPolicyKind.Multiset;
+
+    private static bool HasAnyCanonicalNaNPolicy(DiffBuffer buffer)
+    {
+        if (buffer.ColumnPolicies is null)
+        {
+            return UsesCanonicalNaN(buffer.Policy.Kind);
+        }
+
+        foreach (var colPolicy in buffer.ColumnPolicies)
+        {
+            if (UsesCanonicalNaN(colPolicy.Kind))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TryAppendCanonicalNaNFloatingBytes(
+        IncrementalHash hash,
+        DiffBuffer buffer,
+        Span<byte> intBuf,
+        Span<byte> tagBuf
+    )
+    {
+        int elementSize = GetCanonicalNaNFloatingElementSize(buffer);
+        if (elementSize == 0)
+        {
+            return false;
+        }
+
+        tagBuf[0] = 1;
+        hash.AppendData(tagBuf);
+        BinaryPrimitives.WriteInt32LittleEndian(intBuf, checked(buffer.Length * elementSize));
+        hash.AppendData(intBuf);
+
+        Span<byte> scratch = stackalloc byte[512];
+        int offset = 0;
+        for (int i = 0; i < buffer.Length; i++)
+        {
+            bool canonicalize = UsesCanonicalNaN(buffer.PolicyOf(i).Kind);
+            WriteFloatingCell(buffer, i, canonicalize, scratch[offset..]);
+            offset += elementSize;
+            if (offset == scratch.Length)
+            {
+                hash.AppendData(scratch);
+                offset = 0;
+            }
+        }
+
+        if (offset > 0)
+        {
+            hash.AppendData(scratch[..offset]);
+        }
+
+        return true;
+    }
+
+    private static int GetCanonicalNaNFloatingElementSize(DiffBuffer buffer) => buffer switch
+    {
+        DiffBuffer<float> => sizeof(float),
+        DiffBuffer<double> => sizeof(double),
+        DiffBuffer<Half> => sizeof(ushort),
+        _ => 0,
+    };
+
+    private static void WriteFloatingCell(DiffBuffer buffer, int index, bool canonicalize, Span<byte> destination)
+    {
+        switch (buffer)
+        {
+            case DiffBuffer<float> floatBuffer:
+            {
+                float value = floatBuffer.Data[index];
+                uint bits = canonicalize && float.IsNaN(value)
+                    ? CanonicalSingleNaNBits
+                    : BitConverter.SingleToUInt32Bits(value);
+                BinaryPrimitives.WriteUInt32LittleEndian(destination, bits);
+                break;
+            }
+            case DiffBuffer<double> doubleBuffer:
+            {
+                double value = doubleBuffer.Data[index];
+                ulong bits = canonicalize && double.IsNaN(value)
+                    ? CanonicalDoubleNaNBits
+                    : BitConverter.DoubleToUInt64Bits(value);
+                BinaryPrimitives.WriteUInt64LittleEndian(destination, bits);
+                break;
+            }
+            case DiffBuffer<Half> halfBuffer:
+            {
+                Half value = halfBuffer.Data[index];
+                ushort bits = canonicalize && Half.IsNaN(value)
+                    ? CanonicalHalfNaNBits
+                    : BitConverter.HalfToUInt16Bits(value);
+                BinaryPrimitives.WriteUInt16LittleEndian(destination, bits);
+                break;
+            }
+        }
+    }
+
     private static void AppendMixedColumnBuffer(
         IncrementalHash hash,
         DiffBuffer buffer,
@@ -332,6 +444,8 @@ internal sealed class DiffRecordWriter
         bool canPinAsBytes = buffer.CanPinAsBytes;
         ReadOnlySpan<byte> rawBytes = canPinAsBytes ? buffer.AsReadOnlyBytes() : ReadOnlySpan<byte>.Empty;
         int cellSize = canPinAsBytes ? rawBytes.Length / buffer.Length : 0;
+        int floatingElementSize = canPinAsBytes ? GetCanonicalNaNFloatingElementSize(buffer) : 0;
+        Span<byte> cellBuf = stackalloc byte[8];
 
         for (int i = 0; i < buffer.Length; i++)
         {
@@ -349,7 +463,15 @@ internal sealed class DiffRecordWriter
                 hash.AppendData(tagBuf);
                 BinaryPrimitives.WriteInt32LittleEndian(intBuf, cellSize);
                 hash.AppendData(intBuf);
-                hash.AppendData(rawBytes.Slice(i * cellSize, cellSize));
+                if (UsesCanonicalNaN(colPolicy.Kind) && floatingElementSize > 0)
+                {
+                    WriteFloatingCell(buffer, i, canonicalize: true, cellBuf);
+                    hash.AppendData(cellBuf[..floatingElementSize]);
+                }
+                else
+                {
+                    hash.AppendData(rawBytes.Slice(i * cellSize, cellSize));
+                }
             }
             else
             {

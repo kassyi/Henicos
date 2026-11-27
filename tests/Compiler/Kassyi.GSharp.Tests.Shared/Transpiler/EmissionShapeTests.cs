@@ -298,7 +298,7 @@ public partial class EmissionShapeTests
             generated,
             StringComparison.Ordinal);
         Assert.Contains(
-            "(12,16): GSH0066: The method 'StatedFailureKernels.InstanceHelper' is marked with [GpuDeviceFunction] but is an instance method.",
+            "(12,16): GSH0066: The method 'StatedFailureKernels.InstanceHelper' is marked with [GpuDeviceFunction] but is declared on a reference type",
             generated,
             StringComparison.Ordinal);
         Assert.Contains("(16,60): GSH0003: The syntax 'FunctionPointerType' is not supported", generated, StringComparison.Ordinal);

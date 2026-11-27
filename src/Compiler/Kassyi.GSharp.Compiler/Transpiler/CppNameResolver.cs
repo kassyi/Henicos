@@ -152,10 +152,7 @@ internal static class CppNameResolver
     /// than an intrinsic that the dialect maps to a built-in.
     /// </summary>
     public static bool IsEmittedDeviceFunction(IMethodSymbol method, ITranspilerDialect dialect) =>
-        method is { MethodKind: MethodKind.Ordinary } &&
-        (method.IsStatic || method.ContainingType is { IsValueType: true }) &&
-        method.OriginalDefinition.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
-        !dialect.TryMapIntrinsic(method, out _);
+        DeviceFunctionTargets.IsEmittedDeviceFunction(method, dialect);
 
     private static bool IsEmittedStructMember(ISymbol member, ITranspilerDialect dialect) =>
         member.ContainingType is { } type && GlobalCppNames.IsEncodedUserType(type, dialect);

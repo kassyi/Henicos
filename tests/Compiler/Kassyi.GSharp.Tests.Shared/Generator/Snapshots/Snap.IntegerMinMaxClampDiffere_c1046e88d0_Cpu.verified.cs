@@ -262,6 +262,9 @@ if (native.Maximums.Data == global::System.IntPtr.Zero)
 host.Maximums = default;
 }
 }
+public static unsafe void UnmarshalArrays_SByteClampInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.SByteClampInputs host, ref AotContexts.SByteClampInputs native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_SByteClampInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.SByteClampInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Values != null)
@@ -365,6 +368,9 @@ if (native.Maximums.Data == global::System.IntPtr.Zero)
 {
 host.Maximums = default;
 }
+}
+public static unsafe void UnmarshalArrays_ByteClampInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.ByteClampInputs host, ref AotContexts.ByteClampInputs native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_ByteClampInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.ByteClampInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -470,6 +476,9 @@ if (native.Maximums.Data == global::System.IntPtr.Zero)
 host.Maximums = default;
 }
 }
+public static unsafe void UnmarshalArrays_Int16ClampInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.Int16ClampInputs host, ref AotContexts.Int16ClampInputs native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_Int16ClampInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.Int16ClampInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Values != null)
@@ -573,6 +582,9 @@ if (native.Maximums.Data == global::System.IntPtr.Zero)
 {
 host.Maximums = default;
 }
+}
+public static unsafe void UnmarshalArrays_UInt16ClampInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.UInt16ClampInputs host, ref AotContexts.UInt16ClampInputs native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_UInt16ClampInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.UInt16ClampInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -678,6 +690,9 @@ if (native.Maximums.Data == global::System.IntPtr.Zero)
 host.Maximums = default;
 }
 }
+public static unsafe void UnmarshalArrays_UInt32ClampInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.UInt32ClampInputs host, ref AotContexts.UInt32ClampInputs native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_UInt32ClampInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.UInt32ClampInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Values != null)
@@ -782,6 +797,9 @@ if (native.Maximums.Data == global::System.IntPtr.Zero)
 host.Maximums = default;
 }
 }
+public static unsafe void UnmarshalArrays_Int64ClampInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.Int64ClampInputs host, ref AotContexts.Int64ClampInputs native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_Int64ClampInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.Int64ClampInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Values != null)
@@ -885,6 +903,9 @@ if (native.Maximums.Data == global::System.IntPtr.Zero)
 {
 host.Maximums = default;
 }
+}
+public static unsafe void UnmarshalArrays_UInt64ClampInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.UInt64ClampInputs host, ref AotContexts.UInt64ClampInputs native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_UInt64ClampInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.UInt64ClampInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -1004,6 +1025,9 @@ if (native.Signed64Values.Data == global::System.IntPtr.Zero)
 {
 host.Signed64Values = default;
 }
+}
+public static unsafe void UnmarshalArrays_IntegerSignInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.IntegerSignInputs host, ref AotContexts.IntegerSignInputs native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_IntegerSignInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.IntegerSignInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -1163,6 +1187,9 @@ if (native.Signed32Values.Data == global::System.IntPtr.Zero)
 host.Signed32Values = default;
 }
 }
+public static unsafe void UnmarshalArrays_MixedOperandInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.MixedOperandInputs host, ref AotContexts.MixedOperandInputs native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_MixedOperandInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.MixedOperandInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Signed64Values != null)
@@ -1309,6 +1336,9 @@ if (native.Signed16Values.Data == global::System.IntPtr.Zero)
 host.Signed16Values = default;
 }
 }
+public static unsafe void UnmarshalArrays_NarrowResultInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.NarrowResultInputs host, ref AotContexts.NarrowResultInputs native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_NarrowResultInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.NarrowResultInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Unsigned8Values != null)
@@ -1421,6 +1451,9 @@ if (native.Unsigned16Values.Data == global::System.IntPtr.Zero)
 {
 host.Unsigned16Values = default;
 }
+}
+public static unsafe void UnmarshalArrays_NarrowArgumentInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.NarrowArgumentInputs host, ref AotContexts.NarrowArgumentInputs native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_NarrowArgumentInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.NarrowArgumentInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

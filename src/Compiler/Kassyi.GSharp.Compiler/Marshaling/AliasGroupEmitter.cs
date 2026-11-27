@@ -260,26 +260,48 @@ internal static class AliasGroupEmitter
                     $"{AliasRangeEmitter.RangesSpan(plan.Ranges, plan.HasHeldArrays)});");
                 writer.Append($"{HostTypeNames.Span}<{conversion.ShadowType}> {Native} = ");
                 writer.AppendLine($"{StagingType}.GetBuffer<{conversion.ShadowType}>({Aliases}, {Group});");
-                writer.AppendLine($"if ({layout}.{(toDevice ? "CopiesIn" : "CopiesBack")})");
-                using (writer.Scope())
+                if (!toDevice && conversion.UnmarshalArraysMethod is not null)
                 {
-                    WriteConversionLoop(writer, conversion, toDevice, isCuda);
+                    writer.AppendLine($"if ({layout}.CopiesBack)");
+                    using (writer.Scope())
+                    {
+                        WriteConversionLoop(writer, conversion, toDevice, isCuda);
+                    }
+
+                    writer.AppendLine("else");
+                    using (writer.Scope())
+                    {
+                        WriteConversionLoop(writer, conversion, toDevice, isCuda, arraysOnly: true);
+                    }
+                }
+                else
+                {
+                    writer.AppendLine($"if ({layout}.{(toDevice ? "CopiesIn" : "CopiesBack")})");
+                    using (writer.Scope())
+                    {
+                        WriteConversionLoop(writer, conversion, toDevice, isCuda);
+                    }
                 }
             }
         }
     }
 
     private static void WriteConversionLoop(SourceWriter writer, in AliasConversion conversion, bool toDevice,
-        bool isCuda)
+        bool isCuda, bool arraysOnly = false)
     {
-        writer.AppendLineIf(isCuda && !toDevice, $"{StagingType}.CopyToHost({Aliases}, {Group}, hStream);");
+        writer.AppendLineIf(isCuda && !toDevice && !arraysOnly, $"{StagingType}.CopyToHost({Aliases}, {Group}, hStream);");
         writer.AppendLine($"for (int {Index} = 0; {Index} < {Host}.Length; {Index}++)");
         using (writer.Scope())
         {
-            var elements = $"ref {Host}[{Index}], ref {Native}[{Index}]";
+            var elements = arraysOnly
+                ? $"in {Host}[{Index}], ref {Native}[{Index}]"
+                : $"ref {Host}[{Index}], ref {Native}[{Index}]";
+            var method = toDevice ? conversion.MarshalMethod
+                : arraysOnly ? conversion.UnmarshalArraysMethod
+                : conversion.UnmarshalMethod;
             writer.AppendLine(toDevice
-                ? $"{conversion.MarshalMethod}({elements}, {conversion.Allocations}, hStream);"
-                : $"{conversion.UnmarshalMethod}({elements}, hStream);");
+                ? $"{method}({elements}, {conversion.Allocations}, hStream);"
+                : $"{method}({elements}, hStream);");
         }
 
         writer.AppendLineIf(isCuda && toDevice, $"{StagingType}.CopyToDevice({Aliases}, {Group}, hStream);");
@@ -425,6 +447,37 @@ internal static class AliasGroupEmitter
                 writer.AppendLine($"if (!({MemberTest(plan, plan.Candidates[k])})) {shape.Identifier} = default;");
             }
         }
+    }
+
+    /// <summary>
+    /// CPU: declares the <c>ref readonly</c> locals for <c>in</c> parameters that may rebind to an all-<c>[In]</c>
+    /// group copy, initialized to the caller's variables before <see cref="WriteCpuHeldTry"/> opens its scope.
+    /// </summary>
+    public static void WriteCpuInReferenceDeclarations(SourceWriter writer, in ArraySharingPlan sharing)
+    {
+        for (var i = 0; i < sharing.Parameters.Length; i++)
+        {
+            if (!sharing.TakesInReferenceGroupCopy(i))
+            {
+                continue;
+            }
+
+            var shape = sharing.Parameters[i];
+            var local = KernelHostNames.GetLocal(LauncherLocal.AliasReference, shape);
+            writer.AppendLine($"ref readonly {shape.TypeName} {local} = ref {shape.Identifier};");
+        }
+    }
+
+    /// <summary>
+    /// CPU: rebinds the <c>ref readonly</c> local of <c>in</c> parameter <paramref name="parameterIndex"/> into its
+    /// group's copy when every member of the group is copied in only.
+    /// </summary>
+    public static void WriteCpuInReferenceCopy(SourceWriter writer, in ArraySharingPlan sharing, int parameterIndex)
+    {
+        var shape = sharing.Parameters[parameterIndex];
+        var local = KernelHostNames.GetLocal(LauncherLocal.AliasReference, shape);
+        var call = CopyCall(sharing, parameterIndex, "GetHostReference", shape.TypeName);
+        writer.AppendLine($"{local} = ref {call}in {local});");
     }
 
     // Span: if (HostAliasCopies.TryGetHostView<T>(__gsharp_aliases, <k>, <ranges>, out Span<T> copy))

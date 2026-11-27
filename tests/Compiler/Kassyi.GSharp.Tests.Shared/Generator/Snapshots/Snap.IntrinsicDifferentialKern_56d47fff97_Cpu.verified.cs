@@ -231,6 +231,9 @@ if (native.Selectors.Data == global::System.IntPtr.Zero)
 host.Selectors = default;
 }
 }
+public static unsafe void UnmarshalArrays_Integer32IntrinsicOperands(in global::Kassyi.GSharp.Tests.Shared.Differential.Integer32IntrinsicOperands host, ref AotContexts.Integer32IntrinsicOperands native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_Integer32IntrinsicOperands(ref global::Kassyi.GSharp.Tests.Shared.Differential.Integer32IntrinsicOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.FirstValues != null)
@@ -350,6 +353,9 @@ if (native.SecondUInt64Values.Data == global::System.IntPtr.Zero)
 host.SecondUInt64Values = default;
 }
 }
+public static unsafe void UnmarshalArrays_Integer64IntrinsicOperands(in global::Kassyi.GSharp.Tests.Shared.Differential.Integer64IntrinsicOperands host, ref AotContexts.Integer64IntrinsicOperands native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_Integer64IntrinsicOperands(ref global::Kassyi.GSharp.Tests.Shared.Differential.Integer64IntrinsicOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.FirstUInt32Values != null)
@@ -463,6 +469,9 @@ if (native.ThirdValues.Data == global::System.IntPtr.Zero)
 host.ThirdValues = default;
 }
 }
+public static unsafe void UnmarshalArrays_UInt32BitOperands(in global::Kassyi.GSharp.Tests.Shared.Differential.UInt32BitOperands host, ref AotContexts.UInt32BitOperands native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_UInt32BitOperands(ref global::Kassyi.GSharp.Tests.Shared.Differential.UInt32BitOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.FirstValues != null)
@@ -552,6 +561,9 @@ if (native.Lengths.Data == global::System.IntPtr.Zero)
 host.Lengths = default;
 }
 }
+public static unsafe void UnmarshalArrays_BitFieldSlices(in global::Kassyi.GSharp.Tests.Shared.Differential.BitFieldSlices host, ref AotContexts.BitFieldSlices native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_BitFieldSlices(ref global::Kassyi.GSharp.Tests.Shared.Differential.BitFieldSlices host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Positions != null)
@@ -631,6 +643,9 @@ if (native.SecondValues.Data == global::System.IntPtr.Zero)
 {
 host.SecondValues = default;
 }
+}
+public static unsafe void UnmarshalArrays_UInt64BitOperands(in global::Kassyi.GSharp.Tests.Shared.Differential.UInt64BitOperands host, ref AotContexts.UInt64BitOperands native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_UInt64BitOperands(ref global::Kassyi.GSharp.Tests.Shared.Differential.UInt64BitOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -741,6 +756,9 @@ if (native.BorrowIns.Data == global::System.IntPtr.Zero)
 {
 host.BorrowIns = default;
 }
+}
+public static unsafe void UnmarshalArrays_CarryChainOperands(in global::Kassyi.GSharp.Tests.Shared.Differential.CarryChainOperands host, ref AotContexts.CarryChainOperands native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_CarryChainOperands(ref global::Kassyi.GSharp.Tests.Shared.Differential.CarryChainOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

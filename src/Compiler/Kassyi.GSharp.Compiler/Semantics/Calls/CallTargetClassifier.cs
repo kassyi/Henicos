@@ -1,6 +1,4 @@
-using Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules;
-
-namespace Kassyi.GSharp.Compiler.Transpiler;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>
 /// Decides what a call in GPU code, or a method group that device code names, calls (<see cref="CallTargetPlan"/>):
@@ -35,11 +33,19 @@ internal static class CallTargetClassifier
     private static readonly string[] s_mathTypeNames =
         ["System." + TypeConstants.MathType, "System." + TypeConstants.MathFType];
 
-    /// <summary>The reason given for an instance method of a struct.</summary>
-    public static string InstanceMethodOfStruct =>
-        "instance methods of structs are not supported in GPU code yet (" +
-        GSharpDiagnostics.InstanceDeviceFunctionNotSupported.Id +
-        "); make it a static [GpuDeviceFunction] method that takes the struct as a parameter";
+    /// <summary>
+    /// The GSH0003 text for an instance <c>[GpuDeviceFunction]</c> method of a struct used as a method group.
+    /// </summary>
+    public const string InstanceDeviceFunctionMethodGroup =
+        "method group of an instance method of a struct (the delegate would hold a boxed copy of the receiver)";
+
+    /// <summary>
+    /// Whether <paramref name="method"/> is an unreduced instance device function emitted as a global C++ function,
+    /// which cannot form a delegate without boxing a copy of the struct receiver (GSH0003).
+    /// </summary>
+    public static bool IsUnsupportedInstanceMethodGroup(IMethodSymbol method, ITranspilerDialect dialect) =>
+        method is { IsStatic: false, ReducedFrom: null } &&
+        DeviceFunctionTargets.IsEmittedDeviceFunction(method, dialect);
 
     /// <summary>
     /// Classifies a call from symbol and tree information alone, returning <see langword="null"/> when syntax-specific
@@ -92,7 +98,7 @@ internal static class CallTargetClassifier
 
     /// <summary>
     /// What <paramref name="call"/> of <paramref name="called"/> calls in <paramref name="dialect"/>: an invocation, or
-    /// a method group that device code names (<see cref="MethodGroupReference"/>), in the tree of
+    /// a method group that device code names (<c>MethodGroupReference</c>), in the tree of
     /// <paramref name="model"/> or a lowered copy of it.
     /// </summary>
     public static CallTargetPlan Classify(IMethodSymbol called, SyntaxNode call, SemanticModel model,
@@ -153,7 +159,7 @@ internal static class CallTargetClassifier
 
         var method = (called.ReducedFrom ?? called).OriginalDefinition;
         if (GpuMacroClassifier.Classify(method).Kind != GpuMacroKind.None ||
-            MathAbsTranspilerRule.Claims(method) ||
+            InvocationRuleClaims.ClaimsMathAbs(method) ||
             IsClaimedBySymbol(called, method, isMemberAccessCall))
         {
             return InvocationRuleClaim.Other;
@@ -257,21 +263,14 @@ internal static class CallTargetClassifier
             call is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax });
 
     private static bool IsClaimedBySymbol(IMethodSymbol called, IMethodSymbol method, bool isMemberAccessCall) =>
-        StackLinqHelper.IsStackLinqMethod(method) ||
+        StackLinqSymbols.IsStackLinqMethod(method) ||
         SpanWriteClassifier.ClassifyMethod(called) != SpanMemberKind.None ||
-        NullableGetValueOrDefaultRule.Claims(method, isMemberAccessCall);
+        InvocationRuleClaims.ClaimsNullableGetValueOrDefault(method, isMemberAccessCall);
 
-    private static string GetUnemittedReason(IMethodSymbol method)
-    {
-        if (method.IsAbstract || method.ContainingType?.TypeKind == TypeKind.Interface)
-        {
-            return ThroughInterface;
-        }
-
-        return method is { IsStatic: false, ContainingType.IsValueType: true }
-            ? InstanceMethodOfStruct
+    private static string GetUnemittedReason(IMethodSymbol method) =>
+        method.IsAbstract || method.ContainingType?.TypeKind == TypeKind.Interface
+            ? ThroughInterface
             : MissingAttribute;
-    }
 
     private static CallTargetPlan Unmapped(IMethodSymbol method, ITranspilerDialect dialect, string detail) =>
         new(CallTargetKind.Unmapped, FormatMethod(method), detail, dialect.Name);

@@ -54,7 +54,7 @@ internal static class IrCallDecider
     {
         var notRemoved = targetPlan?.Kind != CallTargetKind.Removed;
         var checksCaller = notRemoved &&
-                           CppNameResolver.IsEmittedDeviceFunction(call.Method, context.Dialect) &&
+                           DeviceFunctionTargets.IsEmittedDeviceFunction(call.Method, context.Dialect) &&
                            !call.Method.IsExtensionMethod &&
                            NonNullProof.ChecksArguments(call.Method);
         var convertsStandard = notRemoved &&
@@ -160,10 +160,10 @@ internal static class IrCallDecider
         // [WHY] The operation gives the static form of an extension method called on its receiver (x.F(a)), so the
         // builder marks the receiver; that call routes to the declared extension method, as the reduced symbol does
         var routed = call.Arguments is [{ Kind: IrArgumentKind.ExtensionReceiver }, ..]
-            ? (ManagedRouting.IsRouted(call.Method.OriginalDefinition, context.Compilation)
+            ? (ManagedVersionRouting.IsRouted(call.Method.OriginalDefinition, context.Compilation)
                 ? call.Method.OriginalDefinition
                 : null)
-            : (ManagedRouting.IsRoutedReference(call.Method, context.Compilation) ? call.Method : null);
+            : (ManagedVersionRouting.IsRoutedReference(call.Method, context.Compilation) ? call.Method : null);
         var addsCallerInfo = ManagedCallForms.AddsCallerInfo(call.Method);
         return new IrManagedCall(routed, addsCallerInfo);
     }

@@ -36,7 +36,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
-        var isAccessorProperty = PropertyAccessorCall.IsAccessorPropertyTarget(node.Left, ref context);
+        var isAccessorProperty = PropertyAccessorCallEmitter.IsAccessorPropertyTarget(node.Left, ref context);
         if (node.IsKind(SyntaxKind.CoalesceAssignmentExpression))
         {
             TranspileCoalesceAssignment(node, isAccessorProperty, ref context);
@@ -70,7 +70,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
-        NullRepresentation.AppendCoalesceAssignment(node, ref context);
+        NullRepresentationEmitter.AppendCoalesceAssignment(node, ref context);
     }
 
     // x = y, in the C# order when the operands interfere
@@ -85,7 +85,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
-        PropertyAccessorCall.TranspileAssignment(node, node.OperatorToken.Text, ref context);
+        PropertyAccessorCallEmitter.TranspileAssignment(node, node.OperatorToken.Text, ref context);
     }
 
     // x op= y
@@ -209,7 +209,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
         ElementAccessExpressionSyntax element, ref TranspileContext context)
     {
         var model = context.Query.SemanticModel;
-        var plan = ArrayNullCheck.PlanElementStore(element, model, context.Emitter.ErrorSites,
+        var plan = ArrayNullCheckEmitter.PlanElementStore(element, model, context.Emitter.ErrorSites,
             context.Emitter.CurrentMemberName);
         var valueType = model.GetTypeSymbol(node.Left);
 
@@ -221,7 +221,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
         writer.AppendLine(";");
         var value = EvaluationOrder.DeclareTemp(ref context, node.Right, reference: false, valueType);
         sequence.Return();
-        ArrayNullCheck.AppendElementOfTemps(plan, array, index, writer);
+        ArrayNullCheckEmitter.AppendElementOfTemps(plan, array, index, writer);
         writer.Append(" = ");
         EvaluationOrder.AppendTempName(writer, value);
     }

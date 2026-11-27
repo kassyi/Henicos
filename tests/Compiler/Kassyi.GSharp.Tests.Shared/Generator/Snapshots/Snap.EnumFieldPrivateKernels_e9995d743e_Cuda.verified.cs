@@ -310,6 +310,28 @@ host._longMode = native._longMode;
 host._sbyteMode = native._sbyteMode;
 host._ulongMode = native._ulongMode;
 }
+public static unsafe void UnmarshalArrays_EnumFieldPrivateJob(in global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateJob hostValue, ref AotContexts.EnumFieldPrivateJob native, global::System.IntPtr hStream = default)
+{
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateJob>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.EnumFieldPrivateJob.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateJob", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.EnumFieldPrivateJob.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateJob>());
+if (!AotContexts.EnumFieldPrivateJob.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateJob");
+ref readonly AotContexts.EnumFieldPrivateJob.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateJob, AotContexts.EnumFieldPrivateJob.__gsharp_host_mirror>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in hostValue));
+if (native.Data.Data != global::System.IntPtr.Zero && host.Data != null)
+{
+int size = checked(host.Data.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Data, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Data.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
 public static void AliasHeldArrays_EnumFieldPrivateJob(ref global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateJob hostValue, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateJob>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.EnumFieldPrivateJob.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateJob", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.EnumFieldPrivateJob.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateJob>());
@@ -438,6 +460,28 @@ handle.Free();
 }
 }
 }
+public static unsafe void UnmarshalArrays_EnumFieldPrivateExplicit(in global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit hostValue, ref AotContexts.EnumFieldPrivateExplicit native, global::System.IntPtr hStream = default)
+{
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit>());
+if (!AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit");
+ref readonly AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit, AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in hostValue));
+if (native.Data.Data != global::System.IntPtr.Zero && host.Data != null)
+{
+int size = checked(host.Data.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Data, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Data.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
 public static void AliasHeldArrays_EnumFieldPrivateExplicit(ref global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit hostValue, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit>());
@@ -468,6 +512,10 @@ public static unsafe void Unmarshal_EnumFieldPrivateOuter(ref global::Kassyi.GSh
 {
 Unmarshal_EnumFieldPrivateJob(ref host.Inner, ref native.Inner, hStream);
 host.Y = native.Y;
+}
+public static unsafe void UnmarshalArrays_EnumFieldPrivateOuter(in global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateOuter host, ref AotContexts.EnumFieldPrivateOuter native, global::System.IntPtr hStream = default)
+{
+UnmarshalArrays_EnumFieldPrivateJob(in host.Inner, ref native.Inner, hStream);
 }
 public static void AliasHeldArrays_EnumFieldPrivateOuter(ref global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateOuter host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

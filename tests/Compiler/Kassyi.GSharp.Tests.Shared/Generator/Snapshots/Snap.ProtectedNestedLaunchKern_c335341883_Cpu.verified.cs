@@ -71,6 +71,9 @@ host.Values = default;
 }
 host.Factor = native.Factor;
 }
+public static unsafe void UnmarshalArrays_ProtectedNestedLaunchBase_ProtectedPayload(in global::Kassyi.GSharp.Tests.Shared.Marshaling.ProtectedNestedLaunchBase.ProtectedPayload host, ref AotContexts.ProtectedPayload native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_ProtectedNestedLaunchBase_ProtectedPayload(ref global::Kassyi.GSharp.Tests.Shared.Marshaling.ProtectedNestedLaunchBase.ProtectedPayload host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Values != null)
@@ -483,6 +486,9 @@ if (native.Values.Data == global::System.IntPtr.Zero)
 host.Values = default;
 }
 host.Factor = native.Factor;
+}
+public static unsafe void UnmarshalArrays_ProtectedNestedLaunchBase_ProtectedPayload(in global::Kassyi.GSharp.Tests.Shared.Marshaling.ProtectedNestedLaunchBase.ProtectedPayload host, ref AotContexts.ProtectedPayload native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_ProtectedNestedLaunchBase_ProtectedPayload(ref global::Kassyi.GSharp.Tests.Shared.Marshaling.ProtectedNestedLaunchBase.ProtectedPayload host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

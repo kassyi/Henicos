@@ -5,18 +5,10 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules.StackLinq;
 internal static class StackLinqHelper
 {
     public static bool IsStackLinqMethod(IMethodSymbol symbol) =>
-        symbol.ContainingNamespace is
-        {
-            Name: "Linq",
-            ContainingNamespace: { Name: "ZeroAlloc", ContainingNamespace.Name: "Kassyi" }
-        };
+        StackLinqSymbols.IsStackLinqMethod(symbol);
 
     public static bool IsStackLinqType(ITypeSymbol? type) =>
-        type?.ContainingNamespace is
-        {
-            Name: "Linq",
-            ContainingNamespace: { Name: "ZeroAlloc", ContainingNamespace.Name: "Kassyi" }
-        };
+        StackLinqSymbols.IsStackLinqType(type);
 
     /// <summary>
     /// Is it a StackLinq operator that runs on the host only? That is every overload passing a state value to its lambda

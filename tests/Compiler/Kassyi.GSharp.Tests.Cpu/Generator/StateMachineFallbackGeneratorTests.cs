@@ -137,17 +137,17 @@ public class StateMachineFallbackGeneratorTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void StateMachineFallbacks_NativeImportedSuspendingCall_EmitsLineAndReason()
+    public void StateMachineFallbacks_NativeImportedCallWithoutStackForm_EmitsLineAndReason()
     {
         var consumer = CreateImportedConsumerCompilation();
         var sources = RunGenerator(consumer, "Cpu", nativeModel: "Stack", managedModel: null);
         var file = Assert.Single(sources, static s => s.HintName == StateMachineFallbackPipeline.HintName);
 
-        var reason = StateMachineReason.ForNative(NativeStackObstacle.ImportedSuspendingCall);
+        var reason = StateMachineReason.ForNative(NativeStackObstacle.ImportedCallWithoutStackForm);
         Assert.NotNull(reason);
-        Assert.Equal("ImportedSuspendingCall", reason.Value.Name);
+        Assert.Equal("ImportedCallWithoutStackForm", reason.Value.Name);
         Assert.Contains("another assembly", reason.Value.Sentence, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("// native\tKernels.CallRemoteKernel\tImportedSuspendingCall", file.SourceText,
+        Assert.Contains("// native\tConsumerKernels.CallKernel\tImportedCallWithoutStackForm", file.SourceText,
             StringComparison.Ordinal);
     }
 
@@ -269,10 +269,10 @@ public class StateMachineFallbackGeneratorTests
         Assert.Contains("// managed\tImportedManagedKernels.CallRemoteShuffleKernel\tWarpLayout",
             importedFile.SourceText, StringComparison.Ordinal);
         Assert.Contains(
-            "// managed\tImportedManagedKernels.CallClosedBarrierKernel\tImportedSuspendingCall: calls ClosedHelpers.ClosedBarrier of ImportedManagedLib, which has no stack form",
+            "// managed\tImportedManagedKernels.CallClosedBarrierKernel\tImportedCallWithoutStackForm: calls ClosedHelpers.ClosedBarrier of ImportedManagedLib, which has no stack form",
             importedFile.SourceText, StringComparison.Ordinal);
         Assert.Contains(
-            "// managed\tImportedManagedKernels.PassClosedBarrierGroupKernel\tImportedSuspendingCall: passes ClosedHelpers.ClosedBarrierAt of ImportedManagedLib, which has no stack form, as a method group",
+            "// managed\tImportedManagedKernels.PassClosedBarrierGroupKernel\tImportedCallWithoutStackForm: passes ClosedHelpers.ClosedBarrierAt of ImportedManagedLib, which has no stack form, as a method group",
             importedFile.SourceText, StringComparison.Ordinal);
 
         var remoteShuffleKernel = GetMethod(consumer, "ConsumerApp.ImportedManagedKernels", "CallRemoteShuffleKernel");
@@ -284,7 +284,7 @@ public class StateMachineFallbackGeneratorTests
         var closedCallee = GetMethod(consumer, "ImportedManagedLib.ClosedHelpers", "ClosedBarrier");
         var closedCalleeReason = ManagedStackEligibility.FindFunctionReason(closedCallee, consumer);
         Assert.NotNull(closedCalleeReason);
-        Assert.Equal("ImportedSuspendingCall", closedCalleeReason.Value.Name);
+        Assert.Equal("ImportedCallWithoutStackForm", closedCalleeReason.Value.Name);
         Assert.Contains("another assembly", closedCalleeReason.Value.Sentence, StringComparison.OrdinalIgnoreCase);
 
         var casesSources = RunGenerator(s_casesCompilation.Value, "Cpu", nativeModel: null, managedModel: "Stack");
@@ -504,14 +504,14 @@ public class StateMachineFallbackGeneratorTests
 
     private static Compilation CreateImportedConsumerCompilation()
     {
-        var libCompilation = RoslynTestUtility.CreateCompilation(
-                ReadCase("Analysis", "Cases", "NativeStackImportedLibraryCases.cs"))
-            .WithAssemblyName("ImportedStackLib");
-        var (_, libOutput, _) = GeneratorTestRunner.RunGenerator(libCompilation, "Cpu");
-        return RoslynTestUtility.CreateCompilation(
-                ReadCase("Analysis", "Cases", "NativeStackImportedCallRemoteCases.cs"))
-            .WithAssemblyName("ConsumerApp")
-            .AddReferences(libOutput.ToMetadataReference());
+        var library = DeviceLibraryBuilder.Build(
+            "XasmLib",
+            new Dictionary<string, string> { ["build_property.GSharpExportDeviceCode"] = "false" },
+            RoslynTestUtility.ReadTestCase("Diagnostics/CrossAssembly/Library.cs"),
+            HandWrittenExportRecords.Read("Diagnostics/CrossAssembly/HandWrittenSuspendingRecord.cs"));
+        return DeviceLibraryBuilder.CreateConsumer(
+            RoslynTestUtility.ReadTestCase("Diagnostics/CrossAssembly/Consumer.cs"),
+            library);
     }
 
     private static Compilation CreateManagedImportedConsumerCompilation()

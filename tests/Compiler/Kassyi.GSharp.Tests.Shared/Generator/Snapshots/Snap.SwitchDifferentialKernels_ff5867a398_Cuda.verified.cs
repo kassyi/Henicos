@@ -384,6 +384,73 @@ handle.Free();
 }
 }
 }
+public static unsafe void UnmarshalArrays_SwitchNarrowIntegerOperands(in global::Kassyi.GSharp.Tests.Shared.Differential.SwitchNarrowIntegerOperands host, ref AotContexts.SwitchNarrowIntegerOperands native, global::System.IntPtr hStream = default)
+{
+if (native.Unsigned8Values.Data != global::System.IntPtr.Zero && host.Unsigned8Values != null)
+{
+int size = checked(host.Unsigned8Values.Length * sizeof(global::System.Byte));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Unsigned8Values, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Unsigned8Values.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.Signed8Values.Data != global::System.IntPtr.Zero && host.Signed8Values != null)
+{
+int size = checked(host.Signed8Values.Length * sizeof(global::System.SByte));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Signed8Values, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Signed8Values.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.Signed16Values.Data != global::System.IntPtr.Zero && host.Signed16Values != null)
+{
+int size = checked(host.Signed16Values.Length * sizeof(global::System.Int16));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Signed16Values, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Signed16Values.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.Unsigned16Values.Data != global::System.IntPtr.Zero && host.Unsigned16Values != null)
+{
+int size = checked(host.Unsigned16Values.Length * sizeof(global::System.UInt16));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Unsigned16Values, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Unsigned16Values.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
 public static void AliasHeldArrays_SwitchNarrowIntegerOperands(ref global::Kassyi.GSharp.Tests.Shared.Differential.SwitchNarrowIntegerOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Unsigned8Values != null)
@@ -573,6 +640,57 @@ handle.Free();
 }
 }
 }
+public static unsafe void UnmarshalArrays_SwitchIntAndLongOperands(in global::Kassyi.GSharp.Tests.Shared.Differential.SwitchIntAndLongOperands host, ref AotContexts.SwitchIntAndLongOperands native, global::System.IntPtr hStream = default)
+{
+if (native.FirstInt32Values.Data != global::System.IntPtr.Zero && host.FirstInt32Values != null)
+{
+int size = checked(host.FirstInt32Values.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.FirstInt32Values, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.FirstInt32Values.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.SecondInt32Values.Data != global::System.IntPtr.Zero && host.SecondInt32Values != null)
+{
+int size = checked(host.SecondInt32Values.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.SecondInt32Values, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.SecondInt32Values.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.Int64Values.Data != global::System.IntPtr.Zero && host.Int64Values != null)
+{
+int size = checked(host.Int64Values.Length * sizeof(global::System.Int64));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Int64Values, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Int64Values.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
 public static void AliasHeldArrays_SwitchIntAndLongOperands(ref global::Kassyi.GSharp.Tests.Shared.Differential.SwitchIntAndLongOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.FirstInt32Values != null)
@@ -742,6 +860,57 @@ if (native.ThirdValues.Data == global::System.IntPtr.Zero)
 host.ThirdValues = default;
 }
 else if (host.ThirdValues != null)
+{
+int size = checked(host.ThirdValues.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.ThirdValues, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.ThirdValues.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
+public static unsafe void UnmarshalArrays_TernaryConditionOperands(in global::Kassyi.GSharp.Tests.Shared.Differential.TernaryConditionOperands host, ref AotContexts.TernaryConditionOperands native, global::System.IntPtr hStream = default)
+{
+if (native.FirstValues.Data != global::System.IntPtr.Zero && host.FirstValues != null)
+{
+int size = checked(host.FirstValues.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.FirstValues, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.FirstValues.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.SecondValues.Data != global::System.IntPtr.Zero && host.SecondValues != null)
+{
+int size = checked(host.SecondValues.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.SecondValues, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.SecondValues.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.ThirdValues.Data != global::System.IntPtr.Zero && host.ThirdValues != null)
 {
 int size = checked(host.ThirdValues.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -1155,6 +1324,121 @@ handle.Free();
 }
 }
 }
+public static unsafe void UnmarshalArrays_TernaryMixedWidthOperands(in global::Kassyi.GSharp.Tests.Shared.Differential.TernaryMixedWidthOperands host, ref AotContexts.TernaryMixedWidthOperands native, global::System.IntPtr hStream = default)
+{
+if (native.Conditions.Data != global::System.IntPtr.Zero && host.Conditions != null)
+{
+int size = checked(host.Conditions.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Conditions, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Conditions.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.Unsigned32Values.Data != global::System.IntPtr.Zero && host.Unsigned32Values != null)
+{
+int size = checked(host.Unsigned32Values.Length * sizeof(global::System.UInt32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Unsigned32Values, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Unsigned32Values.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.Signed32Values.Data != global::System.IntPtr.Zero && host.Signed32Values != null)
+{
+int size = checked(host.Signed32Values.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Signed32Values, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Signed32Values.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.Signed16Values.Data != global::System.IntPtr.Zero && host.Signed16Values != null)
+{
+int size = checked(host.Signed16Values.Length * sizeof(global::System.Int16));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Signed16Values, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Signed16Values.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.Unsigned16Values.Data != global::System.IntPtr.Zero && host.Unsigned16Values != null)
+{
+int size = checked(host.Unsigned16Values.Length * sizeof(global::System.UInt16));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Unsigned16Values, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Unsigned16Values.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.Unsigned8Values.Data != global::System.IntPtr.Zero && host.Unsigned8Values != null)
+{
+int size = checked(host.Unsigned8Values.Length * sizeof(global::System.Byte));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Unsigned8Values, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Unsigned8Values.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.Signed8Values.Data != global::System.IntPtr.Zero && host.Signed8Values != null)
+{
+int size = checked(host.Signed8Values.Length * sizeof(global::System.SByte));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Signed8Values, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Signed8Values.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
 public static void AliasHeldArrays_TernaryMixedWidthOperands(ref global::Kassyi.GSharp.Tests.Shared.Differential.TernaryMixedWidthOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Conditions != null)
@@ -1287,6 +1571,41 @@ if (native.DoubleResults.Data == global::System.IntPtr.Zero)
 host.DoubleResults = default;
 }
 else if (host.DoubleResults != null)
+{
+int size = checked(host.DoubleResults.Length * sizeof(global::System.Double));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.DoubleResults, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.DoubleResults.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
+public static unsafe void UnmarshalArrays_TernaryMixedWidthResults(in global::Kassyi.GSharp.Tests.Shared.Differential.TernaryMixedWidthResults host, ref AotContexts.TernaryMixedWidthResults native, global::System.IntPtr hStream = default)
+{
+if (native.Int64Results.Data != global::System.IntPtr.Zero && host.Int64Results != null)
+{
+int size = checked(host.Int64Results.Length * sizeof(global::System.Int64));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Int64Results, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Int64Results.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.DoubleResults.Data != global::System.IntPtr.Zero && host.DoubleResults != null)
 {
 int size = checked(host.DoubleResults.Length * sizeof(global::System.Double));
 if (size > 0)

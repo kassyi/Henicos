@@ -730,7 +730,7 @@ public class ManagedStackModelGeneratorTests
         var failures = Assert.Single(result.GeneratedSources,
             static s => s.HintName == StateMachineFallbackPipeline.HintName).SourceText.ToString();
         Assert.Contains(
-            "// managed\tConsumerKernels.CallKernel\tImportedSuspendingCall: calls LibMath.Twice of XasmLib, which has no stack form",
+            "// managed\tConsumerKernels.CallKernel\tImportedCallWithoutStackForm: calls LibMath.Twice of XasmLib, which has no stack form",
             failures, StringComparison.Ordinal);
         Assert.DoesNotContain(result.GeneratedSources,
             static s => s.SourceText.ToString().Contains("ManagedStackRunner.Run(", StringComparison.Ordinal));

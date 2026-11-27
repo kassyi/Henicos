@@ -564,6 +564,18 @@ public static partial class MarshalingOverlapDifferentialKernels
             observed[1] = b[0].Y;
         }
     }
+
+    // An in element of an [In] array: CPU paths share the group copy so the in parameter reads the kernel's write
+    [GpuKernel]
+    public static void InElementOfInArrayKernel(in int first, [In] int[] values, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            values[0] += 10;
+            values[2] += 10;
+            observed[0] = first;
+        }
+    }
 }
 
 /// <summary>

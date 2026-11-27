@@ -30,8 +30,7 @@ internal sealed class NullableGetValueOrDefaultRule : IInvocationTranspilerRule
     /// syntax) is a call of <c>GetValueOrDefault</c> on <c>Nullable&lt;T&gt;</c>.
     /// </summary>
     internal static bool Claims(IMethodSymbol symbol, bool isMemberAccessCall) =>
-        symbol is { Name: MethodName, ContainingType.OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } &&
-        isMemberAccessCall;
+        InvocationRuleClaims.ClaimsNullableGetValueOrDefault(symbol, isMemberAccessCall);
 
     /// <summary>
     /// Whether <paramref name="node"/>, a call of <paramref name="symbol"/>, is a call of
@@ -100,7 +99,7 @@ internal sealed class NullableGetValueOrDefaultRule : IInvocationTranspilerRule
         }
         else if (plan.Fallback is { } argument)
         {
-            ArithmeticConversions.AppendArgument(argument, plan.ValueType, ref context);
+            ArithmeticConversionsEmitter.AppendArgument(argument, plan.ValueType, ref context);
         }
         else
         {

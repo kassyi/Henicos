@@ -277,12 +277,33 @@ internal readonly struct LaunchAliasPlan
                     ConvertedArrayEmitter.GetElementShadowPath(shape, transfer),
                     transfer.ConvertedElementMarshalMethodName ?? Missing(shape),
                     transfer.ConvertedElementUnmarshalMethodName ?? Missing(shape),
-                    allocations)
+                    allocations,
+                    FindInStructUnmarshalArraysMethod(host))
                 : new AliasConversion(key, host,
                     shape.AotStructPath ?? Missing(shape),
                     shape.MarshalMethodName ?? Missing(shape),
                     shape.UnmarshalMethodName ?? Missing(shape),
-                    allocations);
+                    allocations,
+                    FindInStructUnmarshalArraysMethod(host));
+        }
+
+        private string? FindInStructUnmarshalArraysMethod(string host)
+        {
+            foreach (var parameter in parameters)
+            {
+                if (parameter is
+                    {
+                        IsCustomStruct: true,
+                        IsInReference: true,
+                        UnmarshalArraysMethodName: { } methodName
+                    } &&
+                    parameter.TypeName == host)
+                {
+                    return methodName;
+                }
+            }
+
+            return null;
         }
 
         private static string Missing(in KernelParameterShape shape) =>

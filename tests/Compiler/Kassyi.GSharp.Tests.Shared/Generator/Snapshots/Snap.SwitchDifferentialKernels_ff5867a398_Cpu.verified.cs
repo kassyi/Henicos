@@ -174,6 +174,9 @@ if (native.Unsigned16Values.Data == global::System.IntPtr.Zero)
 host.Unsigned16Values = default;
 }
 }
+public static unsafe void UnmarshalArrays_SwitchNarrowIntegerOperands(in global::Kassyi.GSharp.Tests.Shared.Differential.SwitchNarrowIntegerOperands host, ref AotContexts.SwitchNarrowIntegerOperands native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_SwitchNarrowIntegerOperands(ref global::Kassyi.GSharp.Tests.Shared.Differential.SwitchNarrowIntegerOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Unsigned8Values != null)
@@ -287,6 +290,9 @@ if (native.Int64Values.Data == global::System.IntPtr.Zero)
 host.Int64Values = default;
 }
 }
+public static unsafe void UnmarshalArrays_SwitchIntAndLongOperands(in global::Kassyi.GSharp.Tests.Shared.Differential.SwitchIntAndLongOperands host, ref AotContexts.SwitchIntAndLongOperands native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_SwitchIntAndLongOperands(ref global::Kassyi.GSharp.Tests.Shared.Differential.SwitchIntAndLongOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.FirstInt32Values != null)
@@ -390,6 +396,9 @@ if (native.ThirdValues.Data == global::System.IntPtr.Zero)
 {
 host.ThirdValues = default;
 }
+}
+public static unsafe void UnmarshalArrays_TernaryConditionOperands(in global::Kassyi.GSharp.Tests.Shared.Differential.TernaryConditionOperands host, ref AotContexts.TernaryConditionOperands native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_TernaryConditionOperands(ref global::Kassyi.GSharp.Tests.Shared.Differential.TernaryConditionOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -555,6 +564,9 @@ if (native.Signed8Values.Data == global::System.IntPtr.Zero)
 host.Signed8Values = default;
 }
 }
+public static unsafe void UnmarshalArrays_TernaryMixedWidthOperands(in global::Kassyi.GSharp.Tests.Shared.Differential.TernaryMixedWidthOperands host, ref AotContexts.TernaryMixedWidthOperands native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_TernaryMixedWidthOperands(ref global::Kassyi.GSharp.Tests.Shared.Differential.TernaryMixedWidthOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Conditions != null)
@@ -679,6 +691,9 @@ if (native.DoubleResults.Data == global::System.IntPtr.Zero)
 {
 host.DoubleResults = default;
 }
+}
+public static unsafe void UnmarshalArrays_TernaryMixedWidthResults(in global::Kassyi.GSharp.Tests.Shared.Differential.TernaryMixedWidthResults host, ref AotContexts.TernaryMixedWidthResults native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_TernaryMixedWidthResults(ref global::Kassyi.GSharp.Tests.Shared.Differential.TernaryMixedWidthResults host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

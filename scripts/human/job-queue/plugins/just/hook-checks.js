@@ -8,6 +8,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const justPlugin = require('./hook-rules.js');
+const { DryRunTimeoutMs, expandsInShell, recipeQueue, runJustDryRun } = require('./justfile.js');
 
 const DefaultOptions = {
   hookRecipes: '^(test\\S*|coverage-diff|fuzz-\\S+|mutate|long-checks|bench\\S*|doctest)$',
@@ -110,13 +111,13 @@ function withJustConfig(fn, options = DefaultOptions) {
         '  {{queue}} --weight 2 -- node scripts/human/fuzz-differential.js {{args}}',
         '',
         'test-category category:',
-        '  {{queue}} --gpu -- dotnet test {{category}}',
+        '  {{queue}} --gpu-exclusive -- dotnet test {{category}}',
         '',
         'test-memory project:',
         '  node scripts/human/test-memory.js {{project}}',
         '',
         'mutate phase="compiler":',
-        '  {{queue}} {{if phase == "compiler-cuda" { "--gpu" } else { "" }}} -- node scripts/human/mutate.js',
+        '  {{queue}} {{if phase == "compiler-cuda" { "--gpu" } else if phase == "exclusive" { "--gpu-exclusive" } else { "" }}} -- node scripts/human/mutate.js',
         '',
       ].join('\n'),
     );
@@ -219,10 +220,47 @@ function checks(assert, { createEngine }) {
 
     // just rewrite behavior
     const ctx = { root: tmpDir, changedDirectory: false, entry: 'scripts/human/job-queue.js' };
+    assert.strictEqual(DryRunTimeoutMs, 5000, 'dry-run timeout is 5s');
+    const spawned = [];
+    runJustDryRun('jf', 'mutate', ['gpumath'], (program, args, options) => spawned.push({ program, args, options }));
+    assert.deepStrictEqual(spawned[0].args, ['--dry-run', '--justfile', 'jf', 'mutate', 'gpumath'], 'dry-run argv');
+    assert.strictEqual(spawned[0].options.timeout, DryRunTimeoutMs, 'the dry run is spawned with the 5 s limit');
+    assert.deepStrictEqual(
+      recipeQueue('mutate', tmpDir, 'scripts/human/job-queue.js', ['$P'], () => assert.fail('no dry run for $P')),
+      { undecided: 'just mutate chooses its queue options from its arguments' },
+      'an argument the shell expands is not dry-run',
+    );
+    const expanding = ['$P', '"$P"', '${P}', '`x`', 'src/*.cs', 'a?', '[ab]', '{a,b}', '~', '~/x', 'X=~/x', 'a:~/x'];
+    const literal = ["'$P'", 'HEAD~3', '"Name~A"', 'Name~A', '"src/*.cs"', "'{a,b}'", 'gpumath', 'Category!=Stress'];
+    for (const word of expanding) {
+      assert.strictEqual(expandsInShell(word), true, `the shell expands ${word}`);
+    }
+    for (const word of literal) {
+      assert.strictEqual(expandsInShell(word), false, `the shell leaves ${word} as it is`);
+    }
+    assert.deepStrictEqual(
+      recipeQueue('mutate', tmpDir, 'scripts/human/job-queue.js', ['gpumath', 'HEAD~3'], () => ({
+        status: 0,
+        stderr: 'node scripts/human/job-queue.js run --gpu-exclusive -- node scripts/human/mutate.js\n',
+        stdout: '',
+      })),
+      { gpu: true, gpuExclusive: true, options: [] },
+      'a ~ inside a word is dry-run',
+    );
     assert.deepStrictEqual(
       justPlugin.rewrite('just test', ['just', 'test'], { tool: 'just', verb: 'test' }, ctx),
-      { gpu: true, options: [] },
+      { gpu: true, gpuExclusive: false, options: [] },
       'just test rewrite --gpu',
+    );
+    assert.deepStrictEqual(
+      justPlugin.rewrite(
+        'just test-category Runtime',
+        ['just', 'test-category', 'Runtime'],
+        { tool: 'just', verb: 'test-category' },
+        ctx,
+      ),
+      { gpu: true, gpuExclusive: true, options: [] },
+      'just test-category rewrite --gpu-exclusive',
     );
     assert.deepStrictEqual(
       justPlugin.rewrite(
@@ -231,7 +269,7 @@ function checks(assert, { createEngine }) {
         { tool: 'just', verb: 'test-differential-cpu' },
         ctx,
       ),
-      { gpu: false, options: [] },
+      { gpu: false, gpuExclusive: false, options: [] },
       'just test-differential-cpu rewrite no --gpu',
     );
     assert.deepStrictEqual(
@@ -241,7 +279,7 @@ function checks(assert, { createEngine }) {
         { tool: 'just', verb: 'fuzz-diff' },
         ctx,
       ),
-      { gpu: false, options: ['--weight', '2'] },
+      { gpu: false, gpuExclusive: false, options: ['--weight', '2'] },
       'just fuzz-diff --weight 2',
     );
     assert.deepStrictEqual(
@@ -256,8 +294,67 @@ function checks(assert, { createEngine }) {
     );
     assert.deepStrictEqual(
       justPlugin.rewrite('just mutate compiler', ['just', 'mutate', 'compiler'], { tool: 'just', verb: 'mutate' }, ctx),
-      { undecided: 'just mutate chooses its queue options from its arguments' },
-      'just mutate undecided',
+      { gpu: false, gpuExclusive: false, options: [] },
+      'just mutate compiler resolved via dry-run',
+    );
+    assert.deepStrictEqual(
+      justPlugin.rewrite(
+        'just mutate compiler-cuda',
+        ['just', 'mutate', 'compiler-cuda'],
+        { tool: 'just', verb: 'mutate' },
+        ctx,
+      ),
+      { gpu: true, gpuExclusive: false, options: [] },
+      'just mutate compiler-cuda resolved via dry-run',
+    );
+    assert.deepStrictEqual(
+      justPlugin.rewrite(
+        'just mutate exclusive',
+        ['just', 'mutate', 'exclusive'],
+        { tool: 'just', verb: 'mutate' },
+        ctx,
+      ),
+      { gpu: true, gpuExclusive: true, options: [] },
+      'just mutate exclusive resolved via dry-run',
+    );
+    // Dry-run fallback failure modes stay undecided
+    const undecidedMutate = { undecided: 'just mutate chooses its queue options from its arguments' };
+    assert.deepStrictEqual(
+      recipeQueue('mutate', tmpDir, 'scripts/human/job-queue.js', ['compiler'], () => ({
+        status: null,
+        error: Object.assign(new Error('spawnSync just ETIMEDOUT'), { code: 'ETIMEDOUT' }),
+        stderr: '',
+        stdout: '',
+      })),
+      undecidedMutate,
+      'dry-run timeout stays undecided',
+    );
+    assert.deepStrictEqual(
+      recipeQueue('mutate', tmpDir, 'scripts/human/job-queue.js', ['compiler'], () => ({
+        status: 1,
+        stderr: 'error: failed',
+        stdout: '',
+      })),
+      undecidedMutate,
+      'dry-run non-zero exit stays undecided',
+    );
+    assert.deepStrictEqual(
+      recipeQueue('mutate', tmpDir, 'scripts/human/job-queue.js', ['compiler'], () => ({
+        status: 0,
+        stderr: 'echo no queue line here\n',
+        stdout: '',
+      })),
+      undecidedMutate,
+      'dry-run with no queue line stays undecided',
+    );
+    assert.deepStrictEqual(
+      recipeQueue('mutate', tmpDir, 'scripts/human/job-queue.js', ['compiler'], () => ({
+        status: 0,
+        stderr: 'node scripts/human/job-queue.js run --gpu --unknown -- node scripts/human/mutate.js\n',
+        stdout: '',
+      })),
+      undecidedMutate,
+      'dry-run with options outside OptionsPattern stays undecided',
     );
     assert.strictEqual(
       justPlugin.rewrite(

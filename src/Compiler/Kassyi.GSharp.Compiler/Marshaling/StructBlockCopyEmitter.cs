@@ -8,7 +8,8 @@ internal static class StructBlockCopyEmitter
     // the captured primary constructor parameters and the fields generated code cannot name
     // (NativeStructEmitter.NeedsHostMirror). The size and offset checks
     // catch a mirror that does not have the CLR layout of S.
-    internal static void WriteHostMirrorBinding(SourceWriter writer, INamedTypeSymbol s, bool hasMirror)
+    internal static void WriteHostMirrorBinding(SourceWriter writer, INamedTypeSymbol s, bool hasMirror,
+        bool readOnly = false)
     {
         if (!hasMirror)
         {
@@ -33,13 +34,23 @@ internal static class StructBlockCopyEmitter
         writer.Append("global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch(\"");
         writer.Append(TypeLayoutCalculator.FormatTypeName(s));
         writer.AppendLine("\");");
-        writer.Append("ref ");
+        writer.Append(readOnly ? "ref readonly " : "ref ");
         writer.AppendAotStructPath(s);
         writer.Append($".{NativeStructEmitter.HostMirrorName} host = ref {HostTypeNames.Unsafe}.As<");
         writer.AppendFullyQualifiedCsharpName(s);
         writer.Append(", ");
         writer.AppendAotStructPath(s);
-        writer.AppendLine($".{NativeStructEmitter.HostMirrorName}>(ref {StructMarshalingEmitter.MirroredHostParameter});");
+        writer.Append($".{NativeStructEmitter.HostMirrorName}>(ref ");
+        if (readOnly)
+        {
+            writer.Append($"{HostTypeNames.Unsafe}.AsRef(in {StructMarshalingEmitter.MirroredHostParameter})");
+        }
+        else
+        {
+            writer.Append(StructMarshalingEmitter.MirroredHostParameter);
+        }
+
+        writer.AppendLine(");");
     }
 
     // [WHY] An [InlineArray(N)] struct and a fixed buffer are copied as one block of ElementCount elements: the element

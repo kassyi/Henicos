@@ -92,14 +92,37 @@ internal static class NativeStackEligibility
 
         var visited = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
         var queue = new Queue<IMethodSymbol>();
-        EnqueueSuspendingCallees(declaration, semanticModel, visited, queue);
+        EnqueueSuspendingCallees(method, declaration, compilation, visited, queue);
 
         while (queue.Count > 0)
         {
             var callee = queue.Dequeue();
-            if (!SuspensionAnalysis.TryGetDeviceFunctionBody(callee, compilation, out var calleeDeclaration))
+            if (!SuspensionAnalysis.TryGetDeviceFunctionBody(
+                    GenericExpansion.GetCanonicalDefinition(callee), compilation, out var calleeDeclaration))
             {
-                return NativeStackObstacle.ImportedSuspendingCall;
+                if (DeviceExportTable.TryFindFunction(callee, compilation, out var imported) &&
+                    imported is { IsCompatible: true, Record.HasCppStack: true })
+                {
+                    var traits = imported.Record.Traits;
+                    if (traits.ReachesBlockBarrier)
+                    {
+                        facts |= BodyFacts.BlockBarrier;
+                    }
+
+                    if (traits.ReachesGridBarrier)
+                    {
+                        facts |= BodyFacts.GridSync;
+                    }
+
+                    if (traits.ReachesWarpShuffle)
+                    {
+                        facts |= BodyFacts.WarpCollective;
+                    }
+
+                    continue;
+                }
+
+                return NativeStackObstacle.ImportedCallWithoutStackForm;
             }
 
             // Recursive suspending functions (#926, GSH0061) do not get a stack overload; keep them on the
@@ -112,7 +135,7 @@ internal static class NativeStackEligibility
 
             var calleeModel = compilation.GetCachedSemanticModel(calleeDeclaration.SyntaxTree);
             facts |= GetFacts(callee, calleeDeclaration, calleeModel);
-            EnqueueSuspendingCallees(calleeDeclaration, calleeModel, visited, queue);
+            EnqueueSuspendingCallees(callee, calleeDeclaration, compilation, visited, queue);
         }
 
         if ((facts & BodyFacts.GridSync) != 0)
@@ -196,9 +219,16 @@ internal static class NativeStackEligibility
             .Any(compilation, static (member, c) =>
                 member is IMethodSymbol target && SuspensionAnalysis.ReachesWarpShuffleOnStack(target, c));
 
+    private static bool IsSuspendingDeviceFunctionSite(CalleeSite site, Compilation compilation) =>
+        !CalleeSite.IsOperatorMacro(site, compilation) && // see CalleeSite.IsOperatorMacro (#2273)
+        site.Callee.MethodKind is MethodKind.Ordinary or MethodKind.ReducedExtension &&
+        SuspensionAnalysis.HasDeviceFunctionAttribute(site.Callee) &&
+        SuspensionAnalysis.IsSuspendingFunction(site.Callee, compilation);
+
     private static void EnqueueSuspendingCallees(
+        IMethodSymbol? method,
         MethodDeclarationSyntax declaration,
-        SemanticModel semanticModel,
+        Compilation compilation,
         HashSet<IMethodSymbol> visited,
         Queue<IMethodSymbol> queue)
     {
@@ -207,12 +237,12 @@ internal static class NativeStackEligibility
             return;
         }
 
-        foreach (var (callee, _) in
-                 SuspensionAnalysis.GetReferencedSuspendingFunctions(body, semanticModel.Compilation, semanticModel))
+        var typeArguments = method is null ? TypeArgumentMap.None : TypeArgumentMap.Of(method);
+        foreach (var site in DirectCallees.Of([body], typeArguments, compilation))
         {
-            if (visited.Add(callee))
+            if (IsSuspendingDeviceFunctionSite(site, compilation) && visited.Add(site.Callee))
             {
-                queue.Enqueue(callee);
+                queue.Enqueue(site.Callee);
             }
         }
     }
@@ -221,12 +251,14 @@ internal static class NativeStackEligibility
         HasSuspendingCycle(
             start,
             compilation,
+            caller: null,
             new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default),
             new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default));
 
     private static bool HasSuspendingCycle(
         IMethodSymbol method,
         Compilation compilation,
+        CycleStep? caller,
         HashSet<IMethodSymbol> visiting,
         HashSet<IMethodSymbol> acyclic)
     {
@@ -235,21 +267,22 @@ internal static class NativeStackEligibility
             return false;
         }
 
-        if (!visiting.Add(method))
+        if (StopsPolymorphicRecursion(method, caller, compilation) || !visiting.Add(method))
         {
             return true;
         }
 
         try
         {
-            if (SuspensionAnalysis.TryGetDeviceFunctionBody(method, compilation, out var declaration) &&
+            if (SuspensionAnalysis.TryGetDeviceFunctionBody(
+                    GenericExpansion.GetCanonicalDefinition(method), compilation, out var declaration) &&
                 declaration.GetBodyNode() is { } body)
             {
-                var model = compilation.GetCachedSemanticModel(declaration.SyntaxTree);
-                foreach (var (callee, _) in
-                         SuspensionAnalysis.GetReferencedSuspendingFunctions(body, compilation, model))
+                var nextCaller = new CycleStep(method, caller);
+                foreach (var site in DirectCallees.Of([body], TypeArgumentMap.Of(method), compilation))
                 {
-                    if (HasSuspendingCycle(callee, compilation, visiting, acyclic))
+                    if (IsSuspendingDeviceFunctionSite(site, compilation) &&
+                        HasSuspendingCycle(site.Callee, compilation, nextCaller, visiting, acyclic))
                     {
                         return true;
                     }
@@ -263,6 +296,39 @@ internal static class NativeStackEligibility
         {
             visiting.Remove(method);
         }
+    }
+
+    private sealed class CycleStep(IMethodSymbol function, CycleStep? caller)
+    {
+        public IMethodSymbol Function { get; } = function;
+
+        public CycleStep? Caller { get; } = caller;
+    }
+
+    private static bool StopsPolymorphicRecursion(IMethodSymbol function, CycleStep? caller, Compilation compilation)
+    {
+        if (caller is null)
+        {
+            return false;
+        }
+
+        var definition = GenericExpansion.GetCanonicalDefinition(function);
+        if (!GenericExpansion.GetExpandingCallees(GenericExpansion.GetCanonicalDefinition(caller.Function), compilation)
+                .AsStackEnumerable()
+                .Any(definition, static (callee, own) => callee.IsEqualTo(own)))
+        {
+            return false;
+        }
+
+        for (var enclosing = caller; enclosing != null; enclosing = enclosing.Caller)
+        {
+            if (GenericExpansion.GetCanonicalDefinition(enclosing.Function).IsEqualTo(definition))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // The facts of the body of method, read once per compilation; a declaration without a symbol is read every time
@@ -330,13 +396,16 @@ internal static class NativeStackEligibility
 
             if (methodDeclaration.GetBodyNode() is { } body)
             {
-                foreach (var (callee, _) in
-                         SuspensionAnalysis.GetReferencedSuspendingFunctions(body, compilation, model))
+                foreach (var site in DirectCallees.Of([body], TypeArgumentMap.Of(method), compilation))
                 {
-                    if (visited.Add(callee) &&
-                        SuspensionAnalysis.TryGetDeviceFunctionBody(callee, compilation, out var calleeDeclaration))
+                    if (IsSuspendingDeviceFunctionSite(site, compilation) &&
+                        visited.Add(site.Callee) &&
+                        SuspensionAnalysis.TryGetDeviceFunctionBody(
+                            GenericExpansion.GetCanonicalDefinition(site.Callee),
+                            compilation,
+                            out var calleeDeclaration))
                     {
-                        queue.Enqueue((callee, calleeDeclaration));
+                        queue.Enqueue((site.Callee, calleeDeclaration));
                     }
                 }
             }
@@ -385,33 +454,30 @@ internal static class NativeStackEligibility
         }
 
         var body = declaration.GetBodyNode();
-        if (body != null &&
-            SuspensionAnalysis.HasStructMemberSplit(body, typeArguments, semanticModel.Compilation))
+        if (body != null)
         {
-            facts |= BodyFacts.StructMemberSplit;
+            var compilation = semanticModel.Compilation;
+            var callees = DirectCallees.Of([body], typeArguments, compilation);
+            if (SuspensionAnalysis.HasStructMemberSplit(callees, compilation))
+            {
+                facts |= BodyFacts.StructMemberSplit;
+            }
+
+            facts |= ScanWarpMethodGroups(callees, semanticModel);
         }
 
-        return facts | ScanWarpMethodGroups(declaration, semanticModel);
+        return facts;
     }
 
     // A suspending function that reaches a warp collective, named as a method group (#2272)
-    private static BodyFacts ScanWarpMethodGroups(MethodDeclarationSyntax declaration, SemanticModel semanticModel)
-    {
-        if (declaration.GetBodyNode() is not { } body)
-        {
-            return BodyFacts.None;
-        }
-
-        var compilation = semanticModel.Compilation;
-        foreach (var (referenced, isMethodGroup) in
-                 SuspensionAnalysis.GetReferencedSuspendingFunctions(body, compilation, semanticModel))
-        {
-            if (isMethodGroup && SuspensionAnalysis.ReachesWarpShuffleOnStack(referenced, compilation))
-            {
-                return BodyFacts.WarpMethodGroup;
-            }
-        }
-
-        return BodyFacts.None;
-    }
+    private static BodyFacts ScanWarpMethodGroups(ImmutableArray<CalleeSite> callees, SemanticModel semanticModel) =>
+        callees
+            .AsStackEnumerable()
+            .Any(semanticModel, static (site, model) =>
+                IsSuspendingDeviceFunctionSite(site, model.Compilation) &&
+                DirectCallees.IsMethodGroupSite(site.Site, site.Callee, model) &&
+                SuspensionAnalysis.ReachesWarpShuffleOnStack(site.Callee, model.Compilation)
+            )
+            ? BodyFacts.WarpMethodGroup
+            : BodyFacts.None;
 }

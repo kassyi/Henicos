@@ -128,6 +128,9 @@ if (native.Free.Data == global::System.IntPtr.Zero)
 host.Free = default;
 }
 }
+public static unsafe void UnmarshalArrays_ReadOnlyWriteHolder(in global::Kassyi.GSharp.Tests.TestCases.Diagnostics.ReadOnlyWriteHolder host, ref AotContexts.ReadOnlyWriteHolder native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_ReadOnlyWriteHolder(ref global::Kassyi.GSharp.Tests.TestCases.Diagnostics.ReadOnlyWriteHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Fixed != null)

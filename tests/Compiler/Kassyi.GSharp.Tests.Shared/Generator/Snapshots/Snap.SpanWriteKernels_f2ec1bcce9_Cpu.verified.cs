@@ -134,6 +134,9 @@ host.Buffer = default;
 host.Offset = native.Offset;
 host.Count = native.Count;
 }
+public static unsafe void UnmarshalArrays_SpanSliceReadSource(in global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSliceReadSource host, ref AotContexts.SpanSliceReadSource native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_SpanSliceReadSource(ref global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSliceReadSource host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Buffer != null)
@@ -199,6 +202,9 @@ host.Buffer = default;
 }
 host.Offset = native.Offset;
 host.Count = native.Count;
+}
+public static unsafe void UnmarshalArrays_SpanSliceWriteTarget(in global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSliceWriteTarget host, ref AotContexts.SpanSliceWriteTarget native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_SpanSliceWriteTarget(ref global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSliceWriteTarget host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -285,6 +291,9 @@ host.Buffer = default;
 }
 host.StartIndex = native.StartIndex;
 }
+public static unsafe void UnmarshalArrays_ArraySliceSource(in global::Kassyi.GSharp.Tests.Shared.Syntax.ArraySliceSource host, ref AotContexts.ArraySliceSource native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_ArraySliceSource(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ArraySliceSource host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Buffer != null)
@@ -345,6 +354,9 @@ if (native.Buffer.Data == global::System.IntPtr.Zero)
 host.Buffer = default;
 }
 host.StartIndex = native.StartIndex;
+}
+public static unsafe void UnmarshalArrays_ArraySliceDestination(in global::Kassyi.GSharp.Tests.Shared.Syntax.ArraySliceDestination host, ref AotContexts.ArraySliceDestination native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_ArraySliceDestination(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ArraySliceDestination host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -446,6 +458,9 @@ if (native.Counters.Data == global::System.IntPtr.Zero)
 {
 host.Counters = default;
 }
+}
+public static unsafe void UnmarshalArrays_EvaluationOrderSpanTargets(in global::Kassyi.GSharp.Tests.Shared.Syntax.EvaluationOrderSpanTargets host, ref AotContexts.EvaluationOrderSpanTargets native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_EvaluationOrderSpanTargets(ref global::Kassyi.GSharp.Tests.Shared.Syntax.EvaluationOrderSpanTargets host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

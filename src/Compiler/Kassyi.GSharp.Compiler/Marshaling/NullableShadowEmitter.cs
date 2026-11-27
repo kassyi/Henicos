@@ -20,6 +20,7 @@ internal static class NullableShadowEmitter
         WriteShadow(writer, plan);
         WriteMarshal(writer, plan, dialect);
         WriteUnmarshal(writer, plan, dialect);
+        WriteUnmarshalArrays(writer, plan, dialect);
         WriteAliasHeldArrays(writer, plan);
         if (plan.ArrayHelpers is { } helpers)
         {
@@ -144,6 +145,46 @@ internal static class NullableShadowEmitter
             writer.AppendLine($"{plan.ValueTypeName} {Value} = {Host}.GetValueOrDefault();");
             WriteValueFromNative(writer, plan, dialect);
             writer.AppendLine($"{Host} = {Value};");
+        }
+
+        writer.AppendLine();
+    }
+
+    // public static unsafe void UnmarshalArrays_<key>(in <T?> host, ref <shadow> native, IntPtr hStream = default)
+    // { if (!host.HasValue || native.HasValue == 0) return;
+    //   <T> value = host.GetValueOrDefault(); <read arrays>; }
+    private static void WriteUnmarshalArrays(SourceWriter writer, NullableShadowPlan plan, ITranspilerDialect dialect)
+    {
+        if (plan.UnmarshalArraysMethodName is not { } methodName)
+        {
+            return;
+        }
+
+        writer.Append($"public static unsafe void {methodName}");
+        using (writer.Parentheses())
+        {
+            writer.Append($"in {plan.NullableTypeName} {Host}, ref {plan.ShadowPath} {Native}, ");
+            writer.Append($"{HostTypeNames.IntPtr} hStream = default");
+        }
+
+        writer.AppendLine();
+        using (writer.Scope())
+        {
+            writer.AppendLine($"if (!{Host}.HasValue || {Native}.HasValue == 0)");
+            using (writer.Scope())
+            {
+                writer.AppendLine("return;");
+            }
+
+            writer.AppendLine($"{plan.ValueTypeName} {Value} = {Host}.GetValueOrDefault();");
+            if (plan.ValueForm == NullableValueForm.Shadow)
+            {
+                writer.AppendLine($"{plan.ValueUnmarshalArraysMethodName}(in {Value}, ref {Native}.Value, hStream);");
+            }
+            else if (plan.ValueForm == NullableValueForm.ArrayView)
+            {
+                ArrayViewFieldEmitter.WriteUnmarshal(writer, GetArrayValue(plan), Value, $"{Native}.Value", dialect);
+            }
         }
 
         writer.AppendLine();

@@ -134,6 +134,9 @@ host.Base = default;
 host.Skip = native.Skip;
 host.Limit = native.Limit;
 }
+public static unsafe void UnmarshalArrays_GpuBigIntVectorKernels_ElementCountContext(in global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext host, ref AotContexts.ElementCount native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_GpuBigIntVectorKernels_ElementCountContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Base != null)

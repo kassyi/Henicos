@@ -36,7 +36,7 @@ internal static class ManagedFallbackEmitter
     /// launcher has declared <c>dllPath</c>.
     /// </summary>
     public static void WriteManagedExecutionFallback(SourceWriter writer, in KernelHostModel kernel,
-        bool useStack = false)
+        in ArraySharingPlan sharing, bool useStack = false)
     {
         writer.AppendLine(
             $"if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution({DllPath}))");
@@ -45,7 +45,7 @@ internal static class ManagedFallbackEmitter
             switch (kernel.ManagedMode)
             {
                 case ManagedKernelMode.UserMethod:
-                    WriteUserMethodRun(writer, kernel);
+                    WriteUserMethodRun(writer, kernel, sharing);
                     return;
                 case ManagedKernelMode.Unavailable:
                     writer.AppendLine(
@@ -55,12 +55,12 @@ internal static class ManagedFallbackEmitter
 
             if (useStack)
             {
-                ManagedStackLaunchEmitter.Write(writer, kernel);
+                ManagedStackLaunchEmitter.Write(writer, kernel, sharing);
                 return;
             }
 
             WriteManagedContextAllocation(writer, kernel);
-            WriteManagedGridLoop(writer, kernel);
+            WriteManagedGridLoop(writer, kernel, sharing);
             AutoResultEmitter.WriteReturn(writer, kernel);
             if (!kernel.ReturnsValue)
             {
@@ -72,9 +72,9 @@ internal static class ManagedFallbackEmitter
     // The body names a file-local type, so there is no copy: the user's method runs one GPU thread after another as in
     // the C# execution, on the arguments after the copies that the launcher made (GSH0119). A kernel that the C#
     // execution cannot run (a ref struct parameter) throws
-    private static void WriteUserMethodRun(SourceWriter writer, in KernelHostModel kernel)
+    private static void WriteUserMethodRun(SourceWriter writer, in KernelHostModel kernel, in ArraySharingPlan sharing)
     {
-        var plan = CSharpExecutionPlan.Create(kernel, isDevicePtr: false);
+        var plan = CSharpExecutionPlan.Create(kernel, isDevicePtr: false).WithCpuInReferenceCopies(sharing);
         if (plan.CannotRunReason is { } reason)
         {
             writer.AppendLine("throw new global::System.NotSupportedException(" +
@@ -134,26 +134,27 @@ internal static class ManagedFallbackEmitter
     }
 
     // [fixed (<context>* __gsharp_pinned_contexts = __gsharp_contexts)] { <grid loop> }
-    private static void WriteManagedGridLoop(SourceWriter writer, in KernelHostModel kernel)
+    private static void WriteManagedGridLoop(SourceWriter writer, in KernelHostModel kernel, in ArraySharingPlan sharing)
     {
         if (kernel.IsUnsafeContext)
         {
             writer.AppendLine($"fixed ({kernel.ContextName}* {PinnedContexts} = {Contexts})");
             using (writer.Scope())
             {
-                WriteManagedGridLoopBody(writer, kernel);
+                WriteManagedGridLoopBody(writer, kernel, sharing);
             }
         }
         else
         {
-            WriteManagedGridLoopBody(writer, kernel);
+            WriteManagedGridLoopBody(writer, kernel, sharing);
         }
     }
 
     // ExceptionDispatchInfo? __gsharp_first_failure = null; bool __gsharp_any_grid_active = true; try { while
     // (__gsharp_any_grid_active) { <grid phase> } } catch (Exception) when (<a thread failed>) { <throw the first> }
     // finally { EndGrid(); } __gsharp_first_failure?.Throw();
-    private static void WriteManagedGridLoopBody(SourceWriter writer, in KernelHostModel kernel)
+    private static void WriteManagedGridLoopBody(SourceWriter writer, in KernelHostModel kernel,
+        in ArraySharingPlan sharing)
     {
         writer.AppendLine($"{ExceptionDispatchInfo}? {FirstFailure} = null;");
         writer.AppendLine($"bool {AnyGridActive} = true;");
@@ -165,7 +166,7 @@ internal static class ManagedFallbackEmitter
             writer.AppendLine($"while ({AnyGridActive})");
             using (writer.Scope())
             {
-                WriteManagedGridPhase(writer, kernel);
+                WriteManagedGridPhase(writer, kernel, sharing);
             }
         }
 
@@ -187,7 +188,7 @@ internal static class ManagedFallbackEmitter
     }
 
     // One grid phase: every block in turn, then (cooperative) the check that no block finished while others wait
-    private static void WriteManagedGridPhase(SourceWriter writer, in KernelHostModel kernel)
+    private static void WriteManagedGridPhase(SourceWriter writer, in KernelHostModel kernel, in ArraySharingPlan sharing)
     {
         writer.AppendLine($"{AnyGridActive} = false;");
         if (kernel.IsCooperative)
@@ -199,7 +200,7 @@ internal static class ManagedFallbackEmitter
         writer.AppendLine($"for (int {BlockLoopIndex} = 0; {BlockLoopIndex} < {TotalBlocks}; {BlockLoopIndex}++)");
         using (writer.Scope())
         {
-            WriteManagedBlock(writer, kernel);
+            WriteManagedBlock(writer, kernel, sharing);
         }
 
         if (kernel.IsCooperative)
@@ -223,7 +224,7 @@ internal static class ManagedFallbackEmitter
     }
 
     // One block of the managed launcher, stepped until its threads reach Gpu.SyncGrid or finish
-    private static void WriteManagedBlock(SourceWriter writer, in KernelHostModel kernel)
+    private static void WriteManagedBlock(SourceWriter writer, in KernelHostModel kernel, in ArraySharingPlan sharing)
     {
         writer.AppendLine($"int {BlockX} = {BlockLoopIndex} % (int)gridDimX;");
         writer.AppendLine($"int {BlockY} = ({BlockLoopIndex} / (int)gridDimX) % (int)gridDimY;");
@@ -247,7 +248,7 @@ internal static class ManagedFallbackEmitter
                 writer.AppendLine($"bool {BlockAtGridSyncFlag} = false;");
             }
 
-            WriteManagedBarrierRounds(writer, kernel);
+            WriteManagedBarrierRounds(writer, kernel, sharing);
             if (kernel.IsCooperative)
             {
                 WriteManagedBlockGridSyncStatus(writer, kernel);
@@ -298,7 +299,8 @@ internal static class ManagedFallbackEmitter
     // more steps (a shuffle before it). When no thread can run, the threads at a block barrier pass it together; the
     // block's part of the phase ends when no thread can run and none waits at a block barrier.
     // bool anyBlockActive = true; while (anyBlockActive) { anyBlockActive = false; <threads> <block barrier release> }
-    private static void WriteManagedBarrierRounds(SourceWriter writer, in KernelHostModel kernel)
+    private static void WriteManagedBarrierRounds(SourceWriter writer, in KernelHostModel kernel,
+        in ArraySharingPlan sharing)
     {
         writer.AppendLine($"bool {AnyBlockActive} = true;");
         if (kernel.ReachesWarpShuffle)
@@ -319,7 +321,7 @@ internal static class ManagedFallbackEmitter
             writer.AppendLine($"for (int {ThreadLoopIndex} = 0; {ThreadLoopIndex} < {ThreadsPerBlock}; {ThreadLoopIndex}++)");
             using (writer.Scope())
             {
-                WriteManagedThreadStep(writer, kernel);
+                WriteManagedThreadStep(writer, kernel, sharing);
             }
 
             if (kernel.ReachesWarpShuffle)
@@ -387,7 +389,8 @@ internal static class ManagedFallbackEmitter
     }
 
     // One step of one thread: from where it stopped to its next barrier, grid sync or end
-    private static void WriteManagedThreadStep(SourceWriter writer, in KernelHostModel kernel)
+    private static void WriteManagedThreadStep(SourceWriter writer, in KernelHostModel kernel,
+        in ArraySharingPlan sharing)
     {
         writer.AppendLine($"int {ThreadX} = {ThreadLoopIndex} % (int)blockDimX;");
         writer.AppendLine($"int {ThreadY} = ({ThreadLoopIndex} / (int)blockDimX) % (int)blockDimY;");
@@ -420,7 +423,7 @@ internal static class ManagedFallbackEmitter
                     // time on this host thread
                     writer.AppendLine($"{ManagedNames.Context}.{ManagedNames.GridSyncRequestedName} = false;");
                     writer.AppendLine($"{ManagedNames.Context}.{ManagedNames.BlockBarrierRequestedName} = false;");
-                    WriteStateMachineCall(writer, kernel);
+                    WriteStateMachineCall(writer, kernel, sharing);
                     WriteManagedWaits(writer, kernel);
                 }
 
@@ -500,12 +503,13 @@ internal static class ManagedFallbackEmitter
     }
 
     // <state machine>(<arguments>, __gsharp_contexts[<thread>][, ref __gsharp_auto_result[<thread>]]);
-    private static void WriteStateMachineCall(SourceWriter writer, in KernelHostModel kernel)
+    private static void WriteStateMachineCall(SourceWriter writer, in KernelHostModel kernel,
+        in ArraySharingPlan sharing)
     {
         writer.Append($"{kernel.StateMachineName}(");
         foreach (var p in kernel.Parameters)
         {
-            // An in parameter that the kernel receives by address stays the caller's variable
+            // An in parameter that may alias an all-[In] group uses its rebound ref readonly local (#2400)
             writer.Append(p.RefKind switch
             {
                 RefKind.Ref or RefKind.Out => "ref ",
@@ -513,7 +517,9 @@ internal static class ManagedFallbackEmitter
                 _ when p.IsInReference => "in ",
                 _ => string.Empty
             });
-            writer.Append(p.Identifier);
+            writer.Append(sharing.TakesInReferenceGroupCopy(p.Ordinal)
+                ? KernelHostNames.GetLocal(LauncherLocal.AliasReference, p)
+                : p.Identifier);
             writer.Append(", ");
         }
 

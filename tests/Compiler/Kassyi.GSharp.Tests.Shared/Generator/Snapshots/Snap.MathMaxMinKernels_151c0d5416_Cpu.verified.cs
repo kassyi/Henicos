@@ -154,6 +154,9 @@ if (native.Int32Values.Data == global::System.IntPtr.Zero)
 host.Int32Values = default;
 }
 }
+public static unsafe void UnmarshalArrays_MixedOperandInputs(in global::Kassyi.GSharp.Tests.Shared.Syntax.MixedOperandInputs host, ref AotContexts.MixedOperandInputs native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_MixedOperandInputs(ref global::Kassyi.GSharp.Tests.Shared.Syntax.MixedOperandInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Singles != null)
@@ -242,6 +245,9 @@ if (native.Doubles.Data == global::System.IntPtr.Zero)
 {
 host.Doubles = default;
 }
+}
+public static unsafe void UnmarshalArrays_MixedOperandResults(in global::Kassyi.GSharp.Tests.Shared.Syntax.MixedOperandResults host, ref AotContexts.MixedOperandResults native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_MixedOperandResults(ref global::Kassyi.GSharp.Tests.Shared.Syntax.MixedOperandResults host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

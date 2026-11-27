@@ -18,6 +18,13 @@ import { removeDirectory } from "../job-queue/self-test-support.ts";
 import { shortCommand } from "../job-queue/view.ts";
 import { selectsCategory } from "../job-queue/plugins/dotnet/plugin.ts";
 import { cpuOnlyTestProjects, parseBudgets, testMemoryMb } from "./budgets.ts";
+import {
+  DefaultExample,
+  MaxCommandLength,
+  formatOutsideLanguageRefusal,
+  parseSharedCommand,
+} from "./command-language.ts";
+import { sharedTurnRefusal } from "./share-refusal.ts";
 import { checkCommandLanguage } from "./command-language-checks.ts";
 import { checkNameFilter } from "./name-filter-checks.ts";
 import { checkHenicosOffloadSources } from "./offload-source-checks.ts";
@@ -299,12 +306,32 @@ function checkGpuCheckHook(assert: AssertModule, host: PluginHost): void {
     assert.strictEqual(cudaCheck.refuse, undefined);
     assert.strictEqual(cudaCheck.hints, undefined);
 
-    // §9.3: --gpu outside the command language is refused with 3 lines (where, accepted form, --gpu-exclusive hint)
-    const outsideGpu = host.check("dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --filter Name~Foo", gpu, ctx);
-    assert.ok(outsideGpu.refuse !== undefined, "unquoted filter under --gpu must be refused");
-    assert.strictEqual(outsideGpu.refuse.split("\n").length, 3, "refusal must be 3 lines");
-    assert.ok(outsideGpu.refuse.includes("Accepted form:"), "refusal shows accepted form");
-    assert.ok(outsideGpu.refuse.includes("--gpu-exclusive"), "refusal mentions --gpu-exclusive");
+    // §9.3 & §10.1: --gpu outside the command language is refused (3 lines unsplit, 4 lines when build-split)
+    const outsideUnsplit = host.check(
+      "dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --no-build --filter Name~Foo",
+      gpu,
+      ctx,
+    );
+    assert.ok(outsideUnsplit.refuse !== undefined, "unquoted filter under --gpu must be refused");
+    assert.strictEqual(outsideUnsplit.refuse.split("\n").length, 3, "unsplit refusal must be 3 lines");
+    assert.ok(outsideUnsplit.refuse.includes("Accepted form:"), "refusal shows accepted form");
+    assert.ok(outsideUnsplit.refuse.includes("--gpu-exclusive"), "refusal mentions --gpu-exclusive");
+    // When planBuildStep splits build+test, prepend build-split line and omit split-added --no-build from example
+    const outsideSplit = host.check("dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --filter Name~Foo", gpu, ctx);
+    assert.ok(outsideSplit.refuse !== undefined, "split command with unquoted filter must be refused");
+    const splitLines = outsideSplit.refuse.split("\n");
+    assert.strictEqual(splitLines.length, 4, "split refusal must be 4 lines");
+    assert.ok(
+      splitLines[0]?.includes("dotnet build tests/Compiler/Kassyi.GSharp.Tests.Cuda") &&
+        splitLines[0]?.includes("would run first as a CPU job"),
+      "line 0 names the CPU build job",
+    );
+    assert.ok(splitLines[1]?.includes("in test part at pos"), "line 1 states position is within the test part");
+    assert.strictEqual(
+      splitLines[2],
+      'Accepted form: dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --filter "Name~Foo"',
+      "split-added --no-build is omitted from example and not listed as dropped",
+    );
     // Same command with --gpu-exclusive is allowed
     const gpuExcl = { name: "gpu", forcedExclusive: true };
     assert.strictEqual(
@@ -317,8 +344,10 @@ function checkGpuCheckHook(assert: AssertModule, host: PluginHost): void {
       "dotnet build tests/Compiler/Kassyi.GSharp.Tests.Cuda && " +
       `dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --no-build --filter "${Kept}"`;
     assert.strictEqual(host.check(buildSplitCmd, gpu, ctx).refuse, undefined, "build-split into language passes");
-    // Non-shared recipe under --gpu is refused
-    assert.ok(host.check("just test-coverage", gpu, ctx).refuse !== undefined, "non-shared recipe refused under --gpu");
+    // Non-shared recipe under --gpu is refused and falls back to DefaultExample (does not suggest itself)
+    const nonSharedRefusal = host.check("just test-coverage", gpu, ctx).refuse;
+    assert.ok(nonSharedRefusal !== undefined, "non-shared recipe refused under --gpu");
+    assert.ok(nonSharedRefusal.includes(`Accepted form: ${DefaultExample}`), "non-shared recipe falls back to default");
 
     // Without --gpu (resource = null): long-checks still refuses double-queueing; plain CPU tests pass cleanly
     const longChecksCpu = host.check("just long-checks", null, ctx);
@@ -821,6 +850,199 @@ function checkMutateShare(assert: AssertModule, host: PluginHost, repoRoot: stri
   }
 }
 
+/** Unit and property checks for `formatOutsideLanguageRefusal` (all 4 rules of §10.1). */
+function checkOutsideLanguageRefusal(assert: AssertModule): void {
+  const extractExample = (refusal: string): string => {
+    const line = refusal.split("\n").find((l) => l.startsWith("Accepted form: "));
+    assert.ok(line !== undefined, `refusal must contain Accepted form line:\n${refusal}`);
+    return line.slice("Accepted form: ".length).replace(/ \(dropped: .*\)$/, "");
+  };
+
+  // Rule 1: build-split notice, "in test part" position, omit split-added --no-build, keep user-written --no-build
+  const splitAdded = formatOutsideLanguageRefusal("dotnet test --no-build tests/X -p:Foo=1", "bash", {
+    splitBuild: { build: "dotnet build tests/X", originalCommand: "dotnet test tests/X -p:Foo=1" },
+  });
+  const splitAddedLines = splitAdded.split("\n");
+  assert.strictEqual(splitAddedLines.length, 4, "split refusal has 4 lines");
+  assert.ok(splitAddedLines[0]?.includes("`dotnet build tests/X` would run first as a CPU job"));
+  assert.ok(splitAddedLines[1]?.includes("in test part at pos"));
+  assert.strictEqual(splitAddedLines[2], "Accepted form: dotnet test tests/X (dropped: -p:Foo=1)");
+
+  const splitKept = formatOutsideLanguageRefusal("dotnet test tests/X --no-build -p:Foo=1", "bash", {
+    splitBuild: {
+      build: "dotnet build tests/X",
+      originalCommand: "dotnet build tests/X && dotnet test tests/X --no-build -p:Foo=1",
+    },
+  });
+  assert.strictEqual(
+    splitKept.split("\n")[2],
+    "Accepted form: dotnet test tests/X --no-build (dropped: -p:Foo=1)",
+    "user-written --no-build is kept when split",
+  );
+
+  // Rule 2: keeps all in-language items in original order (prefixes, blame, verbosity, logger, redirect) and drops only out-of-language
+  const richBash =
+    "ROWBATCH_ROOTS=1 DiffEngine_Disabled=true dotnet test --blame-crash tests/X --blame-crash-dump-type mini " +
+    '-v minimal -p:Configuration=Release --blame-hang-timeout 30s --logger "console;verbosity=detailed" ' +
+    '--filter "Name~Foo" > tmp/out.log 2>&1';
+  const richBashRefusal = formatOutsideLanguageRefusal(richBash, "bash");
+  assert.strictEqual(
+    richBashRefusal.split("\n")[1],
+    "Accepted form: DiffEngine_Disabled=true dotnet test --blame-crash tests/X --blame-crash-dump-type mini " +
+      '-v minimal --blame-hang-timeout 30s --logger "console;verbosity=detailed" --filter "Name~Foo" ' +
+      "> tmp/out.log 2>&1 (dropped: ROWBATCH_ROOTS=1, -p:Configuration=Release)",
+  );
+
+  const richPwsh =
+    "$env:DiffEngine_Disabled='true'; $env:ROWBATCH_ROOTS='1'; dotnet test tests/X --no-build " +
+    "--logger 'console;verbosity=normal' --filter Name~Bar | Tee-Object log.txt";
+  const richPwshRefusal = formatOutsideLanguageRefusal(richPwsh, "pwsh");
+  assert.strictEqual(
+    richPwshRefusal.split("\n")[1],
+    "Accepted form: $env:DiffEngine_Disabled='true'; dotnet test tests/X --no-build " +
+      '--logger "console;verbosity=normal" --filter "Name~Bar" ' +
+      "(dropped: $env:ROWBATCH_ROOTS='1';, |, Tee-Object, log.txt)",
+  );
+
+  // Separator stops item collection so tokens from a trailing command are not pulled in
+  // Quoted tokens are cut to 80 characters; the length failure is not put in parentheses twice
+  const longWord = `-p:X=${"a".repeat(5000)}`;
+  const longLines = formatOutsideLanguageRefusal(`dotnet test tests/X ${longWord}`, "bash").split("\n");
+  assert.ok(
+    longLines.every((line) => line.length <= 200),
+    `refusal lines stay short: ${longLines.map((l) => l.length)}`,
+  );
+  const overlong = formatOutsideLanguageRefusal(`dotnet test tests/X --filter "${"a".repeat(5000)}"`, "bash");
+  assert.ok(/ \(\d+ chars\): /.test(overlong) && !overlong.includes("(("), `one pair of parentheses: ${overlong}`);
+  assert.ok(
+    formatOutsideLanguageRefusal("dotnet test tests/X (Name~A)", "bash").includes(" ((Name~A)): "),
+    "a token that starts with ( keeps its parentheses",
+  );
+  const noRedirect = sharedTurnRefusal("dotnet test tests/X -p:A=1", "bash", {
+    exclusiveCategories: ["Stress"],
+    exclusiveEnv: [],
+    sharedRecipes: ["test"],
+  });
+  assert.ok(noRedirect !== null && !noRedirect.includes(">>"), `no redirect, no append note: ${noRedirect}`);
+  const withRedirect = sharedTurnRefusal("dotnet test tests/X -p:A=1 > tmp/x.log", "bash", {
+    exclusiveCategories: ["Stress"],
+    exclusiveEnv: [],
+    sharedRecipes: ["test"],
+  });
+  assert.ok(withRedirect?.split("\n")[0]?.includes("append (>>)"), `the split redirect is named: ${withRedirect}`);
+  const chainedRefusal = formatOutsideLanguageRefusal('dotnet test tests/X --filter "Name~A"; echo --no-build', "bash");
+  assert.strictEqual(
+    chainedRefusal.split("\n")[1],
+    'Accepted form: dotnet test tests/X --filter "Name~A" (dropped: ;, echo, --no-build)',
+  );
+
+  // Rule 3: head dispatch (mid-line dotnet test -> DefaultExample; mutate -> just mutate <phase>; just <recipe>)
+  assert.strictEqual(
+    extractExample(formatOutsideLanguageRefusal("echo hi && dotnet test tests/X --no-build", "bash")),
+    DefaultExample,
+    "mid-line dotnet test must not produce a dotnet test example from the tail",
+  );
+  assert.strictEqual(
+    extractExample(formatOutsideLanguageRefusal("dotnet build tests/X && dotnet test tests/X --no-build", "bash")),
+    DefaultExample,
+    "dotnet build && dotnet test without build-split falls back to DefaultExample",
+  );
+  assert.strictEqual(extractExample(formatOutsideLanguageRefusal("just mutate", "bash")), "just mutate gpumath");
+  assert.strictEqual(extractExample(formatOutsideLanguageRefusal("just mutate other", "bash")), "just mutate gpumath");
+  assert.strictEqual(
+    extractExample(formatOutsideLanguageRefusal("just mutate compiler -- -m Foo", "bash")),
+    "just mutate compiler",
+  );
+  assert.strictEqual(
+    extractExample(
+      formatOutsideLanguageRefusal("node scripts/human/mutate.js --phase compiler-cuda -- --since main", "bash"),
+    ),
+    "just mutate compiler-cuda",
+  );
+  assert.strictEqual(
+    extractExample(formatOutsideLanguageRefusal("node scripts/human/mutate.js --phase=gpumath", "pwsh")),
+    "just mutate gpumath",
+  );
+  assert.strictEqual(
+    extractExample(formatOutsideLanguageRefusal("node scripts/human/mutate.js --phase unknown", "bash")),
+    "just mutate gpumath",
+  );
+  assert.strictEqual(extractExample(formatOutsideLanguageRefusal('just test --filter "Name~A"', "bash")), "just test");
+  assert.strictEqual(
+    extractExample(
+      formatOutsideLanguageRefusal("just test-coverage", "bash", { sharedRecipes: ["test", "test-differential-cuda"] }),
+    ),
+    DefaultExample,
+  );
+  assert.strictEqual(extractExample(formatOutsideLanguageRefusal("just -f justfile test", "bash")), DefaultExample);
+  assert.strictEqual(extractExample(formatOutsideLanguageRefusal("echo hello", "bash")), DefaultExample);
+
+  // Rule 4: every generated example across all shells and negative/overlong inputs is accepted and <= 4000 chars
+  const allShells = ["bash", "sh", "pwsh", "powershell", "cmd"] as const;
+  const corpus = [
+    "",
+    "   ",
+    "echo hello",
+    "dotnet build tests/X",
+    "dotnet.exe test tests/X",
+    `dotnet test tests/${"a".repeat(3990)}`,
+    `dotnet test tests/X --filter "Name~${"a".repeat(8200)}"`,
+    `dotnet test tests/X --no-build ${"--nologo ".repeat(600)}`,
+    'dotnet test tests/X --filter "Name~A"\necho pwn',
+    'dotnet test\ttests/X --filter "Name~A"',
+    '$env:DiffEngine_Disabled= hostname; dotnet test tests/X --filter "Name~A"',
+    "$env:DiffEngine_Disabled=\u2018true\u2019; dotnet test tests/X",
+    "dotnet test tests/X --filter \u201CName~A\u201D",
+    'dotnet test tests/日本語 --filter "Name~A"',
+    'dotnet test tests/X Category=Stress --filter "Name~A"',
+    "dotnet test tests/X -a: -x:--filter Category=Stress",
+    "dotnet test -a/b",
+    'just test --filter "Category!=Stress&Category!=Benchmark&Category!=GpuTrap"',
+    "just mutate",
+    "just mutate other",
+    "just mutate gpumath -- -m Foo",
+    "node scripts/human/mutate.js --phase gpumath -- --since main",
+    "dotnet test tests/X -p Configuration=Release",
+    "dotnet test tests/X --filter FullyQualifiedName~Foo",
+    'dotnet test tests/X --filter "(Name~A|Name~B)"',
+    'dotnet test tests/X --filter "Name~A" --filter "Name~B"',
+    "dotnet test tests/X --no-build --no-build",
+    "dotnet test tests/X -c Debug --configuration Release",
+    "dotnet test tests/A tests/B",
+    'dotnet test tests/X --filter "$FILTER"',
+    'dotnet test tests/X --filter "Name~A" | tee log',
+    "dotnet test tests/X > C:\\x.log",
+    "dotnet test tests/X > /c/x.log",
+    "dotnet test tests/X > ../x.log",
+    "dotnet test tests/X > NUL",
+    "dotnet test tests/X > 1kb",
+    "dotnet test tests/X > tmp/out.log --no-build",
+    'ROWBATCH_ROOTS=1 dotnet test tests/X --no-build --filter "Name~A"',
+    "$env:ROWBATCH_ROOTS='1'; dotnet test tests/X --no-build --filter \"Name~A\"",
+    "DiffEngine_Disabled=true dotnet test tests/X",
+    "$env:DiffEngine_Disabled='true'; dotnet test tests/X",
+    "dotnet test tests/X --filter 'Name~A'",
+    "dotnet test tests/X --logger 'console;verbosity=normal'",
+    "Set-Item Env:DiffEngine_Disabled true; dotnet test tests/X",
+    "set DiffEngine_Disabled=true && dotnet test tests/X",
+  ];
+  for (const shell of allShells) {
+    assert.ok(parseSharedCommand(DefaultExample, shell) !== null, `DefaultExample must parse on ${shell}`);
+    for (const cmd of corpus) {
+      const refusal = formatOutsideLanguageRefusal(cmd, shell);
+      const ex = extractExample(refusal);
+      assert.ok(
+        ex.length <= MaxCommandLength,
+        `example must be <= ${MaxCommandLength} chars on ${shell} for ${JSON.stringify(cmd.slice(0, 60))}`,
+      );
+      assert.ok(
+        parseSharedCommand(ex, shell) !== null,
+        `example must be accepted on ${shell}: got ${JSON.stringify(ex)} for ${JSON.stringify(cmd.slice(0, 60))}`,
+      );
+    }
+  }
+}
+
 export async function checks(assert: AssertModule): Promise<void> {
   await checkRepoBaselineConfig(assert);
   checkDialectOf(assert);
@@ -843,6 +1065,7 @@ export async function checks(assert: AssertModule): Promise<void> {
   checkMovedCpuOnlyProjects(assert);
   checkCharacterizationAndBudgets(assert, host);
   checkGpuCheckHook(assert, host);
+  checkOutsideLanguageRefusal(assert);
   checkShareRules(assert, host);
   checkMutateShare(assert, host, loaded.configRoot);
   const henicosOptions = loaded.config.plugins?.find((p) => p.name === "./scripts/human/job-queue-henicos")?.options;

@@ -3,12 +3,12 @@ using Kassyi.GSharp.Compiler.Analysis.Checks;
 using Microsoft.CodeAnalysis.Operations;
 using Names = Kassyi.GSharp.Compiler.GSharpInternalNames.IntegerSemantics;
 
-namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.Numeric;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>
 /// Where the C++ of an integer operator or a float-to-integer conversion would leave undefined what C# defines, and the
 /// Prelude function (<c>IntegerSemantics.hpp</c>) that gives the C# result instead (#722, #724).
-/// <see cref="IntegerSemanticsEmitter"/> writes the forms, <see cref="BoundedLoopStep"/> proves a loop counter bounded.
+/// <c>IntegerSemanticsEmitter</c> writes the forms, <c>BoundedLoopStep</c> proves a loop counter bounded.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -26,7 +26,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.Numeric;
 /// An operator or conversion with a constant result is written as its value (<see cref="GetConstant"/>), as Roslyn
 /// folds it: <c>3 &lt;&lt; 33</c> is <c>6</c>. The operator stays as it is where the result is known not to overflow:
 /// operands whose types or constant values bound the result, and the step of a for loop counter that the loop condition
-/// bounds (<see cref="BoundedLoopStep"/>). The rest costs no instruction on the GPU: the unsigned operation is the same
+/// bounds (<c>BoundedLoopStep</c>). The rest costs no instruction on the GPU: the unsigned operation is the same
 /// instruction without the no-overflow assumption, and the masked shift is one funnel shift. Which definition wins:
 /// <c>docs/spec/en/01_language/06_semantics.md</c>.
 /// </para>
@@ -226,35 +226,6 @@ internal static class IntegerSemantics
     }
 
     /// <summary>
-    /// The Prelude function of the step of the increment or decrement <paramref name="operation"/> of an integer type
-    /// that promotes to <see langword="int"/> or is <see langword="int"/> or <see langword="long"/>
-    /// (<paramref name="node"/>): <c>__gsharp_add_i32</c> for <c>++</c>, <c>__gsharp_sub_i32</c> for <c>--</c> (#722,
-    /// #1079); null when the C++ operator cannot overflow there (<see cref="IntegerSemanticsEmitter.AppendStep"/> writes
-    /// the step).
-    /// </summary>
-    /// <remarks>
-    /// The analysis of a for loop step runs once per step: its result is kept in
-    /// <see cref="Emitter.BoundedLoopSteps"/>.
-    /// </remarks>
-    public static string? GetIncrementHelper(IIncrementOrDecrementOperation operation, ExpressionSyntax node,
-        ref TranspileContext context)
-    {
-        if (GetStepHelper(IntegerStepFacts.Of(operation), undo: false) is not { } helper)
-        {
-            return null;
-        }
-
-        var steps = context.Emitter.BoundedLoopSteps;
-        if (!steps.TryGetValue(node, out var bounded))
-        {
-            bounded = BoundedLoopStep.IsBounded(operation, node, context.Query.SemanticModel);
-            steps[node] = bounded;
-        }
-
-        return bounded ? null : helper;
-    }
-
-    /// <summary>
     /// The Prelude function that steps the value of the increment or decrement <paramref name="operation"/> back
     /// (<c>__gsharp_sub_i32</c> for <c>++</c>), which gives the old value of a postfix step that wraps.
     /// </summary>
@@ -276,7 +247,7 @@ internal static class IntegerSemantics
 
     /// <summary>
     /// The Prelude function of the operator of the compound assignment <paramref name="facts"/>
-    /// (<c>__gsharp_add_i32</c> for an int <c>+=</c>), which <see cref="IntegerSemanticsEmitter.AppendStep"/> and the
+    /// (<c>__gsharp_add_i32</c> for an int <c>+=</c>), which <c>IntegerSemanticsEmitter.AppendStep</c> and the
     /// form that evaluates the operands into temporaries call; null for an assignment that C++ gives the C# result (see
     /// <see cref="GetCompoundShiftMask"/>).
     /// </summary>
@@ -423,7 +394,7 @@ internal static class IntegerSemantics
 
     /// <summary>
     /// Whether the C++ of <paramref name="expression"/> begins with a name or a digit rather than with its operator or
-    /// left operand (<see cref="OperatorSpacing"/>): a Prelude call that stands for its operator, or a constant written
+    /// left operand (<c>OperatorSpacing</c>): a Prelude call that stands for its operator, or a constant written
     /// as its value (a negative one is parenthesized).
     /// </summary>
     public static bool IsWrittenAsCallOrConstant(ExpressionSyntax expression, SemanticModel model)

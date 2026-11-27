@@ -1,8 +1,17 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.Loader;
 using System.Threading.Tasks;
+using Kassyi.GSharp.Compiler;
 using Kassyi.GSharp.Compiler.Diagnostics;
+using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Tests.Shared.Helpers;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Analyzers;
@@ -630,7 +639,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task ChainedLabelJump_GotoAcrossBarrier_ReportsGSH0040AloneAndGSH0121FromTheGeneratorOnly()
+    public async Task ChainedLabelJump_GotoAcrossBarrier_ReportsGSH0040FromTheAnalyzerOnlyAndGSH0121FromTheGeneratorOnly()
     {
         var compilation = RoslynTestUtility.CreateCompilation(
             RoslynTestUtility.ReadTestCase("Analyzers/BarrierUsage/ChainedLabelGotoBarrierKernels.cu.cs"));
@@ -638,12 +647,13 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
         var run = await KernelDiagnostics.RunCompilationAsync(compilation, "Cpu");
 
         // A goto across a barrier or a call that suspends gets GSH0040 only; one across a shuffle alone keeps GSH0121,
-        // though the method has a barrier before the chain. The generator reports both, so a build without the
-        // analyzers stops at the same places; GSH0121 comes from the generator alone
+        // though the method has a barrier before the chain. GSH0040 comes from the analyzer alone and GSH0121 from the
+        // generator alone: an IDE merges none, so a goto reported from both places is seen twice (#2390)
+        // mutant: FindReported returning the gotos across a barrier, HeldRefLocalSite.Report giving them GSH0040 -> the
+        // generator reports GSH0040 at lines 31 and 50 too
         // mutant: FindReported without the IsCrossBarrierGoto check -> GSH0121 at lines 31 and 50 too
         // mutant: IsCrossBarrierGoto given the goto of the lowered body -> GSH0121 at lines 31 and 50 too
         // mutant: HeldRefLocalSite.Collect skipping a method that has a barrier -> no GSH0121 at line 70
-        // mutant: HeldRefLocalSite.Report without the CrossesBarrier branch -> the generator reports GSH0121 at 31 and 50
         var gsh0040 = GSharpDiagnostics.CrossBarrierGotoProhibited.Id;
         var gsh0121 = GSharpDiagnostics.GotoToChainedLabelAcrossStates.Id;
         var analyzer = run.Analyzer
@@ -654,11 +664,79 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
             analyzer.Ranges(gsh0040).OrderBy(static r => r.StartLine).ToList());
         Assert.Empty(analyzer.Ranges(gsh0121));
         Assert.Equal([(DiagnosticOrigin.Generator, 70, 13, 70, 25)], GeneratorRanges(run, gsh0121));
-        Assert.Equal(3, run.Generator.Length);
-        Assert.True(run.Analyzer
-            .Where(d => d.Id == gsh0040)
-            .ToHashSet()
-            .SetEquals(run.Generator.Where(d => d.Id == gsh0040)));
+        Assert.DoesNotContain(run.Generator, d => d.Id == gsh0040);
+        Assert.Single(run.Generator);
+    }
+
+    [Theory]
+    [InlineData("ChainedBarrierBackInnerKernel", 31)]
+    [InlineData("ChainedSuspendingCallBackInnerKernel", 50)]
+    [Scenario(TestScenario.SadPath)]
+    public void ChainedLabelJump_GotoAcrossBarrierWithoutAnalyzers_ManagedBodyThrowsAtTheJumpAndTheLauncherEnds(
+        string kernelName, int line)
+    {
+        // A caller in the compilation: the launcher takes a span, which reflection cannot pass
+        var caller = CSharpSyntaxTree.ParseText($$"""
+            namespace Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage;
+
+            public static class ChainedLabelGotoBarrierCaller
+            {
+                public static void Run(int[] result) =>
+                    ChainedLabelGotoBarrierKernels.Launch{{kernelName}}(result, blockDimX: 4);
+            }
+            """, new CSharpParseOptions(LanguageVersion.Preview));
+        var unnamed = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Analyzers/BarrierUsage/ChainedLabelGotoBarrierKernels.cu.cs"));
+        // The place of the goto in the message is the file name and the position, so the tree needs a path
+        var kernelTree = unnamed.SyntaxTrees[0];
+        var compilation = unnamed
+            .ReplaceSyntaxTree(kernelTree, CSharpSyntaxTree.ParseText(kernelTree.GetText(),
+                new CSharpParseOptions(LanguageVersion.Preview), "ChainedLabelGotoBarrierKernels.cu.cs"))
+            .AddSyntaxTrees(caller);
+        var driver = CSharpGeneratorDriver.Create(
+            generators: [new GpuKernelGenerator().AsSourceGenerator()],
+            additionalTexts: null,
+            parseOptions: new CSharpParseOptions(LanguageVersion.Preview),
+            optionsProvider: new TestAnalyzerConfigOptionsProvider("Cpu"));
+        driver.RunGeneratorsAndUpdateCompilation(compilation, out var output, out _);
+
+        using var peStream = new MemoryStream();
+        Assert.True(output.Emit(peStream).Success);
+        peStream.Position = 0;
+        var loadContext = new AssemblyLoadContext($"ChainedLabelJumpThrow_{Guid.NewGuid():N}", isCollectible: true);
+        var launcher = loadContext.LoadFromStream(peStream)
+            .GetType("Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.ChainedLabelGotoBarrierCaller",
+                throwOnError: true)
+            ?.GetMethod("Run", BindingFlags.Public | BindingFlags.Static);
+        Assert.NotNull(launcher);
+
+        // The analyzers are not run, so GSH0040 does not stop the build, and an empty body would leave the state
+        // machine without ending (the launcher loops for ever): the body throws at the goto instead
+        // mutant: ManagedCSharpTranspiler.CreateBody returning an empty body again -> the launcher does not end
+        var launch = Task.Run(() =>
+        {
+            using (GpuExecution.Use(KernelExecution.Managed))
+            {
+                launcher.Invoke(null, [new int[4]]);
+            }
+        });
+        var ended = false;
+        try
+        {
+            ended = launch.Wait(TimeSpan.FromSeconds(30));
+        }
+        catch (AggregateException)
+        {
+            ended = true;
+        }
+
+        Assert.True(ended, "the managed launcher did not end");
+        var failure = Assert.IsType<AggregateException>(launch.Exception).Flatten().InnerException;
+        var thrown = Assert.IsType<NotSupportedException>(
+            failure is TargetInvocationException invocation ? invocation.InnerException : failure);
+        Assert.Contains(GSharpDiagnostics.CrossBarrierGotoProhibited.Id, thrown.Message, StringComparison.Ordinal);
+        Assert.Contains($"ChainedLabelGotoBarrierKernels.cu.cs({line},13)", thrown.Message, StringComparison.Ordinal);
+        Assert.Contains("goto second", thrown.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -973,6 +1051,222 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
         Assert.Empty(run.Generator);
         Assert.Equal(8, stated.Count);
         Assert.All(stated, static f => Assert.True(f.IsReported, f.Failure));
+    }
+
+    [Theory]
+    [InlineData("Cpu", "", "", 4)]
+    [InlineData("Cpu", "build_property.GSharpNativeBarrierModel", "Stack", 4)]
+    [InlineData("Cpu", "build_property.GSharpManagedBarrierModel", "Stack", 4)]
+    [InlineData("Cuda", "", "", 0)]
+    [Scenario(TestScenario.SadPath)]
+    public async Task ReselectedReceiverStructCallWithWarpShuffle_CpuPaths_ReportsGsh0062AndAllowsCuda(
+        string dialect,
+        string optionKey,
+        string optionValue,
+        int expectedCount)
+    {
+        const string Source = """
+            using System;
+            using Kassyi.GSharp.Core;
+
+            namespace ReselectedReceiverWarpShuffle;
+
+            public partial struct Counter
+            {
+                public int X;
+
+                [GpuDeviceFunction]
+                public int AddGet(int v)
+                {
+                    X += v;
+                    return X;
+                }
+            }
+
+            public struct Holder
+            {
+                public Counter[] Items;
+
+                public ref Counter RefProp => ref Items[0];
+            }
+
+            public static partial class Kernels
+            {
+                [GpuDeviceFunction]
+                private static ref Counter RefTo(ref Counter s, ref int log)
+                {
+                    log = 42;
+                    return ref s;
+                }
+
+                [GpuDeviceFunction]
+                private static Span<Counter> GetSpan(Counter[] items) => items;
+
+                [GpuKernel]
+                public static void CallSites(Counter[] items, int[] r, bool flag)
+                {
+                    int t = ThreadIndex.X;
+                    var s = new Counter { X = 10 };
+                    int log = 0;
+                    int a0 = RefTo(ref s, ref log).AddGet(Warp.ShuffleSync(0xFu, log, 0));
+
+                    var holder = new Holder { Items = items };
+                    int a1 = holder.RefProp.AddGet(Warp.ShuffleSync(0xFu, log, 0));
+
+                    var c1 = new Counter { X = 1 };
+                    var c2 = new Counter { X = 2 };
+                    int a2 = (flag ? ref c1 : ref c2).AddGet(Warp.ShuffleSync(0xFu, log, 0));
+
+                    int a3 = GetSpan(items)[0].AddGet(Warp.ShuffleSync(0xFu, log, 0));
+                    r[t] = a0 + a1 + a2 + a3;
+                }
+            }
+            """;
+
+        var compilation = RoslynTestUtility.CreateCompilation(Source);
+        Dictionary<string, string>? options = string.IsNullOrEmpty(optionKey) || string.IsNullOrEmpty(optionValue)
+            ? null
+            : new Dictionary<string, string> { [optionKey] = optionValue };
+        var diagnostics = await compilation
+            .WithAnalyzers([s_analyzer], new AnalyzerOptions([], new TestAnalyzerConfigOptionsProvider(dialect, options)))
+            .GetAnalyzerDiagnosticsAsync();
+
+        var gsh0062 = diagnostics.Where(static d => d.Id == GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id).ToArray();
+        Assert.Equal(expectedCount, gsh0062.Length);
+        if (expectedCount == 0)
+        {
+            Assert.Empty(diagnostics);
+        }
+        else
+        {
+            Assert.All(gsh0062, static d => Assert.Contains(
+                "receiver is selected by a call, a property or a ref conditional",
+                d.GetMessage(CultureInfo.InvariantCulture),
+                StringComparison.Ordinal));
+        }
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task ReselectedReceiverStructCallWithSuspendingArg_CpuAndCuda_ReportsGsh0062(string dialect)
+    {
+        const string Source = """
+            using Kassyi.GSharp.Core;
+
+            namespace ReselectedReceiverSuspendingArg;
+
+            public partial struct Counter
+            {
+                public int X;
+
+                [GpuDeviceFunction]
+                public int AddGet(int v)
+                {
+                    X += v;
+                    return X;
+                }
+            }
+
+            public static partial class Kernels
+            {
+                [GpuDeviceFunction]
+                private static ref Counter RefTo(ref Counter s, ref int log)
+                {
+                    log = 42;
+                    return ref s;
+                }
+
+                [GpuDeviceFunction]
+                private static int SuspendingStatic(int v)
+                {
+                    Gpu.SyncThreads();
+                    return v + 1;
+                }
+
+                [GpuKernel]
+                public static void CallSite(int[] r)
+                {
+                    var s = new Counter { X = 10 };
+                    int log = 0;
+                    r[ThreadIndex.X] = RefTo(ref s, ref log).AddGet(SuspendingStatic(log));
+                }
+            }
+            """;
+
+        var compilation = RoslynTestUtility.CreateCompilation(Source);
+        var diagnostics = await compilation
+            .WithAnalyzers([s_analyzer], new AnalyzerOptions([], new TestAnalyzerConfigOptionsProvider(dialect)))
+            .GetAnalyzerDiagnosticsAsync();
+
+        var gsh0062 = Assert.Single(diagnostics, static d => d.Id == GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id);
+        Assert.Contains(
+            "receiver is selected by a call, a property or a ref conditional",
+            gsh0062.GetMessage(CultureInfo.InvariantCulture),
+            StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.Boundary)]
+    public async Task DefensiveCopyOrKeptSpanStructCallWithWarpShuffle_CpuAndCuda_ReportsNoGsh0062(string dialect)
+    {
+        const string Source = """
+            using System;
+            using Kassyi.GSharp.Core;
+
+            namespace DefensiveCopyAndKeptSpan;
+
+            public partial struct Counter
+            {
+                public int X;
+
+                [GpuDeviceFunction]
+                public int AddGet(int v)
+                {
+                    X += v;
+                    return X;
+                }
+            }
+
+            public static partial class Kernels
+            {
+                [GpuDeviceFunction]
+                private static ref readonly Counter RefReadOnlyTo(in Counter s, ref int log)
+                {
+                    log = 42;
+                    return ref s;
+                }
+
+                [GpuKernel]
+                public static void DefensiveCopyCall(int[] r)
+                {
+                    var s = new Counter { X = 10 };
+                    int log = 0;
+                    r[ThreadIndex.X] = RefReadOnlyTo(in s, ref log).AddGet(Warp.ShuffleSync(0xFu, log, 0));
+                }
+
+                [GpuKernel]
+                public static void KeptSpanCall(Counter[] items, int[] r)
+                {
+                    int log = 0;
+                    Span<Counter> spanLocal = items;
+                    r[ThreadIndex.X] = spanLocal[0].AddGet(Warp.ShuffleSync(0xFu, log, 0));
+                }
+            }
+            """;
+
+        var compilation = RoslynTestUtility.CreateCompilation(Source);
+        var diagnostics = await compilation
+            .WithAnalyzers([s_analyzer], new AnalyzerOptions([], new TestAnalyzerConfigOptionsProvider(dialect)))
+            .GetAnalyzerDiagnosticsAsync();
+
+        Assert.DoesNotContain(diagnostics, static d => d.Id == GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id);
+        Assert.DoesNotContain(
+            diagnostics,
+            static d => d.Location.GetMappedLineSpan().StartLinePosition.Line is >= 25 and <= 31);
     }
 
     private static List<(DiagnosticOrigin Origin, int StartLine, int StartColumn, int EndLine, int EndColumn)>

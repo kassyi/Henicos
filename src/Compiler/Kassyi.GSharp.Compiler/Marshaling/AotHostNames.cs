@@ -17,6 +17,11 @@ internal static class AotHostNames
     public const string UnmarshalMethodPrefix = "Unmarshal_";
 
     /// <summary>
+    /// The prefix of the method that copies device writes back into the arrays held by an <c>in</c> struct parameter.
+    /// </summary>
+    public const string UnmarshalArraysMethodPrefix = "UnmarshalArrays_";
+
+    /// <summary>
     /// The prefix of the CPU method that replaces each array a host struct holds with a copy, for a kernel argument whose
     /// writes the device never sends back.
     /// </summary>
@@ -158,6 +163,14 @@ internal static class AotHostNames
         return ref writer;
     }
 
+    /// <summary>Appends <c>UnmarshalArrays_{key}</c>.</summary>
+    public static ref readonly SourceWriter AppendUnmarshalArraysMethodName(this in SourceWriter writer,
+        ISymbol symbol)
+    {
+        writer.Append(UnmarshalArraysMethodPrefix).AppendMarshalTypeKey(symbol);
+        return ref writer;
+    }
+
     /// <summary>Appends <c>CopyArrays_{key}</c>.</summary>
     public static ref readonly SourceWriter AppendCopyArraysMethodName(this in SourceWriter writer, ISymbol symbol)
     {
@@ -185,6 +198,10 @@ internal static class AotHostNames
 
     /// <summary>Gets <c>Unmarshal_{key}</c>, as code inside <c>AotContexts</c> calls it.</summary>
     public static string GetUnmarshalMethodName(ISymbol symbol) => GetName(symbol, UnmarshalMethodPrefix);
+
+    /// <summary>Gets <c>UnmarshalArrays_{key}</c>, as code inside <c>AotContexts</c> calls it.</summary>
+    public static string GetUnmarshalArraysMethodName(ISymbol symbol) =>
+        GetName(symbol, UnmarshalArraysMethodPrefix);
 
     /// <summary>Gets <c>CopyArrays_{key}</c>, as code inside <c>AotContexts</c> calls it.</summary>
     public static string GetCopyArraysMethodName(ISymbol symbol) => GetName(symbol, CopyArraysMethodPrefix);
@@ -215,6 +232,17 @@ internal static class AotHostNames
         INamedTypeSymbol? kernelClass)
     {
         AppendAotContextsQualifier(writer, kernelClass).AppendUnmarshalMethodName(symbol);
+        return ref writer;
+    }
+
+    /// <summary>
+    /// Appends <c>AotContexts.UnmarshalArrays_{key}</c> (qualified by <paramref name="kernelClass"/> when given), the
+    /// way a kernel wrapper calls it.
+    /// </summary>
+    public static ref readonly SourceWriter AppendQualifiedUnmarshalArraysMethodName(this in SourceWriter writer,
+        ISymbol symbol, INamedTypeSymbol? kernelClass)
+    {
+        AppendAotContextsQualifier(writer, kernelClass).AppendUnmarshalArraysMethodName(symbol);
         return ref writer;
     }
 
@@ -258,6 +286,14 @@ internal static class AotHostNames
     {
         using var writer = new SourceWriter();
         writer.AppendQualifiedUnmarshalMethodName(symbol, kernelClass);
+        return writer.ToString();
+    }
+
+    /// <summary>Gets the name that <see cref="AppendQualifiedUnmarshalArraysMethodName"/> writes.</summary>
+    public static string GetQualifiedUnmarshalArraysMethodName(ISymbol symbol, INamedTypeSymbol? kernelClass)
+    {
+        using var writer = new SourceWriter();
+        writer.AppendQualifiedUnmarshalArraysMethodName(symbol, kernelClass);
         return writer.ToString();
     }
 

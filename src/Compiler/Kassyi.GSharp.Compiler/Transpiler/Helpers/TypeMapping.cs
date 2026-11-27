@@ -1,5 +1,3 @@
-using Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules.StackLinq;
-
 namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 
 /// <summary>
@@ -12,32 +10,10 @@ internal static class TypeMapping
     /// Whether <paramref name="type"/> has a direct C++ type representation that can be emitted by
     /// <see cref="Backends.Cpp.CppTypeWriter.AppendType{TServices}"/> for declarations, rather than using C++ type deduction (<c>auto</c>).
     /// </summary>
-    public static bool HasDirectCppType(ITypeSymbol? type)
-    {
-        if (type is null or { TypeKind: TypeKind.Error })
-        {
-            return false;
-        }
-
-        if (StackLinqHelper.IsStackLinqType(type))
-        {
-            return false;
-        }
-
-        return !IsOrContainsTypeParameter(type);
-    }
+    public static bool HasDirectCppType(ITypeSymbol? type) => CppTypeMapping.HasDirectCppType(type);
 
     /// <summary>
     /// Whether <paramref name="type"/> is or contains an unresolved type parameter.
     /// </summary>
-    public static bool IsOrContainsTypeParameter(ITypeSymbol type) => type switch
-    {
-        ITypeParameterSymbol => true,
-        IArrayTypeSymbol array => IsOrContainsTypeParameter(array.ElementType),
-        IPointerTypeSymbol pointer => IsOrContainsTypeParameter(pointer.PointedAtType),
-        INamedTypeSymbol named => named.TypeArguments
-            .AsStackEnumerable()
-            .Any(static argument => IsOrContainsTypeParameter(argument)),
-        _ => false,
-    };
+    public static bool IsOrContainsTypeParameter(ITypeSymbol type) => CppTypeMapping.IsOrContainsTypeParameter(type);
 }

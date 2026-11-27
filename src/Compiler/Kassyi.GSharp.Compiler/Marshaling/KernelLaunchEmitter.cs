@@ -774,9 +774,19 @@ internal static class KernelLaunchEmitter
         bool isDevicePtr)
     {
         var shape = plan.Parameters[paramIndex];
-        // An in parameter is read by the kernel and never copied back
-        if (IsPassedThrough(shape, isDevicePtr) || shape.IsInReference)
+        // An in parameter is read by the kernel and never copied back, except for the arrays that an in struct holds
+        if (IsPassedThrough(shape, isDevicePtr))
         {
+            return;
+        }
+
+        if (shape.IsInReference)
+        {
+            if (shape is { IsCustomStruct: true, UnmarshalArraysMethodName: { } unmarshalArrays })
+            {
+                WriteCustomStructArraysUnmarshal(writer, plan, paramIndex, unmarshalArrays);
+            }
+
             return;
         }
 
@@ -821,6 +831,17 @@ internal static class KernelLaunchEmitter
             }
 
             writer.AppendLine(";");
+        }
+    }
+
+    private static void WriteCustomStructArraysUnmarshal(SourceWriter writer, in ArraySharingPlan plan, int paramIndex,
+        string unmarshalArrays)
+    {
+        var shape = plan.Parameters[paramIndex];
+        var native = KernelHostNames.GetLocal(LauncherLocal.Native, shape);
+        using (WriteNotGroupMemberScope(writer, plan, paramIndex))
+        {
+            writer.AppendLine($"{unmarshalArrays}(in {shape.Identifier}, ref {native}, hStream);");
         }
     }
 

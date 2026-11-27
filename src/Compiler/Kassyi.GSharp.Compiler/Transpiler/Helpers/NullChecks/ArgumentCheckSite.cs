@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.NullChecks;
 
 /// <summary>
 /// Where a failed argument check of a BCL call (<see cref="ArgumentExceptionMessages"/>) reports, planned before the
-/// call is written, as <see cref="ArrayNullCheck.PlanSite(ExpressionSyntax, string, string, string, ref TranspileContext)"/>
+/// call is written, as <see cref="ArrayNullCheckEmitter.PlanSite(ExpressionSyntax, string, string, string, ref TranspileContext)"/>
 /// does for a null array: a site of the kernel's error site table, or, in a method without a table, the message itself
 /// (the message is already the text the mapper knows, so no place is appended).
 /// </summary>

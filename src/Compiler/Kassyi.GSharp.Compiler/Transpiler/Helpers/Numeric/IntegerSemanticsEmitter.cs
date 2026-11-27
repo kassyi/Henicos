@@ -22,8 +22,36 @@ internal static class IntegerSemanticsEmitter
             return false;
         }
 
-        ConstantAtUse.Append(node, type, value, ref context);
+        ConstantAtUseEmitter.Append(node, type, value, ref context);
         return true;
+    }
+
+    /// <summary>
+    /// The Prelude function of the step of the increment or decrement <paramref name="operation"/> of an integer type
+    /// that promotes to <see langword="int"/> or is <see langword="int"/> or <see langword="long"/>
+    /// (<paramref name="node"/>): <c>__gsharp_add_i32</c> for <c>++</c>, <c>__gsharp_sub_i32</c> for <c>--</c> (#722,
+    /// #1079); null when the C++ operator cannot overflow there (<see cref="AppendStep"/> writes the step).
+    /// </summary>
+    /// <remarks>
+    /// The analysis of a for loop step runs once per step: its result is kept in
+    /// <see cref="Emitter.BoundedLoopSteps"/>.
+    /// </remarks>
+    public static string? GetIncrementHelper(IIncrementOrDecrementOperation operation, ExpressionSyntax node,
+        ref TranspileContext context)
+    {
+        if (IntegerSemantics.GetStepHelper(IntegerStepFacts.Of(operation), undo: false) is not { } helper)
+        {
+            return null;
+        }
+
+        var steps = context.Emitter.BoundedLoopSteps;
+        if (!steps.TryGetValue(node, out var bounded))
+        {
+            bounded = BoundedLoopStep.IsBounded(operation, node, context.Query.SemanticModel);
+            steps[node] = bounded;
+        }
+
+        return bounded ? null : helper;
     }
 
     /// <summary>
@@ -53,7 +81,7 @@ internal static class IntegerSemanticsEmitter
 
     /// <summary>
     /// Writes the increment or decrement <paramref name="operation"/> (<paramref name="node"/>, of
-    /// <paramref name="operand"/>), for which <see cref="IntegerSemantics.GetIncrementHelper"/> gave
+    /// <paramref name="operand"/>), for which <see cref="IntegerSemanticsEmitter.GetIncrementHelper"/> gave
     /// <paramref name="step"/>: <c>x=(T)__gsharp_add_i32(x,1)</c> for a statement or a prefix step (parenthesized where
     /// its value is used; the cast narrows to a target narrower than int, #1079), and
     /// <c>(T)__gsharp_sub_i32((x=(T)__gsharp_add_i32(x,1)),1)</c> for a postfix step whose value is used (the old value,

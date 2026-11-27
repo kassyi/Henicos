@@ -16,10 +16,15 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// What <c>Marshal_</c> records its allocations in: the CUDA launch's <c>DeviceArrayRegions</c> (or <c>null</c>), or
 /// the CPU launch's list of pinned handles.
 /// </param>
+/// <param name="UnmarshalArraysMethod">
+/// The <c>UnmarshalArrays_</c> method of the struct when an <c>in</c> struct parameter of this type can be part of a
+/// read-only alias group, otherwise <see langword="null"/>.
+/// </param>
 internal readonly record struct AliasConversion(
     int Key,
     string HostType,
     string ShadowType,
     string MarshalMethod,
     string UnmarshalMethod,
-    string Allocations);
+    string Allocations,
+    string? UnmarshalArraysMethod);

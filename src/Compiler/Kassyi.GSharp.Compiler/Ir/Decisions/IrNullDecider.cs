@@ -1,6 +1,5 @@
 using Kassyi.GSharp.Compiler.Ir.Classifying;
 using Kassyi.GSharp.Compiler.Ir.Expressions;
-using Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
 namespace Kassyi.GSharp.Compiler.Ir.Decisions;
 
@@ -100,7 +99,7 @@ internal static class IrNullDecider
         if (member is { Receiver: { } named, Property.Name: "Length" } &&
             IrNonNullProof.UnwrapImplicitReferenceConversions(named) is
                 IrVariableReference { Variable.Symbol: ILocalSymbol local } &&
-            StackArrayLengthAccess.TryGetStackArraySize(local, context.Compilation, out var size))
+            StackArraySizeQuery.TryGetStackArraySize(local, context.Compilation, out var size))
         {
             return size.Count is { } length
                 ? new IrMemberDecision(IrMemberForm.StackArrayLength, null, length, null)

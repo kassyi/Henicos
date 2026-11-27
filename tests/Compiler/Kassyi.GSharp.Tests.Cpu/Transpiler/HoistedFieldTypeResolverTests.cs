@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Kassyi.GSharp.Compiler.Lowering;
 using Kassyi.GSharp.Compiler.Transpiler;
+using Kassyi.GSharp.Compiler.Transpiler.Helpers.Locals;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Xunit;
 
@@ -137,5 +138,53 @@ public class HoistedFieldTypeResolverTests
 
         Assert.NotNull(typeSymbol);
         Assert.Equal(SpecialType.System_UInt32, typeSymbol.SpecialType);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Resolve_SpilledThisTemporaryFromImplicitThisCall_ResolvesContainingStructType()
+    {
+        const string source = """
+            using Kassyi.GSharp.Core;
+
+            namespace ImplicitThisSpill;
+
+            public partial struct Counter
+            {
+                public int X;
+
+                [GpuDeviceFunction]
+                public int AddGet(int v) { X += v; return X; }
+
+                [GpuDeviceFunction]
+                public readonly int ReadonlyWithSplit(int v) =>
+                    AddGet(Warp.ShuffleSync(0xFu, v, 0));
+            }
+            """;
+
+        var compilation = RoslynTestUtility.CreateCompilation(source);
+        var tree = compilation.SyntaxTrees.Last();
+        var model = compilation.GetSemanticModel(tree);
+        var method = tree.GetRoot().DescendantNodes()
+            .OfType<MethodDeclarationSyntax>()
+            .Single(static m => m.Identifier.ValueText == "ReadonlyWithSplit");
+        var owner = Assert.IsAssignableFrom<IMethodSymbol>(model.GetDeclaredSymbol(method));
+
+        var lowered = AstLoweringPipeline.Lower(method, model, owner, isDeviceFunction: true);
+        var declarator = lowered.ContextFields
+            .Concat(lowered.LoweredBody.DescendantNodes().OfType<VariableDeclaratorSyntax>())
+            .First(static v => v.Initializer?.Value is ThisExpressionSyntax);
+
+        var resolved = HoistedFieldTypeResolver.Resolve(declarator, model, "ReadonlyWithSplit");
+        Assert.Equal("Counter", resolved.Name);
+
+        var stackLowered = AstLoweringPipeline.LowerForStack(method, model, owner, isDeviceFunction: true);
+        var stackDeclarator = stackLowered.Body.DescendantNodes()
+            .OfType<VariableDeclaratorSyntax>()
+            .First(static v => v.Initializer?.Value is ThisExpressionSyntax);
+        var stackDeclaration = Assert.IsType<VariableDeclarationSyntax>(stackDeclarator.Parent);
+        var localType = JumpedOverDeclarations.GetLocalType(stackDeclaration, stackDeclarator, model);
+        Assert.NotNull(localType);
+        Assert.Equal("Counter", localType.Name);
     }
 }

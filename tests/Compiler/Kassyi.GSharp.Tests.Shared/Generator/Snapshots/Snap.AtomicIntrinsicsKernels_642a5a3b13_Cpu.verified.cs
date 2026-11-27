@@ -159,6 +159,9 @@ if (native.OldValues.Data == global::System.IntPtr.Zero)
 host.OldValues = default;
 }
 }
+public static unsafe void UnmarshalArrays_Int32AtomicSlots(in global::Kassyi.GSharp.Tests.Shared.Syntax.Int32AtomicSlots host, ref AotContexts.Int32AtomicSlots native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_Int32AtomicSlots(ref global::Kassyi.GSharp.Tests.Shared.Syntax.Int32AtomicSlots host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Targets != null)
@@ -238,6 +241,9 @@ if (native.OldValues.Data == global::System.IntPtr.Zero)
 {
 host.OldValues = default;
 }
+}
+public static unsafe void UnmarshalArrays_UInt32AtomicSlots(in global::Kassyi.GSharp.Tests.Shared.Syntax.UInt32AtomicSlots host, ref AotContexts.UInt32AtomicSlots native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_UInt32AtomicSlots(ref global::Kassyi.GSharp.Tests.Shared.Syntax.UInt32AtomicSlots host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -319,6 +325,9 @@ if (native.OldValues.Data == global::System.IntPtr.Zero)
 host.OldValues = default;
 }
 }
+public static unsafe void UnmarshalArrays_UInt64AtomicSlots(in global::Kassyi.GSharp.Tests.Shared.Syntax.UInt64AtomicSlots host, ref AotContexts.UInt64AtomicSlots native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_UInt64AtomicSlots(ref global::Kassyi.GSharp.Tests.Shared.Syntax.UInt64AtomicSlots host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Targets != null)
@@ -398,6 +407,9 @@ if (native.OldValues.Data == global::System.IntPtr.Zero)
 {
 host.OldValues = default;
 }
+}
+public static unsafe void UnmarshalArrays_SingleAtomicSlots(in global::Kassyi.GSharp.Tests.Shared.Syntax.SingleAtomicSlots host, ref AotContexts.SingleAtomicSlots native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_SingleAtomicSlots(ref global::Kassyi.GSharp.Tests.Shared.Syntax.SingleAtomicSlots host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

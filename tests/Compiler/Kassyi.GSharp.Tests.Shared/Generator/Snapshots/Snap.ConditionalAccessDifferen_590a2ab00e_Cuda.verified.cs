@@ -661,6 +661,25 @@ handle.Free();
 }
 }
 }
+public static unsafe void UnmarshalArrays_ConditionalHolder(in global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalHolder host, ref AotContexts.ConditionalHolder native, global::System.IntPtr hStream = default)
+{
+if (native.Data.Data != global::System.IntPtr.Zero && host.Data != null)
+{
+int size = checked(host.Data.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Data, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Data.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
 public static void AliasHeldArrays_ConditionalHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Data != null)
@@ -837,6 +856,67 @@ if (native.UnrollPoints.Data == global::System.IntPtr.Zero)
 host.UnrollPoints = default;
 }
 else if (host.UnrollPoints != null)
+{
+int size = checked(host.UnrollPoints.Length * sizeof(AotContexts.ConditionalPoint));
+if (size > 0)
+{
+AotContexts.ConditionalPoint[] tempArray = new AotContexts.ConditionalPoint[host.UnrollPoints.Length];
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(tempArray, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.UnrollPoints.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+for (int i = 0; i < host.UnrollPoints.Length; i++)
+{
+Unmarshal_ConditionalPoint(ref host.UnrollPoints[i], ref tempArray[i], hStream);
+}
+}
+}
+}
+public static unsafe void UnmarshalArrays_VoidExtensionStatementTargets(in global::Kassyi.GSharp.Tests.Shared.Differential.VoidExtensionStatementTargets host, ref AotContexts.VoidExtensionStatementTargets native, global::System.IntPtr hStream = default)
+{
+if (native.ChainValues.Data != global::System.IntPtr.Zero && host.ChainValues != null)
+{
+int size = checked(host.ChainValues.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.ChainValues, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.ChainValues.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.HolderPoints.Data != global::System.IntPtr.Zero && host.HolderPoints != null)
+{
+int size = checked(host.HolderPoints.Length * sizeof(AotContexts.ConditionalPoint));
+if (size > 0)
+{
+AotContexts.ConditionalPoint[] tempArray = new AotContexts.ConditionalPoint[host.HolderPoints.Length];
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(tempArray, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.HolderPoints.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+for (int i = 0; i < host.HolderPoints.Length; i++)
+{
+Unmarshal_ConditionalPoint(ref host.HolderPoints[i], ref tempArray[i], hStream);
+}
+}
+}
+if (native.UnrollPoints.Data != global::System.IntPtr.Zero && host.UnrollPoints != null)
 {
 int size = checked(host.UnrollPoints.Length * sizeof(AotContexts.ConditionalPoint));
 if (size > 0)
@@ -1133,6 +1213,93 @@ if (native.SingleThreadLambdaPoints.Data == global::System.IntPtr.Zero)
 host.SingleThreadLambdaPoints = default;
 }
 else if (host.SingleThreadLambdaPoints != null)
+{
+int size = checked(host.SingleThreadLambdaPoints.Length * sizeof(AotContexts.ConditionalPoint));
+if (size > 0)
+{
+AotContexts.ConditionalPoint[] tempArray = new AotContexts.ConditionalPoint[host.SingleThreadLambdaPoints.Length];
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(tempArray, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.SingleThreadLambdaPoints.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+for (int i = 0; i < host.SingleThreadLambdaPoints.Length; i++)
+{
+Unmarshal_ConditionalPoint(ref host.SingleThreadLambdaPoints[i], ref tempArray[i], hStream);
+}
+}
+}
+}
+public static unsafe void UnmarshalArrays_VoidExtensionBodyTargets(in global::Kassyi.GSharp.Tests.Shared.Differential.VoidExtensionBodyTargets host, ref AotContexts.VoidExtensionBodyTargets native, global::System.IntPtr hStream = default)
+{
+if (native.DeviceFunctionPoints.Data != global::System.IntPtr.Zero && host.DeviceFunctionPoints != null)
+{
+int size = checked(host.DeviceFunctionPoints.Length * sizeof(AotContexts.ConditionalPoint));
+if (size > 0)
+{
+AotContexts.ConditionalPoint[] tempArray = new AotContexts.ConditionalPoint[host.DeviceFunctionPoints.Length];
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(tempArray, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.DeviceFunctionPoints.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+for (int i = 0; i < host.DeviceFunctionPoints.Length; i++)
+{
+Unmarshal_ConditionalPoint(ref host.DeviceFunctionPoints[i], ref tempArray[i], hStream);
+}
+}
+}
+if (native.ManagedVersionPoints.Data != global::System.IntPtr.Zero && host.ManagedVersionPoints != null)
+{
+int size = checked(host.ManagedVersionPoints.Length * sizeof(AotContexts.ConditionalPoint));
+if (size > 0)
+{
+AotContexts.ConditionalPoint[] tempArray = new AotContexts.ConditionalPoint[host.ManagedVersionPoints.Length];
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(tempArray, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.ManagedVersionPoints.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+for (int i = 0; i < host.ManagedVersionPoints.Length; i++)
+{
+Unmarshal_ConditionalPoint(ref host.ManagedVersionPoints[i], ref tempArray[i], hStream);
+}
+}
+}
+if (native.LocalFunctionPoints.Data != global::System.IntPtr.Zero && host.LocalFunctionPoints != null)
+{
+int size = checked(host.LocalFunctionPoints.Length * sizeof(AotContexts.ConditionalPoint));
+if (size > 0)
+{
+AotContexts.ConditionalPoint[] tempArray = new AotContexts.ConditionalPoint[host.LocalFunctionPoints.Length];
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(tempArray, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.LocalFunctionPoints.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+for (int i = 0; i < host.LocalFunctionPoints.Length; i++)
+{
+Unmarshal_ConditionalPoint(ref host.LocalFunctionPoints[i], ref tempArray[i], hStream);
+}
+}
+}
+if (native.SingleThreadLambdaPoints.Data != global::System.IntPtr.Zero && host.SingleThreadLambdaPoints != null)
 {
 int size = checked(host.SingleThreadLambdaPoints.Length * sizeof(AotContexts.ConditionalPoint));
 if (size > 0)

@@ -21,17 +21,7 @@ internal sealed class MathAbsTranspilerRule : IInvocationTranspilerRule
     private const string TrapKind = "Overflow";
 
     /// <summary>Whether <paramref name="symbol"/> is one of the signed integer overloads of <c>Math.Abs</c>.</summary>
-    public static bool Claims(IMethodSymbol symbol) =>
-        symbol is
-        {
-            Name: "Abs",
-            Parameters: [{ Type.SpecialType: SpecialType.System_Int32 or SpecialType.System_Int64 or
-                SpecialType.System_Int16 or SpecialType.System_SByte or SpecialType.System_IntPtr }]
-        } &&
-        IsSystemMath(symbol.ContainingType);
-
-    private static bool IsSystemMath(INamedTypeSymbol? type) =>
-        type is { Name: "Math", ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true } };
+    public static bool Claims(IMethodSymbol symbol) => InvocationRuleClaims.ClaimsMathAbs(symbol);
 
     /// <inheritdoc />
     public bool TryTranspile(InvocationExpressionSyntax node, ref TranspileContext context, IMethodSymbol symbol)
@@ -42,12 +32,12 @@ internal sealed class MathAbsTranspilerRule : IInvocationTranspilerRule
         }
 
         var parameterType = symbol.Parameters[0].Type;
-        var site = ArrayNullCheck.PlanSite(node, null, Message, TrapKind, ref context);
+        var site = ArrayNullCheckEmitter.PlanSite(node, null, Message, TrapKind, ref context);
         var writer = context.Emitter.Writer;
         writer.Append(GetHelper(parameterType.SpecialType));
         using (writer.Parentheses())
         {
-            ArithmeticConversions.AppendArgument(argument, parameterType, ref context);
+            ArithmeticConversionsEmitter.AppendArgument(argument, parameterType, ref context);
             writer.Append(',');
             NullCheckSiteWriter.AppendSite(writer, site);
         }

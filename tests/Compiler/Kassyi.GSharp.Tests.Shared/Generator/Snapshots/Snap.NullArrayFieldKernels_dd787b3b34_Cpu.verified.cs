@@ -143,6 +143,9 @@ host.Data = default;
 }
 host.X = native.X;
 }
+public static unsafe void UnmarshalArrays_NullArrayHolder(in global::Kassyi.GSharp.Tests.Shared.Core.NullArrayHolder host, ref AotContexts.NullArrayHolder native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_NullArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.NullArrayHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Data != null)
@@ -213,6 +216,9 @@ if (native.B.Data == global::System.IntPtr.Zero)
 {
 host.B = default;
 }
+}
+public static unsafe void UnmarshalArrays_NullArrayPair(in global::Kassyi.GSharp.Tests.Shared.Core.NullArrayPair host, ref AotContexts.NullArrayPair native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_NullArrayPair(ref global::Kassyi.GSharp.Tests.Shared.Core.NullArrayPair host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

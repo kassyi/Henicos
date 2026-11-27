@@ -367,6 +367,26 @@ handle.Free();
 Unmarshal_DiffInnerBag(ref host.Inner, ref native.Inner, hStream);
 host.Scale = native.Scale;
 }
+public static unsafe void UnmarshalArrays_DiffNestedDeep(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffNestedDeep host, ref AotContexts.DiffNestedDeep native, global::System.IntPtr hStream = default)
+{
+if (native.Indices.Data != global::System.IntPtr.Zero && host.Indices != null)
+{
+int size = checked(host.Indices.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Indices, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Indices.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+UnmarshalArrays_DiffInnerBag(in host.Inner, ref native.Inner, hStream);
+}
 public static void AliasHeldArrays_DiffNestedDeep(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNestedDeep host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Indices != null)
@@ -444,6 +464,25 @@ handle.Free();
 }
 host.Bias = native.Bias;
 }
+public static unsafe void UnmarshalArrays_DiffInnerBag(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffInnerBag host, ref AotContexts.DiffInnerBag native, global::System.IntPtr hStream = default)
+{
+if (native.Weights.Data != global::System.IntPtr.Zero && host.Weights != null)
+{
+int size = checked(host.Weights.Length * sizeof(global::System.Single));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Weights, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Weights.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
 public static void AliasHeldArrays_DiffInnerBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInnerBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Weights != null)
@@ -519,6 +558,25 @@ handle.Free();
 }
 }
 host.Tag = native.Tag;
+}
+public static unsafe void UnmarshalArrays_DiffDeepBag(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag host, ref AotContexts.DiffDeepBag native, global::System.IntPtr hStream = default)
+{
+if (native.Data.Data != global::System.IntPtr.Zero && host.Data != null)
+{
+int size = checked(host.Data.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Data, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Data.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
 }
 public static void AliasHeldArrays_DiffDeepBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -612,6 +670,28 @@ if (native.Data.Data == global::System.IntPtr.Zero)
 host.Data = default;
 }
 else if (host.Data != null)
+{
+int size = checked(host.Data.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Data, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Data.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
+public static unsafe void UnmarshalArrays_DiffPrimaryCtorBag(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffPrimaryCtorBag hostValue, ref AotContexts.DiffPrimaryCtorBag native, global::System.IntPtr hStream = default)
+{
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Differential.DiffPrimaryCtorBag>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.DiffPrimaryCtorBag.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Differential.DiffPrimaryCtorBag", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.DiffPrimaryCtorBag.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Differential.DiffPrimaryCtorBag>());
+if (!AotContexts.DiffPrimaryCtorBag.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Differential.DiffPrimaryCtorBag");
+ref readonly AotContexts.DiffPrimaryCtorBag.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.DiffPrimaryCtorBag, AotContexts.DiffPrimaryCtorBag.__gsharp_host_mirror>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in hostValue));
+if (native.Data.Data != global::System.IntPtr.Zero && host.Data != null)
 {
 int size = checked(host.Data.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -755,6 +835,41 @@ handle.Free();
 }
 }
 }
+public static unsafe void UnmarshalArrays_DiffArrayPair(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffArrayPair host, ref AotContexts.DiffArrayPair native, global::System.IntPtr hStream = default)
+{
+if (native.First.Data != global::System.IntPtr.Zero && host.First != null)
+{
+int size = checked(host.First.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.First, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.First.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.Second.Data != global::System.IntPtr.Zero && host.Second != null)
+{
+int size = checked(host.Second.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Second, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Second.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
 public static void AliasHeldArrays_DiffArrayPair(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffArrayPair host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.First != null)
@@ -861,6 +976,25 @@ handle.Free();
 }
 }
 host.Fallback = native.Fallback;
+}
+public static unsafe void UnmarshalArrays_DiffNullableDeepBag(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableDeepBag host, ref AotContexts.DiffNullableDeepBag native, global::System.IntPtr hStream = default)
+{
+if (native.Data.Data != global::System.IntPtr.Zero && host.Data != null)
+{
+int size = checked(host.Data.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Data, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Data.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
 }
 public static void AliasHeldArrays_DiffNullableDeepBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableDeepBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -1147,10 +1281,21 @@ for (int __gsharp_alias_index = 0; __gsharp_alias_index < __gsharp_alias_host.Le
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.AotContexts.Unmarshal_DiffNestedDeep(ref __gsharp_alias_host[__gsharp_alias_index], ref __gsharp_alias_native[__gsharp_alias_index], hStream);
 }
 }
+else
+{
+for (int __gsharp_alias_index = 0; __gsharp_alias_index < __gsharp_alias_host.Length; __gsharp_alias_index++)
+{
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.AotContexts.UnmarshalArrays_DiffNestedDeep(in __gsharp_alias_host[__gsharp_alias_index], ref __gsharp_alias_native[__gsharp_alias_index], hStream);
+}
+}
 }
 }
 }
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.AotContexts.Unmarshal_DiffNestedDeep(ref byVal, ref __gsharp_native_0, hStream);
+if (!(__gsharp_aliases?.IsMember(0) == true))
+{
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.AotContexts.UnmarshalArrays_DiffNestedDeep(in byIn, ref __gsharp_native_1, hStream);
+}
 if (!(__gsharp_aliases?.IsMember(1) == true))
 {
 // Fast zero-allocation copy from device

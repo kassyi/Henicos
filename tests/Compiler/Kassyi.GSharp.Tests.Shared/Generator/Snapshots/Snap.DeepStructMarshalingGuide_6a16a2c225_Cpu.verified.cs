@@ -149,6 +149,10 @@ host.Result = default;
 host.Modulus = native.Modulus;
 Unmarshal_DualNttContext(ref host.Ntt, ref native.Ntt, hStream);
 }
+public static unsafe void UnmarshalArrays_FermatContext(in global::Kassyi.GSharp.Tests.Shared.Syntax.FermatContext host, ref AotContexts.Fermat native, global::System.IntPtr hStream = default)
+{
+UnmarshalArrays_DualNttContext(in host.Ntt, ref native.Ntt, hStream);
+}
 public static void AliasHeldArrays_FermatContext(ref global::Kassyi.GSharp.Tests.Shared.Syntax.FermatContext host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.OperandA != null)
@@ -263,6 +267,9 @@ if (native.Twiddles.Data == global::System.IntPtr.Zero)
 host.Twiddles = default;
 }
 host.Length = native.Length;
+}
+public static unsafe void UnmarshalArrays_DualNttContext(in global::Kassyi.GSharp.Tests.Shared.Syntax.DualNttContext host, ref AotContexts.DualNtt native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_DualNttContext(ref global::Kassyi.GSharp.Tests.Shared.Syntax.DualNttContext host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -387,6 +394,9 @@ if (native.Scratch.Data == global::System.IntPtr.Zero)
 host.Scratch = default;
 }
 host.Length = native.Length;
+}
+public static unsafe void UnmarshalArrays_CryptoContext(in global::Kassyi.GSharp.Tests.Shared.Syntax.CryptoContext host, ref AotContexts.Crypto native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_CryptoContext(ref global::Kassyi.GSharp.Tests.Shared.Syntax.CryptoContext host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

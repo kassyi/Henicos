@@ -28,21 +28,8 @@ internal static class EvaluationOrder
     /// The index of the last operand that must be evaluated into a temporary, or -1 when no two operands interfere.
     /// <paramref name="operands"/> are in the C# order of evaluation.
     /// </summary>
-    public static int LastSpilledOperand(ReadOnlySpan<ExpressionEffects> operands)
-    {
-        for (var j = operands.Length - 1; j > 0; j--)
-        {
-            for (var i = 0; i < j; i++)
-            {
-                if (operands[i].InterferesWith(operands[j]))
-                {
-                    return j;
-                }
-            }
-        }
-
-        return -1;
-    }
+    public static int LastSpilledOperand(ReadOnlySpan<ExpressionEffects> operands) =>
+        OperandEvaluationOrder.LastSpilledOperand(operands);
 
     /// <summary>
     /// Opens the lambda of a sequence: <c>([&amp;]() {</c>, or <c>([&amp;]() -&gt; &lt;returnType&gt; {</c>.
@@ -269,7 +256,7 @@ internal static class EvaluationOrder
                 ? ExpressionEffects.OfLocation(arguments[i].Expression, model)
                 : ExpressionEffects.Of(arguments[i].Expression, model);
 
-            // The null check of a non-nullable array argument (ArgumentNullCheck.PlanArgument) is written around the
+            // The null check of a non-nullable array argument (ArgumentNullCheckEmitter.PlanArgument) is written around the
             // argument, or around its temporary after every argument when the arguments are sequenced
             effects[i + offset] = argument.WithThrow(
                 parameter != null && ArgumentNullCheck.ChecksArgument(arguments[i].Expression, parameter, model));
@@ -779,7 +766,7 @@ internal static class EvaluationOrder
             // [WHY] Also in a brace initialization, which rejects a narrowing conversion that C# makes implicitly (#897)
             if (convertToParameter && !byReference && parameter?.Type is { } parameterType)
             {
-                ArithmeticConversions.AppendArgument(argument, parameterType, ref context);
+                ArithmeticConversionsEmitter.AppendArgument(argument, parameterType, ref context);
                 return;
             }
 

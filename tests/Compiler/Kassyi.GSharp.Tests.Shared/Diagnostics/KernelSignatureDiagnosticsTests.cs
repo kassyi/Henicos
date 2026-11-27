@@ -62,7 +62,6 @@ public class KernelSignatureDiagnosticsTests
 
         Assert.Equal(
             [
-                (Analyzer, 10, 16, 10, 21),
                 (Analyzer, 16, 16, 16, 19)
             ],
             diagnostics.Ranges(GSharpDiagnostics.InstanceDeviceFunctionNotSupported.Id));

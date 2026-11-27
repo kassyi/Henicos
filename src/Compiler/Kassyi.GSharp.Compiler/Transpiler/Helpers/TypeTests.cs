@@ -66,7 +66,7 @@ internal static class TypeTests
                 AppendConstant(plan.Value, operand, ref context);
                 return true;
             case TypeTestKind.NotNull:
-                NullRepresentation.AppendNullTest(operand, isNull: plan.Negated, ref context);
+                NullRepresentationEmitter.AppendNullTest(operand, isNull: plan.Negated, ref context);
                 return true;
             case TypeTestKind.Operand:
                 context.Visitor.Visit(operand);

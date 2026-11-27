@@ -29,7 +29,9 @@ internal static class ReceiverPlanner
         var operation = model.GetSafeOperation(node) as IInvocationOperation;
         var receiverOp = operation?.Instance ?? (expression != null ? model.GetSafeOperation(expression) : null);
 
-        if (receiverOp is IInstanceReferenceOperation || (receiverOp == null && expression == null))
+        if ((receiverOp is IInstanceReferenceOperation &&
+             expression?.UnwrapParentheses() is null or ThisExpressionSyntax) ||
+            (receiverOp == null && expression == null))
         {
             var isReadOnlySelf = (receiverOp != null && ReadOnlyReceivers.IsReadOnlyVariable(receiverOp)) ||
                                  (selfForm == SelfForm.MemberFunction && IsConstMemberGetter(receiverOp, model, node));

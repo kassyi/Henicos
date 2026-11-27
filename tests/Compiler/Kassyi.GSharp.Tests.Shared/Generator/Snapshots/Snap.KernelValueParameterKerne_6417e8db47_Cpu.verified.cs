@@ -115,6 +115,9 @@ if (native.Data.Data == global::System.IntPtr.Zero)
 host.Data = default;
 }
 }
+public static unsafe void UnmarshalArrays_KernelParameterHolder(in global::Kassyi.GSharp.Tests.Shared.Syntax.KernelParameterHolder host, ref AotContexts.KernelParameterHolder native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_KernelParameterHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.KernelParameterHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Data != null)

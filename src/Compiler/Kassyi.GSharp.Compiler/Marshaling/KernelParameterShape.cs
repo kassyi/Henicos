@@ -43,6 +43,11 @@ internal readonly record struct KernelParameterShape
     /// <summary><c>AotContexts.Unmarshal_{key}</c> of a user struct, otherwise <see langword="null"/>.</summary>
     public string? UnmarshalMethodName { get; init; }
 
+    /// <summary>
+    /// <c>AotContexts.UnmarshalArrays_{key}</c> of a user struct holding arrays or views, otherwise <see langword="null"/>.
+    /// </summary>
+    public string? UnmarshalArraysMethodName { get; init; }
+
     /// <summary>The fully qualified element type of an array-like parameter, otherwise <see langword="null"/>.</summary>
     public string? ElementTypeName { get; init; }
 
@@ -330,6 +335,9 @@ internal readonly record struct KernelParameterShape
             AotStructPath = AotHostNames.GetAotStructPath(marshaledType, kernelClass),
             MarshalMethodName = AotHostNames.GetQualifiedMarshalMethodName(marshaledType, kernelClass),
             UnmarshalMethodName = AotHostNames.GetQualifiedUnmarshalMethodName(marshaledType, kernelClass),
+            UnmarshalArraysMethodName = hasArrayFields
+                ? AotHostNames.GetQualifiedUnmarshalArraysMethodName(marshaledType, kernelClass)
+                : null,
             BufferElementTypeName = shape.RefKind is RefKind.Ref or RefKind.Out
                 ? GetBufferElementTypeName(parameter.Type, kernelClass)
                 : null,

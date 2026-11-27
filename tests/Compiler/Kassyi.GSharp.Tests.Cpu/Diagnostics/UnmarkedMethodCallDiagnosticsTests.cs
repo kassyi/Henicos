@@ -61,7 +61,7 @@ public class UnmarkedMethodCallDiagnosticsTests
     [InlineData("'Box.Make'", "add [GpuDeviceFunction]")]
     [InlineData("'Helpers.Twice'", "add [GpuDeviceFunction]")]
     [InlineData("'GBox.Make'", "add [GpuDeviceFunction]")]
-    [InlineData("'Box.Set'", "instance methods of structs are not supported in GPU code yet (GSH0066)")]
+    [InlineData("'Box.Set'", "add [GpuDeviceFunction]")]
     [InlineData("'Helpers.TraceOn'", "add [GpuDeviceFunction]")]
     [Scenario(TestScenario.SadPath)]
     public async Task CallOfUnmarkedMethod_DiagnosticMessage_StatesRemediationGuidance(string method, string advice)

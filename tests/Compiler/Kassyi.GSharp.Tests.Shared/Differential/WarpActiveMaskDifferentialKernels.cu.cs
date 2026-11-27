@@ -3606,4 +3606,159 @@ public static partial class WarpActiveMaskDifferentialKernels
                 break;
         }
     }
+
+    // The then branch only continues and the else branch leaves the loop: the lanes meet at the first statement of the
+    // else branch. The condition reads a counter; the loop is while (true)
+    [GpuKernel]
+    public static void ElseBreakAfterContinueWhileTrueKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        while (true)
+        {
+            if (((t >> n) & 1) != 0 && n < 2)
+            {
+                n++;
+                continue;
+            }
+            else
+            {
+                result[t + 32 * n] = Warp.ActiveMask();
+                break;
+            }
+        }
+
+        result[t + 96] = (uint)n;
+        result[t + 128] = Warp.ActiveMask();
+    }
+
+    // The same in a for loop with a run-time trip count
+    [GpuKernel]
+    public static void ElseBreakAfterContinueCounterForKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        for (int i = 0; i < u + 8; i++)
+        {
+            if (((t >> n) & 1) != 0 && n < 2)
+            {
+                n++;
+                continue;
+            }
+            else
+            {
+                result[t + 32 * n] = Warp.ActiveMask();
+                break;
+            }
+        }
+
+        result[t + 96] = (uint)n;
+        result[t + 128] = Warp.ActiveMask();
+    }
+
+    // The condition reads the loop variable and the trip count is known only at run time
+    [GpuKernel]
+    public static void ElseBreakAfterContinueIndexConditionKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        for (int i = 0; i < u + 3; i++)
+        {
+            result[t + 32 * i] = Warp.ActiveMask();
+            if (((t >> i) & 1) != 0 && i < 2)
+            {
+                continue;
+            }
+            else
+            {
+                result[t + 96] = Warp.ActiveMask();
+                break;
+            }
+        }
+
+        result[t + 128] = Warp.ActiveMask();
+    }
+
+    // The else branch falls to the end of the loop, so it can come back to the start: no gate
+    [GpuKernel]
+    public static void ElseFallsToLoopEndAfterContinueKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        for (int i = 0; i < u + 3; i++)
+        {
+            if (((t >> i) & 1) != 0 && i < 2)
+            {
+                n++;
+                continue;
+            }
+            else
+            {
+                result[t + 32 * i] = Warp.ActiveMask();
+            }
+        }
+
+        result[t + 96] = (uint)n;
+        result[t + 128] = Warp.ActiveMask();
+    }
+
+    // The else branch leaves the kernel
+    [GpuKernel]
+    public static void ElseReturnAfterContinueKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        while (true)
+        {
+            if (((t >> n) & 1) != 0 && n < 2)
+            {
+                n++;
+                continue;
+            }
+            else
+            {
+                result[t + 32 * n] = Warp.ActiveMask();
+                result[t + 96] = (uint)n;
+                return;
+            }
+        }
+    }
+
+    // The else branch that leaves is inside a switch section, where no gate can be placed; the gate after the
+    // continue of the second if stays
+    [GpuKernel]
+    public static void ElseExitInSwitchSectionAndGateAfterContinueKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        while (true)
+        {
+            switch (t & 1)
+            {
+                case 0:
+                    if (n < ((t >> 1) & 1))
+                    {
+                        n++;
+                        continue;
+                    }
+                    else
+                    {
+                        result[t] = Warp.ActiveMask();
+                        return;
+                    }
+                default:
+                    break;
+            }
+
+            if (n < 2 && ((t >> 1) & 1) != 0)
+            {
+                n++;
+                continue;
+            }
+
+            result[t + 32] = Warp.ActiveMask();
+            break;
+        }
+
+        result[t + 64] = Warp.ActiveMask();
+    }
 }

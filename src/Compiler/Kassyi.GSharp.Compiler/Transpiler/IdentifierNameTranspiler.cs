@@ -28,7 +28,7 @@ internal static class IdentifierNameTranspiler
 
         if (symbol is IFieldSymbol { IsConst: true, HasConstantValue: true } field)
         {
-            ConstantAtUse.Append(node, field.Type, field.ConstantValue, ref context);
+            ConstantAtUseEmitter.Append(node, field.Type, field.ConstantValue, ref context);
             return;
         }
 
@@ -36,7 +36,7 @@ internal static class IdentifierNameTranspiler
         // label is a constant expression and a goto past the declaration skips nothing
         if (symbol is ILocalSymbol { IsConst: true, HasConstantValue: true } constLocal)
         {
-            ConstantAtUse.Append(node, constLocal.Type, constLocal.ConstantValue, ref context);
+            ConstantAtUseEmitter.Append(node, constLocal.Type, constLocal.ConstantValue, ref context);
             return;
         }
 
@@ -82,11 +82,12 @@ internal static class IdentifierNameTranspiler
     {
         // [WHY] Lowering rewrites hoisted locals into references that carry the declarator's original span.
         symbol ??= context.Query.SemanticModel.GetDeclaredSymbol<ISymbol>(node);
-        FailUnemittableReference(node, symbol, ref context);
         if (CallTargetEmitter.TryFailMethodGroup(node, symbol, ref context))
         {
             return;
         }
+
+        FailUnemittableReference(node, symbol, ref context);
 
         // A member function reads a captured primary constructor parameter from its hidden field (#495)
         if (symbol is IParameterSymbol parameter &&
@@ -102,7 +103,7 @@ internal static class IdentifierNameTranspiler
             return;
         }
 
-        var copyType = PropertyAccessorCall.PlanCopyType(node, symbol, ref context);
+        var copyType = PropertyAccessorCallEmitter.PlanCopyType(node, symbol, ref context);
         if (copyType == null && IsSelfMember(node, symbol, ref context))
         {
             ThisExpressionTranspilerRule.AppendSelf(ref context);
@@ -136,7 +137,7 @@ internal static class IdentifierNameTranspiler
         }
 
         context.Emitter.Writer.AppendCppName(name);
-        PropertyAccessorCall.AppendCallIfGetter(node, symbol, ref context);
+        PropertyAccessorCallEmitter.AppendCallIfGetter(node, symbol, ref context);
     }
 
     // The member named by an object initializer (new Vector3(v) { Y = l }) of a type whose members the dialect maps, as
@@ -175,7 +176,7 @@ internal static class IdentifierNameTranspiler
         if (symbol is IMethodSymbol method)
         {
             DynamicSharedMemoryEmitter.FailIfReferencedWithoutCall(node, method, ref context);
-            NonNullProof.FailIfReferencedWithoutCall(node, method, ref context);
+            NonNullProofEmitter.FailIfReferencedWithoutCall(node, method, ref context);
             SuspendingCallReference.FailIfReferencedWithoutCall(node, method, ref context);
         }
     }

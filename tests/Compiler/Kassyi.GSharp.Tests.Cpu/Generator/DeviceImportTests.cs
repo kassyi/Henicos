@@ -487,6 +487,74 @@ public class DeviceImportTests
         Assert.Contains("\"Check\"", kernels, StringComparison.Ordinal);
     }
 
+    // T2: default-config library exports CppStack*; consumer with GSharpNativeBarrierModel=Stack imports the stack forms
+    // of the reached function and its transitive callees, while default consumer omits them
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    [Scenario(TestScenario.HappyPath)]
+    public void DeviceImport_SuspendingLibraryFunctionOnNativeStacks_PlacesStackFormsOnlyWhenOnStacksEnabled(
+        bool onStacks)
+    {
+        var compilation = DeviceLibraryBuilder.CreateConsumer(s_structsConsumer, s_structsLibrary.Value);
+        var options = onStacks
+            ? new Dictionary<string, string> { ["build_property.GSharpNativeBarrierModel"] = "Stack" }
+            : null;
+        var result = CreateDriver("Cpu", options).RunGenerators(compilation).GetRunResult().Results.Single();
+        Assert.Null(result.Exception);
+
+        var device = result.GeneratedSources
+            .Single(static s => s.HintName == "GSharpSharedCpuDeviceCode.g.cs")
+            .SourceText.ToString();
+        var kernels = result.GeneratedSources
+            .Single(static s => s.HintName.EndsWith("StructImportKernels.g.cs", StringComparison.Ordinal))
+            .SourceText.ToString();
+
+        Assert.Equal(onStacks, device.Contains(GSharpInternalNames.NativeStack.Barrier, StringComparison.Ordinal));
+        Assert.Equal(onStacks, device.Contains(
+            "inline int __gsharp_fn_DeviceImportStructsCase__LibStructs__Relay(",
+            StringComparison.Ordinal));
+        Assert.Equal(onStacks, device.Contains(
+            "inline int __gsharp_fn_DeviceImportStructsCase__LibStructs__Wait(",
+            StringComparison.Ordinal));
+        Assert.Equal(onStacks, kernels.Contains(GSharpInternalNames.NativeStack.Resume, StringComparison.Ordinal));
+        Assert.Equal(!onStacks, kernels.Contains("__gsharp_ctx->__gsharp_call_frame_0", StringComparison.Ordinal));
+    }
+
+    // T4: a library function that throws after a barrier exports its stack form and throw site so the consumer's native
+    // stack launcher registers the place (file, line, member) and exception type
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void DeviceImport_ThrowAfterBarrierInLibraryFunction_RegistersSiteInNativeStackLauncher()
+    {
+        var librarySource = RoslynTestUtility.ReadTestCase("Generators/DeviceThrowLibrary.cs")
+            .Replace("if (v < 0)", "Gpu.SyncThreads();" + Environment.NewLine + "            if (v < 0)",
+                StringComparison.Ordinal);
+        var library = DeviceLibraryBuilder.Build("DeviceThrowLibrary", null, librarySource);
+        var compilation = DeviceLibraryBuilder.CreateConsumer(
+            RoslynTestUtility.ReadTestCase("Generators/DeviceThrowConsumer.cs"),
+            library);
+
+        var options = new Dictionary<string, string> { ["build_property.GSharpNativeBarrierModel"] = "Stack" };
+        var result = CreateDriver("Cpu", options).RunGenerators(compilation).GetRunResult().Results.Single();
+        Assert.Null(result.Exception);
+
+        var device = result.GeneratedSources
+            .Single(static s => s.HintName == "GSharpSharedCpuDeviceCode.g.cs")
+            .SourceText.ToString();
+        var kernels = result.GeneratedSources
+            .Single(static s => s.HintName.EndsWith("ThrowImportKernels.g.cs", StringComparison.Ordinal))
+            .SourceText.ToString();
+
+        Assert.Contains(GSharpInternalNames.NativeStack.Barrier, device, StringComparison.Ordinal);
+        Assert.Contains("inline int __gsharp_fn_DeviceThrowCase__LibThrow__Check(", device, StringComparison.Ordinal);
+        Assert.Contains("GSharpErrorCode::Throw, ", device, StringComparison.Ordinal);
+        Assert.Contains(GSharpInternalNames.NativeStack.Resume, kernels, StringComparison.Ordinal);
+        Assert.Contains("\"from the library\"", kernels, StringComparison.Ordinal);
+        Assert.Contains("DeviceThrowCase.LibraryThrowException, DeviceThrowLibrary", kernels, StringComparison.Ordinal);
+        Assert.Contains("\"Check\"", kernels, StringComparison.Ordinal);
+    }
+
     private static (string Device, string Kernels) Generate(string dialect) =>
         Generate(dialect, s_consumer, s_library.Value, "ImportKernels.g.cs");
 
@@ -506,11 +574,11 @@ public class DeviceImportTests
         return (device, kernels);
     }
 
-    private static GeneratorDriver CreateDriver(string dialect) =>
+    private static GeneratorDriver CreateDriver(string dialect, Dictionary<string, string>? options = null) =>
         CSharpGeneratorDriver.Create(
             generators: [new GpuKernelGenerator().AsSourceGenerator()],
             additionalTexts: null,
             parseOptions: s_parseOptions,
-            optionsProvider: new TestAnalyzerConfigOptionsProvider(dialect),
+            optionsProvider: new TestAnalyzerConfigOptionsProvider(dialect, options),
             driverOptions: new GeneratorDriverOptions(IncrementalGeneratorOutputKind.None, trackIncrementalGeneratorSteps: true));
 }

@@ -106,6 +106,24 @@ internal static class ManagedCSharpTranspiler
         $"managed state machine of '{callee.ContainingType.Name}.{callee.Name}' is not generated " +
         $"({GSharpDiagnostics.FileLocalTypeInManagedCopy.Id}, or the diagnostics of that function).\");";
 
+    // throw new global::System.NotSupportedException("<method> cannot run on the managed CPU path: ...");
+    // naming the place of each goto, as the error sites of the other paths do (SourcePlace.Format)
+    private static string CreateChainedLabelJumpThrow(string methodName, ImmutableArray<ChainedLabelGoto> jumps,
+        SemanticModel semanticModel)
+    {
+        var places = ImmutableArray.CreateBuilder<string>(jumps.Length);
+        jumps
+            .AsStackEnumerable()
+            .Select(semanticModel, static (jump, model) =>
+                $"'goto {jump.Label}' at {SourcePlace.Format(model, jump.Goto)}")
+            .AddTo(places);
+        return $"throw new global::System.NotSupportedException(\"{methodName} cannot run on the managed CPU path: " +
+               $"{string.Join(", ", places)} jumps to the inner label of chained labels from another state " +
+               $"({GSharpDiagnostics.GotoToChainedLabelAcrossStates.Id}, or " +
+               $"{GSharpDiagnostics.CrossBarrierGotoProhibited.Id} across a barrier or a call that suspends). " +
+               "This build did not report it: build with the analyzers on, or jump to the first label of the chain.\");";
+    }
+
     /// <summary>
     /// The lowered body of <paramref name="methodName"/> with the context accesses of its resume locals turned back into
     /// locals, the hoisted locals that share a name renamed and the labels that share a name renamed
@@ -246,9 +264,10 @@ internal static class ManagedCSharpTranspiler
             ? GetStackBody(in plan, methodSymbol)
             : null;
 
-        // <modifiers> static <return type> <prefix><path><type parameters>(<parameters>) <constraints> <body>
-        // The signature is the user's, with every name written in full (the generated file has none of the user's using
-        // directives), without attributes (the version is not a device function) and without 'this'
+        // <modifiers> [static|readonly] <return type> <prefix><path><type parameters>(<parameters>) <constraints> <body>
+        // The signature is the user's ('static' when static, 'readonly' when present), with every name written in full
+        // (the generated file has none of the user's using directives), without attributes (the version is not a device
+        // function) and without 'this'
         var method = declaration
             .WithAttributeLists(default)
             .WithModifiers(GetManagedVersionModifiers(declaration, methodSymbol))
@@ -325,15 +344,15 @@ internal static class ManagedCSharpTranspiler
             ?? throw new InvalidOperationException("Managed execution rewriting removed the device function body.");
     }
 
-    // The user's accessibility, static, and unsafe when the version needs it (the partial declaration that holds it is
-    // not inside the user's unsafe type); nothing else (partial, extern, new)
+    // The user's accessibility, static, readonly, and unsafe when the version needs it (the partial declaration that
+    // holds it is not inside the user's unsafe type); nothing else (partial, extern, new)
     private static SyntaxTokenList GetManagedVersionModifiers(MethodDeclarationSyntax declaration, IMethodSymbol method)
     {
         var modifiers = SyntaxFactory.TokenList();
         foreach (var modifier in declaration.Modifiers)
         {
             if (modifier.Kind() is SyntaxKind.PublicKeyword or SyntaxKind.InternalKeyword or SyntaxKind.PrivateKeyword
-                or SyntaxKind.ProtectedKeyword or SyntaxKind.StaticKeyword)
+                or SyntaxKind.ProtectedKeyword or SyntaxKind.StaticKeyword or SyntaxKind.ReadOnlyKeyword)
             {
                 modifiers = modifiers.Add(modifier.WithoutTrivia());
             }
@@ -462,20 +481,20 @@ internal static class ManagedCSharpTranspiler
     }
 
     // The source of the state machine body: the lowered body rewritten for managed execution, or only a throw when the
-    // body holds a ref local (LoweredStateMachine.HeldRefLocals), which is an error of its own, or the body is not
-    // written when it holds a goto to an inner chained label from another state (GSH0121)
+    // body holds a ref local (LoweredStateMachine.HeldRefLocals), which is an error of its own, or when it holds a goto
+    // to an inner chained label from another state (GSH0121, or GSH0040 across a barrier)
     private static string CreateBody(LoweredStateMachine lowered,
         Dictionary<DeclarationKey, ManagedContextField> unhoistedLocals,
         Dictionary<DeclarationKey, string> renamedLocals,
         SemanticModel semanticModel, string methodName, bool zeroFill, ManagedExecutionRewriter rewriter)
     {
-        // [WHY] Such a goto would stay a C# goto into another case block (CS0159). The generator reports
-        // it as an error (GSH0121, or GSH0040 across a barrier; ChainedLabelJumpChecks.FindReported), so the build
-        // never runs this method: the declarations stay for the launcher and the callers, and the
-        // body that the managed path cannot express is left out (no throw in place of the jump)
+        // [WHY] Such a goto would stay a C# goto into another case block (CS0159). The generator reports it as an error
+        // (GSH0121; across a barrier the analyzer reports GSH0040, ChainedLabelJumpChecks.FindReported), which stops the
+        // build. A build without the analyzers does not stop at GSH0040, and an empty state machine would never set the
+        // state to -1, so the launcher would loop for ever: the body throws at the jump's place instead
         if (!lowered.GotosToChainedLabelsAcrossStates.IsEmpty)
         {
-            return string.Empty;
+            return CreateChainedLabelJumpThrow(methodName, lowered.GotosToChainedLabelsAcrossStates, semanticModel);
         }
 
         if (lowered.HeldRefLocals is [var heldRefLocal, ..])

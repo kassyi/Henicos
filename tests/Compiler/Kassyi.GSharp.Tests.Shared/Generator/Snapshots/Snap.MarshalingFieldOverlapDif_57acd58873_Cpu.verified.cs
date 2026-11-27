@@ -209,6 +209,9 @@ host.Data = default;
 }
 host.Tag = native.Tag;
 }
+public static unsafe void UnmarshalArrays_DiffDeepBag(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag host, ref AotContexts.DiffDeepBag native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_DiffDeepBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Data != null)
@@ -264,6 +267,9 @@ if (native.Items.Data == global::System.IntPtr.Zero)
 {
 host.Items = default;
 }
+}
+public static unsafe void UnmarshalArrays_DiffPaddedHolder(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffPaddedHolder host, ref AotContexts.DiffPaddedHolder native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_DiffPaddedHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffPaddedHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -342,6 +348,15 @@ global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag value = host.GetValu
 Unmarshal_DiffDeepBag(ref value, ref native.Value, hStream);
 host = value;
 }
+public static unsafe void UnmarshalArrays___gsharp_nullable_of_DiffDeepBag(in global::System.Nullable<global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag> host, ref AotContexts.__gsharp_nullable_of_DiffDeepBag native, global::System.IntPtr hStream = default)
+{
+if (!host.HasValue || native.HasValue == 0)
+{
+return;
+}
+global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag value = host.GetValueOrDefault();
+UnmarshalArrays_DiffDeepBag(in value, ref native.Value, hStream);
+}
 public static void AliasHeldArrays___gsharp_nullable_of_DiffDeepBag(ref global::System.Nullable<global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag> host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.HasValue)
@@ -398,6 +413,9 @@ public static unsafe void Unmarshal_DiffMemoryBag(ref global::Kassyi.GSharp.Test
 {
 host.Tag = native.Tag;
 }
+public static unsafe void UnmarshalArrays_DiffMemoryBag(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffMemoryBag host, ref AotContexts.DiffMemoryBag native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_DiffMemoryBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffMemoryBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 held.AddView<global::System.Int32>(host.Data, true, 4, 0, false);
@@ -444,6 +462,9 @@ native.Tag = host.Tag;
 public static unsafe void Unmarshal_DiffSegmentBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffSegmentBag host, ref AotContexts.DiffSegmentBag native, global::System.IntPtr hStream = default)
 {
 host.Tag = native.Tag;
+}
+public static unsafe void UnmarshalArrays_DiffSegmentBag(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffSegmentBag host, ref AotContexts.DiffSegmentBag native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_DiffSegmentBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffSegmentBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -492,6 +513,9 @@ public static unsafe void Unmarshal_DiffReadOnlyMemoryBag(ref global::Kassyi.GSh
 {
 host.Tag = native.Tag;
 }
+public static unsafe void UnmarshalArrays_DiffReadOnlyMemoryBag(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffReadOnlyMemoryBag host, ref AotContexts.DiffReadOnlyMemoryBag native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_DiffReadOnlyMemoryBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffReadOnlyMemoryBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 held.AddView<global::System.Int32>(host.Data, false, 4, 0, false);
@@ -538,6 +562,9 @@ native.Tag = host.Tag;
 public static unsafe void Unmarshal_DiffImmutableArrayBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffImmutableArrayBag host, ref AotContexts.DiffImmutableArrayBag native, global::System.IntPtr hStream = default)
 {
 host.Tag = native.Tag;
+}
+public static unsafe void UnmarshalArrays_DiffImmutableArrayBag(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffImmutableArrayBag host, ref AotContexts.DiffImmutableArrayBag native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_DiffImmutableArrayBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffImmutableArrayBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -589,6 +616,9 @@ native.B.Length = host.B.Length;
 public static unsafe void Unmarshal_DiffTwoMemoryViews(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffTwoMemoryViews host, ref AotContexts.DiffTwoMemoryViews native, global::System.IntPtr hStream = default)
 {
 }
+public static unsafe void UnmarshalArrays_DiffTwoMemoryViews(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffTwoMemoryViews host, ref AotContexts.DiffTwoMemoryViews native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_DiffTwoMemoryViews(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffTwoMemoryViews host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 held.AddView<global::System.Int32>(host.A, true, 4, 0, false);
@@ -634,6 +664,10 @@ public static unsafe void Unmarshal_DiffNullableMemoryBag(ref global::Kassyi.GSh
 {
 Unmarshal___gsharp_nullable_of_Memory_Int32(ref host.Data, ref native.Data, hStream);
 host.Tag = native.Tag;
+}
+public static unsafe void UnmarshalArrays_DiffNullableMemoryBag(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableMemoryBag host, ref AotContexts.DiffNullableMemoryBag native, global::System.IntPtr hStream = default)
+{
+UnmarshalArrays___gsharp_nullable_of_Memory_Int32(in host.Data, ref native.Data, hStream);
 }
 public static void AliasHeldArrays_DiffNullableMemoryBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableMemoryBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -690,6 +724,14 @@ return;
 global::System.Memory<global::System.Int32> value = host.GetValueOrDefault();
 host = value;
 }
+public static unsafe void UnmarshalArrays___gsharp_nullable_of_Memory_Int32(in global::System.Nullable<global::System.Memory<global::System.Int32>> host, ref AotContexts.__gsharp_nullable_of_Memory_Int32 native, global::System.IntPtr hStream = default)
+{
+if (!host.HasValue || native.HasValue == 0)
+{
+return;
+}
+global::System.Memory<global::System.Int32> value = host.GetValueOrDefault();
+}
 public static void AliasHeldArrays___gsharp_nullable_of_Memory_Int32(ref global::System.Nullable<global::System.Memory<global::System.Int32>> host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.HasValue)
@@ -727,6 +769,10 @@ public static unsafe void Unmarshal_DiffNestedMemoryBag(ref global::Kassyi.GShar
 {
 Unmarshal_DiffMemoryBag(ref host.Inner, ref native.Inner, hStream);
 host.Scale = native.Scale;
+}
+public static unsafe void UnmarshalArrays_DiffNestedMemoryBag(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffNestedMemoryBag host, ref AotContexts.DiffNestedMemoryBag native, global::System.IntPtr hStream = default)
+{
+UnmarshalArrays_DiffMemoryBag(in host.Inner, ref native.Inner, hStream);
 }
 public static void AliasHeldArrays_DiffNestedMemoryBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNestedMemoryBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -778,6 +824,9 @@ native.Tag = host.Tag;
 public static unsafe void Unmarshal_DiffShortMemoryBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffShortMemoryBag host, ref AotContexts.DiffShortMemoryBag native, global::System.IntPtr hStream = default)
 {
 host.Tag = native.Tag;
+}
+public static unsafe void UnmarshalArrays_DiffShortMemoryBag(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffShortMemoryBag host, ref AotContexts.DiffShortMemoryBag native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_DiffShortMemoryBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffShortMemoryBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -837,6 +886,9 @@ native.Tag = host.Tag;
 public static unsafe void Unmarshal_DiffReadOnlyMemoryOfBagsHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffReadOnlyMemoryOfBagsHolder host, ref AotContexts.DiffReadOnlyMemoryOfBagsHolder native, global::System.IntPtr hStream = default)
 {
 host.Tag = native.Tag;
+}
+public static unsafe void UnmarshalArrays_DiffReadOnlyMemoryOfBagsHolder(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffReadOnlyMemoryOfBagsHolder host, ref AotContexts.DiffReadOnlyMemoryOfBagsHolder native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_DiffReadOnlyMemoryOfBagsHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffReadOnlyMemoryOfBagsHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -912,6 +964,9 @@ public static unsafe void Unmarshal_DiffImmutableArrayOfBagsHolder(ref global::K
 {
 host.Tag = native.Tag;
 }
+public static unsafe void UnmarshalArrays_DiffImmutableArrayOfBagsHolder(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffImmutableArrayOfBagsHolder host, ref AotContexts.DiffImmutableArrayOfBagsHolder native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_DiffImmutableArrayOfBagsHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffImmutableArrayOfBagsHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 held.AddView<global::Kassyi.GSharp.Tests.Shared.Differential.DiffMemoryBag>(host.Bags.AsMemory(), false, 8, 0, true, true, cudaAlignment: -1);
@@ -969,6 +1024,9 @@ native.Items.Length = host.Items.Length;
 public static unsafe void Unmarshal_DiffPaddedMemoryHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffPaddedMemoryHolder host, ref AotContexts.DiffPaddedMemoryHolder native, global::System.IntPtr hStream = default)
 {
 }
+public static unsafe void UnmarshalArrays_DiffPaddedMemoryHolder(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffPaddedMemoryHolder host, ref AotContexts.DiffPaddedMemoryHolder native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_DiffPaddedMemoryHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffPaddedMemoryHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 held.AddView<global::Kassyi.GSharp.Tests.Shared.Differential.DiffVec2Padded>(host.Items, true, 4, 0, false, cudaAlignment: -1);
@@ -1009,6 +1067,9 @@ native.Data.Length = host.Data.Length;
 }
 }
 public static unsafe void Unmarshal_DiffVector2MemoryBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffVector2MemoryBag host, ref AotContexts.DiffVector2MemoryBag native, global::System.IntPtr hStream = default)
+{
+}
+public static unsafe void UnmarshalArrays_DiffVector2MemoryBag(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffVector2MemoryBag host, ref AotContexts.DiffVector2MemoryBag native, global::System.IntPtr hStream = default)
 {
 }
 public static void AliasHeldArrays_DiffVector2MemoryBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffVector2MemoryBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
@@ -1059,6 +1120,9 @@ if (native.Data.Data == global::System.IntPtr.Zero)
 {
 host.Data = default;
 }
+}
+public static unsafe void UnmarshalArrays_DiffVector2ArrayBag(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffVector2ArrayBag host, ref AotContexts.DiffVector2ArrayBag native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_DiffVector2ArrayBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffVector2ArrayBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

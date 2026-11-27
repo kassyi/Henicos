@@ -682,74 +682,521 @@ export function parseSharedCommand(command: string, shell: ShellName): SharedCom
   return result.ok ? result.value : null;
 }
 
-const DefaultExample =
-  'dotnet test tests/<project> --no-build --filter "Category!=Stress&Category!=Benchmark&Category!=GpuTrap"';
+export const DefaultExample =
+  'dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --no-build --filter "Category!=Stress&Category!=Benchmark&Category!=GpuTrap"';
+
+export interface RefusalOptions {
+  /** Present when `planBuildStep` split the original command into a CPU build job and a GPU test step. */
+  splitBuild?: {
+    build: string;
+    originalCommand: string;
+  };
+  /** Configured `sharedRecipes` names, so non-shared recipes are reported accurately and not suggested as accepted. */
+  sharedRecipes?: readonly string[];
+}
+
+interface ExtractedExample {
+  example: string;
+  dropped: string[];
+}
+
+function unquoteSimple(token: string): string {
+  if (token.length >= 2) {
+    const first = token.charAt(0);
+    const last = token.charAt(token.length - 1);
+    if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
+      return token.slice(1, -1);
+    }
+  }
+  return token;
+}
 
 /**
- * Formats the 3-line refusal message for a `--gpu` command outside the allow-listed language:
- * line 1: where parsing stopped and what was expected;
- * line 2: an accepted example (built from kept parts of `dotnet test` when possible, naming dropped tokens);
- * line 3: hint to re-queue with `--gpu-exclusive` if exclusive GPU access is intended.
+ * Splits `rest` into shell-like tokens while isolating unquoted command separators (`&&`, `||`, `;`, `|`, `\r`, `\n`)
+ * so trailing chained commands are cleanly dropped without contaminating kept items.
  */
-export function formatOutsideLanguageRefusal(command: string, shell: ShellName): string {
-  const parsed = parseSharedCommandDetailed(command, shell);
-  const where = parsed.ok
-    ? "command is not accepted for shared --gpu"
-    : `outside --gpu command language at pos ${parsed.failure.position}` +
-      `${parsed.failure.token !== "" ? ` (${parsed.failure.token})` : ""}: expected ${parsed.failure.expected}.`;
+function tokenizeForExample(rest: string): string[] {
+  const tokens: string[] = [];
+  let i = 0;
+  while (i < rest.length) {
+    const ch = rest.charAt(i);
+    if (ch === " " || ch === "\t") {
+      i++;
+      continue;
+    }
+    if (ch === "\r" || ch === "\n") {
+      tokens.push("\n");
+      while (i < rest.length && (rest.charAt(i) === "\r" || rest.charAt(i) === "\n")) {
+        i++;
+      }
+      continue;
+    }
+    if (ch === ";" || ch === "|") {
+      if (ch === "|" && rest.charAt(i + 1) === "|") {
+        tokens.push("||");
+        i += 2;
+      } else {
+        tokens.push(ch);
+        i++;
+      }
+      continue;
+    }
+    if (ch === "&" && rest.charAt(i + 1) === "&") {
+      tokens.push("&&");
+      i += 2;
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      let end = i + 1;
+      while (end < rest.length && rest.charAt(end) !== ch) {
+        end++;
+      }
+      if (end < rest.length) {
+        end++;
+      }
+      tokens.push(rest.slice(i, end));
+      i = end;
+      continue;
+    }
+    let end = i;
+    while (end < rest.length) {
+      const c = rest.charAt(end);
+      if (c === " " || c === "\t" || c === "\r" || c === "\n" || c === ";" || c === "|") {
+        break;
+      }
+      if (c === "&" && rest.charAt(end + 1) === "&") {
+        break;
+      }
+      end++;
+    }
+    tokens.push(rest.slice(i, end));
+    i = end;
+  }
+  return tokens;
+}
 
-  let example = DefaultExample;
-  let droppedNote = "";
-  const trimmed = command.trim();
-  const bodyMatch = /\bdotnet +test\b(.*)$/.exec(trimmed);
-  if (bodyMatch !== null) {
-    const rest = (bodyMatch[1] ?? "").trim();
-    const tokens = rest.match(/"[^"]*"|'[^']*'|\S+/g) ?? [];
-    const kept: string[] = [];
-    const dropped: string[] = [];
-    let hasProject = false;
-    let hasFilter = false;
-    for (let i = 0; i < tokens.length; i++) {
-      const t = tokens[i] as string;
-      if (!hasProject && isValidProject(t)) {
+function isCommandSeparator(token: string): boolean {
+  return token === ";" || token === "|" || token === "||" || token === "&&" || token === "\n";
+}
+
+/**
+ * Strips leading env-assignment prefixes (PowerShell `$env:NAME=...;` and POSIX `NAME=...`), separating those that
+ * are valid in `shell` from those that must be dropped.
+ */
+function peelLeadingPrefixes(
+  trimmed: string,
+  shell: ShellName,
+): { keptPrefixes: string[]; droppedPrefixes: string[]; rest: string } {
+  const keptPrefixes: string[] = [];
+  const droppedPrefixes: string[] = [];
+  const pwsh = CommandShell.isPowerShell(shell);
+  const posix = isPosixShell(shell);
+  let pos = 0;
+
+  while (pos < trimmed.length) {
+    while (pos < trimmed.length && (trimmed.charAt(pos) === " " || trimmed.charAt(pos) === "\t")) {
+      pos++;
+    }
+    const slice = trimmed.slice(pos);
+    // PowerShell `$env:NAME='v';` or `$env:NAME="v";` or bare `$env:NAME=v;`
+    const psQuoted = /^\$env:([A-Za-z0-9_]+)=(?:'([^']*)'|"([^"]*)");[ \t]*/.exec(slice);
+    if (psQuoted !== null) {
+      const name = psQuoted[1] as string;
+      const value = (psQuoted[2] ?? psQuoted[3]) as string;
+      const raw = psQuoted[0].trim();
+      if (pwsh && AllowedNameSet.has(name) && AllowedValueSet.has(value)) {
+        keptPrefixes.push(raw);
+      } else {
+        droppedPrefixes.push(raw);
+      }
+      pos += psQuoted[0].length;
+      continue;
+    }
+    const psBare = /^\$env:([A-Za-z0-9_]+)=[^;\r\n]*;[ \t]*/.exec(slice);
+    if (psBare !== null) {
+      droppedPrefixes.push(psBare[0].trim());
+      pos += psBare[0].length;
+      continue;
+    }
+    // POSIX `NAME=VALUE `
+    const shAssign = /^([A-Za-z_][A-Za-z0-9_]*)=([^ \t\r\n;]+)[ \t]+/.exec(slice);
+    if (shAssign !== null) {
+      const name = shAssign[1] as string;
+      const value = shAssign[2] as string;
+      const raw = `${name}=${value}`;
+      if (posix && AllowedNameSet.has(name) && AllowedValueSet.has(value)) {
+        keptPrefixes.push(raw);
+      } else {
+        droppedPrefixes.push(raw);
+      }
+      pos += shAssign[0].length;
+      continue;
+    }
+    break;
+  }
+
+  return { keptPrefixes, droppedPrefixes, rest: trimmed.slice(pos) };
+}
+
+function buildDotnetTestExample(
+  restAfterHead: string,
+  shell: ShellName,
+  keptPrefixes: string[],
+  droppedPrefixes: string[],
+  omitSplitNoBuild: boolean,
+): ExtractedExample {
+  const tokens = tokenizeForExample(restAfterHead);
+  const kept: string[] = [];
+  const dropped: string[] = [...droppedPrefixes];
+  const seenOptions = new Set<TestOption["kind"]>();
+  let hasProject = false;
+  let hasFilter = false;
+  let hasLogger = false;
+  let redirectStdout: { op: ">" | ">>"; path: string } | null = null;
+  let mergeStderr = false;
+
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i] as string;
+    if (isCommandSeparator(t)) {
+      for (let j = i; j < tokens.length; j++) {
+        const tail = tokens[j] as string;
+        if (tail !== "\n") {
+          dropped.push(tail);
+        }
+      }
+      break;
+    }
+
+    if (t === "--no-build") {
+      if (omitSplitNoBuild && !seenOptions.has("no-build")) {
+        seenOptions.add("no-build");
+        continue;
+      }
+      if (!seenOptions.has("no-build")) {
+        seenOptions.add("no-build");
         kept.push(t);
-        hasProject = true;
-      } else if (
-        t === "--no-build" ||
-        t === "-nodeReuse:false" ||
-        t === "--disable-build-servers" ||
-        t === "--nologo"
-      ) {
+      } else {
+        dropped.push(t);
+      }
+      continue;
+    }
+    if (t === "-nodeReuse:false") {
+      if (!seenOptions.has("no-node-reuse")) {
+        seenOptions.add("no-node-reuse");
         kept.push(t);
-      } else if ((t === "-c" || t === "--configuration") && Configurations.has(tokens[i + 1] ?? "")) {
-        kept.push(t, tokens[++i] as string);
-      } else if (t === "--filter" && !hasFilter && tokens[i + 1] !== undefined) {
-        const raw = tokens[++i] as string;
-        const inner =
-          (raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))
-            ? raw.slice(1, -1)
-            : raw;
-        if (isValidFilter(inner)) {
-          kept.push("--filter", `"${inner}"`);
-          hasFilter = true;
+      } else {
+        dropped.push(t);
+      }
+      continue;
+    }
+    if (t === "--disable-build-servers") {
+      if (!seenOptions.has("disable-build-servers")) {
+        seenOptions.add("disable-build-servers");
+        kept.push(t);
+      } else {
+        dropped.push(t);
+      }
+      continue;
+    }
+    if (t === "--nologo") {
+      if (!seenOptions.has("nologo")) {
+        seenOptions.add("nologo");
+        kept.push(t);
+      } else {
+        dropped.push(t);
+      }
+      continue;
+    }
+    if (t === "--blame-crash") {
+      if (!seenOptions.has("blame-crash")) {
+        seenOptions.add("blame-crash");
+        kept.push(t);
+      } else {
+        dropped.push(t);
+      }
+      continue;
+    }
+    if (t === "-c" || t === "--configuration") {
+      const next = tokens[i + 1];
+      if (next !== undefined && Configurations.has(next)) {
+        i++;
+        if (!seenOptions.has("configuration")) {
+          seenOptions.add("configuration");
+          kept.push(t, next);
         } else {
-          dropped.push(`--filter ${raw}`);
+          dropped.push(`${t} ${next}`);
         }
       } else {
         dropped.push(t);
       }
+      continue;
     }
-    if (kept.length > 0) {
-      example = `dotnet test ${kept.join(" ")}`;
-      if (dropped.length > 0) {
-        droppedNote = ` (dropped: ${dropped.slice(0, 4).join(", ")}${dropped.length > 4 ? ", ..." : ""})`;
+    if (t === "-v" || t === "--verbosity") {
+      const next = tokens[i + 1];
+      if (next !== undefined && VerbosityValues.has(next)) {
+        i++;
+        if (!seenOptions.has("verbosity")) {
+          seenOptions.add("verbosity");
+          kept.push(t, next);
+        } else {
+          dropped.push(`${t} ${next}`);
+        }
+      } else {
+        dropped.push(t);
       }
+      continue;
     }
+    if (t === "--blame-crash-dump-type") {
+      const next = tokens[i + 1];
+      if (next !== undefined && DumpTypes.has(next)) {
+        i++;
+        if (!seenOptions.has("blame-crash-dump-type")) {
+          seenOptions.add("blame-crash-dump-type");
+          kept.push(t, next);
+        } else {
+          dropped.push(`${t} ${next}`);
+        }
+      } else {
+        dropped.push(t);
+      }
+      continue;
+    }
+    if (t === "--blame-hang-timeout") {
+      const next = tokens[i + 1];
+      if (next !== undefined && DurationPattern.test(next)) {
+        i++;
+        if (!seenOptions.has("blame-hang-timeout")) {
+          seenOptions.add("blame-hang-timeout");
+          kept.push(t, next);
+        } else {
+          dropped.push(`${t} ${next}`);
+        }
+      } else {
+        dropped.push(t);
+      }
+      continue;
+    }
+    if (t === "--filter") {
+      const next = tokens[i + 1];
+      if (next !== undefined && !isCommandSeparator(next) && !next.startsWith("-")) {
+        i++;
+        const inner = unquoteSimple(next);
+        if (!hasFilter && isValidFilter(inner)) {
+          hasFilter = true;
+          kept.push("--filter", `"${inner}"`);
+        } else {
+          dropped.push(`--filter ${next}`);
+        }
+      } else {
+        dropped.push(t);
+      }
+      continue;
+    }
+    if (t === "--logger") {
+      const next = tokens[i + 1];
+      if (next !== undefined && !isCommandSeparator(next) && !next.startsWith("-")) {
+        i++;
+        const inner = unquoteSimple(next);
+        if (!hasLogger && (TrxLoggerPattern.test(inner) || ConsoleLoggerPattern.test(inner))) {
+          hasLogger = true;
+          kept.push("--logger", `"${inner}"`);
+        } else {
+          dropped.push(`--logger ${next}`);
+        }
+      } else {
+        dropped.push(t);
+      }
+      continue;
+    }
+    if (t === ">" || t === ">>") {
+      const next = tokens[i + 1];
+      if (next !== undefined && !isCommandSeparator(next)) {
+        const unquoted = unquoteSimple(next);
+        if (redirectStdout === null && isValidRedirectPath(unquoted, shell)) {
+          i++;
+          redirectStdout = { op: t, path: unquoted };
+        } else if (!next.startsWith("-")) {
+          i++;
+          dropped.push(`${t} ${next}`);
+        } else {
+          dropped.push(t);
+        }
+      } else {
+        dropped.push(t);
+      }
+      continue;
+    }
+    if (t === "2>&1") {
+      if (!mergeStderr) {
+        mergeStderr = true;
+      } else {
+        dropped.push(t);
+      }
+      continue;
+    }
+    if (!hasProject && isValidProject(t)) {
+      hasProject = true;
+      kept.push(t);
+      continue;
+    }
+    dropped.push(t);
   }
 
-  return [
+  const hasAnyKept = keptPrefixes.length > 0 || kept.length > 0 || redirectStdout !== null || mergeStderr;
+  if (!hasAnyKept) {
+    return { example: DefaultExample, dropped: [] };
+  }
+
+  const parts: string[] = [];
+  if (keptPrefixes.length > 0) {
+    parts.push(...keptPrefixes);
+  }
+  parts.push("dotnet", "test");
+  parts.push(...kept);
+  if (redirectStdout !== null) {
+    parts.push(redirectStdout.op, redirectStdout.path);
+  }
+  if (mergeStderr) {
+    parts.push("2>&1");
+  }
+  return { example: parts.join(" "), dropped };
+}
+
+function buildAcceptedExample(command: string, shell: ShellName, options?: RefusalOptions): ExtractedExample {
+  const trimmed = command.trim();
+  const { keptPrefixes, droppedPrefixes, rest } = peelLeadingPrefixes(trimmed, shell);
+
+  const dotnetHead = /^dotnet[ \t]+test(?=$|[ \t\r\n;|&])/.exec(rest);
+  if (dotnetHead !== null) {
+    const omitSplitNoBuild =
+      options?.splitBuild !== undefined && !/(?:^|\s)--no-build(?:\s|$)/i.test(options.splitBuild.originalCommand);
+    const built = buildDotnetTestExample(
+      rest.slice(dotnetHead[0].length),
+      shell,
+      keptPrefixes,
+      droppedPrefixes,
+      omitSplitNoBuild,
+    );
+    if (parseSharedCommand(built.example, shell) !== null) {
+      return built;
+    }
+    return { example: DefaultExample, dropped: [] };
+  }
+
+  const allPrefixesDropped = [...keptPrefixes, ...droppedPrefixes];
+
+  const justMutateHead = /^just[ \t]+mutate(?=$|[ \t\r\n;|&])/.exec(rest);
+  if (justMutateHead !== null) {
+    const tailTokens = tokenizeForExample(rest.slice(justMutateHead[0].length)).filter((t) => t !== "\n");
+    const firstArg = tailTokens[0];
+    let phase: MutatePhase = "gpumath";
+    const dropped = [...allPrefixesDropped];
+    if (firstArg !== undefined && MutatePhaseSet.has(firstArg)) {
+      phase = firstArg as MutatePhase;
+      dropped.push(...tailTokens.slice(1));
+    } else {
+      dropped.push(...tailTokens);
+    }
+    const example = `just mutate ${phase}`;
+    return parseSharedCommand(example, shell) !== null
+      ? { example, dropped }
+      : { example: DefaultExample, dropped: [] };
+  }
+
+  const nodeMutateHead = /^node[ \t]+scripts\/human\/mutate\.js(?=$|[ \t\r\n;|&])/.exec(rest);
+  if (nodeMutateHead !== null) {
+    const tailTokens = tokenizeForExample(rest.slice(nodeMutateHead[0].length)).filter((t) => t !== "\n");
+    let phase: MutatePhase = "gpumath";
+    for (let i = 0; i < tailTokens.length; i++) {
+      const tok = tailTokens[i] as string;
+      if (tok === "--phase" && tailTokens[i + 1] !== undefined && MutatePhaseSet.has(tailTokens[i + 1] as string)) {
+        phase = tailTokens[i + 1] as MutatePhase;
+        break;
+      }
+      if (tok.startsWith("--phase=")) {
+        const val = tok.slice("--phase=".length);
+        if (MutatePhaseSet.has(val)) {
+          phase = val as MutatePhase;
+          break;
+        }
+      }
+    }
+    const example = `just mutate ${phase}`;
+    return parseSharedCommand(example, shell) !== null
+      ? { example, dropped: [] }
+      : { example: DefaultExample, dropped: [] };
+  }
+
+  const justRecipeHead = /^just[ \t]+([A-Za-z][A-Za-z0-9_-]*)(?=$|[ \t\r\n;|&])/.exec(rest);
+  if (justRecipeHead !== null) {
+    const recipeName = justRecipeHead[1] as string;
+    const allowedByConfig = options?.sharedRecipes === undefined || options.sharedRecipes.includes(recipeName);
+    if (allowedByConfig) {
+      const tailTokens = tokenizeForExample(rest.slice(justRecipeHead[0].length)).filter((t) => t !== "\n");
+      const dropped = [...allPrefixesDropped, ...tailTokens];
+      const example = `just ${recipeName}`;
+      if (parseSharedCommand(example, shell) !== null) {
+        return { example, dropped };
+      }
+    }
+    return { example: DefaultExample, dropped: [] };
+  }
+
+  return { example: DefaultExample, dropped: [] };
+}
+
+/** A token cut to 80 characters for the refusal message. */
+function shortToken(token: string): string {
+  return token.length > 80 ? `${token.slice(0, 77)}...` : token;
+}
+
+/**
+ * Formats the refusal message for a `--gpu` command outside the allow-listed language (each quoted token cut to 80
+ * characters):
+ * - optional line 0 (when build-split occurred): notes that `<build>` would run first as a CPU job, that the test part's
+ *   redirects (when it has any) append after the split, that nothing was queued, and that the refusal applies to the test part;
+ * - line 1: where parsing stopped (within the test part when split) and what was expected;
+ * - line 2: an accepted example verified by `parseSharedCommand(example, shell)` (falling back to `DefaultExample`), naming dropped tokens;
+ * - line 3: hint to re-queue with `--gpu-exclusive` if exclusive GPU access is intended.
+ */
+export function formatOutsideLanguageRefusal(command: string, shell: ShellName, options?: RefusalOptions): string {
+  const parsed = parseSharedCommandDetailed(command, shell);
+  const inTestPart = options?.splitBuild !== undefined ? " in test part" : "";
+  let where: string;
+  if (parsed.ok) {
+    if (parsed.value.kind === "recipe" && options?.sharedRecipes !== undefined) {
+      where = `recipe '${parsed.value.name}' is not in sharedRecipes (${options.sharedRecipes.join(", ")}).`;
+    } else {
+      where = "command is not accepted for shared --gpu.";
+    }
+  } else {
+    const rawTok = parsed.failure.token;
+    const shownTok = shortToken(rawTok);
+    // The length failure's token is already "(5020 chars)"
+    const tokenNote = shownTok === "" ? "" : /^\(\d+ chars\)$/.test(shownTok) ? ` ${shownTok}` : ` (${shownTok})`;
+    where =
+      `outside --gpu command language${inTestPart} at pos ${parsed.failure.position}` +
+      `${tokenNote}: expected ${parsed.failure.expected}.`;
+  }
+
+  const { example, dropped } = buildAcceptedExample(command, shell, options);
+  const droppedNote =
+    dropped.length > 0
+      ? ` (dropped: ${dropped.slice(0, 4).map(shortToken).join(", ")}${dropped.length > 4 ? ", ..." : ""})`
+      : "";
+
+  const lines: string[] = [];
+  if (options?.splitBuild !== undefined) {
+    lines.push(
+      `[gpu-share] \`${shortToken(options.splitBuild.build)}\` would run first as a CPU job` +
+        (command.includes(">>") ? " and the test part's redirects append (>>) after the split" : "") +
+        "; nothing was queued, and the refusal below applies to the test part.",
+    );
+  }
+  lines.push(
     `[gpu-share] ${where}`,
     `Accepted form: ${example}${droppedNote}`,
     "Re-queue with --gpu-exclusive to run this command with exclusive GPU access.",
-  ].join("\n");
+  );
+  return lines.join("\n");
 }

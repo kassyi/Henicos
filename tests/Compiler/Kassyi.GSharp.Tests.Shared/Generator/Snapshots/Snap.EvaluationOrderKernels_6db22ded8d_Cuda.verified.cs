@@ -614,6 +614,57 @@ handle.Free();
 }
 }
 }
+public static unsafe void UnmarshalArrays_NoSpillBinaryInputs(in global::Kassyi.GSharp.Tests.Shared.Syntax.NoSpillBinaryInputs host, ref AotContexts.NoSpillBinaryInputs native, global::System.IntPtr hStream = default)
+{
+if (native.RotateValues.Data != global::System.IntPtr.Zero && host.RotateValues != null)
+{
+int size = checked(host.RotateValues.Length * sizeof(global::System.UInt32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.RotateValues, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.RotateValues.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.LeftAddends.Data != global::System.IntPtr.Zero && host.LeftAddends != null)
+{
+int size = checked(host.LeftAddends.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.LeftAddends, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.LeftAddends.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.RightAddends.Data != global::System.IntPtr.Zero && host.RightAddends != null)
+{
+int size = checked(host.RightAddends.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.RightAddends, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.RightAddends.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
 public static void AliasHeldArrays_NoSpillBinaryInputs(ref global::Kassyi.GSharp.Tests.Shared.Syntax.NoSpillBinaryInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.RotateValues != null)
@@ -730,6 +781,41 @@ if (native.Sums.Data == global::System.IntPtr.Zero)
 host.Sums = default;
 }
 else if (host.Sums != null)
+{
+int size = checked(host.Sums.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Sums, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Sums.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
+public static unsafe void UnmarshalArrays_NoSpillBinaryResults(in global::Kassyi.GSharp.Tests.Shared.Syntax.NoSpillBinaryResults host, ref AotContexts.NoSpillBinaryResults native, global::System.IntPtr hStream = default)
+{
+if (native.Rotated.Data != global::System.IntPtr.Zero && host.Rotated != null)
+{
+int size = checked(host.Rotated.Length * sizeof(global::System.UInt32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Rotated, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Rotated.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.Sums.Data != global::System.IntPtr.Zero && host.Sums != null)
 {
 int size = checked(host.Sums.Length * sizeof(global::System.Int32));
 if (size > 0)

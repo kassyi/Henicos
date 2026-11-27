@@ -136,6 +136,9 @@ if (native.Int64Values.Data == global::System.IntPtr.Zero)
 host.Int64Values = default;
 }
 }
+public static unsafe void UnmarshalArrays_ImplicitConversionInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.ImplicitConversionInputs host, ref AotContexts.ImplicitConversionInputs native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_ImplicitConversionInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.ImplicitConversionInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Int32Values != null)
@@ -215,6 +218,9 @@ if (native.DoubleResults.Data == global::System.IntPtr.Zero)
 {
 host.DoubleResults = default;
 }
+}
+public static unsafe void UnmarshalArrays_ImplicitConversionResults(in global::Kassyi.GSharp.Tests.Shared.Differential.ImplicitConversionResults host, ref AotContexts.ImplicitConversionResults native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_ImplicitConversionResults(ref global::Kassyi.GSharp.Tests.Shared.Differential.ImplicitConversionResults host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

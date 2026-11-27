@@ -159,6 +159,9 @@ host.Data = default;
 }
 host.Tag = native.Tag;
 }
+public static unsafe void UnmarshalArrays_DiffDeepBag(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag host, ref AotContexts.DiffDeepBag native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_DiffDeepBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Data != null)
