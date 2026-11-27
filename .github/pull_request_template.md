@@ -3,6 +3,8 @@ Write for a reviewer who has not read the issue, the design notes or the code.
 Each section answers one question in sentences. A list of the types and files you touched answers none of
 them: the Files changed tab already has that list.
 Name a type only when the reader needs it to find the code, and say what it does when you name it.
+Many readers are not native English speakers: open each section with one short sentence that carries its point,
+keep paragraphs to three sentences or fewer, and lead list items with a few bold words.
 -->
 
 ## Why
@@ -18,15 +20,16 @@ Relates to #456 otherwise) and say in a few words where this PR stands in a larg
 <!--
 What a user, the compiler output or the next change sees differently after this PR, and what stays the same.
 Be concrete: "generated code is identical for all 1086 files", "a ref local of a struct now gives 5 on CUDA
-(was 0)", "the IR route is off unless -p:GSharpIrCpp=true".
+(was 0)", "the new option -p:X=true turns on the new path; without it nothing changes".
 For groundwork that changes no output, say what the next change can rely on that it could not before.
 -->
 
 ## How it works
 
 <!--
-The shape of the solution in a few sentences: the path the data takes from input to output, and where each
-new piece sits on that path. Then the decisions a reviewer would question: why this way, and which other
+Open with the skeleton on one line when there is a data path, as stages joined by arrows in plain words:
+  front (build, classify, scan; no dialect) -> per route (policy, decide, sequence, verify, support) -> cached result
+Then say where each new piece sits on that path. Then the decisions a reviewer would question: why this way, and which other
 way you rejected and why. Skip this section for a small fix whose "What changes" already says it all.
 For a bug fix: the cause, in one or two sentences.
 -->
