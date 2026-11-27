@@ -111,7 +111,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
         Assert.Equal(0, allocated);
     }
 
-    // mutant: CapturedStreamGraph.cs:143 `_manager.ReturnDeferred(_captured.Buffers);`
+    // mutant: CapturedStreamGraph.cs:286 `_manager.ReturnDeferred(_captured.Buffers);`
     // -> omitted (DeferredBuffers stays high)
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
@@ -155,7 +155,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
         Assert.Throws<ObjectDisposedException>(graph.Launch);
     }
 
-    // mutant: CapturedStreamGraph.cs:177
+    // mutant: CapturedStreamGraph.cs:320
     // `RunCleanupStep((manager, captured), static s => s.manager.ReturnDeferred(s.captured.Buffers),` -> omitted
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
@@ -164,14 +164,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
         var start = Workspace.GetMemoryStatistics();
         var expected = new InvalidOperationException("Simulated capture failure.");
 
-        var actual = Assert.Throws<InvalidOperationException>(() =>
-            CapturedStreamGraph.Capture(Workspace, () =>
-            {
-                using var temp = new GpuBigUInt(Workspace, Words);
-                Workspace.Provider.CopyDeviceToDevice(_result.DevicePointer, temp.DevicePointer, Words,
-                    Workspace.Stream);
-                throw expected;
-            }));
+        var actual = Assert.Throws<InvalidOperationException>(() => CaptureThrowingWithTemp(expected));
         var failed = Workspace.GetMemoryStatistics();
 
         Assert.Same(expected, actual);
@@ -184,7 +177,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
         Assert.Equal(new BigInteger(42), _result.ToBigInteger());
     }
 
-    // mutant: CapturedStreamGraph.cs:179
+    // mutant: CapturedStreamGraph.cs:322
     // `ThrowIfCleanupFailed("CUDA graph capture failed, and so did its cleanup.", original, cleanupErrors);`
     // -> omitted
     [SkippableFact]
@@ -227,6 +220,27 @@ public sealed class CapturedStreamGraphTests : IDisposable
         Assert.Equal(new BigInteger(42), _result.ToBigInteger());
     }
 
+    // mutant: CapturedStreamGraph.cs:322
+    // `ThrowIfCleanupFailed("CUDA graph capture failed, and so did its cleanup.", original, cleanupErrors);`
+    // -> omitted
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void Capture_BodyThrowsAndEndingTheCaptureFails_ThrowsAggregateException()
+    {
+        var start = Workspace.GetMemoryStatistics();
+        var original = new InvalidOperationException("Simulated capture failure.");
+        var cleanupError = new InvalidOperationException("Simulated end-capture failure.");
+        var observer = new ObservingGraphProvider(Workspace) { EndCaptureException = cleanupError };
+
+        var error = Assert.Throws<AggregateException>(() => CaptureThrowingWithTemp(original, observer));
+        var failed = Workspace.GetMemoryStatistics();
+
+        Assert.Equal(2, error.InnerExceptions.Count);
+        Assert.Same(original, error.InnerExceptions[0]);
+        Assert.Same(cleanupError, error.InnerExceptions[1]);
+        Assert.Equal((start.DeferredBuffers, start.LiveBuffers), (failed.DeferredBuffers, failed.LiveBuffers));
+    }
+
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
     public void Capture_NestedOrDuringActiveDeferral_ThrowsInvalidOperationException()
@@ -262,7 +276,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
         Assert.Equal((start.DeferredBuffers, start.LiveBuffers), (end.DeferredBuffers, end.LiveBuffers));
     }
 
-    // mutant: CapturedStreamGraph.cs:135 `using (Workspace.ActivateContext())`
+    // mutant: CapturedStreamGraph.cs:278 `using (Workspace.ActivateContext())`
     // -> omitted (pool thread lacks isolated context)
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
@@ -335,6 +349,99 @@ public sealed class CapturedStreamGraphTests : IDisposable
         Assert.Equal(afterWorkspace.DriverAllocations, afterWorkspace.DriverFrees);
     }
 
+    // ReleaseAfterFailure must destroy the partial graph and return deferred buffers when InstantiateGraph throws.
+    // mutant: CapturedStreamGraph.cs:334
+    // `RunCleanupStep((graphProvider, graph), static s => s.graphProvider.DestroyGraph(s.graph, IntPtr.Zero),`
+    // -> omitted (DestroyCallCount stays 0)
+    // mutant: CapturedStreamGraph.cs:338
+    // `RunCleanupStep((manager, captured), static s => s.manager.ReturnDeferred(s.captured.Buffers),`
+    // -> omitted (DeferredBuffers stays high)
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void Capture_InstantiateGraphThrows_DestroysGraphAndReturnsDeferredBuffers()
+    {
+        var start = Workspace.GetMemoryStatistics();
+        var expected = new InvalidOperationException("Simulated instantiate failure.");
+        var observer = new ObservingGraphProvider(Workspace) { InstantiateException = expected };
+
+        var actual = Assert.Throws<InvalidOperationException>(() => CaptureWithTempCopy(observer));
+        var failed = Workspace.GetMemoryStatistics();
+
+        Assert.Same(expected, actual);
+        Assert.NotEqual(IntPtr.Zero, observer.LastCapturedGraph);
+        Assert.Equal(observer.LastCapturedGraph, observer.DestroyedGraph);
+        Assert.Equal(1, observer.DestroyCallCount);
+        Assert.Equal((start.DeferredBuffers, start.LiveBuffers), (failed.DeferredBuffers, failed.LiveBuffers));
+    }
+
+    // When both InstantiateGraph and DestroyGraph throw, ReleaseAfterFailure must still return deferred buffers and
+    // combine both exceptions into an AggregateException with the original first.
+    // mutant: CapturedStreamGraph.cs:340
+    // `ThrowIfCleanupFailed("Creating the CUDA graph failed, and so did its cleanup.", original, cleanupErrors);`
+    // -> omitted (only original InvalidOperationException is thrown)
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void Capture_InstantiateAndDestroyThrow_ThrowsAggregateExceptionAndReturnsDeferredBuffers()
+    {
+        var start = Workspace.GetMemoryStatistics();
+        var original = new InvalidOperationException("Simulated instantiate failure.");
+        var cleanupError = new InvalidOperationException("Simulated destroy failure.");
+        var observer = new ObservingGraphProvider(Workspace)
+        {
+            InstantiateException = original,
+            DestroyException = cleanupError,
+        };
+
+        var error = Assert.Throws<AggregateException>(() => CaptureWithTempCopy(observer));
+        var failed = Workspace.GetMemoryStatistics();
+
+        Assert.Equal(2, error.InnerExceptions.Count);
+        Assert.Same(original, error.InnerExceptions[0]);
+        Assert.Same(cleanupError, error.InnerExceptions[1]);
+        Assert.Equal((start.DeferredBuffers, start.LiveBuffers), (failed.DeferredBuffers, failed.LiveBuffers));
+    }
+
+    // When EndCapture throws, RecordStream must release deferred buffers via ReleaseAfterFailure without leaking.
+    // mutant: CapturedStreamGraph.cs:222
+    // `ReleaseAfterFailure(manager, graphProvider, manager.EndDeferral(deferral), graph, original);`
+    // -> omitted (deferral stays active and DeferredBuffers leaks)
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void Capture_EndCaptureThrows_ReturnsDeferredBuffersAndRestoresWorkspace()
+    {
+        var start = Workspace.GetMemoryStatistics();
+        var expected = new InvalidOperationException("Simulated end-capture failure.");
+        var observer = new ObservingGraphProvider(Workspace) { EndCaptureException = expected };
+
+        var actual = Assert.Throws<InvalidOperationException>(() => CaptureWithTempCopy(observer));
+        var failed = Workspace.GetMemoryStatistics();
+
+        Assert.Same(expected, actual);
+        Assert.Equal(0, observer.DestroyCallCount);
+        Assert.Equal((start.DeferredBuffers, start.LiveBuffers), (failed.DeferredBuffers, failed.LiveBuffers));
+
+        WriteWords(_a, 17);
+        WriteWords(_b, 25);
+        Workspace.Provider.Add(Workspace, _a, _b, _result);
+        Workspace.Provider.SynchronizeStream(Workspace.Stream);
+        Assert.Equal(new BigInteger(42), _result.ToBigInteger());
+    }
+
+    private CapturedStreamGraph CaptureWithTempCopy(IGpuGraphProvider graphProvider) =>
+        CapturedStreamGraph.Capture(Workspace, () =>
+        {
+            using var temp = new GpuBigUInt(Workspace, Words);
+            Workspace.Provider.CopyDeviceToDevice(_result.DevicePointer, temp.DevicePointer, Words, Workspace.Stream);
+        }, graphProvider);
+
+    private CapturedStreamGraph CaptureThrowingWithTemp(Exception error, IGpuGraphProvider? graphProvider = null) =>
+        CapturedStreamGraph.Capture(Workspace, () =>
+        {
+            using var temp = new GpuBigUInt(Workspace, Words);
+            Workspace.Provider.CopyDeviceToDevice(_result.DevicePointer, temp.DevicePointer, Words, Workspace.Stream);
+            throw error;
+        }, graphProvider ?? Workspace.Provider);
+
     private static CapturedStreamGraph CaptureWithDeferredTemp(GpuWorkspace workspace, GpuBigUInt a, GpuBigUInt b,
         GpuBigUInt result)
     {
@@ -367,15 +474,43 @@ public sealed class CapturedStreamGraphTests : IDisposable
     {
         private readonly IGpuGraphProvider _inner = workspace.Provider;
 
+        public Exception? EndCaptureException { get; set; }
+
+        public Exception? InstantiateException { get; set; }
+
+        public Exception? DestroyException { get; set; }
+
+        public IntPtr LastCapturedGraph { get; private set; }
+
+        public IntPtr DestroyedGraph { get; private set; }
+
+        public int DestroyCallCount { get; private set; }
+
         public IntPtr DestroyCurrentContext { get; private set; }
 
         public int DeferredDuringDestroy { get; private set; }
 
         public void BeginCapture(IntPtr stream) => _inner.BeginCapture(stream);
 
-        public IntPtr EndCapture(IntPtr stream) => _inner.EndCapture(stream);
+        public IntPtr EndCapture(IntPtr stream)
+        {
+            var graph = _inner.EndCapture(stream);
+            LastCapturedGraph = graph;
+            if (EndCaptureException is not null)
+            {
+                if (graph != IntPtr.Zero)
+                {
+                    _inner.DestroyGraph(graph, IntPtr.Zero);
+                }
 
-        public IntPtr InstantiateGraph(IntPtr graph) => _inner.InstantiateGraph(graph);
+                throw EndCaptureException;
+            }
+
+            return graph;
+        }
+
+        public IntPtr InstantiateGraph(IntPtr graph) =>
+            InstantiateException is not null ? throw InstantiateException : _inner.InstantiateGraph(graph);
 
         public void LaunchGraph(IntPtr graphExec, IntPtr stream) => _inner.LaunchGraph(graphExec, stream);
 
@@ -384,7 +519,13 @@ public sealed class CapturedStreamGraphTests : IDisposable
             CudaDriverApi.cuCtxGetCurrent(out var current);
             DestroyCurrentContext = current;
             DeferredDuringDestroy = workspace.GetMemoryStatistics().DeferredBuffers;
+            DestroyedGraph = graph;
+            DestroyCallCount++;
             _inner.DestroyGraph(graph, graphExec);
+            if (DestroyException is not null)
+            {
+                throw DestroyException;
+            }
         }
     }
 }
@@ -408,6 +549,27 @@ public sealed class CapturedStreamGraphCpuFallbackTests
         Assert.Throws<ArgumentNullException>(() => CapturedStreamGraph.Capture(null!, static () => { }));
         // Intentionally passing null to assert ArgumentNullException guards.
         Assert.Throws<ArgumentNullException>(() => CapturedStreamGraph.Capture(workspace, null!));
+    }
+
+    // When original is already an AggregateException, ThrowIfCleanupFailed must preserve it intact at
+    // InnerExceptions[0] rather than flattening its inner exceptions.
+    // mutant: CapturedStreamGraph.cs:366 `errors.Insert(0, original);`
+    // -> flattened into aggregate.InnerExceptions (InnerExceptions[0] is no longer original)
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void ThrowIfCleanupFailed_OriginalIsAggregateException_PreservesWrapperAtIndexZero()
+    {
+        var leaf1 = new InvalidOperationException("Leaf 1");
+        var leaf2 = new ArgumentException("Leaf 2");
+        var original = new AggregateException("Original aggregate", leaf1, leaf2);
+        var cleanupError = new InvalidOperationException("Cleanup failure");
+
+        var actual = Assert.Throws<AggregateException>(() =>
+            CapturedStreamGraph.ThrowIfCleanupFailed("Outer failure", original, [cleanupError]));
+
+        Assert.Equal(2, actual.InnerExceptions.Count);
+        Assert.Same(original, actual.InnerExceptions[0]);
+        Assert.Same(cleanupError, actual.InnerExceptions[1]);
     }
 
     [Fact]

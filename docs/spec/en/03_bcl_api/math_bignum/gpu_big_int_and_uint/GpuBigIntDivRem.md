@@ -176,6 +176,9 @@ Thrown when `baseVal`, `mod`, and `resultBuffer` have mismatched word lengths.
 `DivideByZeroException`<br>
 Thrown when the modulus (`mod`) is zero.
 
+`NotSupportedException`<br>
+Thrown when the workspace stream is capturing a CUDA graph.
+
 ## Reduce(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView, Int32, Int32, GpuBigUIntView, GpuBigUIntView)
 
 Performs a Barrett reduction using a precomputed reciprocal.

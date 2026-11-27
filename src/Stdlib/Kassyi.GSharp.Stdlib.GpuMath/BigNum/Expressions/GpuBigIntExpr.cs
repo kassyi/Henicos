@@ -235,7 +235,7 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// <paramref name="targetResult"/> it is a borrowed value of that buffer.
     /// </returns>
     /// <remarks>
-    /// The expression stays usable afterwards: the internal graph holds it only while it runs (O15).
+    /// The expression stays usable afterwards: the internal graph holds it only while it runs.
     /// </remarks>
     /// <exception cref="InvalidOperationException">The expression has been compiled into a CUDA graph that is alive.</exception>
     public GpuBigInt EvaluateWithCudaGraph(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
@@ -275,7 +275,7 @@ public readonly struct GpuBigIntExpr : IDisposable
     /// </para>
     /// <para>
     /// While the internal graph runs, evaluating or compiling this expression throws
-    /// <see cref="InvalidOperationException"/>; afterwards the expression is usable again (O15). On cancellation, a
+    /// <see cref="InvalidOperationException"/>; afterwards the expression is usable again. On cancellation, a
     /// result buffer allocated by this method is released in stream order behind the graph; <paramref name="targetResult"/>
     /// is left to the caller and receives the result once the graph completes.
     /// </para>
@@ -300,7 +300,7 @@ public readonly struct GpuBigIntExpr : IDisposable
     }
 
     // Warm-up, capture and instantiation. ownsExpression: CompileToGraph hands the expression to the graph for its whole
-    // life; EvaluateWithCudaGraph lends it only while its internal graph exists (O15).
+    // life; EvaluateWithCudaGraph lends it only while its internal graph exists.
     private GpuBigIntExecutableGraph Compile(GpuWorkspace workspace, GpuBigUInt? targetResult, bool ownsExpression)
     {
         GraphOwnership.ThrowIfOwned(Node);
@@ -405,7 +405,7 @@ public readonly struct GpuBigIntExpr : IDisposable
             cleanupErrors);
     }
 
-    // The failure path of a capture (O14): kept as an internal entry point for GraphOwnershipTests.
+    // The failure path of a capture: kept as an internal entry point for GraphOwnershipTests.
     internal static void AbortCapture(GpuWorkspace workspace, DefaultGpuMemoryManager manager, CaptureDeferral deferral,
         Exception original) =>
         CapturedStreamGraph.AbortCapture(workspace, manager, deferral, original);

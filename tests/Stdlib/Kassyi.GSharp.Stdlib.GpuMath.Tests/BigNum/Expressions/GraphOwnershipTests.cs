@@ -95,7 +95,7 @@ public sealed class GraphOwnershipTests : IDisposable
     public void EvaluateWithCudaGraph_ResultBelongsToTheCaller()
     {
         // EvaluateWithCudaGraph detaches the result from its internal graph: the caller owns it and returns it with
-        // Dispose, so ten evaluations leave the live count where it was (G2), and the expression stays usable (O15).
+        // Dispose, so ten evaluations leave the live count where it was (G2), and the expression stays usable.
         // mutant: EvaluateWithCudaGraph without DetachResult (the graph frees the value it returns)
         var expression = (GpuBigIntExpr)_a + _b;
         using (expression.EvaluateWithCudaGraph(Workspace))

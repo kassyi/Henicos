@@ -1,3 +1,5 @@
+using System.Runtime.ExceptionServices;
+
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 /// <summary>
@@ -6,6 +8,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// </summary>
 internal sealed class CapturedStreamGraph : IDisposable
 {
+    private const uint NonBlockingStreamFlag = 1; // CU_STREAM_NON_BLOCKING
+
     private readonly DefaultGpuMemoryManager _manager;
     private readonly IGpuGraphProvider _graphProvider;
     private readonly IntPtr _graph;
@@ -29,10 +33,13 @@ internal sealed class CapturedStreamGraph : IDisposable
     internal GpuBigIntMemoryHandle[] Operands => _captured.Operands;
 
     /// <summary>
-    /// Captures <paramref name="body"/> on the stream of <paramref name="workspace"/>, instantiates the graph, and
-    /// returns the replayable handle. On failure, partial graph handles and deferred buffers are released first.
+    /// Captures <paramref name="body"/> on a dedicated non-blocking CUDA stream, instantiates the graph, and returns a
+    /// handle that replays it on the stream of <paramref name="workspace"/>. On failure, partial graph handles and
+    /// deferred buffers are released first.
     /// </summary>
-    /// <param name="workspace">The workspace whose stream and memory manager host the capture.</param>
+    /// <param name="workspace">
+    /// The workspace whose memory manager hosts the capture and whose stream replays the graph.
+    /// </param>
     /// <param name="body">The zero-sync operations to record into the graph.</param>
     /// <returns>A <see cref="CapturedStreamGraph"/> owning the instantiated graph and deferred buffers.</returns>
     public static CapturedStreamGraph Capture(GpuWorkspace workspace, Action body)
@@ -41,7 +48,35 @@ internal sealed class CapturedStreamGraph : IDisposable
         return Capture(workspace, body, workspace.Provider);
     }
 
-    internal static CapturedStreamGraph Capture(GpuWorkspace workspace, Action body, IGpuGraphProvider graphProvider)
+    internal static CapturedStreamGraph Capture(GpuWorkspace workspace, Action body, IGpuGraphProvider graphProvider) =>
+        TryCapture(workspace, body, graphProvider, out var graph)
+            ? graph
+            : throw new InvalidOperationException("A CUDA graph capture is already running on this workspace.");
+
+    /// <summary>
+    /// Tries to capture <paramref name="body"/> on a dedicated non-blocking CUDA stream and instantiate a graph that
+    /// replays on the stream of <paramref name="workspace"/>. Returns <see langword="false"/> without throwing when
+    /// another capture is already running on <paramref name="workspace"/>.
+    /// </summary>
+    /// <param name="workspace">
+    /// The workspace whose memory manager hosts the capture and whose stream replays the graph.
+    /// </param>
+    /// <param name="body">The zero-sync operations to record into the graph.</param>
+    /// <param name="graph">
+    /// When this method returns <see langword="true"/>, the instantiated graph; otherwise <see langword="null"/>.
+    /// </param>
+    /// <returns>
+    /// <see langword="true"/> if the graph was captured; <see langword="false"/> if another capture is already active.
+    /// </returns>
+    public static bool TryCapture(
+        GpuWorkspace workspace, Action body, [NotNullWhen(true)] out CapturedStreamGraph? graph)
+    {
+        ArgumentNullException.ThrowIfNull(workspace);
+        return TryCapture(workspace, body, workspace.Provider, out graph);
+    }
+
+    internal static bool TryCapture(GpuWorkspace workspace, Action body, IGpuGraphProvider graphProvider,
+        [NotNullWhen(true)] out CapturedStreamGraph? graph)
     {
         ArgumentNullException.ThrowIfNull(workspace);
         ArgumentNullException.ThrowIfNull(body);
@@ -50,50 +85,158 @@ internal sealed class CapturedStreamGraph : IDisposable
         using (workspace.ActivateContext())
         {
             var manager = (DefaultGpuMemoryManager)workspace.MemoryManager;
-            var deferral = manager.BeginDeferral();
+            var captureStream = CreateCaptureStream(workspace);
+            CapturedStreamGraph? result = null;
+            Exception? original = null;
             try
             {
-                graphProvider.BeginCapture(workspace.Stream);
+                if (!TryRecordStream(workspace, manager, graphProvider, captureStream, body, out var rawGraph,
+                    out var captured))
+                {
+                    graph = null;
+                    return false;
+                }
+
+                result = InstantiateCapturedGraph(workspace, manager, graphProvider, rawGraph, captured);
+                graph = result;
+                return true;
             }
-            catch
+            catch (Exception ex)
             {
-                manager.EndDeferral(deferral);
+                original = ex;
                 throw;
+            }
+            finally
+            {
+                DestroyCaptureStream(captureStream, original, result);
+            }
+        }
+    }
+
+    private static IntPtr CreateCaptureStream(GpuWorkspace workspace)
+    {
+        if (workspace.BaseStream == IntPtr.Zero || GpuKernelLoader.IsCpuFallbackMode)
+        {
+            return IntPtr.Zero;
+        }
+
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamCreate(out var captureStream, NonBlockingStreamFlag));
+        return captureStream;
+    }
+
+    private static void DestroyCaptureStream(
+        IntPtr captureStream, Exception? original, CapturedStreamGraph? result)
+    {
+        if (captureStream == IntPtr.Zero)
+        {
+            return;
+        }
+
+        List<Exception>? cleanupErrors = null;
+        RunCleanupStep(captureStream, static stream =>
+        {
+            if (CudaDriverApi.cuStreamIsCapturing(stream, out var status) == CUresult.CudaSuccess &&
+                status != CUstreamCaptureStatus.None)
+            {
+                CudaDriverApi.cuStreamEndCapture(stream, out var leakedGraph);
+                if (leakedGraph != IntPtr.Zero)
+                {
+                    CudaDriverApi.cuGraphDestroy(leakedGraph);
+                }
+            }
+        }, ref cleanupErrors);
+
+        RunCleanupStep(captureStream,
+            static stream => CudaException.ThrowIfError(CudaDriverApi.cuStreamDestroy(stream)),
+            ref cleanupErrors);
+
+        if (original is not null)
+        {
+            ThrowIfCleanupFailed("CUDA graph capture failed, and so did its cleanup.", original, cleanupErrors);
+            return;
+        }
+
+        if (cleanupErrors is not null)
+        {
+            result?.Dispose();
+            if (cleanupErrors.Count == 1)
+            {
+                ExceptionDispatchInfo.Throw(cleanupErrors[0]);
             }
 
-            try
-            {
-                body();
-            }
-            catch (Exception original)
-            {
-                AbortCapture(workspace, manager, graphProvider, deferral, original);
-                throw;
-            }
+            throw new AggregateException("Cleaning up the CUDA capture stream failed.", cleanupErrors);
+        }
+    }
 
-            var graph = IntPtr.Zero;
-            CapturedResources captured;
-            try
-            {
-                graph = graphProvider.EndCapture(workspace.Stream);
-                captured = manager.EndDeferral(deferral);
-            }
-            catch (Exception original)
-            {
-                ReleaseAfterFailure(manager, graphProvider, manager.EndDeferral(deferral), graph, original);
-                throw;
-            }
+    private static bool TryBeginRecording(
+        DefaultGpuMemoryManager manager, IGpuGraphProvider graphProvider, IntPtr captureStream,
+        [NotNullWhen(true)] out CaptureDeferral? deferral)
+    {
+        if (!manager.TryBeginDeferral(captureStream, out deferral))
+        {
+            return false;
+        }
 
-            try
-            {
-                var graphExec = graphProvider.InstantiateGraph(graph);
-                return new CapturedStreamGraph(workspace, manager, graphProvider, graph, graphExec, captured);
-            }
-            catch (Exception original)
-            {
-                ReleaseAfterFailure(manager, graphProvider, captured, graph, original);
-                throw;
-            }
+        try
+        {
+            graphProvider.BeginCapture(captureStream);
+            return true;
+        }
+        catch
+        {
+            manager.EndDeferral(deferral);
+            throw;
+        }
+    }
+
+    private static bool TryRecordStream(
+        GpuWorkspace workspace, DefaultGpuMemoryManager manager, IGpuGraphProvider graphProvider, IntPtr captureStream,
+        Action body, out IntPtr graph, out CapturedResources captured)
+    {
+        if (!TryBeginRecording(manager, graphProvider, captureStream, out var deferral))
+        {
+            graph = IntPtr.Zero;
+            captured = default;
+            return false;
+        }
+
+        try
+        {
+            body();
+        }
+        catch (Exception original)
+        {
+            AbortCapture(workspace, manager, graphProvider, deferral, original);
+            throw;
+        }
+
+        graph = IntPtr.Zero;
+        try
+        {
+            graph = graphProvider.EndCapture(captureStream);
+            captured = manager.EndDeferral(deferral);
+            return true;
+        }
+        catch (Exception original)
+        {
+            ReleaseAfterFailure(manager, graphProvider, manager.EndDeferral(deferral), graph, original);
+            throw;
+        }
+    }
+
+    private static CapturedStreamGraph InstantiateCapturedGraph(
+        GpuWorkspace workspace, DefaultGpuMemoryManager manager, IGpuGraphProvider graphProvider, IntPtr graph,
+        CapturedResources captured)
+    {
+        try
+        {
+            var graphExec = graphProvider.InstantiateGraph(graph);
+            return new CapturedStreamGraph(workspace, manager, graphProvider, graph, graphExec, captured);
+        }
+        catch (Exception original)
+        {
+            ReleaseAfterFailure(manager, graphProvider, captured, graph, original);
+            throw;
         }
     }
 
@@ -145,7 +288,7 @@ internal sealed class CapturedStreamGraph : IDisposable
         }
     }
 
-    // The failure path of a capture (O14): end the capture, drop the partial graph and give back the deferred buffers.
+    // The failure path of a capture: end the capture, drop the partial graph and give back the deferred buffers.
     // When that succeeds, the caller rethrows the original exception; when a step fails too, both are thrown together.
     internal static void AbortCapture(GpuWorkspace workspace, DefaultGpuMemoryManager manager, CaptureDeferral deferral,
         Exception original) =>
@@ -160,7 +303,7 @@ internal sealed class CapturedStreamGraph : IDisposable
             var graph = IntPtr.Zero;
             try
             {
-                graph = graphProvider.EndCapture(workspace.Stream);
+                graph = graphProvider.EndCapture(deferral.Stream);
             }
             catch (Exception ex)
             {
@@ -181,7 +324,7 @@ internal sealed class CapturedStreamGraph : IDisposable
     }
 
     // A capture ended but no executable graph came of it: destroy the partial graph and return the deferred buffers.
-    // As in AbortCapture, a failing step is thrown with the original (O14).
+    // As in AbortCapture, a failing step is thrown with the original.
     private static void ReleaseAfterFailure(DefaultGpuMemoryManager manager, IGpuGraphProvider graphProvider,
         CapturedResources captured, IntPtr graph, Exception original)
     {
@@ -211,20 +354,13 @@ internal sealed class CapturedStreamGraph : IDisposable
     }
 
     // After the cleanup of a failure path: nothing to throw when every step succeeded (the caller rethrows the
-    // original), otherwise the original first and then the cleanup errors (O14).
+    // original), otherwise the original first (preserving any AggregateException wrapper intact) and then the cleanup
+    // errors.
     internal static void ThrowIfCleanupFailed(string message, Exception original, List<Exception>? errors)
     {
         if (errors is null)
         {
             return;
-        }
-
-        if (original is AggregateException aggregate)
-        {
-            var combined = new List<Exception>(aggregate.InnerExceptions.Count + errors.Count);
-            combined.AddRange(aggregate.InnerExceptions);
-            combined.AddRange(errors);
-            throw new AggregateException(message, combined);
         }
 
         errors.Insert(0, original);

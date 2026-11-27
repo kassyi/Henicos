@@ -1,17 +1,22 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 /// <summary>
-/// The state of one capture that <c>CompileToGraph</c> runs on a workspace: the buffers freed during the capture, which
-/// later allocations of the same capture may take again, and the handles the capture read.
+/// The state of one capture that <see cref="CapturedStreamGraph.Capture(GpuWorkspace, Action)"/> runs on a workspace:
+/// the dedicated stream the capture records on, the buffers freed during the capture (which later allocations of the
+/// same capture may take again), and the handles the capture read.
 /// </summary>
 /// <remarks>
 /// Only the thread that began the capture (<see cref="ThreadId"/>) uses the session; the memory manager sends every other
 /// thread through the shared pool. The lock keeps the lists consistent regardless.
 /// </remarks>
 /// <param name="threadId">The managed thread that runs the capture.</param>
-internal sealed class CaptureDeferral(int threadId)
+/// <param name="stream">The stream that the capture records on while this session is active.</param>
+internal sealed class CaptureDeferral(int threadId, IntPtr stream)
 {
     public int ThreadId { get; } = threadId;
+
+    // The stream this capture records on: the work of ThreadId goes there while the capture runs.
+    public IntPtr Stream { get; } = stream;
 
     private readonly object _lock = new();
     private readonly Dictionary<int, Stack<GpuBigIntDeviceBuffer>> _free = [];

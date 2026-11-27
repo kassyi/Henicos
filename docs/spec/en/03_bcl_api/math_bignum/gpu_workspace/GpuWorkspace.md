@@ -139,11 +139,15 @@ The value is negative.
 
 ## Stream
 
-Gets the dedicated CUDA Stream for this workspace, used for operations and CUDA Graph capture.
+Gets the dedicated CUDA Stream for this workspace, used for operations and CUDA Graph playback.
 
 ```csharp
 public IntPtr Stream { get; }
 ```
+
+While GpuMath captures an internal graph (`GpuBigIntExpr.CompileToGraph` or wide `ModPow`), this property returns the capture's dedicated non-blocking stream to the capturing thread and always returns this workspace's own stream to other threads. The resulting graph replays on this workspace's stream.
+
+Buffers freed during an internal capture belong to the graph and return to the pool when it is disposed; other threads using the workspace meanwhile go through the shared pool. A capture started directly on this stream cannot be tracked: buffers freed during it stay parked until disposal, and allocations come only from the pool.
 
 ## Transcendental
 

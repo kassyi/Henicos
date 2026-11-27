@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Lists references to local planning material in tracked files: lane and scenario labels (`D1 (R1)`), roadmap IDs
-// (`A-21`), design-document sections (`design §4.3`, `design D3 4.1`), plan stages (`stage 5`, `P5 tests`) and paths
-// under `tmp/`. None of these exists in the repository, so a reader cannot follow it; say what is meant, or cite an
-// issue number.
+// (`A-21`), design-document sections (`design §4.3`, `design D3 4.1`), plan stages (`stage 5`, `P5 tests`), work-item
+// tags (`(O14)`) and paths under `tmp/`. None of these exists in the repository, so a reader cannot follow it; say what
+// is meant, or cite an issue number.
 // Usage: node scripts/human/check-work-ids.js [--github] [--changed <base>] [--strict] [--root <dir>] [--path <prefix>]...
 //   Warnings only by default (exit 0 even when matches exist); --strict exits 1 when any match remains.
 'use strict';
@@ -41,6 +41,7 @@ const patterns = [
     { name: 'roadmap-id', regex: /\bA-\d{1,3}\b/g },
     { name: 'plan-stage', regex: /\b(?:stage\s+\d+(?!\s+of\s+#\d)|P\d+\s+tests?|test\s+plan\s+\d+)\b/gi },
     { name: 'scenario-label', regex: /\bD[1-8]\s*\(R[1-6]\)|\bD[1-8]\s+to\s+D[1-8]\b/g },
+    { name: 'work-item', regex: /\(O\d{1,3}\)/g },
 ];
 
 // A match is dropped when its text is in this list. Each entry is a real name, not a reference.

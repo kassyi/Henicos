@@ -39,20 +39,24 @@ public class GpuWorkspace : IGpuResourceScope
     public IGpuExecutionProvider Provider => GSharpKernelProvider.Instance;
 
     /// <summary>
-    /// Gets the dedicated CUDA Stream for this context, used for operations and CUDA Graph capture.
+    /// Gets the dedicated CUDA Stream for this context, used for operations and CUDA Graph playback.
     /// </summary>
     /// <remarks>
-    /// A buffer freed while this stream is captured stays out of the workspace pool, because the graph keeps using it.
-    /// A capture started by <c>GpuBigIntExpr.CompileToGraph</c> hands such buffers to its graph, which returns them when it
-    /// is disposed. A capture started directly on this stream cannot be tracked: buffers freed during it stay parked until
-    /// the workspace is disposed, and allocations during it come only from the pool. A capture of
-    /// <c>CompileToGraph</c> belongs to the thread that compiles; other threads using the workspace meanwhile go through
-    /// the shared pool. A capture does not fork this stream into others.
+    /// <para>
+    /// While GpuMath captures an internal graph (<c>GpuBigIntExpr.CompileToGraph</c> or wide <c>ModPow</c>), this
+    /// property returns the capture's dedicated non-blocking stream to the capturing thread and always returns this
+    /// workspace's own stream to other threads. The resulting graph replays on this workspace's stream.
+    /// </para>
+    /// <para>
+    /// Buffers freed during an internal capture belong to the graph and return to the pool when it is disposed; other
+    /// threads using the workspace meanwhile go through the shared pool. A capture started directly on this stream
+    /// cannot be tracked: buffers freed during it stay parked until disposal, and allocations come only from the pool.
+    /// </para>
     /// </remarks>
-    public IntPtr Stream
-    {
-        get;
-    }
+    public IntPtr Stream => _manager?.CurrentStream ?? _stream;
+
+    // The workspace's own CUDA stream, ignoring any active capture session on the current thread.
+    internal IntPtr BaseStream => _stream;
 
     /// <summary>
     /// Gets the number of streaming multiprocessors (SMs) on the active CUDA device.
@@ -68,6 +72,8 @@ public class GpuWorkspace : IGpuResourceScope
     /// </summary>
     internal int DeviceOrdinal { get; }
 
+    private readonly IntPtr _stream;
+    private readonly DefaultGpuMemoryManager? _manager; // the same object as MemoryManager
     private int _disposed;
     private int _inverseSqrtDoublingRuns;
     private readonly List<IDisposable> _trackedResources = [];
@@ -254,7 +260,7 @@ public class GpuWorkspace : IGpuResourceScope
             }
 
             CudaException.ThrowIfError(CudaDriverApi.cuStreamCreate(out var stream, 0)); // CU_STREAM_DEFAULT
-            Stream = stream;
+            _stream = stream;
 
             CudaDriverApi.cuCtxGetDevice(out var device);
             DeviceOrdinal = device;
@@ -265,10 +271,11 @@ public class GpuWorkspace : IGpuResourceScope
 
         try
         {
-            MemoryManager = new DefaultGpuMemoryManager(Provider, Stream);
-            if (Stream != IntPtr.Zero)
+            _manager = new DefaultGpuMemoryManager(Provider, _stream);
+            MemoryManager = _manager;
+            if (_stream != IntPtr.Zero)
             {
-                CorrectionStatus = new GpuCorrectionStatus(Provider, Stream, IsolatedContext.Handle);
+                CorrectionStatus = new GpuCorrectionStatus(Provider, _stream, IsolatedContext.Handle);
             }
         }
         finally
@@ -373,7 +380,21 @@ public class GpuWorkspace : IGpuResourceScope
                 exceptions?.Add(ex);
             }
 
-            DisposeMemoryManager(exceptions);
+            try
+            {
+                // The manager releases its buffers in stream order on _stream; DisposeEngineResources waits for those
+                // frees before it destroys the stream.
+                // Written out here (not '?.' in a helper) so that the ownership analyzer (GSH0022) sees the call.
+                if (_manager != null)
+                {
+                    _manager.Dispose();
+                }
+            }
+            catch (Exception ex)
+            {
+                exceptions?.Add(ex);
+            }
+
             try
             {
                 // Stream-ordered release of the device words; the page-locked slot goes back to the process-wide pool
@@ -411,7 +432,7 @@ public class GpuWorkspace : IGpuResourceScope
 
     private void AbortLeakedCapture(List<Exception>? exceptions)
     {
-        if (Engine != GpuExecutionEngine.GSharpAot || Stream == IntPtr.Zero)
+        if (Engine != GpuExecutionEngine.GSharpAot || _stream == IntPtr.Zero)
         {
             return;
         }
@@ -419,11 +440,11 @@ public class GpuWorkspace : IGpuResourceScope
         try
         {
             // Check if stream was abandoned in a capturing state (e.g., due to an exception)
-            if (CudaDriverApi.cuStreamIsCapturing(Stream, out var captureStatus) == CUresult.CudaSuccess &&
+            if (CudaDriverApi.cuStreamIsCapturing(_stream, out var captureStatus) == CUresult.CudaSuccess &&
                 captureStatus != CUstreamCaptureStatus.None)
             {
                 // Abort and discard uncommitted graph to prevent cross-test / cross-task contamination
-                CudaDriverApi.cuStreamEndCapture(Stream, out var leakedGraph);
+                CudaDriverApi.cuStreamEndCapture(_stream, out var leakedGraph);
                 if (leakedGraph != IntPtr.Zero)
                 {
                     CudaDriverApi.cuGraphDestroy(leakedGraph);
@@ -457,39 +478,20 @@ public class GpuWorkspace : IGpuResourceScope
         }
     }
 
-    private void DisposeMemoryManager(List<Exception>? exceptions)
-    {
-        if (MemoryManager is not IDisposable disposableManager)
-        {
-            return;
-        }
-
-        try
-        {
-            // The manager releases its buffers in stream order on Stream; DisposeEngineResources waits for those frees
-            // before it destroys the stream.
-            disposableManager.Dispose();
-        }
-        catch (Exception ex)
-        {
-            exceptions?.Add(ex);
-        }
-    }
-
     private void DisposeEngineResources(List<Exception>? exceptions)
     {
-        if (Stream == IntPtr.Zero)
+        if (_stream == IntPtr.Zero)
         {
             return;
         }
 
         try
         {
-            // The memory manager freed its buffers in stream order on Stream. A stream-ordered free still pending when
+            // The memory manager freed its buffers in stream order on _stream. A stream-ordered free still pending when
             // its stream is destroyed never returns the memory to the driver (#659), so wait for this stream (only
             // this one, not the whole device) before destroying it. A failed wait is reported, and the stream is
             // still destroyed.
-            CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(Stream));
+            CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(_stream));
             GpuKernelLoader.ThrowIfDeviceError();
         }
         catch (Exception ex)
@@ -499,7 +501,7 @@ public class GpuWorkspace : IGpuResourceScope
 
         try
         {
-            CudaDriverApi.cuStreamDestroy(Stream);
+            CudaDriverApi.cuStreamDestroy(_stream);
 
             if (IsolatedContext.Handle != IntPtr.Zero)
             {
@@ -539,59 +541,28 @@ public class GpuWorkspace : IGpuResourceScope
         return new GpuBigUInt(this, MemoryManager.Allocate(numWords));
     }
 
-    private uint _lastModPowNttBlockDim;
+    // Launch shapes and graph launch counts that the tests read, kept in their own type.
+    private readonly GpuWorkspaceLaunchRecord _launchRecord = new();
 
-    /// <summary>
-    /// Gets the block size of the most recent ModPow NTT mega-kernel launch on this workspace, which the tests read to
-    /// verify the launcher's block-size rule.
-    /// </summary>
-    internal uint LastModPowNttBlockDim => Volatile.Read(ref _lastModPowNttBlockDim);
+    internal uint LastModPowNttBlockDim => _launchRecord.LastModPowNttBlockDim;
 
-    /// <summary>Records the block size used to launch the ModPow NTT mega-kernel.</summary>
-    internal void RecordModPowNttBlockDim(uint blockDim) => Volatile.Write(ref _lastModPowNttBlockDim, blockDim);
+    internal void RecordModPowNttBlockDim(uint blockDim) => _launchRecord.RecordModPowNttBlockDim(blockDim);
 
-    private uint _lastInverseSqrtMegaBlockDim;
-    private uint _lastInverseSqrtMegaGridDim;
-    private uint _lastInverseSqrtMegaSharedMemBytes;
-    private uint _lastReciprocalMegaBlockDim;
-    private uint _lastReciprocalMegaGridDim;
-    private uint _lastReciprocalMegaSharedMemBytes;
-
-    /// <summary>
-    /// Gets the launch shape of the most recent <c>InverseSqrtNewtonRaphsonMegaKernel</c> launch on this workspace,
-    /// which tests read to verify block and grid dimensions.
-    /// </summary>
     internal BigNum.Providers.Handlers.CooperativeMegaKernelLauncher.LaunchShape LastInverseSqrtMegaLaunchShape =>
-        new(
-            Volatile.Read(ref _lastInverseSqrtMegaBlockDim),
-            Volatile.Read(ref _lastInverseSqrtMegaGridDim),
-            Volatile.Read(ref _lastInverseSqrtMegaSharedMemBytes));
+        _launchRecord.LastInverseSqrtMegaLaunchShape;
 
-    /// <summary>Records the launch shape used to launch <c>InverseSqrtNewtonRaphsonMegaKernel</c>.</summary>
-    internal void RecordInverseSqrtMegaLaunchShape(uint blockDim, uint gridDim, uint sharedMemBytes)
-    {
-        Volatile.Write(ref _lastInverseSqrtMegaBlockDim, blockDim);
-        Volatile.Write(ref _lastInverseSqrtMegaGridDim, gridDim);
-        Volatile.Write(ref _lastInverseSqrtMegaSharedMemBytes, sharedMemBytes);
-    }
+    internal void RecordInverseSqrtMegaLaunchShape(uint blockDim, uint gridDim, uint sharedMemBytes) =>
+        _launchRecord.RecordInverseSqrtMegaLaunchShape(blockDim, gridDim, sharedMemBytes);
 
-    /// <summary>
-    /// Gets the launch shape of the most recent <c>ReciprocalNewtonRaphsonMegaKernel</c> launch on this workspace,
-    /// which tests read to verify block and grid dimensions.
-    /// </summary>
     internal BigNum.Providers.Handlers.CooperativeMegaKernelLauncher.LaunchShape LastReciprocalMegaLaunchShape =>
-        new(
-            Volatile.Read(ref _lastReciprocalMegaBlockDim),
-            Volatile.Read(ref _lastReciprocalMegaGridDim),
-            Volatile.Read(ref _lastReciprocalMegaSharedMemBytes));
+        _launchRecord.LastReciprocalMegaLaunchShape;
 
-    /// <summary>Records the launch shape used to launch <c>ReciprocalNewtonRaphsonMegaKernel</c>.</summary>
-    internal void RecordReciprocalMegaLaunchShape(uint blockDim, uint gridDim, uint sharedMemBytes)
-    {
-        Volatile.Write(ref _lastReciprocalMegaBlockDim, blockDim);
-        Volatile.Write(ref _lastReciprocalMegaGridDim, gridDim);
-        Volatile.Write(ref _lastReciprocalMegaSharedMemBytes, sharedMemBytes);
-    }
+    internal void RecordReciprocalMegaLaunchShape(uint blockDim, uint gridDim, uint sharedMemBytes) =>
+        _launchRecord.RecordReciprocalMegaLaunchShape(blockDim, gridDim, sharedMemBytes);
+
+    internal long ModPowGraphLaunches => _launchRecord.ModPowGraphLaunches;
+
+    internal void CountModPowGraphLaunch() => _launchRecord.CountModPowGraphLaunch();
 }
 
 

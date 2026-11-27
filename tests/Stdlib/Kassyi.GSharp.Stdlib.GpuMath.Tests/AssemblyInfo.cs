@@ -1,12 +1,12 @@
 
 // Important note on CUDA Stream Capture (CUDA Graph: GBI-31) and xUnit parallel test execution:
 //
-// The BigNum captures (KernelGraphHandler) run in relaxed mode, so an allocation such as cuMemAlloc on another thread
-// does not disturb them. Work on the legacy default stream (Stream 0) does: a workspace stream is a blocking stream
-// (CU_STREAM_DEFAULT), which synchronizes with the default stream, so default-stream work on any thread of the same
-// CUDA context while a workspace stream captures fails with CUDA_ERROR_STREAM_CAPTURE_IMPLICIT and invalidates the
-// capture (CUDA_ERROR_STREAM_CAPTURE_INVALIDATED). Tests that begin their own capture in a stricter mode also reject
-// unsafe calls made during it.
+// BigNum captures through CapturedStreamGraph run in relaxed mode on a dedicated non-blocking stream
+// (CU_STREAM_NON_BLOCKING), so they do not conflict with concurrent legacy default stream (Stream 0) work.
+// However, tests that capture a workspace stream directly (for example CudaGraphExecutionTests) still record on the
+// blocking workspace stream (CU_STREAM_DEFAULT), which fails with CUDA_ERROR_STREAM_CAPTURE_IMPLICIT and invalidates
+// the capture (CUDA_ERROR_STREAM_CAPTURE_INVALIDATED) when another thread uses Stream 0, and tests that capture in a
+// stricter mode also reject unsafe calls made during it.
 //
 // When xUnit executes test classes in parallel, other tests using auto-generated kernel wrappers or host array overloads
 // may copy through the default stream concurrently, resulting in flaky test failures.
