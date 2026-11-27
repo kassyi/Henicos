@@ -8,22 +8,7 @@ internal static class CrossBarrierChecks
     {
         foreach (var localFunc in scan.LocalFunctionsWithBarrier)
         {
-            var localFuncSymbol = scan.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(localFunc);
-            if (localFuncSymbol == null)
-            {
-                continue;
-            }
-
-            var isRecursive = localFunc.DescendantNodes()
-                .AsStackEnumerable()
-                .Any(
-                    (Model: scan.SemanticModel, Target: localFuncSymbol),
-                    static (innerNode, s) =>
-                        innerNode is InvocationExpressionSyntax innerInv &&
-                        s.Model.GetSymbol(innerInv).IsEqualTo(s.Target)
-                );
-
-            if (isRecursive)
+            if (SuspensionAnalysis.IsRecursiveLocalFunction(localFunc, scan.SemanticModel))
             {
                 scan.Context.ReportDiagnostic(
                     GSharpDiagnostics.RecursiveBarrierProhibited,

@@ -84,6 +84,11 @@ internal static class SuspensionAnalysis
         static (traits, _) => traits.ReachesArrivalBarrier
     );
 
+    private const string RuntimeAssemblyName = "Kassyi.GSharp.Runtime";
+    private const string StackLinqAssemblyName = "Kassyi.ZeroAlloc.Linq";
+
+    private static readonly PerCompilationSymbolCache<IMethodSymbol, bool> s_recursion = new();
+
     /// <summary>Whether <paramref name="method"/> is a device function that reaches a phase barrier.</summary>
     public static bool IsSuspendingFunction(IMethodSymbol method, Compilation compilation) =>
         Reaches(method, s_splitting, compilation);
@@ -203,6 +208,83 @@ internal static class SuspensionAnalysis
     /// </summary>
     public static bool RequiresStateMachine(IMethodSymbol method, Compilation compilation) =>
         IsSuspendingFunction(method, compilation) && !IsRecursiveSuspendingFunction(method, compilation);
+
+    /// <summary>
+    /// Whether <paramref name="kernel"/> reaches recursion, directly or through device functions, struct members,
+    /// operator macro targets, method groups, or local functions declared in them.
+    /// </summary>
+    /// <remarks>
+    /// A function imported from another assembly without a recorded answer counts as recursive so callers choose the
+    /// larger stack (the safe side).
+    /// </remarks>
+    public static bool ReachesRecursion(IMethodSymbol kernel, Compilation compilation)
+    {
+        var target = ToCanonicalDefinitionPart(kernel.GetConstructedReducedFrom() ?? kernel);
+        var answers = s_recursion.For(compilation);
+        if (!answers.TryGetValue(target, out var reaches))
+        {
+            reaches = ReachesRecursionCore(
+                target,
+                compilation,
+                caller: null,
+                new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default),
+                new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)
+            );
+            answers.TryAdd(target, reaches);
+        }
+
+        return reaches;
+    }
+
+    /// <summary>
+    /// Whether <paramref name="localFunction"/> calls itself directly or through other local functions or method groups.
+    /// </summary>
+    internal static bool IsRecursiveLocalFunction(LocalFunctionStatementSyntax localFunction,
+        SemanticModel semanticModel)
+    {
+        if (semanticModel.GetDeclaredSymbol<IMethodSymbol>(localFunction) is not { } symbol)
+        {
+            return false;
+        }
+
+        var target = symbol.OriginalDefinition;
+        var compilation = semanticModel.Compilation;
+        var visited = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
+        var pending = new Stack<SyntaxNode>();
+        if (((SyntaxNode?)localFunction.Body ?? localFunction.ExpressionBody) is { } rootBody)
+        {
+            pending.Push(rootBody);
+        }
+
+        while (pending.Count > 0)
+        {
+            var body = pending.Pop();
+            foreach (var site in DirectCallees.Of([body], TypeArgumentMap.None, compilation))
+            {
+                var callee = site.Callee.OriginalDefinition;
+                if (callee.MethodKind != MethodKind.LocalFunction)
+                {
+                    continue;
+                }
+
+                if (callee.IsEqualTo(target))
+                {
+                    return true;
+                }
+
+                if (visited.Add(callee) &&
+                    DeviceFunctionBodies.TryGet(callee, compilation, out var calleeBodies))
+                {
+                    foreach (var calleeBody in calleeBodies)
+                    {
+                        pending.Push(calleeBody);
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>
     /// The device functions that reach a phase barrier and are called from <paramref name="body"/>, in call order.
@@ -361,6 +443,163 @@ internal static class SuspensionAnalysis
 
         return false;
     }
+
+    private static bool ReachesRecursionCore(
+        IMethodSymbol method,
+        Compilation compilation,
+        ReachStep? caller,
+        HashSet<IMethodSymbol> visiting,
+        HashSet<IMethodSymbol> acyclic)
+    {
+        if (acyclic.Contains(method))
+        {
+            return false;
+        }
+
+        if (StopsPolymorphicRecursion(method, caller, compilation) || !visiting.Add(method))
+        {
+            return true;
+        }
+
+        try
+        {
+            if (!TryGetReachableBodies(method, alsoKernels: true, compilation, out var bodies))
+            {
+                // A function imported from another assembly without a recorded recursion answer counts as recursive
+                // (the larger stack is the safe side).
+                if (DeviceExportTable.IsOutside(DeviceFunctionEffects.GetDefinition(method), compilation))
+                {
+                    return true;
+                }
+
+                acyclic.Add(method);
+                return false;
+            }
+
+            foreach (var body in bodies)
+            {
+                if (!compilation.ContainsSyntaxTree(body.SyntaxTree))
+                {
+                    continue;
+                }
+
+                var semanticModel = compilation.GetCachedSemanticModel(body.SyntaxTree);
+                if (RemovedCalls.DescendantNodesThatRun(body, semanticModel)
+                    .AsStackEnumerable()
+                    .OfType<LocalFunctionStatementSyntax>()
+                    .Any(semanticModel, static (localFunc, model) => IsRecursiveLocalFunction(localFunc, model)))
+                {
+                    return true;
+                }
+            }
+
+            var nextCaller = new ReachStep(method, caller);
+            var typeArguments = TypeArgumentMap.Of(method);
+            foreach (var site in DirectCallees.Of(bodies, typeArguments, compilation))
+            {
+                var callee = ToCanonicalDefinitionPart(site.Callee.GetConstructedReducedFrom() ?? site.Callee);
+                var definition = DeviceFunctionEffects.GetDefinition(callee);
+                if (callee.MethodKind == MethodKind.LocalFunction ||
+                    DeviceFunctionBodies.IsDefaultStructConstructor(definition) ||
+                    IsAutoPropertyAccessor(definition))
+                {
+                    continue;
+                }
+
+                if (ReachesRecursionCore(callee, compilation, nextCaller, visiting, acyclic))
+                {
+                    return true;
+                }
+            }
+
+            if (CallsUnrecordedImportedDeviceFunction(bodies, typeArguments, compilation))
+            {
+                return true;
+            }
+
+            acyclic.Add(method);
+            return false;
+        }
+        finally
+        {
+            visiting.Remove(method);
+        }
+    }
+
+    // DirectCallees.Of omits outside [GpuDeviceFunction] and user-struct member symbols when the referenced assembly
+    // has no export record (for example when device code export is disabled); treat unrecorded imported device calls
+    // as recursive (safe side), excluding trivial zero-init default constructors and auto-property field accesses.
+    private static bool CallsUnrecordedImportedDeviceFunction(
+        ImmutableArray<SyntaxNode> bodies,
+        TypeArgumentMap typeArguments,
+        Compilation compilation)
+    {
+        var called = ImmutableArray.CreateBuilder<CalleeSite>();
+        DirectCallees.AddBodyCalls(bodies, typeArguments, compilation, called);
+        foreach (var (method, _) in called)
+        {
+            var function = method.GetConstructedReducedFrom() ?? method;
+            var definition = DeviceFunctionEffects.GetDefinition(function);
+            if (DeviceFunctionBodies.IsDefaultStructConstructor(definition) ||
+                IsAutoPropertyAccessor(definition) ||
+                !DeviceExportTable.IsOutside(definition, compilation) ||
+                DeviceExportTable.TryFind(definition, out _))
+            {
+                continue;
+            }
+
+            if (HasDeviceFunctionAttribute(definition) ||
+                IsUnrecordedImportedStructMember(definition))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsAutoPropertyAccessor(IMethodSymbol method) =>
+        method is { MethodKind: MethodKind.PropertyGet or MethodKind.PropertySet, AssociatedSymbol: IPropertySymbol property } &&
+        !property.IsStatic &&
+        !property.IsIndexer &&
+        StructAbiMembers.IsAutoProperty(property);
+
+    private static bool IsUnrecordedImportedStructMember(IMethodSymbol definition) =>
+        definition.ContainingType is { TypeKind: TypeKind.Struct } type &&
+        EmittedUserTypes.IsEmittedUserType(type) &&
+        !IsSystemNamespaceHierarchy(type.ContainingNamespace) &&
+        !type.ContainingNamespace.IsCoreNamespace() &&
+        !IsStackLinqNamespace(type.ContainingNamespace) &&
+        type.ContainingAssembly is { } assembly &&
+        !string.Equals(assembly.Name, TypeConstants.CoreNamespace, StringComparison.Ordinal) &&
+        !string.Equals(assembly.Name, RuntimeAssemblyName, StringComparison.Ordinal) &&
+        !string.Equals(assembly.Name, StackLinqAssemblyName, StringComparison.Ordinal);
+
+    private static bool IsSystemNamespaceHierarchy(INamespaceSymbol? ns)
+    {
+        while (ns is { IsGlobalNamespace: false })
+        {
+            if (ns.ContainingNamespace is { IsGlobalNamespace: true })
+            {
+                return string.Equals(ns.Name, TypeConstants.SystemNamespace, StringComparison.Ordinal);
+            }
+
+            ns = ns.ContainingNamespace;
+        }
+
+        return false;
+    }
+
+    private static bool IsStackLinqNamespace(INamespaceSymbol? ns) =>
+        ns is
+        {
+            Name: "Linq",
+            ContainingNamespace:
+            {
+                Name: "ZeroAlloc",
+                ContainingNamespace: { Name: "Kassyi", ContainingNamespace.IsGlobalNamespace: true }
+            }
+        };
 
     private sealed class ReachStep(IMethodSymbol function, ReachStep? caller)
     {
