@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Models;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
@@ -247,7 +248,8 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        if (shuffleContext != null && BuildsCpuPaths(context.Options))
+        if (shuffleContext != null &&
+            CpuBarrierModels.Read(context.Options.AnalyzerConfigOptionsProvider.GlobalOptions).BuildsCpuPaths)
         {
             context.ReportDiagnostic(GSharpDiagnostics.SuspendingCallInUnsupportedContext,
                 invocation.GetLocation(), callee.Name, shuffleContext,
@@ -256,10 +258,6 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
 
         return true;
     }
-
-    // Whether the project builds the native C++ and managed paths: every dialect but CUDA
-    internal static bool BuildsCpuPaths(AnalyzerOptions options) =>
-        !TranspilerDialects.IsCuda(TranspilerDialects.GetName(options.AnalyzerConfigOptionsProvider.GlobalOptions));
 
     // [WHY] A suspending call is called again on every resume, and the lowering keeps a by-reference argument as the
     // location it names, evaluating only its array or pointer and its indices once. A reference that a call, a property

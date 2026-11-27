@@ -146,9 +146,32 @@ internal static class KernelConstructChecks
     /// <summary>Checks if a variable declarator is a ref struct, local pointer, or iterator local that needs cross-barrier tracking.</summary>
     internal static void InspectLocalVariableDeclarator(KernelBarrierScan scan, VariableDeclaratorSyntax varDecl)
     {
-        if (scan.SemanticModel.GetDeclaredSymbol<ILocalSymbol>(varDecl) is not { } localSym)
+        if (!TryClassifyLocalVariableDeclarator(varDecl, scan.SemanticModel, out var tracked, out var isPointer))
         {
             return;
+        }
+
+        if (isPointer)
+        {
+            scan.PointerLocals.Add((varDecl, tracked.Symbol));
+        }
+        else
+        {
+            scan.TrackedLocals.Add(tracked);
+        }
+    }
+
+    internal static bool TryClassifyLocalVariableDeclarator(
+        VariableDeclaratorSyntax varDecl,
+        SemanticModel semanticModel,
+        out TrackedLocalInfo tracked,
+        out bool isPointer)
+    {
+        if (semanticModel.GetDeclaredSymbol<ILocalSymbol>(varDecl) is not { } localSym)
+        {
+            tracked = default;
+            isPointer = false;
+            return false;
         }
 
         var isRefLikeOrRef = (localSym.Type.IsRefLikeType && !localSym.Type.IsSharedMemoryType()) || localSym.IsRef;
@@ -156,12 +179,22 @@ internal static class KernelConstructChecks
 
         if (isRefLikeOrRef || isIteratorLocal)
         {
-            scan.TrackedLocals.Add(new TrackedLocalInfo(varDecl, localSym, isRefLikeOrRef, isLocalPointer: false, isIteratorLocal));
+            tracked = new TrackedLocalInfo(varDecl, localSym, isRefLikeOrRef, isLocalPointer: false, isIteratorLocal);
+            isPointer = false;
+            return true;
         }
-        else if (localSym.Type is IPointerTypeSymbol)
+
+        if (localSym.Type is IPointerTypeSymbol)
         {
-            scan.PointerLocals.Add((varDecl, localSym));
+            tracked = new TrackedLocalInfo(varDecl, localSym, isRefLikeOrRef: false, isLocalPointer: true,
+                isIteratorLocal: false);
+            isPointer = true;
+            return true;
         }
+
+        tracked = default;
+        isPointer = false;
+        return false;
     }
 
 }

@@ -330,7 +330,7 @@
 - name: CrossBarrierRefStructProhibited
   id: GSH0039
   title: "ref structs cannot be held across barrier synchronization"
-  messageFormat: "A ref or ref struct variable '{0}' cannot be held across a Gpu.SyncThreads() barrier. This is restricted by the C# state machine model."
+  messageFormat: "A ref or ref struct variable '{0}' cannot be held across a Gpu.SyncThreads() barrier. {1}"
   category: GSharpTranspiler
   defaultSeverity: Error
   isEnabledByDefault: true
@@ -346,7 +346,7 @@
 - name: CrossBarrierLocalPointerProhibited
   id: GSH0041
   title: "Stack pointers cannot be held across barrier synchronization"
-  messageFormat: "A pointer to a local variable or stackalloc block cannot cross a Gpu.SyncThreads() barrier because the CPU emulator rewinds the stack frame."
+  messageFormat: "A pointer to a local variable or stackalloc block cannot cross a Gpu.SyncThreads() barrier {0}"
   category: GSharpTranspiler
   defaultSeverity: Error
   isEnabledByDefault: true

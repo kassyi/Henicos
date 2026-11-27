@@ -33,6 +33,9 @@ namespace Kassyi.GSharp.Compiler.Models;
 /// Why the native CPU path keeps the method on its state machine under <c>GSharpNativeBarrierModel=Stack</c>, for the
 /// fallback list (<see cref="StateMachineFallbackPipeline"/>); default when it runs on the stack.
 /// </param>
+/// <param name="RunsOnNativeStack">
+/// Whether <see cref="NativeStackTranslator.ForKernel"/> emitted the native stack form for this kernel.
+/// </param>
 internal readonly record struct TranspiledKernelResult(
     HostClassHeader Class,
     KernelHostModel Host,
@@ -47,7 +50,8 @@ internal readonly record struct TranspiledKernelResult(
     EquatableArray<HeldRefLocalSite> HeldRefLocalSites = default,
     string ManagedStackSource = "",
     KernelSpillScope Spill = default,
-    StateMachineFallback NativeFallback = default)
+    StateMachineFallback NativeFallback = default,
+    bool RunsOnNativeStack = false)
 {
     public string GetSource(bool isCuda) => isCuda ? CudaSource : CppSource;
 
