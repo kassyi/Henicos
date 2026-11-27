@@ -114,25 +114,89 @@ public static partial class GpuBigIntDivRem
         return trace;
     }
 
-    // x~ = floor(Y_K / 2^(32 p_K - E)) into resultBuffer, by the stages of InverseSqrtDoublingSchedule. Without
-    // firstY, resultBuffer holds the guess x0 of ComputeInitialGuess and the first stage reads x0 / 2^(E - 64).
+    /// <summary>
+    /// Test only: runs the stages of the precision doubling up to <paramref name="finalWords"/> working words from
+    /// <paramref name="firstY"/> and returns each stage, reading every stage back to the host.
+    /// </summary>
+    /// <param name="targetOperand">The operand <c>A</c> of <c>w</c> words, bit length <c>32w</c> or
+    /// <c>32w - 1</c>.</param>
+    /// <param name="finalWords">The working words <c>p_K</c> of the last stage, at least 3.</param>
+    /// <param name="firstY">The input <c>Y</c> of the first stage, in <c>[0, 2^64)</c>.</param>
+    /// <returns>The stages in order, each with its result <c>Y</c> and its residual <c>D</c>.</returns>
+    /// <exception cref="ArgumentException">The operand has fewer than two words.</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="finalWords"/> is below 3, or
+    /// <paramref name="firstY"/> is negative or wider than 64 bits.</exception>
+    internal static List<InverseSqrtDoublingStage> InverseSqrtDoublingStagesForTest(GpuBigUInt targetOperand,
+        int finalWords, BigInteger firstY)
+    {
+        if (targetOperand.NumWords < 2)
+        {
+            throw new ArgumentException(
+                $"The precision doubling needs an operand of at least 2 words. operand: {targetOperand.NumWords} words.");
+        }
+
+        ArgumentOutOfRangeException.ThrowIfLessThan(finalWords, 3);
+        if (firstY.Sign < 0 || firstY.GetBitLength() > 64)
+        {
+            throw new ArgumentOutOfRangeException(nameof(firstY), firstY, "The first Y must lie in [0, 2^64).");
+        }
+
+        using var y = targetOperand.Workspace.RentTemp(finalWords);
+        WriteInverseSqrtDoublingFirstY(y, firstY);
+        var trace = new List<InverseSqrtDoublingStage>();
+        RunInverseSqrtDoublingStages(targetOperand, y, trace);
+        return trace;
+    }
+
+    // x~ = floor(Y_K / 2^(32 p_K - E)) into resultBuffer, p_K = w + 1. Without firstY, resultBuffer holds the guess x0
+    // of ComputeInitialGuess and the first stage reads x0 / 2^(E - 64).
     private static void InverseSqrtDoubling(GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int marginWords,
         BigInteger? firstY, List<InverseSqrtDoublingStage>? trace)
     {
         var workspace = targetOperand.Workspace;
-        var operandWords = targetOperand.NumWords;
-        var finalWords = operandWords + 1;
-        var scaleBits = 16 * operandWords + 32 * marginWords + 2; // E: Y_k approximates x / 2^E
+        var finalWords = targetOperand.NumWords + 1;
+        var scaleBits = 16 * targetOperand.NumWords + 32 * marginWords + 2; // E: Y_k approximates x / 2^E
+
+        // Rented buffers are zero, so the words of y below the first stage stay zero
+        using var y = workspace.RentTemp(finalWords);
+        if (firstY is { } value)
+        {
+            WriteInverseSqrtDoublingFirstY(y, value);
+        }
+        else
+        {
+            GpuBigIntMath.ShiftAndResize(resultBuffer, 64 - scaleBits, y.BorrowWords(finalWords - 2, 2));
+        }
+
+        RunInverseSqrtDoublingStages(targetOperand, y, trace);
+        GpuBigIntMath.ShiftAndResize(y, scaleBits - 32 * finalWords, resultBuffer);
+    }
+
+    // The input Y of the first stage, below 2^64, into the top two words of y
+    private static void WriteInverseSqrtDoublingFirstY(GpuBigUInt y, BigInteger firstY)
+    {
+        var workspace = y.Workspace;
+        var firstStage = y.BorrowWords(y.NumWords - 2, 2);
+        workspace.Provider.WriteWord(firstStage.DevicePointer, 0, (uint)(firstY & uint.MaxValue), workspace.Stream);
+        workspace.Provider.WriteWord(firstStage.DevicePointer, 1, (uint)(firstY >> 32), workspace.Stream);
+    }
+
+    // The stages of InverseSqrtDoublingSchedule(y.NumWords) on y, whose top two words hold the input of the first
+    // stage and whose other words are zero; y receives Y_K of the last stage in all its words
+    private static void RunInverseSqrtDoublingStages(GpuBigUInt operand, GpuBigUInt y,
+        List<InverseSqrtDoublingStage>? trace)
+    {
+        var workspace = operand.Workspace;
+        var finalWords = y.NumWords;
         var maxResidualWords = InverseSqrtDoublingResidualWords(finalWords);
+        // aw + p + 1 of the last stage, aw = min(p + 1, w): the widest A_k·S and its residual
+        var maxProductWords = Math.Min(finalWords + 1, operand.NumWords) + finalWords + 1;
         Span<int> schedule = stackalloc int[InverseSqrtDoublingMaxStages];
         var stageCount = InverseSqrtDoublingSchedule(finalWords, schedule);
 
-        // Each buffer holds the last stage; a stage uses its low words. Rented buffers are zero, so the words of y
-        // below the current stage stay zero and a wider stage reads the previous Y shifted left by whole words.
-        using var y = workspace.RentTemp(finalWords);
         using var squared = workspace.RentTemp(2 * finalWords);
-        using var product = workspace.RentTemp(2 * operandWords + 2);
-        using var residual = workspace.RentTemp(2 * operandWords + 2);
+        using var product = workspace.RentTemp(maxProductWords);
+        using var residual = workspace.RentTemp(maxProductWords);
         using var offsetResidual = workspace.RentTemp(maxResidualWords);
         using var correction = workspace.RentTemp(2 * maxResidualWords);
         using var offset = workspace.RentTemp(2 * maxResidualWords);
@@ -141,23 +205,10 @@ public static partial class GpuBigIntDivRem
         var buffers = new InverseSqrtDoublingBuffers(y, squared, product, residual, offsetResidual, correction,
             offset, difference, step);
 
-        var firstStage = y.BorrowWords(finalWords - 2, 2);
-        if (firstY is { } value)
-        {
-            workspace.Provider.WriteWord(firstStage.DevicePointer, 0, (uint)(value & uint.MaxValue), workspace.Stream);
-            workspace.Provider.WriteWord(firstStage.DevicePointer, 1, (uint)(value >> 32), workspace.Stream);
-        }
-        else
-        {
-            GpuBigIntMath.ShiftAndResize(resultBuffer, 64 - scaleBits, firstStage);
-        }
-
         foreach (var words in schedule[..stageCount])
         {
-            RunInverseSqrtDoublingStage(targetOperand, buffers, finalWords, words, trace);
+            RunInverseSqrtDoublingStage(operand, buffers, finalWords, words, trace);
         }
-
-        GpuBigIntMath.ShiftAndResize(y, scaleBits - 32 * finalWords, resultBuffer);
     }
 
     // One Newton step x + (x / 2)(1 - A x^2) at p words; the four floors of the derivation are marked

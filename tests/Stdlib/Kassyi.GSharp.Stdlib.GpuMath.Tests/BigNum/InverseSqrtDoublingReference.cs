@@ -109,25 +109,37 @@ internal static class InverseSqrtDoublingReference
     }
 
     /// <summary>
+    /// Runs every stage of <see cref="Schedule"/> up to <paramref name="finalWords"/> from <paramref name="firstY"/>
+    /// and returns them; <paramref name="lastY"/> receives <c>Y_K</c> of the last stage.
+    /// </summary>
+    internal static List<(int Words, BigInteger Y, BigInteger D)> RunTo(BigInteger a, int operandWords,
+        BigInteger firstY, int finalWords, out BigInteger lastY)
+    {
+        var stages = new List<(int Words, BigInteger Y, BigInteger D)>();
+        var previous = 2;
+        var y = firstY;
+        foreach (var words in Schedule(finalWords))
+        {
+            y <<= 32 * (words - previous);
+            var (next, d) = Stage(y, words, a, operandWords);
+            y = next;
+            stages.Add((words, y, d));
+            previous = words;
+        }
+
+        lastY = y;
+        return stages;
+    }
+
+    /// <summary>
     /// Runs every stage from <paramref name="firstY"/> and returns them; <paramref name="xTilde"/> receives
     /// <c>x~ = floor(Y_K / 2^(32 p_K - E))</c>.
     /// </summary>
     internal static List<(int Words, BigInteger Y, BigInteger D)> Run(BigInteger a, Geometry g, BigInteger firstY,
         out BigInteger xTilde)
     {
-        var stages = new List<(int Words, BigInteger Y, BigInteger D)>();
-        var previous = 2;
-        var y = firstY;
-        foreach (var words in Schedule(g.FinalWords))
-        {
-            y <<= 32 * (words - previous);
-            var (next, d) = Stage(y, words, a, g.W);
-            y = next;
-            stages.Add((words, y, d));
-            previous = words;
-        }
-
-        xTilde = y >> (32 * g.FinalWords - g.E);
+        var stages = RunTo(a, g.W, firstY, g.FinalWords, out var lastY);
+        xTilde = lastY >> (32 * g.FinalWords - g.E);
         return stages;
     }
 

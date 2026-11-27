@@ -747,6 +747,28 @@ public static partial class GpuBigIntDivRem
     private static void ComputeInitialGuess(GpuBigUInt targetOperand, GpuBigUInt resultBuffer,
         int targetBits, bool isSquareRoot)
     {
+        var shiftedApproximation = InitialGuessValue(targetOperand, targetBits, isSquareRoot);
+
+        var numWords = resultBuffer.NumWords;
+        var xData = ArrayPool<uint>.Shared.Rent(numWords);
+        try
+        {
+            shiftedApproximation.WriteLimbs(xData.AsSpan(0, numWords));
+
+            // No stream synchronization: a pageable host-to-device copy is staged before the call returns, so the pooled
+            // host buffer may be returned immediately, and later work using resultBuffer is ordered on the same stream.
+            targetOperand.Workspace.Provider.CopyHostToDevice(resultBuffer.DevicePointer, xData, numWords,
+                targetOperand.Workspace.Stream);
+        }
+        finally
+        {
+            ArrayPool<uint>.Shared.Return(xData);
+        }
+    }
+
+    // x0 ~ 2^targetBits / sqrt(a), or 2^targetBits / a, from the top words of the operand (one read to the host)
+    private static BigInteger InitialGuessValue(GpuBigUInt targetOperand, int targetBits, bool isSquareRoot)
+    {
         var topBig = ExtractTopBitsAsBigInteger(targetOperand, out var actualBits);
 
         var truncatedBits = 0;
@@ -794,21 +816,7 @@ public static partial class GpuBigIntDivRem
             shiftedApproximation >>= -finalShift;
         }
 
-        var numWords = resultBuffer.NumWords;
-        var xData = ArrayPool<uint>.Shared.Rent(numWords);
-        try
-        {
-            shiftedApproximation.WriteLimbs(xData.AsSpan(0, numWords));
-
-            // No stream synchronization: a pageable host-to-device copy is staged before the call returns, so the pooled
-            // host buffer may be returned immediately, and later work using resultBuffer is ordered on the same stream.
-            targetOperand.Workspace.Provider.CopyHostToDevice(resultBuffer.DevicePointer, xData, numWords,
-                targetOperand.Workspace.Stream);
-        }
-        finally
-        {
-            ArrayPool<uint>.Shared.Return(xData);
-        }
+        return shiftedApproximation;
     }
 }
 
