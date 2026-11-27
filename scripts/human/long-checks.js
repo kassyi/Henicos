@@ -7,9 +7,10 @@
 //     - Remote Linux sanitizer (`sanitized-linux`, legacy alias `sanitized-wsl`): runs `just test-sanitized` on a
 //       configured remote Linux worker via `job-queue.js run --remote`, falling back to WSL on Windows if remote
 //       offload is unconfigured or unreachable before execution.
-//     - GPU lane (main worktree): differential fuzzer, test-stability loop, coverage, mutate-gpumath.
+//     - GPU lane (main worktree, one step at a time): differential fuzzer, test-stability loop, coverage,
+//       mutate-gpumath, and mutate-compiler-cuda, which takes no GPU turn but builds in the same worktree.
 //     - Heavy CPU lane (isolated temporary git worktree when clean): `mutate-compiler`, avoiding MSBuild bin/obj
-//       file-lock collisions with the GPU lane, plus CPU-only `mutate-compiler-cuda`.
+//       file-lock collisions with the GPU lane.
 // Each step is queued as its own job-queue.js job, so live progress appears in `just queue-watch` and other chats can
 // interleave between steps. A failing step is recorded and the run goes on.
 //
@@ -65,12 +66,12 @@ const allSteps = [
   'coverage', // 3m11s
   'mutate-compiler', // 16h50m (CPU-only; runs in parallel with GPU lane in an isolated worktree)
   'mutate-gpumath', // 8h47m (in the parallel GPU lane)
-  'mutate-compiler-cuda', // 1h15m (build 2m13s); CPU-only snapshot tests
+  'mutate-compiler-cuda', // 1h15m (build 2m13s); CPU-only snapshot tests, serial in the GPU lane
 ];
 
 const stepAliases = { 'sanitized-wsl': 'sanitized-linux' };
 const benchStepNames = new Set(['bench-generator', 'bench-compute', 'bench-pi']);
-const gpuLaneStepNames = new Set(['fuzz', 'stability', 'coverage', 'mutate-gpumath']);
+const gpuLaneStepNames = new Set(['fuzz', 'stability', 'coverage', 'mutate-gpumath', 'mutate-compiler-cuda']);
 
 // P:\a\b -> /mnt/p/a/b, for running the same checkout inside WSL.
 function toWslPath(windowsPath) {
@@ -217,7 +218,7 @@ function buildSteps(options, outDir, isolateMutateCompiler) {
     ),
     'mutate-compiler-cuda': queuedStep(
       ['--local'], 'just', ['mutate', 'compiler-cuda'],
-      { gpu: false, lane: 'cpu', target: 'local' },
+      { gpu: false, lane: 'gpu', target: 'local' },
     ),
   };
 }
