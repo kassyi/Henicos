@@ -7,8 +7,8 @@
 //     - Remote Linux sanitizer (`sanitized-linux`, legacy alias `sanitized-wsl`): runs `just test-sanitized` on a
 //       configured remote Linux worker via `job-queue.js run --remote`, falling back to WSL on Windows if remote
 //       offload is unconfigured or unreachable before execution.
-//     - GPU lane (main worktree): differential fuzzer, test-stability loop, coverage, mutate-gpumath,
-//       mutate-compiler-cuda.
+//     - GPU lane (main worktree, one step at a time): differential fuzzer, test-stability loop, coverage,
+//       mutate-gpumath, and mutate-compiler-cuda, which takes no GPU turn but builds in the same worktree.
 //     - Heavy CPU lane (isolated temporary git worktree when clean): `mutate-compiler`, avoiding MSBuild bin/obj
 //       file-lock collisions with the GPU lane.
 // Each step is queued as its own job-queue.js job, so live progress appears in `just queue-watch` and other chats can
@@ -66,7 +66,7 @@ const allSteps = [
   'coverage', // 3m11s
   'mutate-compiler', // 16h50m (CPU-only; runs in parallel with GPU lane in an isolated worktree)
   'mutate-gpumath', // 8h47m (in the parallel GPU lane)
-  'mutate-compiler-cuda', // 1h15m (build 2m13s); 56m04s in the parallel GPU lane
+  'mutate-compiler-cuda', // 1h15m (build 2m13s); CPU-only snapshot tests, serial in the GPU lane
 ];
 
 const stepAliases = { 'sanitized-wsl': 'sanitized-linux' };
@@ -217,8 +217,8 @@ function buildSteps(options, outDir, isolateMutateCompiler) {
       { gpu: true, lane: 'gpu', target: 'local:gpu' },
     ),
     'mutate-compiler-cuda': queuedStep(
-      ['--gpu'], 'just', ['mutate', 'compiler-cuda'],
-      { gpu: true, lane: 'gpu', target: 'local:gpu' },
+      ['--local'], 'just', ['mutate', 'compiler-cuda'],
+      { gpu: false, lane: 'gpu', target: 'local' },
     ),
   };
 }

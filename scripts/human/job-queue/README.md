@@ -251,7 +251,8 @@ decides, `"timeout"`, `"error"`, `"invalid"`, or `"stale"` after `stillValid` fa
 two reasons of its own: `"downgrade"` for a `downgrade` that carries none, and `"rebind"` for a shared turn that
 registers again as exclusive without a reason. The repository's plugin gives, among others, `not-language` (used on `--gpu-exclusive` turns outside the allow-listed
 command language in `../job-queue-henicos/command-language.ts`; plain `--gpu` refuses outside-language commands before
-queueing), `categories`, `shared-recipe`, `exclusive-recipe`, `binary-test`, `no-filter`, `filter-categories`,
+queueing), `categories`, `shared-recipe`, `mutate-config`, `mutate-config-unreadable`, `mutate-filter-categories`,
+`exclusive-recipe`, `binary-test`, `no-filter`, `filter-categories`,
 `exclusive-category`, `exclusive-env`, `list:<n>` (the exclusive tests the name-filter list found), `list-timeout`
 (the list job was stopped on its time limit), `list-spawn-error` (it could not be started), `list-failed` (it exited
 non-zero) and `list-no-marker` (its output did not say that no test matches). Without plugins it sends no `share` or
