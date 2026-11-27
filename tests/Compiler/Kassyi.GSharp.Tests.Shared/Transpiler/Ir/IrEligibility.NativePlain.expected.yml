@@ -10,8 +10,8 @@
 #   occurrences:  every node the C++ writer cannot spell, most first
 #   eligible:     the methods of the population with an IR body
 kinds:
-  Kernel: 4362
-  DeviceFunction: 1234
+  Kernel: 4366
+  DeviceFunction: 1237
   SuspendingDeviceFunction: 454
   Iterator: 120
 reasons:
@@ -19,17 +19,17 @@ reasons:
   IrNotBuilt: 0
   StrykerMutant: 1
   SplitCall: 10
-  OpaqueNode: 130
+  OpaqueNode: 132
   RemovedCall: 3
   Macro: 6
   SharedMemoryLocal: 26
-  UnsupportedForm: 914
+  UnsupportedForm: 915
 opaque:
   - {key: "UnsupportedOperation/ForStatement", count: 18}
   - {key: "UnsupportedOperation/SimpleLambdaExpression", count: 17}
   - {key: "UnsupportedOperation/ElementAccessExpression", count: 10}
+  - {key: "UnsupportedOperation/ForEachStatement", count: 9}
   - {key: "UnsupportedOperation/LocalDeclarationStatement", count: 9}
-  - {key: "UnsupportedOperation/ForEachStatement", count: 8}
   - {key: "UnsupportedOperation/CoalesceAssignmentExpression", count: 6}
   - {key: "UnsupportedOperation/ParenthesizedLambdaExpression", count: 6}
   - {key: "UnsupportedOperation/ThrowStatement", count: 6}
@@ -42,6 +42,7 @@ opaque:
   - {key: "UnsupportedOperation/SwitchStatement", count: 3}
   - {key: "UnsupportedOperation/UsingStatement", count: 3}
   - {key: "Invalid/ObjectCreationExpression", count: 2}
+  - {key: "UnsupportedOperation/FixedStatement", count: 2}
   - {key: "UnsupportedOperation/IdentifierName", count: 2}
   - {key: "UnsupportedOperation/SimpleMemberAccessExpression", count: 2}
   - {key: "UnsupportedOperation/ThrowExpression", count: 2}
@@ -49,7 +50,6 @@ opaque:
   - {key: "UnsupportedShape/ElementAccessExpression", count: 2}
   - {key: "UnsupportedShape/IdentifierName", count: 2}
   - {key: "Invalid/SimpleMemberAccessExpression", count: 1}
-  - {key: "UnsupportedOperation/FixedStatement", count: 1}
   - {key: "UnsupportedOperation/LocalFunctionStatement", count: 1}
   - {key: "UnsupportedOperation/StackAllocArrayCreationExpression", count: 1}
   - {key: "UnsupportedOperation/TryStatement", count: 1}
@@ -62,7 +62,7 @@ split:
 firstHit:
   - {key: "NativePlain:IrBinary/-", count: 321}
   - {key: "NativePlain:IrAssignment/-", count: 185}
-  - {key: "NativePlain:IrCompoundAssignment/-", count: 99}
+  - {key: "NativePlain:IrCompoundAssignment/-", count: 100}
   - {key: "NativePlain:IrCall/DeviceFunction", count: 39}
   - {key: "NativePlain:IrIncrement/-", count: 36}
   - {key: "NativePlain:IrStructCreation/-", count: 32}
@@ -92,13 +92,13 @@ firstHit:
   - {key: "NativePlain:IrVariableReference/Type:Pointer", count: 1}
 occurrences:
   - {key: "NativePlain:IrBinary/-", count: 1176}
-  - {key: "NativePlain:IrFieldReference/-", count: 535}
+  - {key: "NativePlain:IrFieldReference/-", count: 536}
   - {key: "NativePlain:IrAssignment/-", count: 523}
-  - {key: "NativePlain:IrVariableReference/Ref", count: 454}
-  - {key: "NativePlain:IrElementReference/NullChecked", count: 365}
+  - {key: "NativePlain:IrVariableReference/Ref", count: 455}
+  - {key: "NativePlain:IrElementReference/NullChecked", count: 366}
   - {key: "NativePlain:IrConversion/Transparent", count: 320}
   - {key: "NativePlain:IrCall/DeviceFunction", count: 176}
-  - {key: "NativePlain:IrCompoundAssignment/-", count: 124}
+  - {key: "NativePlain:IrCompoundAssignment/-", count: 125}
   - {key: "NativePlain:IrStructCreation/-", count: 99}
   - {key: "NativePlain:IrConditional/-", count: 88}
   - {key: "NativePlain:IrPropertyReference/DialectIntrinsic", count: 79}
