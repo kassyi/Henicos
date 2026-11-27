@@ -24,11 +24,9 @@ internal static class ModPowNttHostController
         GpuBigIntMath.ShiftLeftUnchecked(mod, lz, bNorm);
 
         // Maximum size of operand A during ModPow is (2 * n) words (product of two n-word numbers).
-        var maxABits = 2 * n * 32;
-        var aActualWords = (maxABits + 31) / 32;
         var marginBits = 512;
         var marginWords = marginBits / 32;
-        var targetBits = n * 32 + aActualWords * 32 + marginBits;
+        var targetBits = CooperativeMegaKernelLauncher.ModPowMegaTargetBits(n);
         var targetWords = (targetBits + 31) / 32;
 
         using var reciprocalNorm = new GpuBigUInt(workspace, targetWords);
@@ -44,7 +42,7 @@ internal static class ModPowNttHostController
         // largest fitting block above.
         var shape = CooperativeMegaKernelLauncher.PrepareLaunchShape(
             workspace,
-            aActualWords + targetWords,
+            CooperativeMegaKernelLauncher.ModPowMegaProductWords(n),
             static () => GpuBigIntDivRemKernels.ResolveModPowNttMegaKernel(),
             CooperativeMegaKernelLauncher.ModPowKernelName,
             smCount: 1);

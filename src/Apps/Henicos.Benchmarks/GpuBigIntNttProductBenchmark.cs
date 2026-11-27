@@ -21,7 +21,9 @@ namespace Henicos.Benchmarks;
 /// <para>
 /// <see cref="NttProductKernel.ModPow"/> is measured for <c>k = 10..16</c> with a 2-word exponent and
 /// <see cref="GpuWorkspace.PolyAlgorithmThreshold"/> set to <c>32 * n</c> so every case takes the cooperative
-/// mega-kernel path.
+/// mega-kernel path. Each <c>ModPow</c> row also runs one Barrett reciprocal at <c>targetBits = 96 * n + 512</c>
+/// (product length <c>7 * n + 32</c>, transform length <c>2^(k + 1)</c> — e.g. 2048 points at <c>k = 10</c> and
+/// 131072 at <c>k = 16</c>) before the ladder.
 /// </para>
 /// </remarks>
 [Config(typeof(NttProductBenchmarkConfig))]
@@ -51,7 +53,7 @@ public class GpuBigIntNttProductBenchmark : IDisposable
     private GpuBigUInt? _exponent;
     private GpuBigUInt? _modulus;
     private GpuBigUInt? _result;
-    private int _reciprocalTargetBits;
+    private Action? _run;
 
     /// <summary>One valid <c>(Kernel, Log2Points)</c> benchmark case.</summary>
     /// <param name="Kernel">The NTT-backed operation to time.</param>
@@ -145,9 +147,11 @@ public class GpuBigIntNttProductBenchmark : IDisposable
                     CooperativeMegaKernelLauncher.InverseSqrtMegaProductWords(operandWords, InverseSqrtMarginWords)),
             NttProductKernel.Reciprocal =>
                 CooperativeMegaKernelLauncher.TransformLengthFor(
-                    operandWords + 2 * ((ReciprocalTargetBits(operandWords) + 31) / 32)),
+                    CooperativeMegaKernelLauncher.ReciprocalMegaProductWords(
+                        operandWords, ReciprocalTargetBits(operandWords))),
             NttProductKernel.ModPow =>
-                CooperativeMegaKernelLauncher.TransformLengthFor(5 * operandWords + 16),
+                CooperativeMegaKernelLauncher.TransformLengthFor(
+                    CooperativeMegaKernelLauncher.ModPowMegaProductWords(operandWords)),
             NttProductKernel.Multiply or NttProductKernel.Square =>
                 Ntt35ConvolutionLauncher.TransformLengthFor35(2 * operandWords),
             _ => throw new ArgumentOutOfRangeException(nameof(kernel), kernel, "Unknown NTT product kernel.")
@@ -161,58 +165,9 @@ public class GpuBigIntNttProductBenchmark : IDisposable
         {
             _scope = new GpuKernelLoader.CudaContextScope();
             var n = OperandWordsFor(Target.Kernel, Target.Log2Points);
-            var workspaceWords = Target.Kernel switch
-            {
-                NttProductKernel.Reciprocal => ReciprocalTargetBits(n) / 32 + 1,
-                NttProductKernel.Multiply or NttProductKernel.Square => 2 * n,
-                NttProductKernel.InverseSqrt => n + InverseSqrtMarginWords,
-                _ => n
-            };
-
-            var workspace = new GpuWorkspace(Math.Max(4096, workspaceWords));
+            var workspace = new GpuWorkspace(Math.Max(4096, WorkspaceWordsFor(Target.Kernel, n)));
             _workspace = workspace;
-
-            var random = new Random(2132);
-            switch (Target.Kernel)
-            {
-                case NttProductKernel.InverseSqrt:
-                    _operandA = new GpuBigUInt(workspace, RandomWords(random, n, setTopBit: true));
-                    _result = new GpuBigUInt(workspace, n + InverseSqrtMarginWords);
-                    break;
-
-                case NttProductKernel.Reciprocal:
-                    _reciprocalTargetBits = ReciprocalTargetBits(n);
-                    _operandA = new GpuBigUInt(workspace, RandomWords(random, n, setTopBit: true));
-                    _result = new GpuBigUInt(workspace, _reciprocalTargetBits / 32 + 1);
-                    break;
-
-                case NttProductKernel.ModPow:
-                    workspace.PolyAlgorithmThreshold = 32 * n;
-                    var modWords = RandomWords(random, n, setTopBit: true);
-                    modWords[0] |= 1u;
-                    var baseWords = RandomWords(random, n, setTopBit: false);
-                    baseWords[^1] &= 0x7FFF_FFFFu;
-                    var expWords = RandomWords(random, ModPowExponentWords, setTopBit: true);
-                    _operandA = new GpuBigUInt(workspace, baseWords);
-                    _exponent = new GpuBigUInt(workspace, expWords);
-                    _modulus = new GpuBigUInt(workspace, modWords);
-                    _result = new GpuBigUInt(workspace, n);
-                    break;
-
-                case NttProductKernel.Multiply:
-                    _operandA = new GpuBigUInt(workspace, RandomWords(random, n, setTopBit: true));
-                    _operandB = new GpuBigUInt(workspace, RandomWords(random, n, setTopBit: true));
-                    _result = new GpuBigUInt(workspace, 2 * n);
-                    break;
-
-                case NttProductKernel.Square:
-                    _operandA = new GpuBigUInt(workspace, RandomWords(random, n, setTopBit: true));
-                    _result = new GpuBigUInt(workspace, 2 * n);
-                    break;
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(Target), Target.Kernel, "Unknown NTT product kernel.");
-            }
+            _run = PrepareOperation(workspace, new Random(2132), Target.Kernel, n);
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
@@ -229,38 +184,14 @@ public class GpuBigIntNttProductBenchmark : IDisposable
     public void Run()
     {
         var workspace = _workspace ?? throw new InvalidOperationException("The benchmark is not set up.");
-        switch (Target.Kernel)
-        {
-            case NttProductKernel.InverseSqrt:
-                GpuBigIntDivRem.InverseSqrt(Buffer(_operandA), Buffer(_result), marginWords: InverseSqrtMarginWords);
-                break;
-
-            case NttProductKernel.Reciprocal:
-                GpuBigIntDivRem.Reciprocal(Buffer(_operandA), Buffer(_result), targetBits: _reciprocalTargetBits);
-                break;
-
-            case NttProductKernel.ModPow:
-                GpuBigIntDivRem.ModPow(Buffer(_operandA), Buffer(_exponent), Buffer(_modulus), Buffer(_result));
-                break;
-
-            case NttProductKernel.Multiply:
-                GpuBigIntMath.Mul(Buffer(_operandA), Buffer(_operandB), Buffer(_result));
-                break;
-
-            case NttProductKernel.Square:
-                GpuBigIntMath.Mul(Buffer(_operandA), Buffer(_operandA), Buffer(_result));
-                break;
-
-            default:
-                throw new InvalidOperationException($"Unknown NTT product kernel: {Target.Kernel}.");
-        }
-
-        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(workspace.Stream));
-        GpuKernelLoader.ThrowIfDeviceError();
+        var run = _run ?? throw new InvalidOperationException("The benchmark is not set up.");
+        run();
+        workspace.Provider.SynchronizeStream(workspace.Stream);
     }
 
     public void Dispose()
     {
+        _run = null;
         _result?.Dispose();
         _modulus?.Dispose();
         _exponent?.Dispose();
@@ -278,8 +209,82 @@ public class GpuBigIntNttProductBenchmark : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private static GpuBigUInt Buffer(GpuBigUInt? buffer) =>
-        buffer ?? throw new InvalidOperationException("The benchmark is not set up.");
+    private static int WorkspaceWordsFor(NttProductKernel kernel, int operandWords) => kernel switch
+    {
+        NttProductKernel.Reciprocal => ReciprocalTargetBits(operandWords) / 32 + 1,
+        NttProductKernel.Multiply or NttProductKernel.Square => 2 * operandWords,
+        NttProductKernel.InverseSqrt => operandWords + InverseSqrtMarginWords,
+        _ => operandWords
+    };
+
+    private Action PrepareOperation(GpuWorkspace workspace, Random random, NttProductKernel kernel, int n) =>
+        kernel switch
+        {
+            NttProductKernel.InverseSqrt => CreateInverseSqrtOperation(workspace, random, n),
+            NttProductKernel.Reciprocal => CreateReciprocalOperation(workspace, random, n),
+            NttProductKernel.ModPow => CreateModPowOperation(workspace, random, n),
+            NttProductKernel.Multiply => CreateMultiplyOperation(workspace, random, n),
+            NttProductKernel.Square => CreateSquareOperation(workspace, random, n),
+            _ => throw new ArgumentOutOfRangeException(nameof(kernel), kernel, "Unknown NTT product kernel.")
+        };
+
+    private Action CreateInverseSqrtOperation(GpuWorkspace workspace, Random random, int n)
+    {
+        var operandA = new GpuBigUInt(workspace, RandomWords(random, n, setTopBit: true));
+        var result = new GpuBigUInt(workspace, n + InverseSqrtMarginWords);
+        _operandA = operandA;
+        _result = result;
+        return () => GpuBigIntDivRem.InverseSqrt(operandA, result, marginWords: InverseSqrtMarginWords);
+    }
+
+    private Action CreateReciprocalOperation(GpuWorkspace workspace, Random random, int n)
+    {
+        var targetBits = ReciprocalTargetBits(n);
+        var operandA = new GpuBigUInt(workspace, RandomWords(random, n, setTopBit: true));
+        var result = new GpuBigUInt(workspace, targetBits / 32 + 1);
+        _operandA = operandA;
+        _result = result;
+        return () => GpuBigIntDivRem.Reciprocal(operandA, result, targetBits: targetBits);
+    }
+
+    private Action CreateModPowOperation(GpuWorkspace workspace, Random random, int n)
+    {
+        workspace.PolyAlgorithmThreshold = 32 * n;
+        var modWords = RandomWords(random, n, setTopBit: true);
+        modWords[0] |= 1u;
+        var baseWords = RandomWords(random, n, setTopBit: false);
+        baseWords[^1] &= 0x7FFF_FFFFu;
+        var expWords = RandomWords(random, ModPowExponentWords, setTopBit: true);
+        var operandA = new GpuBigUInt(workspace, baseWords);
+        var exponent = new GpuBigUInt(workspace, expWords);
+        var modulus = new GpuBigUInt(workspace, modWords);
+        var result = new GpuBigUInt(workspace, n);
+        _operandA = operandA;
+        _exponent = exponent;
+        _modulus = modulus;
+        _result = result;
+        return () => GpuBigIntDivRem.ModPow(operandA, exponent, modulus, result);
+    }
+
+    private Action CreateMultiplyOperation(GpuWorkspace workspace, Random random, int n)
+    {
+        var operandA = new GpuBigUInt(workspace, RandomWords(random, n, setTopBit: true));
+        var operandB = new GpuBigUInt(workspace, RandomWords(random, n, setTopBit: true));
+        var result = new GpuBigUInt(workspace, 2 * n);
+        _operandA = operandA;
+        _operandB = operandB;
+        _result = result;
+        return () => GpuBigIntMath.Mul(operandA, operandB, result);
+    }
+
+    private Action CreateSquareOperation(GpuWorkspace workspace, Random random, int n)
+    {
+        var operandA = new GpuBigUInt(workspace, RandomWords(random, n, setTopBit: true));
+        var result = new GpuBigUInt(workspace, 2 * n);
+        _operandA = operandA;
+        _result = result;
+        return () => GpuBigIntMath.Mul(operandA, operandA, result);
+    }
 
     private static uint[] RandomWords(Random random, int count, bool setTopBit)
     {
