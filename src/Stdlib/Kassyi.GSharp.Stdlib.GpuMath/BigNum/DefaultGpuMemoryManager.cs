@@ -22,13 +22,15 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// </para>
 /// <para>
 /// <b>CUDA graphs:</b> a buffer freed while the workspace stream is captured stays out of the shared pool, because the
-/// graph keeps using it on every launch. Inside a capture started by <c>CompileToGraph</c>
-/// (<see cref="BeginDeferral"/>) it goes to the capture's own free list, from which later allocations of the same
-/// capture take it in stream order; the buffers left there belong to the graph and come back to the pool when it is
-/// disposed (<see cref="ReturnDeferred"/>). A buffer freed during a capture that the user started on the workspace
+/// graph keeps using it on every launch. Inside a capture started by <see cref="CapturedStreamGraph"/>
+/// (<see cref="BeginDeferral(IntPtr)"/>) it goes to the capture's own free list, from which later allocations of the
+/// same capture take it in stream order; the buffers left there belong to the graph and come back to the pool when it
+/// is disposed (<see cref="ReturnDeferred"/>). A buffer freed during a capture that the user started on the workspace
 /// stream is parked until the workspace is disposed. <see cref="Dispose"/> frees every deferred buffer that has not
 /// come back. The own capture is recognized by its session and its thread; the driver is asked
-/// (<c>cuStreamIsCapturing</c>) only to find a capture the user started. Captures do not fork the workspace stream.
+/// (<c>cuStreamIsCapturing</c>) only to find a capture the user started. A capture of
+/// <see cref="CapturedStreamGraph"/> records on a non-blocking stream of its own; the graph runs on the workspace
+/// stream.
 /// </para>
 /// </remarks>
 internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, IntPtr stream)
@@ -90,7 +92,7 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
         Interlocked.Increment(ref _driverAllocations);
         try
         {
-            provider.ClearMemoryAsync(ptr, numWords, stream);
+            provider.ClearMemoryAsync(ptr, numWords, session?.Stream ?? stream);
         }
         catch
         {
@@ -211,7 +213,7 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
             // failed capture refuses the clear. The clear is a node of the graph, so a later node takes a zero buffer.
             _deferred.TryAdd(buffer, 0);
             session.AddFree(buffer);
-            provider.ClearMemoryAsync(buffer.Pointer, buffer.TotalWords, stream);
+            provider.ClearMemoryAsync(buffer.Pointer, buffer.TotalWords, session.Stream);
             return true;
         }
 
@@ -238,14 +240,22 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
     }
 
     /// <summary>
-    /// Starts deferring the frees of a capture that <c>CompileToGraph</c> is about to begin on the workspace stream.
+    /// Starts deferring the frees of a capture on the workspace stream.
     /// </summary>
     /// <returns>The deferral to pass to <see cref="EndDeferral"/>.</returns>
     /// <exception cref="InvalidOperationException">Another capture is already running on this workspace.</exception>
-    internal CaptureDeferral BeginDeferral()
+    internal CaptureDeferral BeginDeferral() => BeginDeferral(stream);
+
+    /// <summary>
+    /// Starts deferring the frees of a capture that records on <paramref name="captureStream"/>.
+    /// </summary>
+    /// <param name="captureStream">The stream that receives the calling thread's work during the capture.</param>
+    /// <returns>The deferral to pass to <see cref="EndDeferral"/>.</returns>
+    /// <exception cref="InvalidOperationException">Another capture is already running on this workspace.</exception>
+    internal CaptureDeferral BeginDeferral(IntPtr captureStream)
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) == 1, this);
-        var deferral = new CaptureDeferral(Environment.CurrentManagedThreadId);
+        var deferral = new CaptureDeferral(Environment.CurrentManagedThreadId, captureStream);
         if (Interlocked.CompareExchange(ref _activeDeferral, deferral, null) is not null)
         {
             throw new InvalidOperationException("A CUDA graph capture is already running on this workspace.");
@@ -305,8 +315,13 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
     /// <param name="handle">A live handle of this manager.</param>
     internal void ObserveCaptured(GpuBigIntMemoryHandle handle) => CurrentSession()?.Observe(handle);
 
-    // The session of the capture CompileToGraph runs, seen only from the thread that runs it: another thread allocating
-    // or freeing meanwhile is not part of the capture and goes through the shared pool (or the driver's capture query)
+    // The stream that the calling thread's work goes to: the stream of the capture this thread runs, else the
+    // workspace stream.
+    internal IntPtr CurrentStream => CurrentSession()?.Stream ?? stream;
+
+    // The session of the capture CapturedStreamGraph runs, seen only from the thread that runs it: another thread
+    // allocating or freeing meanwhile is not part of the capture and goes through the shared pool (or the driver's
+    // capture query).
     private CaptureDeferral? CurrentSession() =>
         Volatile.Read(ref _activeDeferral) is { } session && session.ThreadId == Environment.CurrentManagedThreadId
             ? session
