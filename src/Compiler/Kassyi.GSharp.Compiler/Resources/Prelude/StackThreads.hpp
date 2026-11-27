@@ -271,21 +271,53 @@ inline void __gsharp_stack_range_of(
 }
 
 #if !defined(__GSHARP_STACK_ASAN)
+inline constexpr size_t __gsharp_altstack_bytes = 64u * 1024u;
+
+// The signal stack this prelude gave an OS thread, and its entry in the list the handler reads
 struct __gsharp_altstack_tls {
     bool installed = false;
     __gsharp_altstack_node* node = nullptr;
-    ~__gsharp_altstack_tls() noexcept {
-        if (node != nullptr) {
-            node->current.store(nullptr, std::memory_order_release);
-            node->tid.store(0, std::memory_order_release);
+    void* alt = nullptr;
+    stack_t previous{};
+    bool release_registered = false; // __gsharp_tls_release is constructed, so its destructor runs at the thread end
+};
+
+inline thread_local __gsharp_altstack_tls __gsharp_tls_state{};
+
+// At the end of the thread the entry is freed for another thread (tid 0) and the signal stack the thread had before
+// is put back, and ours is unmapped. A launch from a thread_local destructor that runs after this one installs again.
+// [WHY] The state is a trivially destructible object of its own: the stores of a destructor to the members of its own
+// object are dead once that object ends, and the compiler drops them, so a later launch would find the state still
+// installed while the handler no longer finds the entry
+struct __gsharp_altstack_release {
+    bool armed = false;
+    ~__gsharp_altstack_release() noexcept {
+        __gsharp_altstack_tls& state = __gsharp_tls_state;
+        if (state.node != nullptr) {
+            state.node->current.store(nullptr, std::memory_order_release);
+            state.node->tid.store(0, std::memory_order_release);
+            state.node = nullptr;
         }
+        if (state.alt != nullptr) {
+            stack_t now{};
+            if (::sigaltstack(nullptr, &now) == 0 && now.ss_sp == state.alt && (now.ss_flags & SS_ONSTACK) == 0) {
+                stack_t restore = state.previous;
+                restore.ss_flags = (state.previous.ss_flags & SS_DISABLE) != 0 ? SS_DISABLE : 0;
+                if (::sigaltstack(&restore, nullptr) == 0) {
+                    ::munmap(state.alt, __gsharp_altstack_bytes);
+                }
+            }
+            state.alt = nullptr;
+        }
+        state.installed = false;
     }
 };
+
+inline thread_local __gsharp_altstack_release __gsharp_tls_release{};
 
 inline std::once_flag __gsharp_segv_once;
 inline struct sigaction __gsharp_prev_sigsegv{};
 inline std::atomic<__gsharp_altstack_node*> __gsharp_altstack_head{nullptr};
-inline thread_local __gsharp_altstack_tls __gsharp_tls_state{};
 
 inline void __gsharp_forward_sigsegv(int sig, siginfo_t* info, void* uctx) noexcept;
 
@@ -439,37 +471,62 @@ inline void* __gsharp_stack_pool::acquire(size_t reserveBytes) {
             throw std::bad_alloc();
         }
     });
-    if (!__gsharp_tls_state.installed) {
-        constexpr size_t altSize = 64u * 1024u;
-        void* altBase = ::mmap(nullptr, altSize, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-        if (altBase == MAP_FAILED) {
-            throw std::bad_alloc();
+    // [WHY] A launch from a thread_local destructor that runs after ~__gsharp_altstack_release() installs again; that
+    // signal stack stays mapped, as the destructor does not run a second time
+    if (!__gsharp_tls_state.installed && __gsharp_tls_state.node == nullptr) {
+        const long tid = __gsharp_current_tid();
+        // An entry that an ended thread freed, else a new one. Entries are never freed, as the handler of another
+        // thread may be reading them: the list is as long as the most OS threads that ran stacks at once
+        __gsharp_altstack_node* node = nullptr;
+        for (__gsharp_altstack_node* n = __gsharp_altstack_head.load(std::memory_order_acquire); n != nullptr;
+             n = n->next) {
+            long expected = 0;
+            if (n->tid.compare_exchange_strong(expected, tid, std::memory_order_acq_rel)) {
+                node = n;
+                break;
+            }
         }
-        stack_t ss{};
-        ss.ss_sp = altBase;
-        ss.ss_size = altSize;
-        ss.ss_flags = 0;
-        if (::sigaltstack(&ss, nullptr) != 0) {
-            ::munmap(altBase, altSize);
-            throw std::bad_alloc();
-        }
-        auto* node = new (altBase) __gsharp_altstack_node{};
-        node->tid.store(__gsharp_current_tid(), std::memory_order_relaxed);
-        node->current.store(nullptr, std::memory_order_relaxed);
-        node->next = __gsharp_altstack_head.load(std::memory_order_relaxed);
-        while (!__gsharp_altstack_head.compare_exchange_weak(
-            node->next,
-            node,
-            std::memory_order_release,
-            std::memory_order_relaxed)) {
+        if (node == nullptr) {
+            node = new __gsharp_altstack_node{};
+            node->tid.store(tid, std::memory_order_relaxed);
+            node->next = __gsharp_altstack_head.load(std::memory_order_relaxed);
+            while (!__gsharp_altstack_head.compare_exchange_weak(
+                node->next,
+                node,
+                std::memory_order_release,
+                std::memory_order_relaxed)) {
+            }
         }
         __gsharp_tls_state.node = node;
+    }
+    if (!__gsharp_tls_state.installed) {
+        // [WHY] A thread that has a signal stack (CoreCLR gives one to each thread it runs) keeps it: the handler
+        // reads nothing on it. Only a thread without one (an OpenMP worker) gets ours
+        if (::sigaltstack(nullptr, &__gsharp_tls_state.previous) != 0) {
+            throw std::bad_alloc();
+        }
+        if ((__gsharp_tls_state.previous.ss_flags & SS_DISABLE) != 0) {
+            void* altBase = ::mmap(nullptr, __gsharp_altstack_bytes, PROT_READ | PROT_WRITE,
+                                   MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+            if (altBase == MAP_FAILED) {
+                throw std::bad_alloc();
+            }
+            stack_t ss{};
+            ss.ss_sp = altBase;
+            ss.ss_size = __gsharp_altstack_bytes;
+            ss.ss_flags = 0;
+            if (::sigaltstack(&ss, nullptr) != 0) {
+                ::munmap(altBase, __gsharp_altstack_bytes);
+                throw std::bad_alloc();
+            }
+            __gsharp_tls_state.alt = altBase;
+        }
         __gsharp_tls_state.installed = true;
-    } else if (__gsharp_tls_state.node != nullptr &&
-               __gsharp_tls_state.node->tid.load(std::memory_order_relaxed) == 0) {
-        // ~__gsharp_altstack_tls() may have already run on this OS thread before a later thread_local destructor
-        // launches a kernel; re-arm tid without re-allocating altBase or calling sigaltstack again.
-        __gsharp_tls_state.node->tid.store(__gsharp_current_tid(), std::memory_order_release);
+        // Registers the release at the end of the thread, once: a launch after the release touches it no more
+        if (!__gsharp_tls_state.release_registered) {
+            __gsharp_tls_state.release_registered = true;
+            __gsharp_tls_release.armed = true;
+        }
     }
 #endif
     for (size_t i = free.size(); i > 0; --i) {

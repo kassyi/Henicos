@@ -283,6 +283,29 @@ public sealed class NativeStackToolchainTests(ITestOutputHelper output)
         }
     }
 
+    // A thread that has a signal stack (each thread CoreCLR runs) keeps it, so that CoreCLR frees its own at the end of
+    // the thread; a thread without one (an OpenMP worker) gets the 64 KiB one of the prelude
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public unsafe void StackPool_SignalStackOfTheThread_KeptWhenPresentAndAddedWhenMissing()
+    {
+        int[] outputs = [0, 0, 0];
+
+        using (var library = NativeStackProbeLibrary.BuildForHostX64(
+                   "Tasks/NativeStack/StackOverflowReuse.cpp", "stack_signal_stack", runsOnNativeStacks: true))
+        {
+            var probeSignalStack = (delegate* unmanaged[Cdecl]<int*, void>)library.GetExport("ProbeSignalStack");
+            fixed (int* pOutputs = outputs)
+            {
+                probeSignalStack(pOutputs);
+            }
+        }
+
+        // mutant: acquire installs its own signal stack on every thread: outputs[1] becomes 0
+        int[] expected = OperatingSystem.IsLinux() ? [1, 1, 1] : [-1, -1, -1];
+        Assert.Equal(expected, outputs);
+    }
+
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public unsafe void StackPool_BlockAfterOverflow_ReusesStackOnLinuxAndReplacesFiberOnWindows()

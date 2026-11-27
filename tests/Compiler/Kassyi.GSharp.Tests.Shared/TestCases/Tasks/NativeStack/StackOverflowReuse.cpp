@@ -76,3 +76,42 @@ extern "C" __declspec(dllexport) void ProbeOverflowReuse(
     }
     *block2CreatedDelta = __gsharp_stack_get_created_count() - before2;
 }
+
+#if defined(__linux__) && defined(__x86_64__)
+#include <thread>
+#endif
+
+// Runs a block of one GPU thread on the calling thread and on a new OS thread that has no signal stack, and reports
+// the signal stacks: { calling thread had one, it is the same after the run, the new thread got one of 64 KiB }.
+// Every value stays -1 off Linux
+extern "C" __declspec(dllexport) void ProbeSignalStack(int* outputs) {
+    outputs[0] = -1;
+    outputs[1] = -1;
+    outputs[2] = -1;
+#if defined(__linux__) && defined(__x86_64__)
+    auto runOne = []() {
+        __gsharp_stack_pool stacks;
+        int value = 0;
+        auto body = [&]() { value = 1; };
+        __gsharp_stack_block block(stacks, 1, body, "Probe.SignalStack");
+        RunProbeBlock(block, 1);
+    };
+    stack_t before{};
+    ::sigaltstack(nullptr, &before);
+    runOne();
+    stack_t after{};
+    ::sigaltstack(nullptr, &after);
+    outputs[0] = (before.ss_flags & SS_DISABLE) == 0 ? 1 : 0;
+    outputs[1] = after.ss_sp == before.ss_sp && after.ss_size == before.ss_size ? 1 : 0;
+    std::thread worker([&]() {
+        stack_t none{};
+        none.ss_flags = SS_DISABLE;
+        ::sigaltstack(&none, nullptr);
+        runOne();
+        stack_t got{};
+        ::sigaltstack(nullptr, &got);
+        outputs[2] = (got.ss_flags & SS_DISABLE) == 0 && got.ss_size == 64u * 1024u ? 1 : 0;
+    });
+    worker.join();
+#endif
+}
