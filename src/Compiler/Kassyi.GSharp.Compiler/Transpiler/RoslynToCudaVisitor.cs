@@ -271,6 +271,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             }
             else
             {
+                ActiveMaskIterationEmitter.EmitResets(statement, ref Context);
                 Visit(statement);
                 Context.Emitter.Writer.AppendLine();
             }
@@ -326,6 +327,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
             // [WHY] A nested block is emitted without braces, since lowering wraps statements of one scope in blocks; a
             // block with a using declaration or a synthesized iterator scope keeps them (CppBlockScopes).
+            ActiveMaskIterationEmitter.EmitResets(statement, ref Context);
             if (statement is BlockSyntax nested && !CppBlockScopes.IsWrittenWithoutBraces(nested))
             {
                 VisitStatementOrBlock(nested);

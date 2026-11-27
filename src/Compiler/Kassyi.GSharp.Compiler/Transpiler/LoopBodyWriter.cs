@@ -15,15 +15,30 @@ internal static class LoopBodyWriter
     /// </summary>
     public static void Write(StatementSyntax loop, StatementSyntax body, ref TranspileContext context)
     {
+        var hasCounter = context.Emitter.Dialect.IsCuda &&
+                         context.Emitter.ActiveMaskIterations is { } plan &&
+                         plan.TryGetLoopCounter(loop, out _);
         if (loop.Parent is not LabeledStatementSyntax labeled ||
             !LabeledJumps.PlanTarget(labeled, context.Query.SemanticModel).NeedsContinueLabel)
         {
-            context.Visitor.VisitStatementOrBlock(body);
+            if (!hasCounter)
+            {
+                context.Visitor.VisitStatementOrBlock(body);
+                return;
+            }
+
+            using (context.Emitter.Writer.Scope())
+            {
+                ActiveMaskIterationEmitter.EmitLoopIncrement(loop, ref context);
+                WriteStatements(body, ref context);
+            }
+
             return;
         }
 
         using (context.Emitter.Writer.Scope())
         {
+            ActiveMaskIterationEmitter.EmitLoopIncrement(loop, ref context);
             WriteInnerBodyAndContinueLabel(labeled, body, ref context);
         }
     }
@@ -38,6 +53,7 @@ internal static class LoopBodyWriter
         bool visitBlockDirectlyWhenUnlabeled,
         ref TranspileContext context)
     {
+        ActiveMaskIterationEmitter.EmitLoopIncrement(loop, ref context);
         if (loop.Parent is not LabeledStatementSyntax labeled ||
             !LabeledJumps.PlanTarget(labeled, context.Query.SemanticModel).NeedsContinueLabel)
         {
@@ -78,6 +94,7 @@ internal static class LoopBodyWriter
         }
         else
         {
+            ActiveMaskIterationEmitter.EmitResets(body, ref context);
             context.Visitor.Visit(body);
             context.Emitter.Writer.AppendLine();
         }

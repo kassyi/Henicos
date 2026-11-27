@@ -12,6 +12,7 @@ internal static class SwitchStatementTranspilers
     /// </remarks>
     public static void TranspileSwitchStatement(SwitchStatementSyntax node, ref TranspileContext context)
     {
+        ActiveMaskIterationEmitter.EmitSwitchResets(node, ref context);
         if (!SwitchSectionLocals.ReportAndFindSharedLocals(node, ref context))
         {
             TranspileSwitchBlock(node, ref context);
@@ -63,6 +64,7 @@ internal static class SwitchStatementTranspilers
         using (context.Emitter.Writer.Scope())
         {
             JumpedOverDeclarations.WriteDeclarations(node.Statements, ref context);
+            ActiveMaskIterationEmitter.EmitSwitchSectionIncrement(node, ref context);
             // The local functions that the block around the switch declares (#842) are written there
             var shared = node.Parent is SwitchStatementSyntax switchStatement
                 ? SwitchSectionSharedNames.GetSharedFunctions(switchStatement, context.Query.SemanticModel)
@@ -81,6 +83,7 @@ internal static class SwitchStatementTranspilers
                     continue;
                 }
 
+                ActiveMaskIterationEmitter.EmitResets(stmt, ref context);
                 if (stmt is BlockSyntax nested && !CppBlockScopes.IsWrittenWithoutBraces(nested))
                 {
                     context.Visitor.VisitStatementOrBlock(nested);

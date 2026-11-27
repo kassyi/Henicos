@@ -41,6 +41,7 @@ internal sealed class TranspilerRuleRegistry
     /// <remarks>BCL intrinsics come first so that an intrinsic mapping always wins over the other rules.</remarks>
     public ImmutableArray<IInvocationTranspilerRule> InvocationRules { get; } =
         ImmutableArray.Create<IInvocationTranspilerRule>(
+            new ActiveMaskTranspilerRule(),
             new BclIntrinsicTranspilerRule(),
             new GpuMacroTranspilerRule(),
             new MemoryExtensionsTranspilerRule(),

@@ -518,7 +518,26 @@ public static class MethodTranspiler
                 }
                 else if (plan.Declaration.Body != null)
                 {
-                    context.Visitor.Visit(plan.Declaration.Body);
+                    var previousIterations = context.Emitter.ActiveMaskIterations;
+                    try
+                    {
+                        if (context.Emitter.Dialect.IsCuda && plan.Symbol != null)
+                        {
+                            var iterationPlan = ActiveMaskIterationPlanner.Plan(
+                                plan.Declaration,
+                                context.Query.SemanticModel,
+                                plan.Symbol,
+                                isDeviceFunction: plan.Kind != MethodEmissionKind.Kernel);
+                            context.Emitter.ActiveMaskIterations = iterationPlan;
+                            ActiveMaskIterationEmitter.EmitDeclarations(iterationPlan, ref context);
+                        }
+
+                        context.Visitor.Visit(plan.Declaration.Body);
+                    }
+                    finally
+                    {
+                        context.Emitter.ActiveMaskIterations = previousIterations;
+                    }
                 }
                 else if (plan.Declaration.ExpressionBody != null)
                 {

@@ -169,6 +169,11 @@ public struct Emitter(
     public string? LabelSuffix;
 
     /// <summary>
+    /// Planned CUDA iteration keys for <c>Warp.ActiveMask()</c> calls in the method body currently being emitted.
+    /// </summary>
+    internal ActiveMaskIterationPlan? ActiveMaskIterations;
+
+    /// <summary>
     /// The struct whose definition or <c>Dispose</c> body is currently being emitted, used to substitute generic type
     /// parameters with the concrete type arguments of the specialization.
     /// </summary>
