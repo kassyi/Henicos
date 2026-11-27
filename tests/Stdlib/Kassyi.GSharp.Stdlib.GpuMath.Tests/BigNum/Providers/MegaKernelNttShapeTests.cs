@@ -112,10 +112,10 @@ public class MegaKernelNttShapeTests
 
     // Every block keeps its rows in one batch while M <= 2 * SMs * c: below that a larger block only waits longer at
     // each barrier, above it a larger block runs fewer batches.
-    // mutant: CooperativeMegaKernelLauncher.cs:287 `transformLength <= 2L * ...` -> `<` (input 24576)
-    // mutant: CooperativeMegaKernelLauncher.cs:287 `2L * deviceSmCount` -> `1L * deviceSmCount` (input 16384)
-    // mutant: CooperativeMegaKernelLauncher.cs:287 `candidate < chosen` -> `candidate > chosen` (input 512, 48)
-    // mutant: CooperativeMegaKernelLauncher.cs:287 `candidate < chosen &&` -> removed
+    // mutant: CooperativeMegaKernelLauncher.cs:322 `transformLength <= 2L * ...` -> `<` (input 24576)
+    // mutant: CooperativeMegaKernelLauncher.cs:322 `2L * deviceSmCount` -> `1L * deviceSmCount` (input 16384)
+    // mutant: CooperativeMegaKernelLauncher.cs:322 `candidate < chosen` -> `candidate > chosen` (input 512, 48)
+    // mutant: CooperativeMegaKernelLauncher.cs:322 `candidate < chosen &&` -> removed
     //         (inputs 512 with [256, 512, 768, 1024]; 2048, 1, 768)
     [Theory]
     [Scenario(TestScenario.Boundary)]

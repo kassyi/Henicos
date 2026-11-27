@@ -240,6 +240,19 @@ one of three shapes:
 | `<= StridedColumnMaxTransformLength` (`2^16`) | `N1 x N2` (row-major, `N2` the smallest power of two with `N2^2 >= M`): the `N2` columns of length `N1` in place, then the `N1` rows of length `N2` | 2 |
 | larger | The same split with two transposes through `TemporaryBuffer` around the rows of length `N1` | 4 |
 
+- **Transform reuse**: operands that stay unchanged across products are transformed once into kept residue slots
+  (`NttConvolutionScratchContext.Kept1`..`Kept3`, each an `NttResidues` pair) and combined by pointwise multiplication
+  (`ExecuteNttPointwiseResidues`) without re-running the forward NTT. In `InverseSqrt`, `â` is transformed once before
+  the loop (`Kept2`) and `x̂` once per iteration (`Kept1`); in `Reciprocal`, `b̂` (`Kept2`) and `x̂` (`Kept1`); in
+  `ModPow`, `R̂` (`Kept2`) and `Q̂` (`Kept3`) are transformed once on `StartWord == 0` (persisting across chunked
+  launches) and `x̂Sq` (`Kept1`) once per exponent bit.
+
+  | Kernel | Transforms per iteration / bit (before) | Transforms per iteration / bit (after) |
+  | :- | -: | -: |
+  | `InverseSqrtNewtonRaphsonMegaKernel` | 9 (6 forward + 3 inverse) | 6 (3 forward + 3 inverse; final correction 9 → 5) |
+  | `ReciprocalNewtonRaphsonMegaKernel` | 6 (4 forward + 2 inverse) | 4 (2 forward + 2 inverse; final correction 3 → 2) |
+  | `ModPowNttMegaKernel` (bit 1 / bit 0) | 18 / 9 | 12 / 6 |
+
 - **Rows in batches**: `ExecuteNttSharedRow` gives each butterfly one thread, so a block holds
   `rowsPerBatch = max(1, floor(B / (L / 2)))` rows of `L` points at once and synchronizes once per batch instead of once
   per row. Block `b` takes rows `b + kG`, `k = 0 .. ceil((rows - b) / G) - 1`; the last batch of a block may be short.
@@ -268,7 +281,7 @@ one of three shapes:
   the same work on fewer SMs; above it the grid is capped at one block per SM and a larger block runs fewer batches.
   The rule is a pure function of `M`, the SM count, the largest block that fits and the candidates; the result does
   not depend on the block size. ModPow runs on one block and applies `ChooseBlockDim` with one SM (256 threads up to
-  512 points, 512 at 1024, and the largest block that fits above, 768 on sm_86 with 66 registers per thread).
+  512 points, 512 at 1024, and the largest block that fits above, 768 on sm_86 with 80 registers per thread).
 - **Registers**: a block of 1024 threads fits an SM only with at most 64 registers per thread (56 for the inverse square
   root and the reciprocal). The occupancy test (`MegaKernelOccupancyTests`) asks the driver whether each mega-kernel
   fits with 1024 threads (ModPow with 768) at the least and the most shared memory, since the launcher otherwise

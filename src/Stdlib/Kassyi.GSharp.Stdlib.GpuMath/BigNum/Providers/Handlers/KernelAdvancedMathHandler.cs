@@ -278,7 +278,7 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
 
         // The kernel resolves carries in chunks of one launch block (blockDim threads), not of a fixed size.
         using var buffers = new CooperativeMegaKernelLauncher.NttWorkspaceBuffers(
-            workspace, requiredLen, outWords, (int)blockDim, this);
+            workspace, requiredLen, outWords, (int)blockDim, this, rentsModulusSlot: true);
         using var currentProduct = workspace.RentTemp(outWords);
         using var diff = workspace.RentTemp(outWords);
         using var nextIter = workspace.RentTemp(outWords);
@@ -291,83 +291,86 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         // The kernel resolves the carries of its products (at most outWords words) in chunks of one launch block.
         ThrowIfBlockCarriesTooSmall(buffers.BlockCarries.NumWords, outWords, (int)blockDim);
 
-        var m = buffers.TransformLength;
-        var sharedMemBytes = CooperativeMegaKernelLauncher.ComputeMegaKernelSharedMemoryBytes(m);
-
-        var ctx = new GpuBigIntDivRemKernels.AotContexts.ModPowNtt
-        {
-            Core = new GpuBigIntDivRemKernels.AotContexts.NewtonRaphson
-            {
-                Operands = new GpuBigIntDivRemKernels.AotContexts.Operand
-                {
-                    TargetOperand = targetOperand.ToProxy(),
-                    ResultBuffer = resultBuffer.ToProxy(),
-                    Constant = constant.ToProxy()
-                },
-                Dimensions = new GpuBigIntDivRemKernels.AotContexts.Dimension
-                {
-                    NumberOfWords = n,
-                    TargetBits = targetBits,
-                    Iterations = 1
-                },
-                Ntt = new GpuBigIntDivRemKernels.AotContexts.Ntt
-                {
-                    TransformLength = m,
-                    TwiddleFactors = new GpuBigIntDivRemKernels.AotContexts.TwiddleFactor
-                    {
-                        Forward1 = buffers.Twiddle.Forward1,
-                        Forward2 = buffers.Twiddle.Forward2,
-                        Inverse1 = buffers.Twiddle.Inverse1,
-                        Inverse2 = buffers.Twiddle.Inverse2
-                    }
-                },
-                Workspace = new GpuBigIntDivRemKernels.AotContexts.WorkspaceState
-                {
-                    Iteration = new GpuBigIntDivRemKernels.AotContexts.IterationScratch
-                    {
-                        CurrentProduct = currentProduct.ToProxy(),
-                        Diff = diff.ToProxy(),
-                        NextIter = nextIter.ToProxy(),
-                        NextXUnshifted = nextXUnshifted.ToProxy(),
-                        NextXShifted = nextXShifted.ToProxy(),
-                        AxSquared = axSquared.ToProxy(),
-                        XSquared = xSquared.ToProxy(),
-                        ModulusExpanded = modulusExpanded.ToProxy()
-                    },
-                    NttScratch = new GpuBigIntDivRemKernels.AotContexts.NttConvolutionScratch
-                    {
-                        TmpBuf = buffers.TmpBuf.ToProxy(),
-                        NttBuf1A = buffers.Buf1A.ToProxy(),
-                        NttBuf2A = buffers.Buf2A.ToProxy(),
-                        NttBuf1B = buffers.Buf1B.ToProxy(),
-                        NttBuf2B = buffers.Buf2B.ToProxy(),
-                        UncarriedLow = buffers.UncarriedLow.ToProxy(),
-                        UncarriedHigh = buffers.UncarriedHigh.ToProxy(),
-                        BlockCarries = buffers.BlockCarries.ToProxy()
-                    }
-                },
-                CarryBuffer = default
-            },
-            ReciprocalMod = reciprocalMod.ToProxy(),
-            Exponent = new GpuBigIntDivRemKernels.AotContexts.ExponentSlice
-            {
-                Words = exponent.ToProxy(),
-                TotalWords = exponent.NumWords,
-                StartWord = 0,
-                EndWord = 0
-            }
-        };
-
-        int totalWords = exponent.NumWords;
-        int chunkWords = 8;
+        var sharedMemBytes = CooperativeMegaKernelLauncher.ComputeMegaKernelSharedMemoryBytes(buffers.TransformLength);
+        var ctx = BuildModPowContext(
+            targetOperand, resultBuffer, constant, reciprocalMod, exponent, n, targetBits,
+            in buffers, currentProduct, diff, nextIter, nextXUnshifted, nextXShifted,
+            axSquared, xSquared, modulusExpanded);
 
         workspace.RecordModPowNttBlockDim(blockDim);
+        LaunchModPowChunks(workspace, ref ctx, exponent.NumWords, gridDim, blockDim, sharedMemBytes);
+    }
 
-        for (int start = 0; start < totalWords; start += chunkWords)
+    private static GpuBigIntDivRemKernels.AotContexts.ModPowNtt BuildModPowContext(
+        GpuBigUInt targetOperand, GpuBigUInt resultBuffer, GpuBigUInt constant,
+        GpuBigUInt reciprocalMod, GpuBigUInt exponent, int n, int targetBits,
+        in CooperativeMegaKernelLauncher.NttWorkspaceBuffers buffers,
+        GpuBigUInt currentProduct, GpuBigUInt diff, GpuBigUInt nextIter,
+        GpuBigUInt nextXUnshifted, GpuBigUInt nextXShifted,
+        GpuBigUInt axSquared, GpuBigUInt xSquared, GpuBigUInt modulusExpanded) => new()
+    {
+        Core = new GpuBigIntDivRemKernels.AotContexts.NewtonRaphson
         {
-            int end = Math.Min(start + chunkWords, totalWords);
+            Operands = new GpuBigIntDivRemKernels.AotContexts.Operand
+            {
+                TargetOperand = targetOperand.ToProxy(),
+                ResultBuffer = resultBuffer.ToProxy(),
+                Constant = constant.ToProxy()
+            },
+            Dimensions = new GpuBigIntDivRemKernels.AotContexts.Dimension
+            {
+                NumberOfWords = n,
+                TargetBits = targetBits,
+                Iterations = 1
+            },
+            Ntt = new GpuBigIntDivRemKernels.AotContexts.Ntt
+            {
+                TransformLength = buffers.TransformLength,
+                TwiddleFactors = new GpuBigIntDivRemKernels.AotContexts.TwiddleFactor
+                {
+                    Forward1 = buffers.Twiddle.Forward1,
+                    Forward2 = buffers.Twiddle.Forward2,
+                    Inverse1 = buffers.Twiddle.Inverse1,
+                    Inverse2 = buffers.Twiddle.Inverse2
+                }
+            },
+            Workspace = new GpuBigIntDivRemKernels.AotContexts.WorkspaceState
+            {
+                Iteration = new GpuBigIntDivRemKernels.AotContexts.IterationScratch
+                {
+                    CurrentProduct = currentProduct.ToProxy(),
+                    Diff = diff.ToProxy(),
+                    NextIter = nextIter.ToProxy(),
+                    NextXUnshifted = nextXUnshifted.ToProxy(),
+                    NextXShifted = nextXShifted.ToProxy(),
+                    AxSquared = axSquared.ToProxy(),
+                    XSquared = xSquared.ToProxy(),
+                    ModulusExpanded = modulusExpanded.ToProxy()
+                },
+                NttScratch = buffers.ToDivRemScratch()
+            },
+            CarryBuffer = default
+        },
+        ReciprocalMod = reciprocalMod.ToProxy(),
+        Exponent = new GpuBigIntDivRemKernels.AotContexts.ExponentSlice
+        {
+            Words = exponent.ToProxy(),
+            TotalWords = exponent.NumWords,
+            StartWord = 0,
+            EndWord = 0
+        }
+    };
+
+    private static void LaunchModPowChunks(
+        GpuWorkspace workspace,
+        ref GpuBigIntDivRemKernels.AotContexts.ModPowNtt ctx,
+        int totalWords, uint gridDim, uint blockDim, uint sharedMemBytes)
+    {
+        const int ChunkWords = 8;
+        for (int start = 0; start < totalWords; start += ChunkWords)
+        {
             ctx.Exponent.StartWord = start;
-            ctx.Exponent.EndWord = end;
+            ctx.Exponent.EndWord = Math.Min(start + ChunkWords, totalWords);
 
             GpuBigIntDivRemKernels.LaunchModPowNttMegaKernelPtr(
                 ctx,

@@ -609,10 +609,10 @@ public class GpuBigIntDivRemTests : IDisposable
         Assert.Equal(reduce.Dividend % reduce.Divisor, gpuR.ToBigInteger());
 
         // The quotient is corrected by the same steps as the remainder, so q * b + r == a and 0 <= r < b hold.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:278 `delta--;`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:204 `delta--;`
         //         -> removed
         // input: QuotientOneTooLarge, QuotientThreeTooLarge
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:296 `delta++;`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:222 `delta++;`
         //         -> removed
         // input: QuotientOneTooSmall
         AssertQuotientAndRemainder(reduce.Dividend, reduce.Divisor, gpuQ.ToBigInteger(), gpuR.ToBigInteger());
@@ -892,6 +892,38 @@ public class GpuBigIntDivRemTests : IDisposable
         new KernelAdvancedMathHandler().ReciprocalMega(workspace, gpuB, gpuX, marginWords: 0, iterations: 0,
             targetBits: TargetBits);
 
+        // The final correction must refresh Kept1 = T(ResultBuffer) before computing b * x.
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:86
+        //   `ExecuteNttTransformOperand(core, ops.ResultBuffer, resultWords, nttScratch.Kept1);` -> removed
+        // input: ReciprocalMega_HandBuiltGuessWithoutIterations_IsCorrectedToExactFloor
+        AssertExactReciprocal(b, TargetBits, gpuX.ToBigInteger());
+    }
+
+    // Coverage witness on the default-iteration path: with short divisor b = 13 (4 bits) and targetBits = 1008, the
+    // default count is 5 iterations. Iteration 4 leaves floor(2^1008 / 13) - x4 = 51 and iteration 5 moves x to the
+    // exact floor, so Kept1 = T(x4) is stale when the final correction runs. Without the final Kept1 refresh,
+    // CorrectIntoDivisorRange computes delta = +51 from the stale remainder and returns floor(2^1008 / 13) + 51.
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    public void Reciprocal_DefaultIterationsShortDivisor_FinalCorrectionRefreshesKeptTransform()
+    {
+        const int NumWords = 1;
+        const int TargetBits = 1008;
+        const int ResultWords = (TargetBits + 31) / 32;
+        var b = new BigInteger(13u);
+
+        using var workspace = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot);
+        using var gpuB = new GpuBigUInt(workspace, ToWords(b, NumWords));
+        using var gpuX = new GpuBigUInt(workspace, ResultWords);
+
+        GpuBigIntDivRem.Reciprocal(gpuB, gpuX, TargetBits);
+
+        // The final correction must refresh Kept1 = T(ResultBuffer) on the default-iteration path too.
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:86
+        //   `ExecuteNttTransformOperand(core, ops.ResultBuffer, resultWords, nttScratch.Kept1);` -> removed
+        // input: b = 13, targetBits = 1008 (default 5 iterations)
         AssertExactReciprocal(b, TargetBits, gpuX.ToBigInteger());
     }
 
@@ -1261,14 +1293,14 @@ public class GpuBigIntDivRemTests : IDisposable
     private static void AssertExactReciprocal(BigInteger divisor, int targetBits, BigInteger reciprocal)
     {
         // b * x <= 2^T < b * (x + 1) defines x = floor(2^T / b) without a reference implementation.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:169
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:95
         //         `Gpu.SingleThread(() => AddSmallSigned(ops.ResultBuffer, resultWords, delta));` -> removed
         // input: ReciprocalMega hand-built guesses -3, -1, 1, 2 (the Newton results of the Reciprocal inputs above are
         // already exact, so only the hand-built guesses reach the correction)
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:278 `delta--;`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:204 `delta--;`
         //         -> removed
         // input: ReciprocalMega hand-built guesses 1, 2
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:296 `delta++;`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:222 `delta++;`
         //         -> removed
         // input: ReciprocalMega hand-built guesses -3, -1
         var twoToT = BigInteger.One << targetBits;
@@ -1283,19 +1315,19 @@ public class GpuBigIntDivRemTests : IDisposable
     private static void AssertExactInverseSqrt(BigInteger value, int precisionBits, BigInteger inverseRoot)
     {
         // a * x^2 <= 2^(2B) < a * (x + 1)^2 (B = (n + marginWords) * 32) defines x = floor(2^B / sqrt(a)).
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:267 `delta--;`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:271 `delta--;`
         //         -> removed
         // input: InverseSqrtMega hand-built guesses 1, 3
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:293 `delta++;`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:297 `delta++;`
         //         -> removed
         // input: InverseSqrtMega hand-built guesses -2, -1, InverseSqrt PowerOfFour4Words (Newton gives floor - 1)
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:30 carry chunk
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:32 carry chunk
         //         `chunkSize` -> `256` (the chunk size before #602)
         // input: Random1023WordsMargin16 (products above 256 words are corrupted)
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:265 `ax -= a`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:269 `ax -= a`
         //         (DeviceAddSubAlignedParallel(ax, ..., -1, true)) -> removed
         // input: InverseSqrtMega near-square-boundary guess 3 (the random-operand guesses do not detect it)
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:291 `ax += a`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:295 `ax += a`
         //         (DeviceAddSubAlignedParallel(ax, ..., 1, true)) -> removed
         // input: InverseSqrtMega near-square-boundary guesses -1, -2 (the random-operand guesses do not detect it)
         var twoTo2B = BigInteger.One << (2 * precisionBits);

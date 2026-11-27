@@ -36,153 +36,42 @@ public static partial class GpuBigIntDivRemKernels
         }
     }
 
-    [GpuDeviceFunction]
-    private static void ExecuteNttMultiplyMacroModPow(
-        NewtonRaphsonContext core,
-        uint[] opA, uint[] opB, uint[] resultDest,
-        int numWordsA, int numWordsB, int numWordsResult)
-    {
-        var m = core.Ntt.TransformLength;
-        var grid = GpuBigIntNttKernels.CreateNttGridContext(m);
-
-        var nttScratch = core.Workspace.NttScratch;
-
-        GpuBigIntFermatKernels.DeviceUnpack16(opA, nttScratch.NttBuf1A, nttScratch.NttBuf2A, m, numWordsA, true);
-        GpuBigIntFermatKernels.DeviceUnpack16(opB, nttScratch.NttBuf1B, nttScratch.NttBuf2B, m, numWordsB, true);
-        Gpu.SyncGrid();
-
-        var baseNtt = new DualNtt
-        {
-            TemporaryBuffer = nttScratch.TmpBuf,
-            Grid = grid
-        };
-
-        var forwardA = baseNtt;
-        forwardA.Buffer1 = nttScratch.NttBuf1A;
-        forwardA.Buffer2 = nttScratch.NttBuf2A;
-        forwardA.Twiddle1 = core.Ntt.TwiddleFactors.Forward1;
-        forwardA.Twiddle2 = core.Ntt.TwiddleFactors.Forward2;
-        GpuBigIntNttKernels.ExecuteDualForwardNtt(forwardA);
-
-        var forwardB = forwardA;
-        forwardB.Buffer1 = nttScratch.NttBuf1B;
-        forwardB.Buffer2 = nttScratch.NttBuf2B;
-        GpuBigIntNttKernels.ExecuteDualForwardNtt(forwardB);
-
-        GpuBigIntNttKernels.ExecuteNttPointwiseMultiply(nttScratch.NttBuf1A, nttScratch.NttBuf2A,
-            nttScratch.NttBuf1B, nttScratch.NttBuf2B, m);
-        Gpu.SyncGrid();
-
-        var inverseA = baseNtt;
-        inverseA.Buffer1 = nttScratch.NttBuf1A;
-        inverseA.Buffer2 = nttScratch.NttBuf2A;
-        inverseA.Twiddle1 = core.Ntt.TwiddleFactors.Inverse1;
-        inverseA.Twiddle2 = core.Ntt.TwiddleFactors.Inverse2;
-        GpuBigIntNttKernels.ExecuteDualInverseNtt(inverseA);
-
-        GpuBigIntNttKernels.ExecuteCrtComputeCoefficients(nttScratch.NttBuf1A, nttScratch.NttBuf2A,
-            nttScratch.UncarriedLow, nttScratch.UncarriedHigh, m);
-        Gpu.SyncGrid();
-
-        int chunkSize = BlockDimension.X;
-        int numBlocks = (numWordsResult + chunkSize - 1) / chunkSize;
-
-        GpuBigIntNttKernels.ExecuteResolveNttCarriesBlocked(nttScratch.UncarriedLow, nttScratch.UncarriedHigh,
-            resultDest, nttScratch.BlockCarries, m, numWordsResult, chunkSize);
-
-        Gpu.SyncGrid();
-
-        GpuBigIntNttKernels.ExecuteResolveNttCarriesApply(resultDest, nttScratch.BlockCarries, numWordsResult,
-            chunkSize, numBlocks);
-
-        Gpu.SyncGrid();
-    }
-
+    /// <summary>
+    /// Reduces <paramref name="leftOperand"/> modulo <paramref name="modulus"/> via NTT Barrett reduction.
+    /// Requires <c>core.Workspace.NttScratch.Kept2</c> to hold <c>T(ReciprocalMod)</c> and
+    /// <c>core.Workspace.NttScratch.Kept3</c> to hold <c>T(modulus)</c> for the same modulus.
+    /// </summary>
     [GpuDeviceFunction]
     private static void ExecuteBarrettReductionMacro(
         NewtonRaphsonContext core,
-        uint[] leftOperand, uint[] rightOperand, uint[] reciprocalOfB,
-        int targetBits, int aActualWords, uint[] quotientBuffer, uint[] remainderBuffer)
+        uint[] leftOperand, uint[] modulus,
+        int targetBits, int aActualWords, uint[] quotientBuffer, uint[] remainderBuffer,
+        int chunkSize)
     {
         var nA = aActualWords;
         var n = core.Dimensions.NumberOfWords;
         var targetWords = (targetBits + 31) / 32;
         var iterScratch = core.Workspace.Iteration;
+        var nttScratch = core.Workspace.NttScratch;
         uint[] currentProduct = Gpu.NotNull(iterScratch.CurrentProduct);
         uint[] nextIter = Gpu.NotNull(iterScratch.NextIter);
 
-        ExecuteNttMultiplyMacroModPow(core, leftOperand, reciprocalOfB, currentProduct, nA, targetWords,
-            nA + targetWords);
-
-        int wordShift = targetBits / 32;
-        int bitShift = targetBits % 32;
-        int destWords = nA;
-
-        Gpu.GridStrideLoop(destWords, idx =>
-        {
-            int srcIdx = idx + wordShift;
-            uint w0 = (srcIdx < nA + targetWords) ? currentProduct[srcIdx] : 0u;
-            uint w1 = (srcIdx + 1 < nA + targetWords) ? currentProduct[srcIdx + 1] : 0u;
-            uint shiftedValue = (w0 >> bitShift) | (bitShift == 0 ? 0u : (w1 << (32 - bitShift)));
-            quotientBuffer[idx] = shiftedValue;
-        });
-        Gpu.SyncGrid();
-
-        ExecuteNttMultiplyMacroModPow(core, quotientBuffer, rightOperand, nextIter, destWords, n,
-            destWords + n);
+        // Kept2 holds R̂ = T(ReciprocalMod); Kept3 holds Q̂ = T(modulus).
+        ExecuteNttMultiplyByKept(core, leftOperand, nA, nttScratch.Kept2, currentProduct, nA + targetWords, chunkSize);
+        ShiftRightIntoResult(currentProduct, nA + targetWords, quotientBuffer, nA, targetBits);
+        ExecuteNttMultiplyByKept(core, quotientBuffer, nA, nttScratch.Kept3, nextIter, nA + n, chunkSize);
 
         int evalWords = aActualWords + 1;
-        var subCtx = new GpuBigIntContext
-        {
-            Operands = new OperandContext { CarryBuffer = core.CarryBuffer },
-            NumberOfWords = evalWords
-        };
-
         Gpu.GridStrideLoop(evalWords, idx =>
         {
             iterScratch.Diff[idx] = idx < nA ? leftOperand[idx] : 0u;
         });
         Gpu.SyncGrid();
 
-        GpuBigIntKernels.DeviceAddSubParallel(iterScratch.Diff, nextIter, iterScratch.Diff, evalWords,
-            -1, true);
+        GpuBigIntKernels.DeviceAddSubParallel(iterScratch.Diff, nextIter, iterScratch.Diff, evalWords, -1, true);
         Gpu.SyncGrid();
 
-        for (int iter = 0; iter < 1000; iter++)
-        {
-            uint topWord = iterScratch.Diff[evalWords - 1];
-            bool underflow = (topWord & 0x80000000u) != 0;
-
-            // Wait for all threads to be ready
-            Gpu.SyncGrid();
-
-            if (underflow)
-            {
-                GpuBigIntKernels.DeviceAddSubParallel(iterScratch.Diff, rightOperand, iterScratch.Diff, evalWords,
-                    1, true);
-                Gpu.SyncGrid();
-            }
-            else
-            {
-                // Try subtracting M to see if R >= M
-                GpuBigIntKernels.DeviceAddSubParallel(iterScratch.Diff, rightOperand, iterScratch.Diff, evalWords,
-                    -1, true);
-                Gpu.SyncGrid();
-
-                uint top2 = iterScratch.Diff[evalWords - 1];
-                bool underflow2 = (top2 & 0x80000000u) != 0;
-                Gpu.SyncGrid();
-
-                if (underflow2)
-                {
-                    // Was smaller than M, add back and we are done.
-                    GpuBigIntKernels.DeviceAddSubParallel(iterScratch.Diff, rightOperand, iterScratch.Diff,
-                        evalWords, 1, true);
-                    Gpu.SyncGrid();
-                    break;
-                }
-            }
-        }
+        CorrectBarrettRemainder(iterScratch.Diff, modulus, evalWords);
 
         Gpu.GridStrideLoop(aActualWords, idx =>
         {
@@ -191,11 +80,74 @@ public static partial class GpuBigIntDivRemKernels
         Gpu.SyncGrid();
     }
 
+    [GpuDeviceFunction]
+    private static void CorrectBarrettRemainder(uint[] diff, [GpuReadOnly] uint[] modulus, int evalWords)
+    {
+        for (int iter = 0; iter < 1000; iter++)
+        {
+            uint topWord = diff[evalWords - 1];
+            bool underflow = (topWord & 0x80000000u) != 0;
+            Gpu.SyncGrid();
+
+            if (underflow)
+            {
+                GpuBigIntKernels.DeviceAddSubParallel(diff, modulus, diff, evalWords, 1, true);
+                Gpu.SyncGrid();
+            }
+            else
+            {
+                GpuBigIntKernels.DeviceAddSubParallel(diff, modulus, diff, evalWords, -1, true);
+                Gpu.SyncGrid();
+
+                uint top2 = diff[evalWords - 1];
+                bool underflow2 = (top2 & 0x80000000u) != 0;
+                Gpu.SyncGrid();
+
+                if (underflow2)
+                {
+                    GpuBigIntKernels.DeviceAddSubParallel(diff, modulus, diff, evalWords, 1, true);
+                    Gpu.SyncGrid();
+                    break;
+                }
+            }
+        }
+    }
+
+    [GpuDeviceFunction]
+    private static void InitializeModPowState(ModPowNttContext ctx, int n, int targetWords, int outWords)
+    {
+        var core = ctx.Core;
+        var iterScratch = core.Workspace.Iteration;
+        var nttScratch = core.Workspace.NttScratch;
+        uint[] axSquared = Gpu.NotNull(iterScratch.AxSquared);
+        uint[] xSquared = Gpu.NotNull(iterScratch.XSquared);
+        uint[] modulusExpanded = Gpu.NotNull(iterScratch.ModulusExpanded);
+        uint[] constant = Gpu.NotNull(core.Operands.Constant);
+        uint[] target = Gpu.NotNull(core.Operands.TargetOperand);
+        uint oneModulo = OneModulo(constant, n);
+
+        Gpu.GridStrideLoop(outWords, idx =>
+        {
+            if (idx < 2 * n)
+            {
+                axSquared[idx] = idx == 0 ? oneModulo : 0u; // TempResult
+                xSquared[idx] = idx < n ? target[idx] : 0u; // TempBase
+            }
+
+            modulusExpanded[idx] = idx < n ? constant[idx] : 0u;
+        });
+        Gpu.SyncGrid();
+
+        ExecuteNttTransformOperand(core, ctx.ReciprocalMod, targetWords, nttScratch.Kept2);
+        ExecuteNttTransformOperand(core, modulusExpanded, n, nttScratch.Kept3);
+    }
+
     [GpuKernel(Cooperative = true)]
     public static void ModPowNttMegaKernel(ModPowNttContext ctx)
     {
         var core = ctx.Core;
         var iterScratch = core.Workspace.Iteration;
+        var nttScratch = core.Workspace.NttScratch;
         uint[] axSquared = Gpu.NotNull(iterScratch.AxSquared);
         uint[] xSquared = Gpu.NotNull(iterScratch.XSquared);
         uint[] nextXUnshifted = Gpu.NotNull(iterScratch.NextXUnshifted);
@@ -205,62 +157,40 @@ public static partial class GpuBigIntDivRemKernels
         int n = core.Dimensions.NumberOfWords;
         int expWords = expSlice.TotalWords;
         int targetBits = core.Dimensions.TargetBits;
-        int maxABits = 2 * n * 32;
-        int aActualWords = (maxABits + 31) / 32;
+        int aActualWords = 2 * n;
         int targetWords = (targetBits + 31) / 32;
         int outWords = aActualWords + targetWords;
+        int chunkSize = BlockDimension.X;
 
-        // Initialize tempResult = 1 mod Constant, tempBase = Base, ModulusExpanded = Constant
         if (expSlice.StartWord == 0)
         {
-            uint[] constant = Gpu.NotNull(core.Operands.Constant);
-            uint[] target = Gpu.NotNull(core.Operands.TargetOperand);
-            uint oneModulo = OneModulo(constant, n);
-            Gpu.GridStrideLoop(outWords, idx =>
-            {
-                if (idx < 2 * n)
-                {
-                    axSquared[idx] = idx == 0 ? oneModulo : 0u; // TempResult
-                    xSquared[idx] = idx < n ? target[idx] : 0u; // TempBase
-                }
-
-                modulusExpanded[idx] = idx < n ? constant[idx] : 0u;
-            });
-            Gpu.SyncGrid();
+            InitializeModPowState(ctx, n, targetWords, outWords);
         }
 
         for (int i = expSlice.StartWord; i < expSlice.EndWord; i++)
         {
             uint e = expSlice.Words[i];
-
-            if (e == 0)
-            {
-                // Optimization: check remaining bits using block sync logic omitted for simplicity in kernel
-                // We'll just loop 32 times if e == 0 but not all zeros, or we can just process it.
-                // To avoid complex block-sync break, just process zero bits (multiply by 1 essentially or just square base).
-            }
-
             for (int bit = 0; bit < 32; bit++)
             {
+                // Kept1 holds x̂Sq = T(xSquared), reused by both the conditional multiply and the squaring.
+                ExecuteNttTransformOperand(core, xSquared, 2 * n, nttScratch.Kept1);
+
                 if ((e & 1) == 1)
                 {
-                    ExecuteNttMultiplyMacroModPow(core, axSquared, xSquared,
-                        nextXUnshifted, 2 * n, 2 * n, 4 * n);
+                    ExecuteNttMultiplyByKept(core, axSquared, 2 * n, nttScratch.Kept1, nextXUnshifted, 4 * n,
+                        chunkSize);
                     ExecuteBarrettReductionMacro(core, nextXUnshifted, modulusExpanded,
-                        ctx.ReciprocalMod, targetBits, aActualWords, nextXShifted,
-                        axSquared);
+                        targetBits, aActualWords, nextXShifted, axSquared, chunkSize);
                 }
 
-                ExecuteNttMultiplyMacroModPow(core, xSquared, xSquared,
-                    nextXUnshifted, 2 * n, 2 * n, 4 * n);
+                ExecuteNttMultiplyKept(core, nttScratch.Kept1, nttScratch.Kept1, nextXUnshifted, 4 * n, chunkSize);
                 ExecuteBarrettReductionMacro(core, nextXUnshifted, modulusExpanded,
-                    ctx.ReciprocalMod, targetBits, aActualWords, nextXShifted, xSquared);
+                    targetBits, aActualWords, nextXShifted, xSquared, chunkSize);
 
                 e >>= 1;
             }
         }
 
-        // Copy final result
         if (expSlice.EndWord == expWords)
         {
             Gpu.GridStrideLoop(n, idx =>
