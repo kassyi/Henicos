@@ -5258,7 +5258,7 @@ __gsharp_id_2_outer:
 for(int __gsharp_id_3_i = 0;__gsharp_id_3_i<3;__gsharp_id_3_i++)
 {
 {
-__gsharp_array_at(__gsharp_id_0_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_1_t,8),__gsharp_id_3_i), 155903994u)=__activemask();
+__gsharp_array_at(__gsharp_id_0_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_1_t,8),__gsharp_id_3_i), 155903994u)=__match_any_sync(__activemask(),(unsigned int)__gsharp_id_3_i);
 for(int __gsharp_id_4_j = 0;__gsharp_id_4_j<2;__gsharp_id_4_j++)
 {
 if(((__gsharp_id_1_t>>2)&1)==1&&__gsharp_id_4_j==0)
@@ -5270,7 +5270,7 @@ if(__gsharp_id_3_i==__gsharp_id_1_t%4&&__gsharp_id_4_j==1)
 goto __gsharp_LabeledBreak___gsharp_id_2_outer;
 }
 }
-__gsharp_array_at(__gsharp_id_0_result, __gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_1_t,8),3),__gsharp_id_3_i), 410959714u)=__activemask();
+__gsharp_array_at(__gsharp_id_0_result, __gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_1_t,8),3),__gsharp_id_3_i), 410959714u)=__match_any_sync(__activemask(),(unsigned int)__gsharp_id_3_i);
 }
 __gsharp_LabeledContinue___gsharp_id_2_outer:;
 }
