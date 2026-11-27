@@ -1261,14 +1261,14 @@ public class GpuBigIntDivRemTests : IDisposable
     private static void AssertExactReciprocal(BigInteger divisor, int targetBits, BigInteger reciprocal)
     {
         // b * x <= 2^T < b * (x + 1) defines x = floor(2^T / b) without a reference implementation.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:169
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:113
         //         `Gpu.SingleThread(() => AddSmallSigned(ops.ResultBuffer, resultWords, delta));` -> removed
         // input: ReciprocalMega hand-built guesses -3, -1, 1, 2 (the Newton results of the Reciprocal inputs above are
         // already exact, so only the hand-built guesses reach the correction)
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:278 `delta--;`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:222 `delta--;`
         //         -> removed
         // input: ReciprocalMega hand-built guesses 1, 2
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:296 `delta++;`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:240 `delta++;`
         //         -> removed
         // input: ReciprocalMega hand-built guesses -3, -1
         var twoToT = BigInteger.One << targetBits;

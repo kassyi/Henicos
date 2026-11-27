@@ -51,7 +51,7 @@ public class NttBlockCarriesGuardTests
 
     // Mega-kernel carry and add/sub scans exchange state across 32-thread warps and 32-warp shared buffers, so every
     // positive multiple of 32 up to 1024 threads per block is accepted.
-    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:536-538
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:556-558
     //   `blockDim > CooperativeMegaKernelLauncher.MaxThreadsPerBlock`
     //   -> `blockDim >= CooperativeMegaKernelLauncher.MaxThreadsPerBlock` (1024u throws)
     [Theory]
@@ -74,7 +74,7 @@ public class NttBlockCarriesGuardTests
 
     // Zero, non-multiples of 32, and values above 1024 threads per block break chunk sizing or warp-32 shared scans
     // and must throw ArgumentOutOfRangeException before allocating NTT workspace buffers.
-    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:536-538
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:556-558
     //   `blockDim % CooperativeMegaKernelLauncher.WarpSize != 0` -> removed (260u, 31u, 33u do not throw)
     [Theory]
     [Category(TestCategory.Stdlib)]
@@ -98,9 +98,9 @@ public class NttBlockCarriesGuardTests
 
     // Up to StridedColumnMaxTransformLength (65536), strided column NTT accepts blockDim < 256; above 65536,
     // TransposeTileBatches accepts blockDim >= 256.
-    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:566
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:586
     //   `transformLength > GpuBigIntNttKernels.StridedColumnMaxTransformLength` -> `>=` (65536 with 32u throws)
-    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:567
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:587
     //   `blockDim < StridedColumnMinBlockDim` -> `<= StridedColumnMinBlockDim` (131072 with 256u throws)
     [Theory]
     [Category(TestCategory.Stdlib)]
@@ -124,7 +124,7 @@ public class NttBlockCarriesGuardTests
 
     // Above StridedColumnMaxTransformLength (65536), TransposeTileBatches moves 32x32 tiles with 8 warps (256
     // threads), so blockDim < 256 must throw ArgumentOutOfRangeException before allocating NTT workspace buffers.
-    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:567
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:587
     //   `blockDim < StridedColumnMinBlockDim` -> removed (32u, 96u, 224u at 131072 do not throw)
     [Theory]
     [Category(TestCategory.Stdlib)]

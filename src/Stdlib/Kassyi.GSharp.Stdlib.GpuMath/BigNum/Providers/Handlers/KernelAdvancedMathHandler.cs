@@ -281,7 +281,7 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
 
         // The kernel resolves carries in chunks of one launch block (blockDim threads), not of a fixed size.
         using var buffers = new CooperativeMegaKernelLauncher.NttWorkspaceBuffers(
-            workspace, requiredLen, outWords, (int)blockDim, this);
+            workspace, requiredLen, outWords, (int)blockDim, this, keptCount: 3);
         using var currentProduct = workspace.RentTemp(outWords);
         using var diff = workspace.RentTemp(outWords);
         using var nextIter = workspace.RentTemp(outWords);
@@ -339,11 +339,31 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
                     },
                     NttScratch = new GpuBigIntDivRemKernels.AotContexts.NttConvolutionScratch
                     {
+                        Product = new GpuBigIntDivRemKernels.AotContexts.NttResidues
+                        {
+                            Buffer1 = buffers.ProductBuf1.ToProxy(),
+                            Buffer2 = buffers.ProductBuf2.ToProxy()
+                        },
+                        Kept1 = new GpuBigIntDivRemKernels.AotContexts.NttResidues
+                        {
+                            Buffer1 = buffers.Kept1Buf1.ToProxy(),
+                            Buffer2 = buffers.Kept1Buf2.ToProxy()
+                        },
+                        Kept2 = new GpuBigIntDivRemKernels.AotContexts.NttResidues
+                        {
+                            Buffer1 = buffers.Kept2Buf1.ToProxy(),
+                            Buffer2 = buffers.Kept2Buf2.ToProxy()
+                        },
+                        Kept3 = new GpuBigIntDivRemKernels.AotContexts.NttResidues
+                        {
+                            Buffer1 = buffers.Kept3Buf1 is { } kept3Buf1
+                                ? kept3Buf1.ToProxy()
+                                : throw new InvalidOperationException("ModPow requires Kept3Buf1."),
+                            Buffer2 = buffers.Kept3Buf2 is { } kept3Buf2
+                                ? kept3Buf2.ToProxy()
+                                : throw new InvalidOperationException("ModPow requires Kept3Buf2.")
+                        },
                         TmpBuf = buffers.TmpBuf.ToProxy(),
-                        NttBuf1A = buffers.Buf1A.ToProxy(),
-                        NttBuf2A = buffers.Buf2A.ToProxy(),
-                        NttBuf1B = buffers.Buf1B.ToProxy(),
-                        NttBuf2B = buffers.Buf2B.ToProxy(),
                         UncarriedLow = buffers.UncarriedLow.ToProxy(),
                         UncarriedHigh = buffers.UncarriedHigh.ToProxy(),
                         BlockCarries = buffers.BlockCarries.ToProxy()

@@ -86,7 +86,7 @@ public class ModPowPolyAlgorithmTests : IDisposable
     // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/
     //   CooperativeMegaKernelLauncher.cs:473 `ChunkSize = carryChunkSize;` -> `ChunkSize = 1024;`
     //   input: numWords 200 and 3270 (ThrowIfBlockCarriesTooSmall throws before the launch)
-    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.ModPow.cu.cs:88
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.NttProduct.cu.cs:107
     //   `int numBlocks = (numWordsResult + chunkSize - 1) / chunkSize;` -> `int numBlocks = 1;`
     //   input: numWords 3270 (the carries across chunks 1..20 are lost and the result differs from BigInteger.ModPow)
     // numWords 99 transforms 1024 points as one shared-memory row on 512 threads (one butterfly per thread); numWords
@@ -162,6 +162,43 @@ public class ModPowPolyAlgorithmTests : IDisposable
                 CooperativeMegaKernelLauncher.ModPowKernelName,
                 sharedMemBytes);
         Assert.Equal(expectedBlockDim, workspace.LastModPowNttBlockDim);
+    }
+
+    // A 9-word exponent (288 bits) spans two ModPowNttMegaKernel launches (chunkWords = 8: [0, 8) and [8, 9)).
+    // Kept2 (R̂) and Kept3 (Q̂) are transformed once on StartWord == 0 and reused across the second launch.
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.ModPow.cu.cs:160
+    //   `if (expSlice.StartWord == 0)` -> `if (expSlice.StartWord == 0 && expSlice.EndWord == expWords)`
+    //   input: numWords 48, 9-word exponent (288 bits)
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    public void ModPow_NttPathMultiChunkExponent_MatchesBigIntegerReference()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        const int NumWords = 48;
+        const int ExponentWords = 9;
+        using var workspace = new GpuWorkspace(Math.Max(4096, NumWords * 16), GpuExecutionEngine.GSharpAot);
+        workspace.PolyAlgorithmThreshold = NumWords * 32;
+
+        var seed = 2132;
+        var random = new Random(seed);
+        var modValue = GenerateFullWidthBigInteger(random, NumWords * 32) | BigInteger.One;
+        var baseValue = GenerateFullWidthBigInteger(random, NumWords * 32) % modValue;
+        var expValue = GenerateFullWidthBigInteger(random, ExponentWords * 32);
+
+        var expected = BigInteger.ModPow(baseValue, expValue, modValue);
+
+        using var gpuBase = GpuBigUInt.FromBigInteger(workspace, baseValue, NumWords);
+        using var gpuExp = GpuBigUInt.FromBigInteger(workspace, expValue, ExponentWords);
+        using var gpuMod = GpuBigUInt.FromBigInteger(workspace, modValue, NumWords);
+        using var gpuResult = new GpuBigUInt(workspace, NumWords);
+
+        GpuBigIntDivRem.ModPow(gpuBase, gpuExp, gpuMod, gpuResult);
+
+        var actual = gpuResult.ToBigInteger();
+        // Multi-chunk launches must preserve kept NTT transforms (Kept2/Kept3) across chunks and match
+        // BigInteger.ModPow.
+        Assert.True(expected == actual, $"seed {seed}: expected {expected}, actual {actual}");
     }
 
     // 6600 words transforms 2^17 = 256 x 512 points (N1 != N2) on one block of the largest fitting block size (768
@@ -419,7 +456,7 @@ public class ModPowPolyAlgorithmTests : IDisposable
 
     // Boundary check at m = 131072 > 65536: blockDim = 256 meets TransposeTileBatches' 8-warp tile minimum and
     // matches BigInteger.ModPow.
-    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:567
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:587
     //         `blockDim < StridedColumnMinBlockDim` -> `blockDim <= StridedColumnMinBlockDim` (256u throws)
     // input: n = 6600, targetBits = 96 * 6600 + 512, exp = 3, blockDim = 256
     [SkippableFact]

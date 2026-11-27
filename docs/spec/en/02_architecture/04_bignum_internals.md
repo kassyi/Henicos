@@ -240,6 +240,19 @@ one of three shapes:
 | `<= StridedColumnMaxTransformLength` (`2^16`) | `N1 x N2` (row-major, `N2` the smallest power of two with `N2^2 >= M`): the `N2` columns of length `N1` in place, then the `N1` rows of length `N2` | 2 |
 | larger | The same split with two transposes through `TemporaryBuffer` around the rows of length `N1` | 4 |
 
+- **Transform reuse**: operands that stay unchanged across products are transformed once into kept residue slots
+  (`NttConvolutionScratchContext.Kept1`..`Kept3`, each an `NttResidues` pair) and combined by pointwise multiplication
+  (`ExecuteNttPointwiseResidues`) without re-running the forward NTT. In `InverseSqrt`, `â` is transformed once before
+  the loop (`Kept2`) and `x̂` once per iteration (`Kept1`); in `Reciprocal`, `b̂` (`Kept2`) and `x̂` (`Kept1`); in
+  `ModPow`, `R̂` (`Kept2`) and `Q̂` (`Kept3`) are transformed once on `StartWord == 0` (persisting across chunked
+  launches) and `x̂Sq` (`Kept1`) once per exponent bit.
+
+  | Kernel | Transforms per iteration / bit (before) | Transforms per iteration / bit (after) |
+  | :- | -: | -: |
+  | `InverseSqrtNewtonRaphsonMegaKernel` | 9 (6 forward + 3 inverse) | 6 (3 forward + 3 inverse; final correction 9 → 5) |
+  | `ReciprocalNewtonRaphsonMegaKernel` | 6 (4 forward + 2 inverse) | 4 (2 forward + 2 inverse; final correction 3 → 2) |
+  | `ModPowNttMegaKernel` (bit 1 / bit 0) | 18 / 9 | 12 / 6 |
+
 - **Rows in batches**: `ExecuteNttSharedRow` gives each butterfly one thread, so a block holds
   `rowsPerBatch = max(1, floor(B / (L / 2)))` rows of `L` points at once and synchronizes once per batch instead of once
   per row. Block `b` takes rows `b + kG`, `k = 0 .. ceil((rows - b) / G) - 1`; the last batch of a block may be short.

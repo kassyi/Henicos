@@ -87,6 +87,59 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
         AssertInverseSqrtMegaMatchesCpuOracle(numWords, marginWords, smCount, [BlockSizeOfTheRule]);
     }
 
+    // With iterations = 1 starting from a 96-bit guess for a ~192-bit inverse square root (n = 4, margin = 4),
+    // the single Newton iteration updates ResultBuffer from 96-bit to ~192-bit accuracy, so Kept1 (from the start of
+    // the iteration) is stale when the final floor correction runs. The correction must refresh Kept1 = T(ResultBuffer)
+    // before computing a * x^2 and a * x; otherwise CorrectInverseSqrtSlack sees the stale slack and fails to converge.
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:104
+    //   `GpuBigIntDivRemKernels.ExecuteNttTransformOperand(core, ops.ResultBuffer, xWords, nttScratch.Kept1);`
+    //   -> removed
+    // input: numWords = 4, marginWords = 4, iterations = 1, bottom 3 words of exact floor cleared
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void InverseSqrtMega_FinalCorrectionRefreshesKeptTransform_MatchesDefiningInequality()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        const int NumWords = 4;
+        const int MarginWords = 4;
+        const int PrecisionBits = (NumWords + MarginWords) * 32;
+        var operandWords = CreateNormalizedWords(seed: 2132, NumWords);
+        var operand = FromWords(operandWords);
+
+        uint[] cpuWords;
+        using (CpuFallbackScope.Enter())
+        {
+            using var cpuWorkspace = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot);
+            using var cpuOperand = new GpuBigUInt(cpuWorkspace, operandWords);
+            using var cpuResult = new GpuBigUInt(cpuWorkspace, NumWords + MarginWords);
+            GpuBigIntDivRem.InverseSqrt(cpuOperand, cpuResult, MarginWords);
+            cpuWords = cpuResult.ToHostArray();
+        }
+
+        // Keep the top words (from word 3 upward, ~96 bits of precision) and clear words 0..2, so one Newton iteration
+        // updates ResultBuffer significantly while landing within the 1000-step correction bound.
+        var initialGuessWords = (uint[])cpuWords.Clone();
+        initialGuessWords[0] = 0u;
+        initialGuessWords[1] = 0u;
+        initialGuessWords[2] = 0u;
+
+        using var workspace = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot);
+        using var gpuOperand = new GpuBigUInt(workspace, operandWords);
+        using var gpuResult = new GpuBigUInt(workspace, initialGuessWords);
+
+        workspace.Provider.InverseSqrtMega(
+            workspace, gpuOperand, gpuResult, MarginWords, actualBits: NumWords * 32, iterations: 1);
+
+        var actualWords = gpuResult.ToHostArray();
+        var actualValue = FromWords(actualWords);
+        var twoTo2B = BigInteger.One << (2 * PrecisionBits);
+
+        Assert.Equal(cpuWords, actualWords);
+        Assert.True(operand * actualValue * actualValue <= twoTo2B, "GPU inverse sqrt exceeds 2^B / sqrt(a)");
+        Assert.True(twoTo2B < operand * (actualValue + 1) * (actualValue + 1), "GPU inverse sqrt below floor");
+    }
+
     // (30000, 15000, 0): M = 524288 = 512 x 1024. B = 256 transforms the rows of 1024 points with L / 2 > B (each
     // thread takes two butterflies of one row); B = 1024 batches two such rows.
     [SkippableFact]

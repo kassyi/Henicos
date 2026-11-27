@@ -5,14 +5,20 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 /// </summary>
 public struct NttConvolutionScratchContext
 {
-    /// <summary>First NTT scratch buffer for operand A.</summary>
-    public uint[] NttBuf1A;
-    /// <summary>Second NTT scratch buffer for operand A.</summary>
-    public uint[] NttBuf2A;
-    /// <summary>First NTT scratch buffer for operand B.</summary>
-    public uint[] NttBuf1B;
-    /// <summary>Second NTT scratch buffer for operand B.</summary>
-    public uint[] NttBuf2B;
+    /// <summary>
+    /// Working residues for the freshly transformed operand, pointwise product, and inverse transform.
+    /// </summary>
+    public NttResidues Product;
+    /// <summary>First kept operand transform reused across products (for example <c>x̂</c> or <c>x̂Sq</c>).</summary>
+    public NttResidues Kept1;
+    /// <summary>
+    /// Second kept operand transform reused across iterations (for example <c>â</c>, <c>b̂</c>, or <c>R̂</c>).
+    /// </summary>
+    public NttResidues Kept2;
+    /// <summary>
+    /// Third kept operand transform used only by ModPow (<c>Q̂</c>); empty for InverseSqrt and Reciprocal.
+    /// </summary>
+    public NttResidues Kept3;
     /// <summary>General temporary buffer.</summary>
     public uint[] TmpBuf;
     /// <summary>Uncarried lower-half word accumulator.</summary>

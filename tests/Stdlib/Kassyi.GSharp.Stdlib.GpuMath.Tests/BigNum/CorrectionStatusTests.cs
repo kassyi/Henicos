@@ -902,7 +902,7 @@ public class CorrectionStatusTests : IDisposable
         }
 
         // Every failing launch is counted and reported; a read may report several at once.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:302
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:246
         //         `Gpu.AtomicAdd(ref status[0], 1u);` -> `status[0] = 1u;`
         // input: this test (the count stays at 1)
         Assert.Equal(Threads * Iterations, status.ReportedFailures);
@@ -932,10 +932,10 @@ public class CorrectionStatusTests : IDisposable
         RunReciprocalMega(workspace, gpuB, gpuX, iterations: 0);
         Assert.Throws<InvalidOperationException>(() => gpuX.ToBigInteger());
 
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:287
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:231
         //         `if (belowZero || step == maxSteps)` -> `if (belowZero)` (moves on the last pass)
         // input: offset -1001
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:270
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:214
         //         `if (step == maxSteps)` -> `if (step > maxSteps)` (moves on the last pass)
         // input: offset 1001
         Assert.Equal(floorY + Math.Sign(offset), gpuX.ToBigInteger());

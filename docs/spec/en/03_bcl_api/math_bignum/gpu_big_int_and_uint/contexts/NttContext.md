@@ -32,6 +32,12 @@ public struct DualNtt
     [GpuReadOnly] public uint[] Twiddle2;
     public NttGridContext Grid;
 }
+
+public struct NttResidues
+{
+    public uint[]? Buffer1;
+    public uint[]? Buffer2;
+}
 ```
 
 ## Structs
@@ -40,6 +46,7 @@ public struct DualNtt
 | --- | --- |
 | [Ntt](#ntt-struct) | Context parameters for NTT-related operations in Fermat and Newton-Raphson sequences. |
 | [DualNtt](#dualntt-struct) | Context parameters for dual-pass NTT GPU execution. |
+| [NttResidues](#nttresidues-struct) | Prime-1 and prime-2 NTT residue buffers of one operand in transform order, reused across mega-kernel products. |
 
 ## Ntt Struct
 
@@ -71,6 +78,18 @@ public struct DualNtt
 ```
 
 `Grid` holds the six-step grid dimensions `M`, `N1` and `N2` (see [NttGridContext](NumberTheoreticTransformKernelArgs.md#nttgridcontext-struct)).
+
+## NttResidues Struct
+
+Holds the prime-1 and prime-2 NTT residue buffers of one operand in transform order. Used by `NttConvolutionScratchContext` (`Product`, `Kept1`, `Kept2`, and `Kept3`) to reuse forward transforms across cooperative mega-kernel products.
+
+```csharp
+public struct NttResidues
+{
+    public uint[]? Buffer1;
+    public uint[]? Buffer2;
+}
+```
 
 ## Examples
 
