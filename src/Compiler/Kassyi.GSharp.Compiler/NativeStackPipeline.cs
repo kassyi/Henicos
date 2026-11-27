@@ -53,4 +53,20 @@ internal static class NativeStackPipeline
             .Combine(runsOnNativeStacks)
             .Select((input, cancellationToken) =>
                 translate(new NativeStackContext(input.Left.Context, input.Right), cancellationToken));
+
+    /// <summary>
+    /// Runs <paramref name="translate"/> on each captured context together with the switch and whether the assembly
+    /// exports its device code.
+    /// </summary>
+    public static IncrementalValuesProvider<TResult> Translate<TResult>(
+        IncrementalValuesProvider<AttributeTarget> targets,
+        IncrementalValueProvider<bool> runsOnNativeStacks,
+        IncrementalValueProvider<bool> exportsDeviceCode,
+        Func<NativeStackContext, CancellationToken, TResult> translate) =>
+        targets
+            .Combine(runsOnNativeStacks)
+            .Combine(exportsDeviceCode)
+            .Select((input, cancellationToken) =>
+                translate(new NativeStackContext(input.Left.Left.Context, input.Left.Right, input.Right),
+                    cancellationToken));
 }

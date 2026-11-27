@@ -147,7 +147,7 @@ internal static class ManagedStackEligibility
             if (reason is not null)
             {
                 return !SuspensionAnalysis.TryGetDeviceFunctionBody(callee, compilation, out _) &&
-                       reason.Value.Name == nameof(NativeStackObstacle.ImportedSuspendingCall)
+                       reason.Value.Name == nameof(NativeStackObstacle.ImportedCallWithoutStackForm)
                     ? CreateImportedMissingFormReason(callee, compilation, isMethodGroup)
                     : reason;
             }
@@ -281,7 +281,7 @@ internal static class ManagedStackEligibility
             : "it calls a suspending device function from another assembly";
         return new StateMachineReason(
             CpuPath.Managed,
-            nameof(NativeStackObstacle.ImportedSuspendingCall),
+            nameof(NativeStackObstacle.ImportedCallWithoutStackForm),
             sentence,
             detail);
     }

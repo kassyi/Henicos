@@ -15,22 +15,21 @@ internal readonly record struct ReceiverParameter(
 
     /// <summary>Plans the receiver parameter for <paramref name="plan"/>.</summary>
     public static ReceiverParameter Plan(in MethodEmissionPlan plan) =>
-        Plan(plan.Symbol, plan.Kind);
+        Plan(plan.Symbol, plan.Kind, plan.SemanticModel.Compilation);
 
     /// <summary>Plans the receiver parameter for <paramref name="method"/> under <paramref name="kind"/>.</summary>
-    public static ReceiverParameter Plan(IMethodSymbol? method, MethodEmissionKind kind)
+    public static ReceiverParameter Plan(IMethodSymbol? method, MethodEmissionKind kind, Compilation? compilation = null)
     {
         if (kind is MethodEmissionKind.Kernel or MethodEmissionKind.Iterator ||
             method == null ||
-            !GpuCodeConstraints.IsInstanceDeviceFunction(method))
+            method.IsStatic ||
+            !method.HasAttribute(KnownAttributes.GpuDeviceFunction))
         {
             return default;
         }
 
-        if (method.MethodKind != MethodKind.Ordinary ||
-            method.ContainingType is not { IsValueType: true } ||
-            kind == MethodEmissionKind.SuspendingDeviceFunction ||
-            method.ContainingType.IsGenericType)
+        if (GpuCodeConstraints.GetInstanceDeviceFunctionProblem(method, compilation) is not null ||
+            kind == MethodEmissionKind.SuspendingDeviceFunction)
         {
             return new ReceiverParameter(null, false, FailsUnsupported: true);
         }

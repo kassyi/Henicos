@@ -538,4 +538,188 @@ public class InstanceDeviceFunctionDifferentialTests
                 Assert.Equal(500500, r[9]);
                 Assert.Equal(500500, r[10]);
             }));
+
+    private static DifferentialCase CreateReferenceSingleOutputCase(
+        DiffLaunch<int[], int[]> launch,
+        int valuesPerThread,
+        Action<DiffBuffers> reference,
+        Action<int[]> assertThreadZero,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        new(DiffKernelNames.FromLaunchExpression(launchExpression, paramName: nameof(launch)))
+        {
+            Shape = LaunchShape.ForRows(ThreadCount, blockX: ThreadCount),
+            Seeds = [0],
+            Inputs = (_, _) => new DiffBuffers()
+                .In("data", SequentialData(), OutputPolicy.Exact)
+                .Out<int>("r", ThreadCount * valuesPerThread, OutputPolicy.Exact),
+            Launch = (b, s) => launch(
+                b.Get<int>("data"),
+                b.Get<int>("r"),
+                s.GridX, s.GridY, s.GridZ, s.BlockX, s.BlockY, s.BlockZ, 0, default, default),
+            Reference = (b, _) => reference(b),
+            Verify = (actual, _) =>
+            {
+                assertThreadZero(actual.Get<int>("r"));
+                return PropertyResult.Passed;
+            },
+        };
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void InstanceOperatorMacro_MutatingAndReadonlyManagedVersions_MatchesOracle() =>
+        DifferentialRunner.Run(CreateReferenceSingleOutputCase(
+            InstanceDeviceFunctionKernels.LaunchInstanceOperatorMacroKernel,
+            valuesPerThread: 7,
+            static b =>
+            {
+                var data = b.Get<int>("data");
+                var r = b.Get<int>("r");
+                for (var t = 0; t < ThreadCount; t++)
+                {
+                    var d = data[t];
+                    var o = t * 7;
+                    var sum = 10 + d + 5;
+                    var roAndMut = (sum + 3) * 1000 + (sum + 3);
+                    r[o + 0] = sum;
+                    r[o + 1] = sum;
+                    r[o + 2] = roAndMut;
+                    r[o + 3] = sum;
+                    r[o + 4] = 100 + d + 7;
+                    r[o + 5] = 507;
+                    r[o + 6] = 500;
+                }
+            },
+            static r =>
+            {
+                Assert.Equal(16, r[0]);
+                Assert.Equal(16, r[1]);
+                Assert.Equal(19019, r[2]);
+                Assert.Equal(16, r[3]);
+                Assert.Equal(108, r[4]);
+                Assert.Equal(507, r[5]);
+                Assert.Equal(500, r[6]);
+            }));
+
+    private static DifferentialCase CreateSplitOrderCase(
+        DiffLaunch<int[], DiffInstanceCounter[], int[]> launch,
+        int valuesPerThread,
+        Action<DiffBuffers> reference,
+        Action<DiffInstanceCounter[], int[]> assertThreadZero,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        new(DiffKernelNames.FromLaunchExpression(launchExpression, paramName: nameof(launch)))
+        {
+            Shape = LaunchShape.ForRows(ThreadCount, blockX: ThreadCount),
+            Seeds = [0],
+            Inputs = (_, _) => new DiffBuffers()
+                .In("data", SequentialData(), OutputPolicy.Exact)
+                .In("items", new DiffInstanceCounter[ThreadCount * 3])
+                .Out<int>("r", ThreadCount * valuesPerThread, OutputPolicy.Exact),
+            Launch = (b, s) => launch(
+                b.Get<int>("data"),
+                b.Get<DiffInstanceCounter>("items"),
+                b.Get<int>("r"),
+                s.GridX, s.GridY, s.GridZ, s.BlockX, s.BlockY, s.BlockZ, 0, default, default),
+            Reference = (b, _) => reference(b),
+            Verify = (actual, _) =>
+            {
+                assertThreadZero(actual.Get<DiffInstanceCounter>("items"), actual.Get<int>("r"));
+                return PropertyResult.Passed;
+            },
+        };
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void InstanceSplitArgOrder_ReceiverEvaluatedAndSpilledBeforeSplit_MatchesOracle() =>
+        DifferentialRunner.Run(CreateSplitOrderCase(
+            InstanceDeviceFunctionKernels.LaunchInstanceSplitArgOrderKernel,
+            valuesPerThread: 7,
+            static b =>
+            {
+                var items = b.Get<DiffInstanceCounter>("items");
+                var r = b.Get<int>("r");
+                for (var t = 0; t < ThreadCount; t++)
+                {
+                    var k = t * 3;
+                    items[k] = new DiffInstanceCounter(11);
+                    items[k + 1] = new DiffInstanceCounter(20);
+                    var o = t * 7;
+                    r[o + 0] = 105;
+                    r[o + 1] = 105;
+                    r[o + 2] = 11;
+                    r[o + 3] = k + 1;
+                    r[o + 4] = 9;
+                    r[o + 5] = 500;
+                    r[o + 6] = 10;
+                }
+            },
+            static (items, r) =>
+            {
+                Assert.Equal(105, r[0]);
+                Assert.Equal(105, r[1]);
+                Assert.Equal(11, r[2]);
+                Assert.Equal(1, r[3]);
+                Assert.Equal(11, items[0].X);
+                Assert.Equal(20, items[1].X);
+                Assert.Equal(9, r[4]);
+                Assert.Equal(500, r[5]);
+                Assert.Equal(10, r[6]);
+            }));
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void InstancePointerSplitArgOrder_PointerReceiverSpilledBeforeSplit_MatchesOracle() =>
+        DifferentialRunner.Run(CreateReferenceSingleOutputCase(
+            InstanceDeviceFunctionKernels.LaunchInstancePointerSplitArgOrderKernel,
+            valuesPerThread: 1,
+            static b =>
+            {
+                var r = b.Get<int>("r");
+                for (var t = 0; t < ThreadCount; t++)
+                {
+                    r[t] = 212130;
+                }
+            },
+            static r => Assert.Equal(212130, r[0])));
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void InstanceMultiArgSplitOrder_EarlierArgEvaluatedAndSpilledBeforeSplit_MatchesOracle() =>
+        DifferentialRunner.Run(CreateSplitOrderCase(
+            InstanceDeviceFunctionKernels.LaunchInstanceMultiArgSplitOrderKernel,
+            valuesPerThread: 5,
+            static b =>
+            {
+                var items = b.Get<DiffInstanceCounter>("items");
+                var r = b.Get<int>("r");
+                for (var t = 0; t < ThreadCount; t++)
+                {
+                    var baseIdx = t * 3;
+                    items[baseIdx] = new DiffInstanceCounter(103);
+                    items[baseIdx + 1] = new DiffInstanceCounter(2);
+                    var o = t * 5;
+                    r[o + 0] = 804;
+                    r[o + 1] = 103;
+                    r[o + 2] = 1300;
+                    r[o + 3] = 500;
+                    r[o + 4] = 1300;
+                }
+            },
+            static (items, r) =>
+            {
+                Assert.Equal(804, r[0]);
+                Assert.Equal(103, r[1]);
+                Assert.Equal(1300, r[2]);
+                Assert.Equal(500, r[3]);
+                Assert.Equal(1300, r[4]);
+                Assert.Equal(103, items[0].X);
+                Assert.Equal(2, items[1].X);
+            }));
 }

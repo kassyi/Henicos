@@ -72,6 +72,14 @@ internal static class DeviceImportAssembler
     /// and Dispose bodies may call the functions), then the Dispose definitions, then the function bodies.
     /// </remarks>
     public static ImportedDeviceCode Resolve(EquatableArray<ImportedDeviceRecord> records, bool isCuda,
+        IReadOnlyList<string> ownTexts) =>
+        Resolve(records, isCuda, onStacks: false, ownTexts);
+
+    /// <summary>
+    /// The device code of <paramref name="records"/> that <paramref name="ownTexts"/> reach, for one dialect and
+    /// optionally including the native stack forms when <paramref name="onStacks"/> is true.
+    /// </summary>
+    public static ImportedDeviceCode Resolve(EquatableArray<ImportedDeviceRecord> records, bool isCuda, bool onStacks,
         IReadOnlyList<string> ownTexts)
     {
         if (records.IsDefaultOrEmpty)
@@ -92,7 +100,7 @@ internal static class DeviceImportAssembler
             }
         }
 
-        var reached = Reach(records, byName, ownTexts, isCuda);
+        var reached = Reach(records, byName, ownTexts, isCuda, onStacks);
         if (reached.Count == 0)
         {
             return new ImportedDeviceCode("", default, default);
@@ -112,25 +120,25 @@ internal static class DeviceImportAssembler
         using var source = new SourceWriter();
         foreach (var record in functions)
         {
-            source.AppendLine(record.GetDialect(isCuda).Signature);
+            source.AppendLine(record.GetDialect(isCuda, onStacks).Signature);
         }
 
-        var orderedStructs = OrderStructs(structs, isCuda);
+        var orderedStructs = OrderStructs(structs, isCuda, onStacks);
         foreach (var record in orderedStructs)
         {
-            source.Append(record.GetDialect(isCuda).Body);
+            source.Append(record.GetDialect(isCuda, onStacks).Body);
         }
 
         foreach (var record in orderedStructs)
         {
-            source.Append(record.GetDialect(isCuda).Dispose);
+            source.Append(record.GetDialect(isCuda, onStacks).Dispose);
         }
 
-        AppendFunctionBodies(source, functions, isCuda);
+        AppendFunctionBodies(source, functions, isCuda, onStacks);
 
-        return new ImportedDeviceCode(source.ToString(), CollectIncludes(structs, functions, isCuda),
+        return new ImportedDeviceCode(source.ToString(), CollectIncludes(structs, functions, isCuda, onStacks),
             CollectFullNames(structs, functions), CollectErrorSites(functions),
-            CollectCalls(records, byName, reached, isCuda));
+            CollectCalls(records, byName, reached, isCuda, onStacks));
     }
 
     /// <summary>
@@ -193,7 +201,7 @@ internal static class DeviceImportAssembler
     // conversion or truth operator) with the struct's name, which stands for all of its members
     private static EquatableArray<(string Name, string Callee)> CollectCalls(
         EquatableArray<ImportedDeviceRecord> records, Dictionary<string, ImmutableArray<int>.Builder> byName,
-        HashSet<int> reached, bool isCuda)
+        HashSet<int> reached, bool isCuda, bool onStacks)
     {
         var calls = ImmutableArray.CreateBuilder<(string Name, string Callee)>();
         foreach (var index in reached)
@@ -204,7 +212,7 @@ internal static class DeviceImportAssembler
                 .AsStackEnumerable()
                 .Select(caller, static (name, owner) => (name, owner))
                 .AddTo(calls);
-            foreach (var reference in record.Record.GetDialect(isCuda).References)
+            foreach (var reference in record.Record.GetDialect(isCuda, onStacks).References)
             {
                 if (byName.TryGetValue(reference, out var indices) &&
                     reached.Contains(Choose(records, indices, record.AssemblyName)))
@@ -254,7 +262,8 @@ internal static class DeviceImportAssembler
     // The indices of the records that the own text reaches, directly or through the records it reaches; a record that
     // failed in the dialect is left out (the analyzer reports its use, GSH0089)
     private static HashSet<int> Reach(EquatableArray<ImportedDeviceRecord> records,
-        Dictionary<string, ImmutableArray<int>.Builder> byName, IReadOnlyList<string> ownTexts, bool isCuda)
+        Dictionary<string, ImmutableArray<int>.Builder> byName, IReadOnlyList<string> ownTexts, bool isCuda,
+        bool onStacks)
     {
         var texts = new string[ownTexts.Count];
         for (var i = 0; i < texts.Length; i++)
@@ -280,14 +289,14 @@ internal static class DeviceImportAssembler
             var index = Choose(records, indices, assembly);
             if (records[index].FailedFor(isCuda) || reached.Contains(index) ||
                 (records[index].Record.Kind == DeviceExportRecord.StructKind &&
-                 !IsUsable(records, byName, index, isCuda, new HashSet<int>())))
+                 !IsUsable(records, byName, index, isCuda, onStacks, new HashSet<int>())))
             {
                 continue;
             }
 
             reached.Add(index);
 
-            foreach (var reference in records[index].Record.GetDialect(isCuda).References)
+            foreach (var reference in records[index].Record.GetDialect(isCuda, onStacks).References)
             {
                 pending.Enqueue((reference, records[index].AssemblyName));
             }
@@ -302,7 +311,8 @@ internal static class DeviceImportAssembler
     // record is left out: the module defines the struct from metadata, as it did before the import existed. A use of
     // its constructor or computed property is the analyzer's GSH0088 / GSH0089 / GSH0090
     private static bool IsUsable(EquatableArray<ImportedDeviceRecord> records,
-        Dictionary<string, ImmutableArray<int>.Builder> byName, int index, bool isCuda, HashSet<int> visiting)
+        Dictionary<string, ImmutableArray<int>.Builder> byName, int index, bool isCuda, bool onStacks,
+        HashSet<int> visiting)
     {
         if (records[index].FailedFor(isCuda))
         {
@@ -314,10 +324,11 @@ internal static class DeviceImportAssembler
             return true;
         }
 
-        foreach (var name in records[index].Record.GetDialect(isCuda).References)
+        foreach (var name in records[index].Record.GetDialect(isCuda, onStacks).References)
         {
             if (!byName.TryGetValue(name, out var indices) || IsDefinedByTwoAssemblies(records, indices) ||
-                !IsUsable(records, byName, Choose(records, indices, records[index].AssemblyName), isCuda, visiting))
+                !IsUsable(records, byName, Choose(records, indices, records[index].AssemblyName), isCuda, onStacks,
+                    visiting))
             {
                 return false;
             }
@@ -359,7 +370,7 @@ internal static class DeviceImportAssembler
     // A struct after the structs whose names its text uses: the types of its fields, and the constructors that its
     // constructors and computed properties call (DefinedNames)
     private static ImmutableArray<DeviceExportRecord> OrderStructs(ImmutableArray<DeviceExportRecord>.Builder structs,
-        bool isCuda)
+        bool isCuda, bool onStacks)
     {
         var byName = new Dictionary<string, int>(StringComparer.Ordinal);
         for (var i = 0; i < structs.Count; i++)
@@ -388,7 +399,7 @@ internal static class DeviceImportAssembler
             }
 
             state[index] = 1;
-            foreach (var name in structs[index].GetDialect(isCuda).References)
+            foreach (var name in structs[index].GetDialect(isCuda, onStacks).References)
             {
                 if (byName.TryGetValue(name, out var dependency))
                 {
@@ -404,7 +415,7 @@ internal static class DeviceImportAssembler
     // On the CPU dialects a frame embeds the frames of its calls by value, so a callee's body comes before its caller's
     // (as NativeModuleAssembler.AssembleDeviceSource orders the own functions)
     private static void AppendFunctionBodies(SourceWriter source, ImmutableArray<DeviceExportRecord>.Builder functions,
-        bool isCuda)
+        bool isCuda, bool onStacks)
     {
         var byFrame = new Dictionary<string, int>(StringComparer.Ordinal);
         for (var i = 0; i < functions.Count; i++)
@@ -441,24 +452,24 @@ internal static class DeviceImportAssembler
                 }
             }
 
-            source.AppendLine(record.GetDialect(isCuda).Body);
+            source.AppendLine(record.GetDialect(isCuda, onStacks).Body);
         }
     }
 
     private static EquatableArray<string> CollectIncludes(ImmutableArray<DeviceExportRecord>.Builder structs,
-        ImmutableArray<DeviceExportRecord>.Builder functions, bool isCuda)
+        ImmutableArray<DeviceExportRecord>.Builder functions, bool isCuda, bool onStacks)
     {
         var includes = new HashSet<string>(StringComparer.Ordinal);
         foreach (var record in structs)
         {
-            record.GetDialect(isCuda).Includes
+            record.GetDialect(isCuda, onStacks).Includes
                 .AsStackEnumerable()
                 .AddTo(includes);
         }
 
         foreach (var record in functions)
         {
-            record.GetDialect(isCuda).Includes
+            record.GetDialect(isCuda, onStacks).Includes
                 .AsStackEnumerable()
                 .AddTo(includes);
         }

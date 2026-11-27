@@ -126,8 +126,19 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null, Loweri
 
         public override SyntaxNode? VisitInvocationExpression(InvocationExpressionSyntax node)
         {
+            var model = parent._semanticModel;
+            var op = model?.GetSafeOperation(node) as IInvocationOperation;
+            var isWarpPrimitive = IsWarpPrimitive(node);
+            var hasNestedSplitArg = HasNestedWarpPrimitiveArgument(node);
+
             InvocationExpressionSyntax visitedNode;
-            if (IsWarpPrimitive(node) && HasNestedWarpPrimitiveArgument(node))
+            if (SpilledArguments.IsStructInstanceDeviceFunctionCall(op) &&
+                op is not null &&
+                (isWarpPrimitive || hasNestedSplitArg))
+            {
+                visitedNode = VisitStructInvocationInOrder(node, op, isWarpPrimitive);
+            }
+            else if (isWarpPrimitive && hasNestedSplitArg)
             {
                 visitedNode = VisitArgumentsInOrder(node);
             }
@@ -148,6 +159,11 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null, Loweri
                 // [WHY] A shuffle is split as well: its value is published before the state boundary and read again
                 // after it, together with the other arguments in parameter order (#788)
                 visitedNode = SpillArguments(visitedInvocation);
+            }
+
+            if (!IsWarpPrimitive(visitedNode))
+            {
+                return visitedNode;
             }
 
             var isSuspendingCall = BarrierHelper.IsSuspendingCall(visitedNode);
@@ -211,6 +227,142 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null, Loweri
                 .AsStackEnumerable()
                 .Any(static argument => ContainsWarpPrimitive(argument));
 
+        private static int FindLastSplitArgumentIndex(SeparatedSyntaxList<ArgumentSyntax> arguments)
+        {
+            for (var i = arguments.Count - 1; i >= 0; i--)
+            {
+                if (ContainsWarpPrimitive(arguments[i]))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        private static SeparatedSyntaxList<ArgumentSyntax> SliceArguments(
+            SeparatedSyntaxList<ArgumentSyntax> arguments,
+            int count)
+        {
+            if (count >= arguments.Count)
+            {
+                return arguments;
+            }
+
+            var builder = ImmutableArray.CreateBuilder<ArgumentSyntax>(count);
+            for (var i = 0; i < count; i++)
+            {
+                builder.Add(arguments[i]);
+            }
+
+            return SyntaxFactory.SeparatedList(builder);
+        }
+
+        // [WHY] C# evaluates the receiver (operand 0) of a struct instance call before any argument, and copies a
+        // readonly variable for a non-readonly method before evaluating the arguments (C# §12.6.6.1). When an argument
+        // holds a split, the receiver (or its location parts) is evaluated and spilled before visiting the arguments so
+        // hoisted splits land after the receiver and its defensive copy; for non-splitting calls, every argument before
+        // the last split-holding argument is also spilled in order so hoisted splits run after earlier arguments.
+        // <spilled receiver or location parts>.<method>(<arguments>)
+        private InvocationExpressionSyntax VisitStructInvocationInOrder(
+            InvocationExpressionSyntax call,
+            IInvocationOperation op,
+            bool spillArguments)
+        {
+            var written = call.ArgumentList.Arguments;
+            var lastSplitArgIndex = spillArguments ? written.Count - 1 : FindLastSplitArgumentIndex(written);
+            var effectiveWritten = !spillArguments && lastSplitArgIndex >= 0
+                ? SliceArguments(written, lastSplitArgIndex + 1)
+                : written;
+            var laterOnly = !spillArguments;
+            var expression = VisitStructReceiver(call.Expression, op, effectiveWritten, laterOnly);
+            var arguments = written;
+            for (var i = 0; i < arguments.Count; i++)
+            {
+                var visited = Visit(arguments[i]) as ArgumentSyntax
+                              ?? throw new InvalidOperationException("Warp instruction hoisting removed an argument.");
+                var rewritten = spillArguments || i < lastSplitArgIndex
+                    ? SpillArgument(effectiveWritten, i, visited, laterOnly)
+                    : visited;
+                arguments = arguments.Replace(arguments[i], rewritten);
+            }
+
+            return call
+                .WithExpression(expression)
+                .WithArgumentList(call.ArgumentList.WithArguments(arguments));
+        }
+
+        // var __gsharp_arg_temp_<n> = <receiver>; __gsharp_arg_temp_<n>.<method>(...)   (value or copy receiver)
+        // <location with __gsharp_arg_temp_<n> parts>.<method>(...)                        (address receiver)
+        // <spilled ptr>-><method>(...)                                                     (pointer-arrow receiver)
+        private ExpressionSyntax VisitStructReceiver(
+            ExpressionSyntax expression,
+            IInvocationOperation op,
+            SeparatedSyntaxList<ArgumentSyntax> written,
+            bool laterOnly)
+        {
+            switch (expression)
+            {
+                case ParenthesizedExpressionSyntax parenthesized:
+                    return parenthesized.WithExpression(
+                        VisitStructReceiver(parenthesized.Expression, op, written, laterOnly));
+                case SimpleNameSyntax when op.Instance is not null &&
+                                           ReadOnlyReceivers.IsReadOnlyVariable(op.Instance) &&
+                                           !op.TargetMethod.IsReadOnly:
+                {
+                    // var __gsharp_arg_temp_<n> = this; __gsharp_arg_temp_<n>.<method>(...)
+                    var spilledThis = Spill(SyntaxFactory.ThisExpression().WithOriginalSpanFrom(expression));
+                    return SyntaxFactory.MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        spilledThis,
+                        (SimpleNameSyntax)expression.WithoutTrivia()
+                    ).WithOriginalSpanFrom(expression).WithTriviaFrom(expression);
+                }
+                case MemberAccessExpressionSyntax
+                {
+                    RawKind: (int)SyntaxKind.PointerMemberAccessExpression
+                } pointerAccess:
+                {
+                    var visitedPtr = Visit(pointerAccess.Expression) as ExpressionSyntax
+                                     ?? throw new InvalidOperationException(
+                                         "Warp instruction hoisting removed a receiver.");
+                    if (IsOrContainsWarpPrimitive(pointerAccess.Expression) && visitedPtr is IdentifierNameSyntax)
+                    {
+                        return pointerAccess.WithExpression(visitedPtr);
+                    }
+
+                    var spilledPtr = SpilledArguments.CanStayInPlace(
+                        pointerAccess.Expression, written, -1, parent._semanticModel, laterOnly)
+                        ? visitedPtr
+                        : Spill(visitedPtr);
+                    return pointerAccess.WithExpression(spilledPtr);
+                }
+                case MemberAccessExpressionSyntax
+                {
+                    RawKind: (int)SyntaxKind.SimpleMemberAccessExpression
+                } access:
+                {
+                    var visitedReceiver = Visit(access.Expression) as ExpressionSyntax
+                                          ?? throw new InvalidOperationException(
+                                              "Warp instruction hoisting removed a receiver.");
+                    if (IsOrContainsWarpPrimitive(access.Expression) && visitedReceiver is IdentifierNameSyntax)
+                    {
+                        return access.WithExpression(visitedReceiver);
+                    }
+
+                    var isCopyOrValue = SpilledArguments.IsCopiedOrValueReceiver(op);
+                    var rewrittenReceiver = isCopyOrValue
+                        ? Spill(visitedReceiver)
+                        : LocationPartSpiller.SpillLocation(
+                            visitedReceiver, written, -1, parent._semanticModel, Spill, laterOnly);
+                    return access.WithExpression(rewrittenReceiver);
+                }
+                default:
+                    return Visit(expression) as ExpressionSyntax
+                           ?? throw new InvalidOperationException("Warp instruction hoisting removed a receiver.");
+            }
+        }
+
         // [WHY] C# evaluates the arguments in the order written, so an argument that holds a suspending call or a shuffle
         // runs after the arguments before it and before the ones after it. Hoisting the nested call first (the children
         // before the call) would run it before the earlier arguments are evaluated, which then see what it wrote. Each
@@ -263,7 +415,7 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null, Loweri
         // arguments are the arguments as written, which decide what stays in place (SpilledArguments); argument is the one
         // at index with its nested calls already hoisted
         private ArgumentSyntax SpillArgument(SeparatedSyntaxList<ArgumentSyntax> arguments, int index,
-            ArgumentSyntax argument)
+            ArgumentSyntax argument, bool laterOnly = false)
         {
             if (argument.Expression is DeclarationExpressionSyntax
                 {
@@ -282,12 +434,12 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null, Loweri
             {
                 // The reference itself must stay a variable, so only what selects it is evaluated once
                 return argument.WithExpression(
-                    LocationPartSpiller.SpillLocation(argument.Expression, arguments, index, model, Spill));
+                    LocationPartSpiller.SpillLocation(argument.Expression, arguments, index, model, Spill, laterOnly));
             }
 
             // [WHY] A constant expression stays in place like a literal: it keeps its implicit constant conversion
             // ('Half / 2' to a uint parameter), which a variable lacks
-            return SpilledArguments.CanStayInPlace(argument.Expression, arguments, index, model)
+            return SpilledArguments.CanStayInPlace(argument.Expression, arguments, index, model, laterOnly)
                 ? argument
                 : argument.WithExpression(Spill(argument.Expression));
         }

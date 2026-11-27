@@ -169,6 +169,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             .WithTrackingName(DeviceImportTableTrackingName);
 
         var runsOnNativeStacks = NativeStackPipeline.Switch(configProvider);
+        var exportsDeviceCode = configProvider.Select(static (value, _) => value.ExportDeviceCode);
 
         // ForAttributeWithMetadataName resolves the attribute through the symbol, so an alias of it is found as well; the
         // predicate only checks the node kind
@@ -189,6 +190,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     predicate: static (node, _) => node is MethodDeclarationSyntax,
                     transform: NativeStackPipeline.Capture),
                 runsOnNativeStacks,
+                exportsDeviceCode,
                 static (ctx, _) => TranspileDeviceMethod(ctx))
             .WithTrackingName(DeviceFunctionTrackingName)
             .Where(static m => m.HasValue)
@@ -232,7 +234,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         // The imported text is resolved once for all outputs; an edit that reaches the same records leaves it equal
         var importedCode = allKernels.Combine(allDevices).Combine(deviceImports).Combine(configProvider)
             .Select(static (input, _) => ResolveImports(input.Left.Right, input.Left.Left.Left,
-                GetDistinctDeviceMethods(input.Left.Left.Right), input.Right.IsCuda));
+                GetDistinctDeviceMethods(input.Left.Left.Right), input.Right.IsCuda, input.Right.RunsOnNativeStacks));
         var stackForms = ManagedStackPipeline.Forms(context.CompilationProvider, configProvider);
         var kernelsWithStackForms = ManagedStackPipeline.AttachToKernels(allKernels, stackForms);
         var kernelModule = kernelsWithStackForms.Combine(configProvider.Select(static (config, _) => config.EmitSource))
@@ -495,12 +497,15 @@ public class GpuKernelGenerator : IIncrementalGenerator
         );
         var plan = MethodEmissionPlan.Create(bodyDeclaration, bodyModel, isKernel: false);
         var texts = DeviceFunctionTexts.Transpile(in plan);
+        var stackForm = NativeStackTranslator.TranslateDeviceStackForm(context, in plan, methodDeclaration);
         var forms = DeviceFunctionForms.Create(in plan, bodyDeclaration, methodSymbol, compilation);
-        var (export, structExports) = DeviceFunctionRecords.Create(in plan, methodSymbol, compilation, texts, forms);
+        var (export, structExports) = DeviceFunctionRecords.Create(
+            in plan, methodSymbol, compilation, texts, forms, in stackForm);
 
-        var cpp = NativeStackTranslator.ForDeviceFunction(context, in plan, methodDeclaration,
+        var cpp = NativeStackTranslator.ForDeviceFunction(context,
             new DeviceCppText(texts.Cpp.Signature, texts.Cpp.Failures.Apply(texts.Cpp.Source), texts.Cpp.Includes,
-                texts.Sites));
+                texts.Sites),
+            in stackForm);
 
         return new TranspiledDeviceMethodResult(
             HostClassHeader.Create(methodSymbol.ContainingType, compilation),
@@ -772,7 +777,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
     // The device code of other assemblies that the kernels and device functions of the module reach
     private static ImportedDeviceCode ResolveImports(EquatableArray<ImportedDeviceRecord> deviceImports,
         ImmutableArray<TranspiledKernelResult> kernelMethods,
-        ImmutableArray<TranspiledDeviceMethodResult>.Builder deviceMethods, bool isCuda)
+        ImmutableArray<TranspiledDeviceMethodResult>.Builder deviceMethods, bool isCuda, bool onStacks)
     {
         if (deviceImports.IsDefaultOrEmpty)
         {
@@ -790,7 +795,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             texts.Add(method.GetBody(isCuda));
         }
 
-        return DeviceImportAssembler.Resolve(deviceImports, isCuda, texts);
+        return DeviceImportAssembler.Resolve(deviceImports, isCuda, onStacks, texts);
     }
 
     // The CUDA module context, which loads the fatbin and warms up every kernel's function pointer

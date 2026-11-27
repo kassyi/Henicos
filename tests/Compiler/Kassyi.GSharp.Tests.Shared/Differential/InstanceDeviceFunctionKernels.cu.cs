@@ -27,6 +27,13 @@ public partial struct DiffInstanceCounter
     }
 
     [GpuDeviceFunction]
+    public int AddTwo(int a, int b)
+    {
+        X += a * 100 + b;
+        return X;
+    }
+
+    [GpuDeviceFunction]
     public readonly int ReadAfter(ref DiffInstanceCounter other)
     {
         other.X = 500;
@@ -75,7 +82,7 @@ public partial struct DiffInstanceCounter
     }
 }
 
-public static class DiffInstanceCounterExtensions
+public static partial class DiffInstanceCounterExtensions
 {
     [GpuDeviceFunction]
     public static int ExtReadAfter(this in DiffInstanceCounter self, ref DiffInstanceCounter other)
@@ -109,6 +116,13 @@ public partial struct DiffChainInner
     public int AddGet(int v)
     {
         X += v;
+        return X;
+    }
+
+    [GpuDeviceFunction]
+    public int AddTwo(int a, int b)
+    {
+        X += a * 100 + b;
         return X;
     }
 
@@ -273,6 +287,13 @@ public partial struct DiffInstanceMemberCaller
     public int AddGet(int v)
     {
         X += v;
+        return X;
+    }
+
+    [GpuDeviceFunction]
+    public int AddTwo(int a, int b)
+    {
+        X += a * 100 + b;
         return X;
     }
 
@@ -1261,5 +1282,197 @@ public static partial class InstanceDeviceFunctionKernels
         r[o + 8] = a8;
         r[o + 9] = a9 * 1000 + sRead1.X;
         r[o + 10] = a10 * 1000 + sRead2.X;
+    }
+
+    [GpuDeviceFunction]
+    public static void AddMacroVal(ref DiffMacroVal result, DiffMacroVal left, DiffMacroVal right) =>
+        result.V = left.V + right.V;
+
+    [GpuDeviceFunction]
+    private static int CallMacroOnIn(in DiffMacroAcc p, DiffMacroVal x) =>
+        p.AddToReadonly(x) * 1000 + p.AddToMut(x);
+
+    [GpuDeviceFunction]
+    private static int CallMacroAlias(in DiffMacroAcc p, ref DiffMacroAcc alias, DiffMacroVal x) =>
+        p.ReadAfterMacro(ref alias, x);
+
+    // Instance device functions that expand an operator macro (managed versions keep readonly and receiver)
+    [GpuKernel]
+    public static void InstanceOperatorMacroKernel(int[] data, int[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= data.Length)
+        {
+            return;
+        }
+
+        int d = data[t];
+        var acc = new DiffMacroAcc { Sum = new DiffMacroVal { V = 10 + d } };
+        int a0 = acc.AddToMut(new DiffMacroVal { V = 5 });
+        int a1 = acc.Sum.V;
+        int a2 = CallMacroOnIn(in acc, new DiffMacroVal { V = 3 });
+        int a3 = acc.Sum.V;
+        int a4 = new DiffMacroAcc { Sum = new DiffMacroVal { V = 100 + d } }.AddToMut(new DiffMacroVal { V = 7 });
+        int a5 = CallMacroAlias(in acc, ref acc, new DiffMacroVal { V = 7 });
+        int a6 = acc.Sum.V;
+
+        int o = t * 7;
+        r[o + 0] = a0;
+        r[o + 1] = a1;
+        r[o + 2] = a2;
+        r[o + 3] = a3;
+        r[o + 4] = a4;
+        r[o + 5] = a5;
+        r[o + 6] = a6;
+    }
+
+    [GpuDeviceFunction]
+    private static int SetXAndReturn(ref DiffInstanceCounter counter, int value)
+    {
+        counter.X = value;
+        return 5;
+    }
+
+    [GpuDeviceFunction]
+    private static int SplitOnIn(in DiffInstanceCounter p, ref DiffInstanceCounter alias) =>
+        p.AddGet(Warp.ShuffleSync(0xFu, SetXAndReturn(ref alias, 500), 0));
+
+    // Split arguments on struct instance device function calls keep receiver evaluation and defensive copy order
+    [GpuKernel]
+    public static void InstanceSplitArgOrderKernel(int[] data, DiffInstanceCounter[] items, int[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= data.Length)
+        {
+            return;
+        }
+
+        var sLocal = new DiffInstanceCounter(10);
+        int s0 = sLocal.AddGet(Warp.ShuffleSync(0xFu, SetXAndReturn(ref sLocal, 100), 0));
+
+        int k = t * 3;
+        items[k] = new DiffInstanceCounter(10);
+        items[k + 1] = new DiffInstanceCounter(20);
+        int s1 = 0;
+        for (int iter = 0; iter < 1; iter++)
+        {
+            s1 = items[k++].AddGet(Warp.ShuffleSync(0xFu, k, 0));
+        }
+
+        var sIn = new DiffInstanceCounter(4);
+        int s2 = SplitOnIn(in sIn, ref sIn);
+
+        int s3 = Make(7).AddGet(Warp.ShuffleSync(0xFu, 3, 0));
+
+        int o = t * 7;
+        r[o + 0] = s0;
+        r[o + 1] = sLocal.X;
+        r[o + 2] = s1;
+        r[o + 3] = k;
+        r[o + 4] = s2;
+        r[o + 5] = sIn.X;
+        r[o + 6] = s3;
+    }
+
+    // Pointer-arrow receiver with a split argument spills the pointer before argument side effects
+    [GpuKernel]
+    public static unsafe void InstancePointerSplitArgOrderKernel(int[] data, int[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= data.Length)
+        {
+            return;
+        }
+
+        var sPtrA = new DiffInstanceCounter(20);
+        var sPtrB = new DiffInstanceCounter(30);
+        var holder = new DiffPtrHolder { Ptr = &sPtrA };
+        int s4 = holder.Ptr->AddGet(Warp.ShuffleSync(0xFu, MovePtr(&holder.Ptr, &sPtrB), 0));
+
+        r[t] = s4 * 10000 + sPtrA.X * 100 + sPtrB.X;
+    }
+
+    [GpuDeviceFunction]
+    private static int SetAndRet(ref DiffInstanceCounter counter, int value, int ret)
+    {
+        counter.X = value;
+        return ret;
+    }
+
+    [GpuDeviceFunction]
+    private static int SplitOnInTwoArgs(in DiffInstanceCounter p, ref DiffInstanceCounter alias) =>
+        p.AddTwo(SetAndRet(ref alias, 500, 3), Warp.ShuffleSync(0xFu, alias.X, 0));
+
+    // Multi-argument struct calls spill earlier arguments before hoisting later split arguments
+    [GpuKernel]
+    public static void InstanceMultiArgSplitOrderKernel(int[] data, DiffInstanceCounter[] items, int[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= data.Length)
+        {
+            return;
+        }
+
+        var sIn = new DiffInstanceCounter(4);
+        int s0 = SplitOnInTwoArgs(in sIn, ref sIn);
+
+        int baseIdx = t * 3;
+        int k = baseIdx;
+        items[baseIdx] = new DiffInstanceCounter(1);
+        items[baseIdx + 1] = new DiffInstanceCounter(2);
+        int s1 = 0;
+        for (int iter = 0; iter < 1; iter++)
+        {
+            s1 = items[k++].AddTwo(k++ - baseIdx, Warp.ShuffleSync(0xFu, k - baseIdx, 0));
+        }
+
+        var sTop = new DiffInstanceCounter(4);
+        int s2 = sTop.AddTwo(SetAndRet(ref sTop, 500, 3), Warp.ShuffleSync(0xFu, sTop.X, 0));
+
+        int o = t * 5;
+        r[o + 0] = s0;
+        r[o + 1] = s1;
+        r[o + 2] = s2;
+        r[o + 3] = sIn.X;
+        r[o + 4] = sTop.X;
+    }
+}
+
+public struct DiffMacroVal
+{
+    public int V;
+
+    [GpuOperatorMacro(typeof(InstanceDeviceFunctionKernels), nameof(InstanceDeviceFunctionKernels.AddMacroVal))]
+    public static DiffMacroVal operator +(DiffMacroVal left, DiffMacroVal right) => throw new GpuOnlyException();
+}
+
+public partial struct DiffMacroAcc
+{
+    public DiffMacroVal Sum;
+
+    [GpuDeviceFunction]
+    public int AddToMut(DiffMacroVal x)
+    {
+        DiffMacroVal next = default;
+        next = Sum + x;
+        Sum = next;
+        return Sum.V;
+    }
+
+    [GpuDeviceFunction]
+    public readonly int AddToReadonly(DiffMacroVal x)
+    {
+        DiffMacroVal next = default;
+        next = Sum + x;
+        return next.V;
+    }
+
+    [GpuDeviceFunction]
+    public readonly int ReadAfterMacro(ref DiffMacroAcc alias, DiffMacroVal x)
+    {
+        alias.Sum = new DiffMacroVal { V = 500 };
+        DiffMacroVal next = default;
+        next = Sum + x;
+        return next.V;
     }
 }

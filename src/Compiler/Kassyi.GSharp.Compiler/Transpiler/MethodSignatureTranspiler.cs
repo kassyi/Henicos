@@ -29,11 +29,15 @@ internal static class MethodSignatureTranspiler
         var receiver = isDevice ? ReceiverParameter.Plan(in plan) : default;
         if (receiver.FailsUnsupported && methodSymbol != null)
         {
+            var reason = GpuCodeConstraints.GetInstanceDeviceFunctionProblem(
+                             methodSymbol, context.Query.SemanticModel.Compilation) ??
+                         GpuCodeConstraints.InstanceSuspendingReason;
             context.Reporter.Fail(
                 GSharpDiagnostics.InstanceDeviceFunctionNotSupported,
                 method.Identifier.GetLocation(),
                 methodSymbol.ContainingType.Name,
-                methodSymbol.Name);
+                methodSymbol.Name,
+                reason);
         }
 
         FailUnsupportedParameterTypes(methodSymbol, ref context);
@@ -160,13 +164,15 @@ internal static class MethodSignatureTranspiler
     public static void WriteSuspendingDeviceSignature(MethodDeclarationSyntax method, IMethodSymbol methodSymbol,
         IReadOnlyCollection<string> copiedParameters, ref TranspileContext context)
     {
-        if (GpuCodeConstraints.IsInstanceDeviceFunction(methodSymbol))
+        if (GpuCodeConstraints.GetInstanceDeviceFunctionProblem(
+                methodSymbol, context.Query.SemanticModel.Compilation) is { } reason)
         {
             context.Reporter.Fail(
                 GSharpDiagnostics.InstanceDeviceFunctionNotSupported,
                 method.Identifier.GetLocation(),
                 methodSymbol.ContainingType.Name,
-                methodSymbol.Name);
+                methodSymbol.Name,
+                reason);
         }
 
         FailUnsupportedParameterTypes(methodSymbol, ref context);

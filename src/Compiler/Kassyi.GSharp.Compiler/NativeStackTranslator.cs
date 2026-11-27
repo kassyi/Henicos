@@ -4,9 +4,9 @@ using Kassyi.GSharp.Compiler.Models;
 namespace Kassyi.GSharp.Compiler;
 
 /// <summary>
-/// Translates a kernel or a suspending device function into its native stack form
-/// (<see cref="Models.GeneratorConfig.RunsOnNativeStacks"/>), next to the state machine form
-/// the generator has translated.
+/// Translates a kernel or a suspending device function into its native stack form, for the assembly's own native
+/// module (<see cref="Models.GeneratorConfig.RunsOnNativeStacks"/>) and for the device code export records of
+/// suspending device functions (<see cref="Models.GeneratorConfig.ExportDeviceCode"/>).
 /// </summary>
 internal static class NativeStackTranslator
 {
@@ -60,59 +60,126 @@ internal static class NativeStackTranslator
     }
 
     /// <summary>
-    /// The C++ text of a device function: its stack form after the state machine form (<paramref name="stateMachine"/>)
-    /// when the build runs on native stacks and the function suspends and can, otherwise the state machine form alone.
+    /// Translates the native stack form of a suspending device function once, whenever the build runs on native stacks
+    /// or exports its device code, independent of the target dialect.
     /// </summary>
-    public static DeviceCppText ForDeviceFunction(NativeStackContext context, in MethodEmissionPlan plan,
-        MethodDeclarationSyntax methodDeclaration, DeviceCppText stateMachine)
+    public static DeviceStackForm TranslateDeviceStackForm(NativeStackContext context, in MethodEmissionPlan plan,
+        MethodDeclarationSyntax methodDeclaration)
     {
-        if (!context.OnStacks || plan.Kind != MethodEmissionKind.SuspendingDeviceFunction)
+        if (plan.Kind != MethodEmissionKind.SuspendingDeviceFunction ||
+            (!context.OnStacks && !context.ExportsDeviceCode))
         {
-            return stateMachine;
+            return default;
         }
 
         var obstacle = NativeStackEligibility.ClassifyDeviceFunction(plan.Declaration, plan.SemanticModel);
         if (obstacle != NativeStackObstacle.None)
         {
-            var fallback = context.TargetSymbol is IMethodSymbol methodSymbol
+            var fallback = context.OnStacks && context.TargetSymbol is IMethodSymbol methodSymbol
                 ? CreateFallback(methodSymbol, obstacle)
                 : default;
-            return stateMachine with { NativeFallback = fallback };
+            return new DeviceStackForm(
+                HasForm: false,
+                Signature: "",
+                Source: "",
+                ModuleBody: "",
+                Includes: null,
+                Structs: null,
+                ErrorSites: default,
+                Failed: false,
+                NativeFallback: fallback);
         }
 
-        var signature = "";
-        var body = "";
-        var includes = stateMachine.Includes;
-        var errorSites = stateMachine.ErrorSites;
         try
         {
             var stackFailures = new FailureCollector();
             var stackDialect = new StackCppDialect();
             var stackThrowSites = new ErrorSiteTable();
-            signature = MethodTranspiler.GenerateCudaSignature(in plan, stackFailures.Fail, stackDialect);
+            var stackStructs = new StructSourceCollector();
+            var signature = MethodTranspiler.GenerateCudaSignature(in plan, stackFailures.Fail, stackDialect);
             var stackSource = MethodTranspiler.GenerateCudaSource(in plan, stackFailures.Fail, stackDialect,
-                out var requiredIncludesStack, new StructSourceCollector(), throwSites: stackThrowSites);
-            body = stackFailures.Apply(stackSource);
-            includes = new HashSet<string>(includes);
-            includes.UnionWith(requiredIncludesStack);
-            errorSites = ErrorSiteTable.MergeSites(errorSites, stackThrowSites.Entries.AsEquatableArray());
+                out var requiredIncludesStack, stackStructs, throwSites: stackThrowSites);
+            var moduleBody = stackFailures.Apply(stackSource);
+            var failed = stackFailures.HasFailures;
+            var hasForm = !failed && stackSource.Length > 0;
+            return new DeviceStackForm(
+                HasForm: hasForm,
+                Signature: signature,
+                Source: hasForm ? stackSource : "",
+                ModuleBody: moduleBody,
+                Includes: requiredIncludesStack,
+                Structs: hasForm ? stackStructs : null,
+                ErrorSites: stackThrowSites.Entries.AsEquatableArray(),
+                Failed: failed);
         }
         catch (InsufficientExecutionStackException)
         {
             var location = methodDeclaration.Identifier.GetLocation();
             var failure = new TranspileFailure(GSharpDiagnostics.MethodTooComplexToCompile, location,
                 [context.TargetSymbol.Name]);
-            body = NativeModuleAssembler.FormatTranspileFailures([failure.Format()]);
+            return new DeviceStackForm(
+                HasForm: false,
+                Signature: "",
+                Source: "",
+                ModuleBody: NativeModuleAssembler.FormatTranspileFailures([failure.Format()]),
+                Includes: null,
+                Structs: null,
+                ErrorSites: default,
+                Failed: true);
         }
         catch (Exception ex)
         {
-            body = InternalError(ex);
+            return new DeviceStackForm(
+                HasForm: false,
+                Signature: "",
+                Source: "",
+                ModuleBody: InternalError(ex),
+                Includes: null,
+                Structs: null,
+                ErrorSites: default,
+                Failed: true);
+        }
+    }
+
+    /// <summary>
+    /// The C++ text of a device function: its stack form (<paramref name="stackForm"/>) after the state machine form
+    /// (<paramref name="stateMachine"/>) when the build runs on native stacks and the function suspends and can,
+    /// otherwise the state machine form alone.
+    /// </summary>
+    public static DeviceCppText ForDeviceFunction(NativeStackContext context, DeviceCppText stateMachine,
+        in DeviceStackForm stackForm)
+    {
+        if (!context.OnStacks)
+        {
+            return stateMachine;
         }
 
-        return body.Length > 0
-            ? new DeviceCppText(AppendOnNewLine(stateMachine.Signature, signature),
-                AppendOnNewLine(stateMachine.Body, body), includes, errorSites)
-            : stateMachine;
+        if (stackForm.NativeFallback != default)
+        {
+            return stateMachine with { NativeFallback = stackForm.NativeFallback };
+        }
+
+        if (stackForm.ModuleBody is not { Length: > 0 } body)
+        {
+            return stateMachine;
+        }
+
+        var includes = stateMachine.Includes;
+        if (stackForm.Includes is not null)
+        {
+            includes = new HashSet<string>(includes);
+            includes.UnionWith(stackForm.Includes);
+        }
+
+        var errorSites = !stackForm.ErrorSites.IsDefaultOrEmpty
+            ? ErrorSiteTable.MergeSites(stateMachine.ErrorSites, stackForm.ErrorSites)
+            : stateMachine.ErrorSites;
+
+        return new DeviceCppText(
+            AppendOnNewLine(stateMachine.Signature, stackForm.Signature),
+            AppendOnNewLine(stateMachine.Body, body),
+            includes,
+            errorSites);
     }
 
     private static StateMachineFallback CreateFallback(IMethodSymbol method, NativeStackObstacle obstacle) =>

@@ -19,17 +19,22 @@ internal static class DeviceFunctionRecords
     /// </remarks>
     public static (DeviceExportRecord Function, EquatableArray<DeviceExportRecord> Structs) Create(
         in MethodEmissionPlan plan, IMethodSymbol method, Compilation compilation, DeviceFunctionTexts texts,
-        DeviceFunctionForms forms)
+        DeviceFunctionForms forms, in DeviceStackForm stackForm)
     {
         var isIterator = plan.Kind == MethodEmissionKind.Iterator;
         try
         {
+            var cppStack = BuildStackDialectText(method, compilation, in stackForm);
+            var errorSites = !stackForm.Failed && !stackForm.ErrorSites.IsDefaultOrEmpty
+                ? ErrorSiteTable.MergeSites(texts.Sites, stackForm.ErrorSites)
+                : texts.Sites;
             var function = isIterator
                 ? default
                 : CreateFunctionRecord(method, compilation,
                     ExportedText(texts.Cuda, compilation, isCuda: true),
                     ExportedText(texts.Cpp, compilation, isCuda: false),
-                    forms, texts.Sites);
+                    cppStack,
+                    forms, errorSites);
             var structs = DeviceExportEmitter.CreateStructRecords(compilation, texts.Cuda.Structs, texts.Cpp.Structs);
             return (function, structs);
         }
@@ -94,9 +99,32 @@ internal static class DeviceFunctionRecords
             Includes: text.Includes,
             Failed: text.Failed);
 
+    private static DeviceExportRecord.DialectText BuildStackDialectText(IMethodSymbol method, Compilation compilation,
+        in DeviceStackForm stackForm)
+    {
+        if (stackForm.Failed)
+        {
+            return DeviceExportRecord.DialectText.NotTranspiled;
+        }
+
+        if (!stackForm.HasForm || stackForm.Structs is null)
+        {
+            return DeviceExportRecord.DialectText.Empty;
+        }
+
+        var cppName = GlobalCppNames.GetFunctionName(method);
+        var stackDialect = new DeviceDialectText(
+            new FailureCollector(),
+            stackForm.Signature,
+            stackForm.Source,
+            stackForm.Includes ?? [],
+            stackForm.Structs);
+        return BuildFunctionDialectText(cppName, ExportedText(stackDialect, compilation, isCuda: false));
+    }
+
     private static DeviceExportRecord CreateFunctionRecord(IMethodSymbol method, Compilation compilation,
-        ExportedFunctionText cuda, ExportedFunctionText cpp, DeviceFunctionForms forms,
-        EquatableArray<ErrorSiteEntry> errorSites)
+        ExportedFunctionText cuda, ExportedFunctionText cpp, DeviceExportRecord.DialectText cppStack,
+        DeviceFunctionForms forms, EquatableArray<ErrorSiteEntry> errorSites)
     {
         var cppName = GlobalCppNames.GetFunctionName(method);
         var sites = DynamicSharedMemoryAnalysis.GetReachableSites(method, compilation);
@@ -148,7 +176,8 @@ internal static class DeviceFunctionRecords
             Cpp: BuildFunctionDialectText(cppName, cpp),
             traits,
             InternalError: "",
-            ErrorSites: EncodeErrorSites(errorSites));
+            ErrorSites: EncodeErrorSites(errorSites),
+            CppStack: cppStack);
     }
 
     // The error sites as the record stores them (ErrorSiteCodec)

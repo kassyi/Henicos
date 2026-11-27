@@ -82,11 +82,12 @@ internal static class IdentifierNameTranspiler
     {
         // [WHY] Lowering rewrites hoisted locals into references that carry the declarator's original span.
         symbol ??= context.Query.SemanticModel.GetDeclaredSymbol<ISymbol>(node);
-        FailUnemittableReference(node, symbol, ref context);
         if (CallTargetEmitter.TryFailMethodGroup(node, symbol, ref context))
         {
             return;
         }
+
+        FailUnemittableReference(node, symbol, ref context);
 
         // A member function reads a captured primary constructor parameter from its hidden field (#495)
         if (symbol is IParameterSymbol parameter &&
