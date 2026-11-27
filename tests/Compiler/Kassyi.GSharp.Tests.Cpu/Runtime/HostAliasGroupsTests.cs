@@ -1,4 +1,5 @@
 #nullable enable
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Kassyi.GSharp.Runtime.Interop;
 
@@ -539,6 +540,127 @@ public class HostAliasGroupsTests
 
         Assert.False(HostAliasCopies.TryGetHostCopy<int>(groups, 0, ranges, out var copy, out _));
         Assert.Null(copy);
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
+    public unsafe void GetHostReference_OffsetZeroInAllInGroup_ReturnsReferenceToGroupCopy()
+    {
+        int[] backing = [1, 2, 3, 4];
+        fixed (int* data = backing)
+        {
+            var ranges = Ranges(((nint)data, 4, 4), ((nint)data, 16, 4));
+            var groups = HostAliasGroups.Find(ranges, [In, In | Whole], "first,values");
+            Assert.NotNull(groups);
+
+            Assert.True(HostAliasCopies.TryGetHostCopy<int>(groups, 1, ranges, out var copy, out _));
+            ref readonly var reference = ref HostAliasCopies.GetHostReference(groups, 0, ranges, in backing[0]);
+            copy[0] = 11;
+
+            Assert.Equal(11, reference);
+            Assert.True(Unsafe.AreSame(ref copy[0], ref Unsafe.AsRef(in reference)));
+            Assert.False(Unsafe.AreSame(ref backing[0], ref Unsafe.AsRef(in reference)));
+            Assert.Equal(1, backing[0]);
+        }
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public unsafe void GetHostReference_MiddleOffsetInAllInGroup_ReturnsReferenceAtOffset()
+    {
+        int[] backing = [1, 2, 3, 4];
+        fixed (int* data = backing)
+        {
+            var ranges = Ranges(((nint)(data + 2), 4, 4), ((nint)data, 16, 4));
+            var groups = HostAliasGroups.Find(ranges, [In, In | Whole], "third,values");
+            Assert.NotNull(groups);
+
+            Assert.True(HostAliasCopies.TryGetHostCopy<int>(groups, 1, ranges, out var copy, out _));
+            ref readonly var reference = ref HostAliasCopies.GetHostReference(groups, 0, ranges, in backing[2]);
+            copy[2] = 33;
+
+            Assert.Equal(33, reference);
+            Assert.True(Unsafe.AreSame(ref copy[2], ref Unsafe.AsRef(in reference)));
+            Assert.False(Unsafe.AreSame(ref backing[2], ref Unsafe.AsRef(in reference)));
+            Assert.Equal(3, backing[2]);
+        }
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public unsafe void GetHostReference_DifferentElementTypeInAllInGroup_ReinterpretsBytesWithAlignment()
+    {
+        long[] storage = [0x0000000200000001, 0x0000000400000003, 0x0000000600000005];
+        fixed (long* data = storage)
+        {
+            var ints = (int*)data + 1;
+            var ranges = Ranges(((nint)(data + 1), 8, 8), ((nint)ints, 20, 4));
+            var groups = HostAliasGroups.Find(ranges, [In, InView], "longVal,ints");
+            Assert.NotNull(groups);
+
+            ref readonly var reference = ref HostAliasCopies.GetHostReference(groups, 0, ranges, in storage[1]);
+            Assert.True(HostAliasCopies.TryGetHostView<int>(groups, 1, ranges, out var intView));
+            intView[1] = 30;
+
+            Assert.Equal(0x000000040000001E, reference);
+            Assert.Equal(0x0000000400000003, storage[1]);
+            fixed (long* first = &reference)
+            {
+                Assert.Equal(0, (nint)first % 8);
+            }
+        }
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public unsafe void GetHostReference_ReferenceCopyAndMisalignedGroup_ThrowsNotSupported()
+    {
+        var memory = (byte*)NativeMemory.AllocZeroed(32);
+        try
+        {
+            var refRanges = Ranges(((nint)memory, 32, 16), ((nint)memory, 4, 4));
+            var refGroups = HostAliasGroups.Find(refRanges, [In, In], "holders,scalar");
+            Assert.NotNull(refGroups);
+
+            Assert.True(HostAliasCopies.TryGetHostCopy<ReferenceHolder>(refGroups, 0, refRanges, out _, out _));
+            var current = 0;
+            Assert.Throws<NotSupportedException>(
+                () => HostAliasCopies.GetHostReference(refGroups, 1, refRanges, in current));
+
+            var misalignedRanges = Ranges(((nint)memory, 16, 8), ((nint)(memory + 4), 8, 8));
+            var error = Assert.Throws<NotSupportedException>(
+                () => HostAliasGroups.Find(misalignedRanges, [In | Whole, In], "longs,longVal"));
+            Assert.Contains("not aligned", error.Message, StringComparison.Ordinal);
+        }
+        finally
+        {
+            NativeMemory.Free(memory);
+        }
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public void GetHostReference_GroupWithWritableMember_ReturnsCallerReference()
+    {
+        var ranges = Ranges((1000, 4, 4), (1000, 8, 4));
+        var groups = HostAliasGroups.Find(ranges, [In, InOut | Whole], "first,values");
+        Assert.NotNull(groups);
+
+        var current = 42;
+        ref readonly var reference = ref HostAliasCopies.GetHostReference(groups, 0, ranges, in current);
+
+        Assert.True(Unsafe.AreSame(ref current, ref Unsafe.AsRef(in reference)));
+        Assert.Equal(42, reference);
     }
 
     [Fact]

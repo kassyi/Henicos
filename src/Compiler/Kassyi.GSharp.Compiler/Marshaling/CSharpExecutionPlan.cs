@@ -108,6 +108,34 @@ internal readonly record struct CSharpExecutionPlan
         return plan with { CannotRunReason = reason };
     }
 
+    /// <summary>
+    /// CPU: replaces <c>in</c> arguments that rebind to an all-<c>[In]</c> group's copy with their launcher
+    /// <c>ref readonly</c> locals for managed fallback execution after <see cref="CpuArrayCopyEmitter"/>.
+    /// </summary>
+    public CSharpExecutionPlan WithCpuInReferenceCopies(in ArraySharingPlan sharing)
+    {
+        if (CannotRunReason is not null)
+        {
+            return this;
+        }
+
+        var builder = Arguments.ToBuilder();
+        var changed = false;
+        for (var i = 0; i < builder.Count; i++)
+        {
+            if (sharing.TakesInReferenceGroupCopy(i))
+            {
+                builder[i] = builder[i] with
+                {
+                    Identifier = KernelHostNames.GetLocal(LauncherLocal.AliasReference, sharing.Parameters[i])
+                };
+                changed = true;
+            }
+        }
+
+        return changed ? this with { Arguments = builder.MoveToImmutable() } : this;
+    }
+
     // Why the launcher cannot run the kernel as C#, before its arguments are looked at
     private static string? GetCannotRunReason(in KernelHostModel kernel, bool isDevicePtr) => true switch
     {
