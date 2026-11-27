@@ -36,7 +36,7 @@ internal static class IrNullDecider
     {
         if (assignment is { IsRef: false, Target: IrPropertyReference { Property: var property } })
         {
-            return new IrAssignmentDecision(null, IrAccessorDecider.DecideStore(property, context.NativeDialect));
+            return new IrAssignmentDecision(null, IrAccessorDecider.DecideStore(property, context.Dialect));
         }
 
         if (assignment.IsRef ||
@@ -90,7 +90,7 @@ internal static class IrNullDecider
     /// </summary>
     public static IrMemberDecision DecideMember(IrPropertyReference member, bool isTarget, IrDecisionContext context)
     {
-        if (context.NativeDialect.TryMapIntrinsic(member.Property, out _))
+        if (context.Dialect.TryMapIntrinsic(member.Property, out _))
         {
             return new IrMemberDecision(IrMemberForm.DialectIntrinsic, null, -1, null);
         }
