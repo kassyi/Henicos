@@ -592,6 +592,17 @@ public class GpuWorkspace : IGpuResourceScope
         Volatile.Write(ref _lastReciprocalMegaGridDim, gridDim);
         Volatile.Write(ref _lastReciprocalMegaSharedMemBytes, sharedMemBytes);
     }
+
+    private long _modPowGraphLaunches;
+
+    /// <summary>
+    /// Gets the number of CUDA graph launches executed by <c>ModPowZeroSyncController</c> on this workspace, which
+    /// tests read to verify graph playback.
+    /// </summary>
+    internal long ModPowGraphLaunches => Volatile.Read(ref _modPowGraphLaunches);
+
+    /// <summary>Counts a CUDA graph launch executed by <c>ModPowZeroSyncController</c>.</summary>
+    internal void CountModPowGraphLaunch() => Interlocked.Increment(ref _modPowGraphLaunches);
 }
 
 

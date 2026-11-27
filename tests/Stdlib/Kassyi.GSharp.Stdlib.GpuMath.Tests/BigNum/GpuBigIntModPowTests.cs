@@ -84,7 +84,7 @@ public class GpuBigIntModPowTests
         using var m = new GpuBigUInt(ctx, mArr);
         using var result = new GpuBigUInt(ctx, NumWords);
 
-        // mutant: ModPowZeroSyncController.cs:106 `e == 0 && i == expWords - 1` -> `e != 0 && ...`
+        // mutant: ModPowZeroSyncController.cs:252 `e == 0 && i == expWords - 1` -> `e != 0 && ...`
         // (the last word would stop after its first bit)
         GpuBigIntDivRem.ModPow(a, e, m, result);
 
@@ -160,6 +160,128 @@ public class GpuBigIntModPowTests
 
         // Every integer is 0 modulo 1.
         Assert.Equal(BigInteger.ModPow(baseValue, exponentValue, BigInteger.One), result.ToBigInteger());
+    }
+
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    public void ModPow_BaseZeroAboveThreshold_ReturnsZero()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        const int NumWords = 64;
+        using var ctx = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot);
+
+        var modValue = CreateModulus(ModulusKind.Large, NumWords, seed: 2346);
+        var expValue = (BigInteger.One << 64) - 1;
+
+        using var a = GpuBigUInt.FromBigInteger(ctx, BigInteger.Zero, NumWords);
+        using var e = GpuBigUInt.FromBigInteger(ctx, expValue, 2);
+        using var m = GpuBigUInt.FromBigInteger(ctx, modValue, NumWords);
+        using var result = new GpuBigUInt(ctx, NumWords);
+
+        var launchesBefore = ctx.ModPowGraphLaunches;
+        GpuBigIntDivRem.ModPow(a, e, m, result);
+
+        Assert.Equal(BigInteger.Zero, result.ToBigInteger());
+        Assert.Equal(127L, ctx.ModPowGraphLaunches - launchesBefore);
+        ctx.ThrowIfDeviceErrors();
+    }
+
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.SadPath)]
+    public void ModPow_ModulusZeroAboveThreshold_ThrowsDivideByZeroWithoutDeferredBuffers()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        const int NumWords = 64;
+        using var ctx = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot);
+
+        using var a = GpuBigUInt.FromBigInteger(ctx, new BigInteger(5), NumWords);
+        using var e = GpuBigUInt.FromBigInteger(ctx, (BigInteger.One << 64) - 1, 2);
+        using var m = GpuBigUInt.FromBigInteger(ctx, BigInteger.Zero, NumWords);
+        using var result = new GpuBigUInt(ctx, NumWords);
+
+        Assert.Throws<DivideByZeroException>(() => GpuBigIntDivRem.ModPow(a, e, m, result));
+        var stats = ctx.GetMemoryStatistics();
+        Assert.Equal(0, stats.DeferredBuffers);
+        ctx.ThrowIfDeviceErrors();
+    }
+
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    public void ModPow_RepeatedZeroSyncCalls_DoesNotLeakDeferredBuffersOrDriverAllocations()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        const int NumWords = 64;
+        using var ctx = new GpuWorkspace(512, GpuExecutionEngine.GSharpAot);
+
+        var modValue = CreateModulus(ModulusKind.Large, NumWords, seed: 2348);
+        var expValue = (BigInteger.One << 64) - 1;
+        var baseValue = modValue - 7;
+        var expected = BigInteger.ModPow(baseValue, expValue, modValue);
+
+        using var a = GpuBigUInt.FromBigInteger(ctx, baseValue, NumWords);
+        using var e = GpuBigUInt.FromBigInteger(ctx, expValue, 2);
+        using var m = GpuBigUInt.FromBigInteger(ctx, modValue, NumWords);
+        using var result = new GpuBigUInt(ctx, NumWords);
+
+        // Warm-up call populates pooled buffers and loads modules before steady-state tracking.
+        GpuBigIntDivRem.ModPow(a, e, m, result);
+        Assert.Equal(expected, result.ToBigInteger());
+        var baseline = ctx.GetMemoryStatistics();
+        Assert.Equal(0, baseline.DeferredBuffers);
+
+        for (var i = 0; i < 10; i++)
+        {
+            GpuBigIntDivRem.ModPow(a, e, m, result);
+            var stats = ctx.GetMemoryStatistics();
+            Assert.Equal(0, stats.DeferredBuffers);
+            Assert.Equal(baseline.LiveBuffers, stats.LiveBuffers);
+            Assert.Equal(baseline.DriverAllocations, stats.DriverAllocations);
+        }
+
+        Assert.Equal(expected, result.ToBigInteger());
+        ctx.ThrowIfDeviceErrors();
+    }
+
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.SadPath)]
+    public void ModPow_FullMethodInsideUserStreamCapture_ThrowsOnPreLadderSync()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        const int NumWords = 64;
+        using var ctx = new GpuWorkspace(512, GpuExecutionEngine.GSharpAot);
+
+        var modValue = CreateModulus(ModulusKind.Large, NumWords, seed: 2352);
+        using var a = GpuBigUInt.FromBigInteger(ctx, new BigInteger(5), NumWords);
+        using var e = GpuBigUInt.FromBigInteger(ctx, (BigInteger.One << 64) - 1, 2);
+        using var m = GpuBigUInt.FromBigInteger(ctx, modValue, NumWords);
+        using var result = new GpuBigUInt(ctx, NumWords);
+
+        ctx.Provider.BeginCapture(ctx.Stream);
+        try
+        {
+            // ModPowZeroSyncController.Execute calls GetActualBits(mod) and synchronizes before ExecuteLadder.
+            var ex = Assert.Throws<CudaException>(() => GpuBigIntDivRem.ModPow(a, e, m, result));
+            Assert.NotEqual(CUresult.CudaSuccess, ex.Result);
+        }
+        finally
+        {
+            try
+            {
+                var aborted = ctx.Provider.EndCapture(ctx.Stream);
+                if (aborted != IntPtr.Zero)
+                {
+                    ctx.Provider.DestroyGraph(aborted, IntPtr.Zero);
+                }
+            }
+            catch (CudaException)
+            {
+                // Capture is already invalidated after cuStreamSynchronize failure.
+            }
+        }
     }
 
     private static BigInteger CreateModulus(ModulusKind kind, int numWords, int seed)

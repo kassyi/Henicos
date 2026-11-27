@@ -7,6 +7,10 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 /// </summary>
 internal static class ModPowZeroSyncController
 {
+    // Empirical 1..32-bit sweep vs main: steps = 2..3 regressed (+5.8..7.8%), steps >= 5 broke even,
+    // and by steps = 8 PR 2 is ~22% faster (7.55 ms -> 5.87 ms at 2048-bit). 8 is the smallest 8..16 threshold.
+    internal const int MinimumGraphSteps = 8;
+
     public static void Execute(GpuBigUInt baseVal, GpuBigUInt exp, GpuBigUInt mod, GpuBigUInt resultBuffer)
     {
         var n = baseVal.NumWords;
@@ -62,53 +66,9 @@ internal static class ModPowZeroSyncController
         {
             exp.Workspace.Provider.CopyDeviceToHost(hostExp, exp.DevicePointer, expWords, exp.Workspace.Stream);
 
-            for (var i = 0; i < expWords; i++)
-            {
-                var e = hostExp[i];
-
-                // Optimization: if remaining bits are 0, we can break
-                if (e == 0)
-                {
-                    var allZero = true;
-                    for (var j = i; j < expWords; j++)
-                    {
-                        if (hostExp[j] == 0)
-                        {
-                            continue;
-                        }
-
-                        allZero = false;
-                        break;
-                    }
-
-                    if (allZero)
-                    {
-                        break;
-                    }
-                }
-
-                for (var bit = 0; bit < 32; bit++)
-                {
-                    if ((e & 1) == 1)
-                    {
-                        GpuBigIntMath.Mul(tempResult, tempBase, tempMul);
-                        GpuBigIntDivRem.ReduceZeroSync(tempMul, mod, reciprocalOfMod, targetBits, aActualWords, tempQ, tempR);
-                        tempResult.CopyFrom(tempR, numWords: 2 * n);
-                    }
-
-                    GpuBigIntMath.Mul(tempBase, tempBase, tempMul);
-                    GpuBigIntDivRem.ReduceZeroSync(tempMul, mod, reciprocalOfMod, targetBits, aActualWords, tempQ, tempR);
-                    tempBase.CopyFrom(tempR, numWords: 2 * n);
-
-                    e >>= 1;
-
-                    // If e becomes 0 and there are no more words, we can break bit loop
-                    if (e == 0 && i == expWords - 1)
-                    {
-                        break;
-                    }
-                }
-            }
+            ExecuteLadder(
+                baseVal.Workspace, tempResult, tempBase, mod, reciprocalOfMod,
+                targetBits, aActualWords, tempMul, tempQ, tempR, hostExp, expWords, n);
         }
         finally
         {
@@ -116,5 +76,230 @@ internal static class ModPowZeroSyncController
         }
 
         resultBuffer.CopyFrom(tempResult, numWords: n);
+    }
+
+    internal static void ExecuteLadder(
+        GpuWorkspace workspace,
+        GpuBigUInt tempResult,
+        GpuBigUInt tempBase,
+        GpuBigUInt mod,
+        GpuBigUInt reciprocalOfMod,
+        int targetBits,
+        int aActualWords,
+        GpuBigUInt tempMul,
+        GpuBigUInt tempQ,
+        GpuBigUInt tempR,
+        uint[] hostExp,
+        int expWords,
+        int n)
+    {
+        var steps = CountLadderSteps(hostExp, expWords);
+        if (steps < MinimumGraphSteps || CaptureChecks.IsCapturing(workspace) || GpuKernelLoader.IsCpuFallbackMode)
+        {
+            ExecutePlainLoop(
+                tempResult, tempBase, mod, reciprocalOfMod,
+                targetBits, aActualWords, tempMul, tempQ, tempR, hostExp, expWords, n);
+            return;
+        }
+
+        // Run the first LSB-first step eagerly as warm-up so both graphs capture pooled buffers and loaded modules
+        // without advancing the ladder twice.
+        if ((hostExp[0] & 1u) == 1u)
+        {
+            ExecuteMultiplyStep(
+                tempResult, tempBase, mod, reciprocalOfMod, targetBits, aActualWords, tempMul, tempQ, tempR, n);
+        }
+        else
+        {
+            ExecuteSquareStep(tempBase, mod, reciprocalOfMod, targetBits, aActualWords, tempMul, tempQ, tempR, n);
+        }
+
+        using var multiplyGraph = CapturedStreamGraph.Capture(
+            workspace,
+            () => ExecuteMultiplyStep(
+                tempResult, tempBase, mod, reciprocalOfMod, targetBits, aActualWords, tempMul, tempQ, tempR, n));
+        using var squareGraph = CapturedStreamGraph.Capture(
+            workspace,
+            () => ExecuteSquareStep(
+                tempBase, mod, reciprocalOfMod, targetBits, aActualWords, tempMul, tempQ, tempR, n));
+
+        ExecuteGraphLoop(workspace, multiplyGraph, squareGraph, hostExp, expWords);
+    }
+
+    internal static int CountLadderSteps(uint[] hostExp, int expWords)
+    {
+        var steps = 0;
+        for (var i = 0; i < expWords; i++)
+        {
+            var e = hostExp[i];
+            if (e == 0 && IsRemainingAllZero(hostExp, i, expWords))
+            {
+                break;
+            }
+
+            for (var bit = 0; bit < 32; bit++)
+            {
+                if ((e & 1u) == 1u)
+                {
+                    steps++;
+                }
+
+                steps++;
+                e >>= 1;
+
+                if (e == 0 && i == expWords - 1)
+                {
+                    break;
+                }
+            }
+        }
+
+        return steps;
+    }
+
+    private static void ExecutePlainLoop(
+        GpuBigUInt tempResult,
+        GpuBigUInt tempBase,
+        GpuBigUInt mod,
+        GpuBigUInt reciprocalOfMod,
+        int targetBits,
+        int aActualWords,
+        GpuBigUInt tempMul,
+        GpuBigUInt tempQ,
+        GpuBigUInt tempR,
+        uint[] hostExp,
+        int expWords,
+        int n)
+    {
+        for (var i = 0; i < expWords; i++)
+        {
+            var e = hostExp[i];
+
+            // Optimization: if remaining bits are 0, we can break
+            if (e == 0 && IsRemainingAllZero(hostExp, i, expWords))
+            {
+                break;
+            }
+
+            for (var bit = 0; bit < 32; bit++)
+            {
+                if ((e & 1u) == 1u)
+                {
+                    ExecuteMultiplyStep(
+                        tempResult, tempBase, mod, reciprocalOfMod,
+                        targetBits, aActualWords, tempMul, tempQ, tempR, n);
+                }
+
+                ExecuteSquareStep(tempBase, mod, reciprocalOfMod, targetBits, aActualWords, tempMul, tempQ, tempR, n);
+
+                e >>= 1;
+
+                // If e becomes 0 and there are no more words, we can break bit loop
+                if (e == 0 && i == expWords - 1)
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    private static void ExecuteGraphLoop(
+        GpuWorkspace workspace,
+        CapturedStreamGraph multiplyGraph,
+        CapturedStreamGraph squareGraph,
+        uint[] hostExp,
+        int expWords)
+    {
+        var skipFirstStep = true;
+        for (var i = 0; i < expWords; i++)
+        {
+            var e = hostExp[i];
+
+            // Optimization: if remaining bits are 0, we can break
+            if (e == 0 && IsRemainingAllZero(hostExp, i, expWords))
+            {
+                break;
+            }
+
+            for (var bit = 0; bit < 32; bit++)
+            {
+                if ((e & 1u) == 1u)
+                {
+                    if (skipFirstStep)
+                    {
+                        skipFirstStep = false;
+                    }
+                    else
+                    {
+                        multiplyGraph.Launch();
+                        workspace.CountModPowGraphLaunch();
+                    }
+                }
+
+                if (skipFirstStep)
+                {
+                    skipFirstStep = false;
+                }
+                else
+                {
+                    squareGraph.Launch();
+                    workspace.CountModPowGraphLaunch();
+                }
+
+                e >>= 1;
+
+                // If e becomes 0 and there are no more words, we can break bit loop
+                if (e == 0 && i == expWords - 1)
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    private static bool IsRemainingAllZero(uint[] hostExp, int startIndex, int expWords)
+    {
+        for (var j = startIndex; j < expWords; j++)
+        {
+            if (hostExp[j] != 0)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static void ExecuteMultiplyStep(
+        GpuBigUInt tempResult,
+        GpuBigUInt tempBase,
+        GpuBigUInt mod,
+        GpuBigUInt reciprocalOfMod,
+        int targetBits,
+        int aActualWords,
+        GpuBigUInt tempMul,
+        GpuBigUInt tempQ,
+        GpuBigUInt tempR,
+        int n)
+    {
+        GpuBigIntMath.Mul(tempResult, tempBase, tempMul);
+        GpuBigIntDivRem.ReduceZeroSync(tempMul, mod, reciprocalOfMod, targetBits, aActualWords, tempQ, tempR);
+        tempResult.CopyFrom(tempR, numWords: 2 * n);
+    }
+
+    private static void ExecuteSquareStep(
+        GpuBigUInt tempBase,
+        GpuBigUInt mod,
+        GpuBigUInt reciprocalOfMod,
+        int targetBits,
+        int aActualWords,
+        GpuBigUInt tempMul,
+        GpuBigUInt tempQ,
+        GpuBigUInt tempR,
+        int n)
+    {
+        GpuBigIntMath.Mul(tempBase, tempBase, tempMul);
+        GpuBigIntDivRem.ReduceZeroSync(tempMul, mod, reciprocalOfMod, targetBits, aActualWords, tempQ, tempR);
+        tempBase.CopyFrom(tempR, numWords: 2 * n);
     }
 }

@@ -90,6 +90,7 @@ internal class Program
               arithmetic [words] [iters] Run GpuBigFloat arithmetic benchmark (default: 2048 words, 1000 iters)
               arithmetic wide            Divide / Rsqrt with operands much wider than the result, cut on and off
               arithmetic sqrt-path       GpuBigInt.Sqrt mega-kernel vs precision doubling at NTT boundaries
+              arithmetic modpow          GpuBigInt.ModPow zero-sync loop above 1024 bits (ModulusBits x ExponentBits)
               gbi-linq [elements] [words] Run GpuBigInt + StackLinq + CUDA Graph benchmark
                                          Options:
                                            --benchmark         Run via BenchmarkDotNet instead of instant runner
@@ -220,6 +221,12 @@ internal class Program
         {
             Logger<Program>.Info("Running GpuBigIntSqrtPathBenchmark...");
             BenchmarkRunner.Run<GpuBigIntSqrtPathBenchmark>(args: bdnArgs);
+        }
+
+        if (target is "all" or "modpow")
+        {
+            Logger<Program>.Info("Running GpuBigIntModPowBenchmark...");
+            BenchmarkRunner.Run<GpuBigIntModPowBenchmark>(args: bdnArgs);
         }
 
         return 0;
