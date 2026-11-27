@@ -10,8 +10,8 @@
 #   occurrences:  every node the C++ writer cannot spell, most first
 #   eligible:     the methods of the population with an IR body
 kinds:
-  Kernel: 4173
-  DeviceFunction: 1139
+  Kernel: 4258
+  DeviceFunction: 1200
   SuspendingDeviceFunction: 430
   Iterator: 120
 reasons:
@@ -19,36 +19,37 @@ reasons:
   IrNotBuilt: 0
   StrykerMutant: 1
   SplitCall: 7
-  OpaqueNode: 118
+  OpaqueNode: 129
   RemovedCall: 3
   Macro: 6
   SharedMemoryLocal: 26
-  UnsupportedForm: 851
+  UnsupportedForm: 901
 opaque:
   - {key: "UnsupportedOperation/ForStatement", count: 18}
   - {key: "UnsupportedOperation/SimpleLambdaExpression", count: 17}
+  - {key: "UnsupportedOperation/ElementAccessExpression", count: 10}
   - {key: "UnsupportedOperation/LocalDeclarationStatement", count: 9}
   - {key: "UnsupportedOperation/ForEachStatement", count: 8}
   - {key: "UnsupportedOperation/CoalesceAssignmentExpression", count: 6}
   - {key: "UnsupportedOperation/ParenthesizedLambdaExpression", count: 6}
   - {key: "UnsupportedOperation/ThrowStatement", count: 6}
   - {key: "UnsupportedOperation/YieldReturnStatement", count: 5}
+  - {key: "UnsupportedOperation/PointerIndirectionExpression", count: 4}
   - {key: "UnsupportedShape/InvocationExpression", count: 4}
   - {key: "Invalid/InvocationExpression", count: 3}
   - {key: "UnsupportedOperation/ConditionalAccessExpression", count: 3}
-  - {key: "UnsupportedOperation/ElementAccessExpression", count: 3}
-  - {key: "UnsupportedOperation/PointerIndirectionExpression", count: 3}
   - {key: "UnsupportedOperation/SwitchExpression", count: 3}
   - {key: "UnsupportedOperation/SwitchStatement", count: 3}
   - {key: "UnsupportedOperation/UsingStatement", count: 3}
   - {key: "Invalid/ObjectCreationExpression", count: 2}
+  - {key: "UnsupportedOperation/IdentifierName", count: 2}
   - {key: "UnsupportedOperation/SimpleMemberAccessExpression", count: 2}
   - {key: "UnsupportedOperation/ThrowExpression", count: 2}
   - {key: "UnsupportedOperation/WithExpression", count: 2}
   - {key: "UnsupportedShape/ElementAccessExpression", count: 2}
+  - {key: "UnsupportedShape/IdentifierName", count: 2}
   - {key: "Invalid/SimpleMemberAccessExpression", count: 1}
   - {key: "UnsupportedOperation/FixedStatement", count: 1}
-  - {key: "UnsupportedOperation/IdentifierName", count: 1}
   - {key: "UnsupportedOperation/LocalFunctionStatement", count: 1}
   - {key: "UnsupportedOperation/StackAllocArrayCreationExpression", count: 1}
   - {key: "UnsupportedOperation/TryStatement", count: 1}
@@ -59,17 +60,17 @@ split:
   - {key: "SuspendingCall", count: 2}
   - {key: "WarpShuffle", count: 1}
 firstHit:
-  - {key: "NativePlain:IrBinary/-", count: 314}
-  - {key: "NativePlain:IrAssignment/-", count: 174}
-  - {key: "NativePlain:IrCompoundAssignment/-", count: 78}
+  - {key: "NativePlain:IrBinary/-", count: 320}
+  - {key: "NativePlain:IrAssignment/-", count: 180}
+  - {key: "NativePlain:IrCompoundAssignment/-", count: 96}
+  - {key: "NativePlain:IrCall/DeviceFunction", count: 38}
   - {key: "NativePlain:IrIncrement/-", count: 36}
-  - {key: "NativePlain:IrStructCreation/-", count: 30}
-  - {key: "NativePlain:IrCall/DeviceFunction", count: 28}
-  - {key: "NativePlain:IrConversion/Transparent", count: 25}
+  - {key: "NativePlain:IrStructCreation/-", count: 32}
+  - {key: "NativePlain:IrConversion/Transparent", count: 27}
   - {key: "NativePlain:IrConditional/-", count: 21}
+  - {key: "NativePlain:IrFieldReference/-", count: 16}
   - {key: "NativePlain:IrPropertyReference/DialectIntrinsic", count: 16}
   - {key: "NativePlain:IrElementReference/NullChecked", count: 15}
-  - {key: "NativePlain:IrFieldReference/-", count: 14}
   - {key: "NativePlain:IrVariableReference/Ref", count: 14}
   - {key: "NativePlain:IrCall/TargetNull", count: 13}
   - {key: "NativePlain:IrElementReference/None", count: 13}
@@ -77,7 +78,7 @@ firstHit:
   - {key: "NativePlain:IrCall/DialectIntrinsic", count: 9}
   - {key: "NativePlain:IrConversion/Cast", count: 8}
   - {key: "NativePlain:IrPropertyReference/Other", count: 8}
-  - {key: "NativePlain:IrSequence/-", count: 5}
+  - {key: "NativePlain:IrSequence/-", count: 8}
   - {key: "NativePlain:IrCall/UnsupportedIntrinsic", count: 4}
   - {key: "NativePlain:IrArrayCreation/-", count: 3}
   - {key: "NativePlain:IrConversion/Unsupported", count: 3}
@@ -88,32 +89,34 @@ firstHit:
   - {key: "NativePlain:IrConversion/FloatToInteger", count: 1}
   - {key: "NativePlain:IrLocalDeclaration/Type:String", count: 1}
   - {key: "NativePlain:IrUnary/-", count: 1}
+  - {key: "NativePlain:IrVariableReference/Type:Pointer", count: 1}
 occurrences:
-  - {key: "NativePlain:IrBinary/-", count: 1136}
-  - {key: "NativePlain:IrAssignment/-", count: 505}
-  - {key: "NativePlain:IrFieldReference/-", count: 452}
-  - {key: "NativePlain:IrVariableReference/Ref", count: 397}
+  - {key: "NativePlain:IrBinary/-", count: 1162}
+  - {key: "NativePlain:IrAssignment/-", count: 513}
+  - {key: "NativePlain:IrFieldReference/-", count: 511}
+  - {key: "NativePlain:IrVariableReference/Ref", count: 445}
   - {key: "NativePlain:IrElementReference/NullChecked", count: 365}
-  - {key: "NativePlain:IrConversion/Transparent", count: 315}
-  - {key: "NativePlain:IrCall/DeviceFunction", count: 154}
-  - {key: "NativePlain:IrCompoundAssignment/-", count: 103}
-  - {key: "NativePlain:IrStructCreation/-", count: 93}
-  - {key: "NativePlain:IrConditional/-", count: 83}
+  - {key: "NativePlain:IrConversion/Transparent", count: 317}
+  - {key: "NativePlain:IrCall/DeviceFunction", count: 173}
+  - {key: "NativePlain:IrCompoundAssignment/-", count: 121}
+  - {key: "NativePlain:IrStructCreation/-", count: 98}
+  - {key: "NativePlain:IrConditional/-", count: 88}
   - {key: "NativePlain:IrPropertyReference/DialectIntrinsic", count: 79}
   - {key: "NativePlain:IrElementReference/None", count: 58}
   - {key: "NativePlain:IrIncrement/-", count: 56}
   - {key: "NativePlain:IrPropertyReference/Other", count: 55}
   - {key: "NativePlain:IrConversion/Cast", count: 48}
+  - {key: "NativePlain:IrVariableReference/This", count: 39}
   - {key: "NativePlain:IrCall/TargetNull", count: 35}
-  - {key: "NativePlain:IrInitializedObject/-", count: 33}
+  - {key: "NativePlain:IrInitializedObject/-", count: 35}
   - {key: "NativePlain:IrPropertyReference/ArrayMember", count: 26}
+  - {key: "NativePlain:IrUnary/-", count: 23}
   - {key: "NativePlain:IrConversion/FloatToInteger", count: 22}
   - {key: "NativePlain:IrPropertyReference/Getter", count: 21}
-  - {key: "NativePlain:IrUnary/-", count: 21}
   - {key: "NativePlain:IrDefaultValue/Default", count: 20}
   - {key: "NativePlain:IrConversion/Unsupported", count: 18}
+  - {key: "NativePlain:IrSequence/-", count: 16}
   - {key: "NativePlain:IrCall/DialectIntrinsic", count: 13}
-  - {key: "NativePlain:IrSequence/-", count: 11}
   - {key: "NativePlain:IrConstant/NonDeviceValue", count: 9}
   - {key: "NativePlain:IrLogical/-", count: 7}
   - {key: "NativePlain:IrCall/UnsupportedIntrinsic", count: 6}
@@ -121,9 +124,9 @@ occurrences:
   - {key: "NativePlain:IrArrayCreation/-", count: 4}
   - {key: "NativePlain:IrConversion/Folded", count: 2}
   - {key: "NativePlain:IrNullTest/-", count: 2}
-  - {key: "NativePlain:IrVariableReference/This", count: 2}
   - {key: "NativePlain:IrCall/BclIntrinsicMap", count: 1}
   - {key: "NativePlain:IrCoalesce/-", count: 1}
   - {key: "NativePlain:IrLocalDeclaration/Type:String", count: 1}
   - {key: "NativePlain:IrVariableReference/Declaration", count: 1}
+  - {key: "NativePlain:IrVariableReference/Type:Pointer", count: 1}
 eligible: 96
