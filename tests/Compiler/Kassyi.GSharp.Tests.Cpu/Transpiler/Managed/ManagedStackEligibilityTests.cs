@@ -253,7 +253,7 @@ public class ManagedStackEligibilityTests
         var failures = Assert.Single(result.GeneratedSources,
             static s => s.HintName == StateMachineFallbackPipeline.HintName).SourceText.ToString();
         Assert.Contains(
-            "// managed\tStackConsumerKernels.CallsNonPartialKernel\tImportedSuspendingCall: calls ClosedStackLib.WaitClosed of StackTraitsLib, which has no stack form",
+            "// managed\tStackConsumerKernels.CallsNonPartialKernel\tImportedCallWithoutStackForm: calls ClosedStackLib.WaitClosed of StackTraitsLib, which has no stack form",
             failures, StringComparison.Ordinal);
 
         var kernelWrapper = Assert.Single(result.GeneratedSources,

@@ -1,5 +1,6 @@
 #nullable enable
 using System.Threading.Tasks;
+using Kassyi.GSharp.Compiler.Aot;
 using Kassyi.GSharp.Compiler.Models;
 using VerifyXunit;
 
@@ -78,6 +79,11 @@ public class NativeStackModelGeneratorTests
 
         foreach (var tree in stackResult.GeneratedTrees)
         {
+            if (Path.GetFileName(tree.FilePath) == DeviceExportEmitter.HintName)
+            {
+                continue;
+            }
+
             var text = tree.GetText().ToString();
             Assert.DoesNotContain(GSharpInternalNames.NativeStack.Barrier, text, StringComparison.Ordinal);
             Assert.DoesNotContain(GSharpInternalNames.NativeStack.Resume, text, StringComparison.Ordinal);

@@ -35,6 +35,15 @@ internal static class DeviceExportAttributeNames
         Includes: "CppIncludes",
         Failed: "CppFailed");
 
+    /// <summary>The names of the native stack C++ text of a record (<see cref="DeviceExportRecord.CppStack"/>).</summary>
+    public static readonly DialectNames CppStack = new(
+        References: "CppStackReferences",
+        Signature: "CppStackSignature",
+        Body: "CppStackBody",
+        Dispose: "CppStackDispose",
+        Includes: "CppStackIncludes",
+        Failed: "CppStackFailed");
+
     /// <summary>The names of <see cref="DeviceExportRecord.ExportNames"/>.</summary>
     public static class Names
     {

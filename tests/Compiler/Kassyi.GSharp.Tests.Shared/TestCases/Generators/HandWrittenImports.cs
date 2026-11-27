@@ -30,13 +30,18 @@ using Kassyi.GSharp.Core;
 [assembly: GpuDeviceExport(FORMAT_VERSION, "PRELUDE_HASH", "Function", "M:H.Lib.Relay",
     CppName = "__gsharp_fn_H__Lib__Relay",
     CudaReferences = new[] { "__gsharp_fn_H__Lib__Wait" }, CppReferences = new[] { "__gsharp_fn_H__Lib__Wait" },
+    CppStackReferences = new[] { "__gsharp_fn_H__Lib__Wait" },
     FrameName = "__gsharp_frame_H__Lib__Relay", FrameDependencies = new[] { "__gsharp_frame_H__Lib__Wait" },
     Suspends = true, CudaSignature = "/*RELAY_SIGNATURE*/", CudaBody = "/*RELAY_BODY*/",
-    CppSignature = "/*RELAY_SIGNATURE*/", CppBody = "/*RELAY_BODY*/")]
+    CppSignature = "/*RELAY_SIGNATURE*/", CppBody = "/*RELAY_BODY*/",
+    CppStackSignature = "/*RELAY_STACK_SIGNATURE*/", CppStackBody = "/*RELAY_STACK_BODY*/",
+    CppStackIncludes = new[] { "<relay_stack.h>" })]
 [assembly: GpuDeviceExport(FORMAT_VERSION, "PRELUDE_HASH", "Function", "M:H.Lib.Wait",
     CppName = "__gsharp_fn_H__Lib__Wait",
     FrameName = "__gsharp_frame_H__Lib__Wait", Suspends = true, CudaSignature = "/*WAIT_SIGNATURE*/",
-    CudaBody = "/*WAIT_BODY*/", CppSignature = "/*WAIT_SIGNATURE*/", CppBody = "/*WAIT_BODY*/")]
+    CudaBody = "/*WAIT_BODY*/", CppSignature = "/*WAIT_SIGNATURE*/", CppBody = "/*WAIT_BODY*/",
+    CppStackSignature = "/*WAIT_STACK_SIGNATURE*/", CppStackBody = "/*WAIT_STACK_BODY*/",
+    CppStackIncludes = new[] { "<wait_stack.h>" })]
 [assembly: GpuDeviceExport(FORMAT_VERSION, "PRELUDE_HASH", "Struct", "T:H.Lost", CppName = "__gsharp_ty_H__Lost",
     CudaReferences = new[] { "__gsharp_fn_H__Lib__Missing" }, CppReferences = new[] { "__gsharp_fn_H__Lib__Missing" },
     CudaBody = "/*LOST_BODY*/", CppBody = "/*LOST_BODY*/")]

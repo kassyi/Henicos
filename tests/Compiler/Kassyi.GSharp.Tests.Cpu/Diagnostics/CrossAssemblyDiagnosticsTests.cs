@@ -427,8 +427,10 @@ public class CrossAssemblyDiagnosticsTests
     [InlineData("Cuda", 4, ", ManagedStateMachine = true, PrivateManagedFrame = true", 1)]
     [InlineData("Cpu", 5, ", ManagedStateMachine = true, PrivateManagedFrame = true", 1)]
     [InlineData("Cuda", 5, ", ManagedStateMachine = true, PrivateManagedFrame = true", 1)]
-    [InlineData("Cpu", 6, ", ManagedStateMachine = true, PrivateManagedFrame = true", 0)]
-    [InlineData("Cuda", 6, ", ManagedStateMachine = true, PrivateManagedFrame = true", 0)]
+    [InlineData("Cpu", 6, ", ManagedStateMachine = true, PrivateManagedFrame = true", 1)]
+    [InlineData("Cuda", 6, ", ManagedStateMachine = true, PrivateManagedFrame = true", 1)]
+    [InlineData("Cpu", 7, ", ManagedStateMachine = true, PrivateManagedFrame = true", 0)]
+    [InlineData("Cuda", 7, ", ManagedStateMachine = true, PrivateManagedFrame = true", 0)]
     [Scenario(TestScenario.SadPath)]
     public async Task ImportedSuspendingFunction_RecordOfThePreviousFormat_ReportsGsh0089(
         string dialect,
