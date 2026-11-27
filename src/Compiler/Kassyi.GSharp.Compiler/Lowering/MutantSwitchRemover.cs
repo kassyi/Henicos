@@ -27,8 +27,6 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// </remarks>
 internal sealed class MutantSwitchRemover : CSharpSyntaxRewriter
 {
-    private static readonly ConditionalWeakTable<Compilation, IMethodSymbol[]> s_switchMethods = new();
-
     private readonly SemanticModel _semanticModel;
     private readonly IMethodSymbol[] _switchMethods;
 
@@ -59,7 +57,7 @@ internal sealed class MutantSwitchRemover : CSharpSyntaxRewriter
         }
 
         var compilation = semanticModel.Compilation;
-        var switchMethods = s_switchMethods.GetValue(compilation, FindSwitchMethods);
+        var switchMethods = StrykerSwitchMethods.Of(compilation);
         if (switchMethods.Length == 0)
         {
             return node;
@@ -140,8 +138,4 @@ internal sealed class MutantSwitchRemover : CSharpSyntaxRewriter
         _switchMethods
             .AsStackEnumerable()
             .Any(method, static (switchMethod, called) => switchMethod.IsEqualTo(called));
-
-    // public static bool IsActive(int id) of Stryker<random>.MutantControl, declared in the compilation's own source
-    private static IMethodSymbol[] FindSwitchMethods(Compilation compilation) =>
-        StrykerSwitchMethods.Find(compilation);
 }

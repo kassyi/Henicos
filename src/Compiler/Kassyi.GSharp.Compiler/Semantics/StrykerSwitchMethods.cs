@@ -14,9 +14,13 @@ internal static class StrykerSwitchMethods
     private static readonly ConditionalWeakTable<Compilation, IMethodSymbol[]> s_switchMethods = new();
 
     /// <summary>
-    /// Returns every <c>Stryker*.MutantControl.IsActive(int)</c> method declared in <paramref name="compilation"/>.
+    /// Every <c>Stryker*.MutantControl.IsActive(int)</c> method declared in <paramref name="compilation"/>, found once
+    /// per compilation.
     /// </summary>
-    public static IMethodSymbol[] Find(Compilation compilation)
+    public static IMethodSymbol[] Of(Compilation compilation) => s_switchMethods.GetValue(compilation, Find);
+
+    // public static bool IsActive(int id) of Stryker<random>.MutantControl, declared in the compilation's own source
+    private static IMethodSymbol[] Find(Compilation compilation)
     {
         var methods = ImmutableArray.CreateBuilder<IMethodSymbol>();
         // GetNamespaceMembers is a lazy sequence, which StackLinq does not enumerate
@@ -49,8 +53,7 @@ internal static class StrykerSwitchMethods
             return false;
         }
 
-        var switchMethods = s_switchMethods.GetValue(compilation, Find);
-        return switchMethods
+        return Of(compilation)
             .AsStackEnumerable()
             .Any(method, static (switchMethod, called) => switchMethod.IsEqualTo(called));
     }
