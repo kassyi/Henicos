@@ -262,8 +262,12 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
     /// Returns <see langword="false"/> without throwing if another capture is already running on this workspace.
     /// </summary>
     /// <param name="captureStream">The stream that receives the calling thread's work during the capture.</param>
-    /// <param name="deferral">When this method returns <see langword="true"/>, the deferral to pass to <see cref="EndDeferral"/>.</param>
-    /// <returns><see langword="true"/> if the deferral started; <see langword="false"/> if another capture is already active.</returns>
+    /// <param name="deferral">
+    /// When this method returns <see langword="true"/>, the deferral to pass to <see cref="EndDeferral"/>.
+    /// </param>
+    /// <returns>
+    /// <see langword="true"/> if the deferral started; <see langword="false"/> if another capture is already active.
+    /// </returns>
     internal bool TryBeginDeferral(IntPtr captureStream, [NotNullWhen(true)] out CaptureDeferral? deferral)
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) == 1, this);
@@ -281,7 +285,9 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
     /// <summary>
     /// Ends <paramref name="deferral"/> (after the capture ended, also when it failed).
     /// </summary>
-    /// <param name="deferral">The deferral returned by <see cref="BeginDeferral(IntPtr)"/> or <see cref="TryBeginDeferral"/>.</param>
+    /// <param name="deferral">
+    /// The deferral returned by <see cref="BeginDeferral(IntPtr)"/> or <see cref="TryBeginDeferral"/>.
+    /// </param>
     /// <returns>
     /// The buffers freed during the capture and not taken again, which now belong to the graph, and the handles the
     /// capture read that the graph does not own (operands and target), whose liveness the graph checks before a launch.

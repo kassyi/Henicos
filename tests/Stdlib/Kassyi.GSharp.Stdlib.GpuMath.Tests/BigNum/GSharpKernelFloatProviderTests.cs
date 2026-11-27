@@ -492,7 +492,7 @@ public class GSharpKernelFloatProviderTests : IDisposable
     // words.
     // The other float tests stop at 16 words, so without this test no float root reaches the doubling by default.
     // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:69 `>` -> `>=` (5956 counts a doubling run)
-    // mutant: GpuWorkspace.cs:145 `} = 5956;` -> `} = 5957;` (5957 counts no doubling run)
+    // mutant: GpuWorkspace.cs:151 `} = 5956;` -> `} = 5957;` (5957 counts no doubling run)
     [SkippableTheory]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stdlib)]

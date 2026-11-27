@@ -6,9 +6,10 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 /// </summary>
 internal static class ModPowZeroSyncController
 {
-    // Empirical 1..32-bit sweep vs main: steps = 2..3 regressed (+5.8..7.8%), steps >= 5 broke even,
-    // and by steps = 8 PR 2 is ~22% faster (7.55 ms -> 5.87 ms at 2048-bit). 8 is the smallest 8..16 threshold.
-    internal const int MinimumGraphSteps = 8;
+    // Interleaved sweep comparing CUDA Graph replay against the plain ladder loop across 1056 (33 words), 2048, and
+    // 8192 bits (#2346): 2..4 steps regress at 1056 bits (0.81x..0.95x ModPow), while >= 5 steps are faster at every
+    // measured width (1.01x..1.09x at 1056 bits, 1.10x..1.14x at 2048 bits, 1.22x..1.24x at 8192 bits).
+    internal const int MinimumGraphSteps = 5;
 
     public static void Execute(GpuBigUInt baseVal, GpuBigUInt exp, GpuBigUInt mod, GpuBigUInt resultBuffer)
     {
@@ -51,7 +52,7 @@ internal static class ModPowZeroSyncController
         try
         {
             tempResult = new GpuBigUInt(workspace, 2 * n);
-            // tempResult = 1 mod mod, written on the device (0 for modulus 1) so that exponent 0 returns a reduced value.
+            // tempResult = 1 mod mod on the device (0 for modulus 1) so exponent 0 returns a reduced value.
             GpuBigIntDivRemKernels.LaunchInitializeOneModuloKernelPtr(
                 tempResult.ToProxy(), mod.ToProxy(), n,
                 gridDimX: 1, blockDimX: 1, hStream: workspace.Stream);

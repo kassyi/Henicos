@@ -11,6 +11,7 @@ public static partial class GpuBigIntDivRem
     /// <param name="resultBuffer">The destination buffer in GPU device memory receiving the modular power.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="baseVal"/>, <paramref name="mod"/>, and <paramref name="resultBuffer"/> have mismatched word lengths.</exception>
     /// <exception cref="DivideByZeroException">Thrown when <paramref name="mod"/> is zero.</exception>
+    /// <exception cref="NotSupportedException">Thrown when the workspace stream is capturing a CUDA graph.</exception>
     public static void ModPow(
         scoped GpuBigUIntView baseVal,
         scoped GpuBigUIntView exp,
@@ -35,6 +36,8 @@ public static partial class GpuBigIntDivRem
             CSharpCpuBigIntProvider.Instance.ModPow(baseVal, exp, mod, resultBuffer);
             return;
         }
+
+        CaptureChecks.ThrowIfCapturing(baseVal.Workspace, "The bit length of the modulus and the exponent");
 
         var bitLength = baseVal.NumWords * 32;
 

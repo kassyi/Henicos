@@ -115,7 +115,7 @@ public class GpuBigIntContextTests
     public void CpuFallback_DeviceSmCountIsOne()
     {
         // Under the CPU fallback no stream is created and the workspace reports one multiprocessor.
-        // mutant: GpuWorkspace.cs:236 `DeviceSmCount = 1` removed
+        // mutant: GpuWorkspace.cs:242 `DeviceSmCount = 1` removed
         GpuKernelLoader.ForceCpuFallback = true;
         try
         {
@@ -136,7 +136,7 @@ public class GpuBigIntContextTests
     {
         // The workspace reports the multiprocessor count of the device (the fallback 16 only when the query fails).
         // On a GPU with exactly 16 multiprocessors this check cannot tell the two apart.
-        // mutant: GpuWorkspace.cs:263 `smCount > 0 ? smCount : 16` -> `false ? smCount : 16` / `smCount < 0`
+        // mutant: GpuWorkspace.cs:269 `smCount > 0 ? smCount : 16` -> `false ? smCount : 16` / `smCount < 0`
         CudaCapability.EnsureGpuAvailable();
         using var scope = new GpuKernelLoader.CudaContextScope();
         CudaException.ThrowIfError(CudaDriverApi.cuCtxGetDevice(out var device));
@@ -154,7 +154,7 @@ public class GpuBigIntContextTests
     public void DisposeUnmanaged_DoesNotThrowFromTrackedResources()
     {
         // Dispose(false) runs on the finalizer thread, so it must not throw even when a tracked resource does.
-        // mutant: GpuWorkspace.cs:343 `disposing ? [] : null` -> `[]` (the errors are collected and thrown)
+        // mutant: GpuWorkspace.cs:350 `disposing ? [] : null` -> `[]` (the errors are collected and thrown)
         CudaCapability.EnsureGpuAvailable();
         var workspace = new UnmanagedDisposeWorkspace();
         workspace.Track(new ThrowingDisposable(new InvalidOperationException("tracked resource failed")));
@@ -170,7 +170,7 @@ public class GpuBigIntContextTests
     public void Finalizer_CallsDisposeWithFalse()
     {
         // The finalizer releases the workspace through Dispose(false).
-        // mutant: GpuWorkspace.cs:521 `Dispose(false)` -> `Dispose(true)` / call removed
+        // mutant: GpuWorkspace.cs:523 `Dispose(false)` -> `Dispose(true)` / call removed
         CudaCapability.EnsureGpuAvailable();
         FinalizerProbeWorkspace.Reset();
         CreateAndDropProbe();
@@ -196,9 +196,9 @@ public class GpuBigIntContextTests
     {
         // A workspace with its own context destroys that context (and its stream) on Dispose.
         // One context takes some hundred MiB, so three leaked contexts stand out.
-        // mutant: GpuWorkspace.cs:392 `DisposeEngineResources(exceptions)` removed
-        // mutant: GpuWorkspace.cs:481 `Stream == IntPtr.Zero` -> `Stream != IntPtr.Zero`
-        // mutant: GpuWorkspace.cs:507 `GpuKernelLoader.DestroyContext(IsolatedContext.Handle)` removed
+        // mutant: GpuWorkspace.cs:413 `DisposeEngineResources(exceptions)` removed
+        // mutant: GpuWorkspace.cs:483 `_stream == IntPtr.Zero` -> `_stream != IntPtr.Zero`
+        // mutant: GpuWorkspace.cs:509 `GpuKernelLoader.DestroyContext(IsolatedContext.Handle)` removed
         CudaCapability.EnsureGpuAvailable();
         AssertReleasesDeviceMemory(128 * MiB, static () =>
         {
@@ -218,7 +218,7 @@ public class GpuBigIntContextTests
         // The second Dispose returns at once. Running the teardown again would destroy the already destroyed context.
         // The constructor leaves the new context current on the constructing thread, so the workspace lives on a
         // thread of its own and the test thread keeps a valid current context.
-        // mutant: GpuWorkspace.cs:340 `return` removed
+        // mutant: GpuWorkspace.cs:347 `return` removed
         CudaCapability.EnsureGpuAvailable();
         Exception error = null;
         var thread = new Thread(() => error = Record.Exception(() =>
@@ -240,7 +240,7 @@ public class GpuBigIntContextTests
     {
         // A failure while the memory manager frees its buffers is reported by Dispose, not dropped.
         // The buffer is freed behind the manager's back, so the manager's own free fails.
-        // mutant: GpuWorkspace.cs:475 `exceptions?.Add(ex)` removed
+        // mutant: GpuWorkspace.cs:395 `exceptions?.Add(ex)` removed
         CudaCapability.EnsureGpuAvailable();
         var workspace = new GpuWorkspace(4);
         GpuBigUInt value;

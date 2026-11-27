@@ -42,13 +42,16 @@ public class GpuWorkspace : IGpuResourceScope
     /// Gets the dedicated CUDA Stream for this context, used for operations and CUDA Graph playback.
     /// </summary>
     /// <remarks>
-    /// While GpuMath captures an internal graph (such as <c>GpuBigIntExpr.CompileToGraph</c> or wide <c>ModPow</c>),
-    /// this property returns the capture's dedicated non-blocking stream to the capturing thread and always returns
-    /// this workspace's own stream to other threads. The resulting graph is replayed on this workspace's stream. A
-    /// buffer freed during such a capture belongs to the graph and returns to the workspace pool when the graph is
-    /// disposed; other threads using the workspace meanwhile go through the shared pool. A capture started directly on
-    /// this stream cannot be tracked: buffers freed during it stay parked until the workspace is disposed, and
-    /// allocations during it come only from the pool.
+    /// <para>
+    /// While GpuMath captures an internal graph (<c>GpuBigIntExpr.CompileToGraph</c> or wide <c>ModPow</c>), this
+    /// property returns the capture's dedicated non-blocking stream to the capturing thread and always returns this
+    /// workspace's own stream to other threads. The resulting graph replays on this workspace's stream.
+    /// </para>
+    /// <para>
+    /// Buffers freed during an internal capture belong to the graph and return to the pool when it is disposed; other
+    /// threads using the workspace meanwhile go through the shared pool. A capture started directly on this stream
+    /// cannot be tracked: buffers freed during it stay parked until disposal, and allocations come only from the pool.
+    /// </para>
     /// </remarks>
     public IntPtr Stream => _manager?.CurrentStream ?? _stream;
 
@@ -538,70 +541,28 @@ public class GpuWorkspace : IGpuResourceScope
         return new GpuBigUInt(this, MemoryManager.Allocate(numWords));
     }
 
-    private uint _lastModPowNttBlockDim;
+    // Launch shapes and graph launch counts that the tests read, kept in their own type.
+    private readonly GpuWorkspaceLaunchRecord _launchRecord = new();
 
-    /// <summary>
-    /// Gets the block size of the most recent ModPow NTT mega-kernel launch on this workspace, which the tests read to
-    /// verify the launcher's block-size rule.
-    /// </summary>
-    internal uint LastModPowNttBlockDim => Volatile.Read(ref _lastModPowNttBlockDim);
+    internal uint LastModPowNttBlockDim => _launchRecord.LastModPowNttBlockDim;
 
-    /// <summary>Records the block size used to launch the ModPow NTT mega-kernel.</summary>
-    internal void RecordModPowNttBlockDim(uint blockDim) => Volatile.Write(ref _lastModPowNttBlockDim, blockDim);
+    internal void RecordModPowNttBlockDim(uint blockDim) => _launchRecord.RecordModPowNttBlockDim(blockDim);
 
-    private uint _lastInverseSqrtMegaBlockDim;
-    private uint _lastInverseSqrtMegaGridDim;
-    private uint _lastInverseSqrtMegaSharedMemBytes;
-    private uint _lastReciprocalMegaBlockDim;
-    private uint _lastReciprocalMegaGridDim;
-    private uint _lastReciprocalMegaSharedMemBytes;
-
-    /// <summary>
-    /// Gets the launch shape of the most recent <c>InverseSqrtNewtonRaphsonMegaKernel</c> launch on this workspace,
-    /// which tests read to verify block and grid dimensions.
-    /// </summary>
     internal BigNum.Providers.Handlers.CooperativeMegaKernelLauncher.LaunchShape LastInverseSqrtMegaLaunchShape =>
-        new(
-            Volatile.Read(ref _lastInverseSqrtMegaBlockDim),
-            Volatile.Read(ref _lastInverseSqrtMegaGridDim),
-            Volatile.Read(ref _lastInverseSqrtMegaSharedMemBytes));
+        _launchRecord.LastInverseSqrtMegaLaunchShape;
 
-    /// <summary>Records the launch shape used to launch <c>InverseSqrtNewtonRaphsonMegaKernel</c>.</summary>
-    internal void RecordInverseSqrtMegaLaunchShape(uint blockDim, uint gridDim, uint sharedMemBytes)
-    {
-        Volatile.Write(ref _lastInverseSqrtMegaBlockDim, blockDim);
-        Volatile.Write(ref _lastInverseSqrtMegaGridDim, gridDim);
-        Volatile.Write(ref _lastInverseSqrtMegaSharedMemBytes, sharedMemBytes);
-    }
+    internal void RecordInverseSqrtMegaLaunchShape(uint blockDim, uint gridDim, uint sharedMemBytes) =>
+        _launchRecord.RecordInverseSqrtMegaLaunchShape(blockDim, gridDim, sharedMemBytes);
 
-    /// <summary>
-    /// Gets the launch shape of the most recent <c>ReciprocalNewtonRaphsonMegaKernel</c> launch on this workspace,
-    /// which tests read to verify block and grid dimensions.
-    /// </summary>
     internal BigNum.Providers.Handlers.CooperativeMegaKernelLauncher.LaunchShape LastReciprocalMegaLaunchShape =>
-        new(
-            Volatile.Read(ref _lastReciprocalMegaBlockDim),
-            Volatile.Read(ref _lastReciprocalMegaGridDim),
-            Volatile.Read(ref _lastReciprocalMegaSharedMemBytes));
+        _launchRecord.LastReciprocalMegaLaunchShape;
 
-    /// <summary>Records the launch shape used to launch <c>ReciprocalNewtonRaphsonMegaKernel</c>.</summary>
-    internal void RecordReciprocalMegaLaunchShape(uint blockDim, uint gridDim, uint sharedMemBytes)
-    {
-        Volatile.Write(ref _lastReciprocalMegaBlockDim, blockDim);
-        Volatile.Write(ref _lastReciprocalMegaGridDim, gridDim);
-        Volatile.Write(ref _lastReciprocalMegaSharedMemBytes, sharedMemBytes);
-    }
+    internal void RecordReciprocalMegaLaunchShape(uint blockDim, uint gridDim, uint sharedMemBytes) =>
+        _launchRecord.RecordReciprocalMegaLaunchShape(blockDim, gridDim, sharedMemBytes);
 
-    private long _modPowGraphLaunches;
+    internal long ModPowGraphLaunches => _launchRecord.ModPowGraphLaunches;
 
-    /// <summary>
-    /// Gets the number of CUDA graph launches executed by <c>ModPowZeroSyncController</c> on this workspace, which
-    /// tests read to verify graph playback.
-    /// </summary>
-    internal long ModPowGraphLaunches => Volatile.Read(ref _modPowGraphLaunches);
-
-    /// <summary>Counts a CUDA graph launch executed by <c>ModPowZeroSyncController</c>.</summary>
-    internal void CountModPowGraphLaunch() => Interlocked.Increment(ref _modPowGraphLaunches);
+    internal void CountModPowGraphLaunch() => _launchRecord.CountModPowGraphLaunch();
 }
 
 

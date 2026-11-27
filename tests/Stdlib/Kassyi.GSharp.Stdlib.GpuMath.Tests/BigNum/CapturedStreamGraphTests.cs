@@ -111,7 +111,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
         Assert.Equal(0, allocated);
     }
 
-    // mutant: CapturedStreamGraph.cs:277 `_manager.ReturnDeferred(_captured.Buffers);`
+    // mutant: CapturedStreamGraph.cs:286 `_manager.ReturnDeferred(_captured.Buffers);`
     // -> omitted (DeferredBuffers stays high)
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
@@ -155,7 +155,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
         Assert.Throws<ObjectDisposedException>(graph.Launch);
     }
 
-    // mutant: CapturedStreamGraph.cs:311
+    // mutant: CapturedStreamGraph.cs:320
     // `RunCleanupStep((manager, captured), static s => s.manager.ReturnDeferred(s.captured.Buffers),` -> omitted
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
@@ -164,14 +164,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
         var start = Workspace.GetMemoryStatistics();
         var expected = new InvalidOperationException("Simulated capture failure.");
 
-        var actual = Assert.Throws<InvalidOperationException>(() =>
-            CapturedStreamGraph.Capture(Workspace, () =>
-            {
-                using var temp = new GpuBigUInt(Workspace, Words);
-                Workspace.Provider.CopyDeviceToDevice(_result.DevicePointer, temp.DevicePointer, Words,
-                    Workspace.Stream);
-                throw expected;
-            }));
+        var actual = Assert.Throws<InvalidOperationException>(() => CaptureThrowingWithTemp(expected));
         var failed = Workspace.GetMemoryStatistics();
 
         Assert.Same(expected, actual);
@@ -184,7 +177,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
         Assert.Equal(new BigInteger(42), _result.ToBigInteger());
     }
 
-    // mutant: CapturedStreamGraph.cs:313
+    // mutant: CapturedStreamGraph.cs:322
     // `ThrowIfCleanupFailed("CUDA graph capture failed, and so did its cleanup.", original, cleanupErrors);`
     // -> omitted
     [SkippableFact]
@@ -227,6 +220,27 @@ public sealed class CapturedStreamGraphTests : IDisposable
         Assert.Equal(new BigInteger(42), _result.ToBigInteger());
     }
 
+    // mutant: CapturedStreamGraph.cs:322
+    // `ThrowIfCleanupFailed("CUDA graph capture failed, and so did its cleanup.", original, cleanupErrors);`
+    // -> omitted
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void Capture_BodyThrowsAndEndingTheCaptureFails_ThrowsAggregateException()
+    {
+        var start = Workspace.GetMemoryStatistics();
+        var original = new InvalidOperationException("Simulated capture failure.");
+        var cleanupError = new InvalidOperationException("Simulated end-capture failure.");
+        var observer = new ObservingGraphProvider(Workspace) { EndCaptureException = cleanupError };
+
+        var error = Assert.Throws<AggregateException>(() => CaptureThrowingWithTemp(original, observer));
+        var failed = Workspace.GetMemoryStatistics();
+
+        Assert.Equal(2, error.InnerExceptions.Count);
+        Assert.Same(original, error.InnerExceptions[0]);
+        Assert.Same(cleanupError, error.InnerExceptions[1]);
+        Assert.Equal((start.DeferredBuffers, start.LiveBuffers), (failed.DeferredBuffers, failed.LiveBuffers));
+    }
+
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
     public void Capture_NestedOrDuringActiveDeferral_ThrowsInvalidOperationException()
@@ -262,7 +276,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
         Assert.Equal((start.DeferredBuffers, start.LiveBuffers), (end.DeferredBuffers, end.LiveBuffers));
     }
 
-    // mutant: CapturedStreamGraph.cs:269 `using (Workspace.ActivateContext())`
+    // mutant: CapturedStreamGraph.cs:278 `using (Workspace.ActivateContext())`
     // -> omitted (pool thread lacks isolated context)
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
@@ -336,10 +350,10 @@ public sealed class CapturedStreamGraphTests : IDisposable
     }
 
     // ReleaseAfterFailure must destroy the partial graph and return deferred buffers when InstantiateGraph throws.
-    // mutant: CapturedStreamGraph.cs:325
+    // mutant: CapturedStreamGraph.cs:334
     // `RunCleanupStep((graphProvider, graph), static s => s.graphProvider.DestroyGraph(s.graph, IntPtr.Zero),`
     // -> omitted (DestroyCallCount stays 0)
-    // mutant: CapturedStreamGraph.cs:329
+    // mutant: CapturedStreamGraph.cs:338
     // `RunCleanupStep((manager, captured), static s => s.manager.ReturnDeferred(s.captured.Buffers),`
     // -> omitted (DeferredBuffers stays high)
     [SkippableFact]
@@ -350,13 +364,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
         var expected = new InvalidOperationException("Simulated instantiate failure.");
         var observer = new ObservingGraphProvider(Workspace) { InstantiateException = expected };
 
-        var actual = Assert.Throws<InvalidOperationException>(() =>
-            CapturedStreamGraph.Capture(Workspace, () =>
-            {
-                using var temp = new GpuBigUInt(Workspace, Words);
-                Workspace.Provider.CopyDeviceToDevice(_result.DevicePointer, temp.DevicePointer, Words,
-                    Workspace.Stream);
-            }, observer));
+        var actual = Assert.Throws<InvalidOperationException>(() => CaptureWithTempCopy(observer));
         var failed = Workspace.GetMemoryStatistics();
 
         Assert.Same(expected, actual);
@@ -368,7 +376,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
 
     // When both InstantiateGraph and DestroyGraph throw, ReleaseAfterFailure must still return deferred buffers and
     // combine both exceptions into an AggregateException with the original first.
-    // mutant: CapturedStreamGraph.cs:331
+    // mutant: CapturedStreamGraph.cs:340
     // `ThrowIfCleanupFailed("Creating the CUDA graph failed, and so did its cleanup.", original, cleanupErrors);`
     // -> omitted (only original InvalidOperationException is thrown)
     [SkippableFact]
@@ -384,13 +392,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
             DestroyException = cleanupError,
         };
 
-        var error = Assert.Throws<AggregateException>(() =>
-            CapturedStreamGraph.Capture(Workspace, () =>
-            {
-                using var temp = new GpuBigUInt(Workspace, Words);
-                Workspace.Provider.CopyDeviceToDevice(_result.DevicePointer, temp.DevicePointer, Words,
-                    Workspace.Stream);
-            }, observer));
+        var error = Assert.Throws<AggregateException>(() => CaptureWithTempCopy(observer));
         var failed = Workspace.GetMemoryStatistics();
 
         Assert.Equal(2, error.InnerExceptions.Count);
@@ -400,7 +402,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
     }
 
     // When EndCapture throws, RecordStream must release deferred buffers via ReleaseAfterFailure without leaking.
-    // mutant: CapturedStreamGraph.cs:213
+    // mutant: CapturedStreamGraph.cs:222
     // `ReleaseAfterFailure(manager, graphProvider, manager.EndDeferral(deferral), graph, original);`
     // -> omitted (deferral stays active and DeferredBuffers leaks)
     [SkippableFact]
@@ -411,13 +413,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
         var expected = new InvalidOperationException("Simulated end-capture failure.");
         var observer = new ObservingGraphProvider(Workspace) { EndCaptureException = expected };
 
-        var actual = Assert.Throws<InvalidOperationException>(() =>
-            CapturedStreamGraph.Capture(Workspace, () =>
-            {
-                using var temp = new GpuBigUInt(Workspace, Words);
-                Workspace.Provider.CopyDeviceToDevice(_result.DevicePointer, temp.DevicePointer, Words,
-                    Workspace.Stream);
-            }, observer));
+        var actual = Assert.Throws<InvalidOperationException>(() => CaptureWithTempCopy(observer));
         var failed = Workspace.GetMemoryStatistics();
 
         Assert.Same(expected, actual);
@@ -431,183 +427,20 @@ public sealed class CapturedStreamGraphTests : IDisposable
         Assert.Equal(new BigInteger(42), _result.ToBigInteger());
     }
 
-    [SkippableFact]
-    [Scenario(TestScenario.Boundary)]
-    public void CompileToGraph_LegacyCopyOnAnotherThreadDuringCapture_BothSucceed()
-    {
-        CudaCapability.EnsureGpuAvailable();
-        const string Name = nameof(CompileToGraph_LegacyCopyOnAnotherThreadDuringCapture_BothSucceed);
-        if (!IsolatedTestProcess.IsChild(Name))
+    private CapturedStreamGraph CaptureWithTempCopy(IGpuGraphProvider graphProvider) =>
+        CapturedStreamGraph.Capture(Workspace, () =>
         {
-            IsolatedTestProcess.Run(typeof(CapturedStreamGraphTests), Name);
-            return;
-        }
+            using var temp = new GpuBigUInt(Workspace, Words);
+            Workspace.Provider.CopyDeviceToDevice(_result.DevicePointer, temp.DevicePointer, Words, Workspace.Stream);
+        }, graphProvider);
 
-        using var workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
-        using var a = new GpuBigInt(new GpuBigUInt(workspace, Words), isNegative: false);
-        using var b = new GpuBigInt(new GpuBigUInt(workspace, Words), isNegative: false);
-        using var c = new GpuBigInt(new GpuBigUInt(workspace, Words), isNegative: false);
-        WriteWords(a.Value, new BigInteger(1_000_003));
-        WriteWords(b.Value, new BigInteger(7_919));
-        WriteWords(c.Value, new BigInteger(42));
-
-        using var start = new ManualResetEventSlim(false);
-        using var done = new ManualResetEventSlim(false);
-        Exception? otherThreadError = null;
-        var hostBuffer = new int[16];
-
-        var otherThread = new Thread(() =>
+    private CapturedStreamGraph CaptureThrowingWithTemp(Exception error, IGpuGraphProvider? graphProvider = null) =>
+        CapturedStreamGraph.Capture(Workspace, () =>
         {
-            start.Wait();
-            try
-            {
-                using var scope = new GpuKernelLoader.CudaContextScope();
-                using var deviceBuffer = new GpuBuffer<int>(16);
-                deviceBuffer.CopyToHost(hostBuffer);
-            }
-            catch (Exception ex)
-            {
-                otherThreadError = ex;
-            }
-            finally
-            {
-                done.Set();
-            }
-        });
-        otherThread.Start();
-
-        var manager = (DefaultGpuMemoryManager)workspace.MemoryManager;
-        var observer = new LegacyCopyOnCaptureObserver(workspace, start, done);
-        manager.Observer = observer;
-        GpuBigIntExecutableGraph graph;
-        try
-        {
-            graph = ((GpuBigIntExpr)a * b + c).CompileToGraph(workspace);
-        }
-        finally
-        {
-            manager.Observer = null;
-            start.Set();
-            otherThread.Join();
-        }
-
-        using (graph)
-        {
-            // Coverage witness: the legacy copy ran while CompileToGraph's capture was active.
-            Assert.True(observer.Fired, "The memory observer never observed an active graph capture.");
-            // CompileToGraph records on a dedicated non-blocking stream so concurrent legacy copies succeed.
-            // mutant: CapturedStreamGraph.cs:173 `graphProvider.BeginCapture(captureStream);` -> `graphProvider.BeginCapture(workspace.BaseStream);`
-            // mutant: CapturedStreamGraph.cs:11 `private const uint NonBlockingStreamFlag = 1;` -> `private const uint NonBlockingStreamFlag = 0;`
-            // mutant: GpuWorkspace.cs:53 `public IntPtr Stream => _manager?.CurrentStream ?? _stream;` -> `public IntPtr Stream => _stream;`
-            Assert.Null(otherThreadError);
-
-            graph.Execute();
-            Assert.Equal(new BigInteger(1_000_003) * 7_919 + 42, graph.Result.ToBigInteger());
-
-            WriteWords(a.Value, new BigInteger(2_000_003));
-            graph.Execute();
-            Assert.Equal(new BigInteger(2_000_003) * 7_919 + 42, graph.Result.ToBigInteger());
-        }
-    }
-
-    [SkippableFact]
-    [Scenario(TestScenario.Boundary)]
-    public void Capture_FreshAllocationInBody_IsZeroAtEveryLaunch()
-    {
-        const int FreshWords = 17;
-        using var workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
-        using var output = new GpuBigUInt(workspace, 1);
-        var allocsBefore = workspace.GetMemoryStatistics().DriverAllocations;
-        GpuBigUInt fresh = default;
-        try
-        {
-            using var graph = CapturedStreamGraph.Capture(workspace, () =>
-            {
-                fresh = workspace.RentTemp(FreshWords);
-                output.CopyFrom(fresh, numWords: 1);
-                workspace.Provider.WriteWord(fresh.DevicePointer, 0, 7u, workspace.Stream);
-            });
-
-            // Coverage witness: RentTemp missed the empty pool and allocated from the driver during capture.
-            Assert.True(workspace.GetMemoryStatistics().DriverAllocations > allocsBefore);
-
-            // Driver allocation inside a capture must enqueue its zero-clear on the capture stream so every launch
-            // sees zeroed memory, even after a previous launch dirtied the buffer.
-            // mutant: DefaultGpuMemoryManager.cs:95 `provider.ClearMemoryAsync(ptr, numWords, session?.Stream ?? stream);` -> `provider.ClearMemoryAsync(ptr, numWords, stream);`
-            for (var launch = 0; launch < 2; launch++)
-            {
-                graph.Launch();
-                workspace.Provider.SynchronizeStream(workspace.Stream);
-                Assert.Equal(0u, workspace.Provider.ReadWord(output.DevicePointer, 0, workspace.Stream));
-            }
-        }
-        finally
-        {
-            fresh.Dispose();
-        }
-    }
-
-    [SkippableFact]
-    [Scenario(TestScenario.Boundary)]
-    public void Capture_BufferFreedAndTakenAgainInBody_IsZeroAtEveryLaunch()
-    {
-        const int ReuseWords = 17;
-        using var output = new GpuBigUInt(Workspace, 1);
-        var firstPtr = IntPtr.Zero;
-        var secondPtr = IntPtr.Zero;
-
-        using var graph = CapturedStreamGraph.Capture(Workspace, () =>
-        {
-            using (var first = Workspace.RentTemp(ReuseWords))
-            {
-                firstPtr = first.DevicePointer;
-                Workspace.Provider.WriteWord(first.DevicePointer, 0, 7u, Workspace.Stream);
-            }
-
-            using var second = Workspace.RentTemp(ReuseWords);
-            secondPtr = second.DevicePointer;
-            output.CopyFrom(second, numWords: 1);
-        });
-
-        // Coverage witness: the second RentTemp reused the exact buffer freed earlier in the same capture.
-        Assert.Equal(firstPtr, secondPtr);
-
-        // Freeing a buffer during capture must record its zero-clear on the capture stream so reuse sees zeros.
-        // mutant: DefaultGpuMemoryManager.cs:216 `provider.ClearMemoryAsync(buffer.Pointer, buffer.TotalWords, session.Stream);` -> `provider.ClearMemoryAsync(buffer.Pointer, buffer.TotalWords, stream);`
-        for (var launch = 0; launch < 2; launch++)
-        {
-            graph.Launch();
-            Workspace.Provider.SynchronizeStream(Workspace.Stream);
-            Assert.Equal(0u, Workspace.Provider.ReadWord(output.DevicePointer, 0, Workspace.Stream));
-        }
-    }
-
-    [SkippableFact]
-    [Scenario(TestScenario.SadPath)]
-    public void Capture_BodyThrows_NextCaptureOnTheWorkspaceSucceeds()
-    {
-        var expected = new InvalidOperationException("Simulated capture abort.");
-
-        // AbortCapture must end capture on deferral.Stream (not the workspace base stream), so no cleanup error is
-        // added and the original exception propagates intact before the next capture runs.
-        // mutant: CapturedStreamGraph.cs:297 `graph = graphProvider.EndCapture(deferral.Stream);` -> `graph = graphProvider.EndCapture(workspace.BaseStream);`
-        var actual = Assert.Throws<InvalidOperationException>(() =>
-            CapturedStreamGraph.Capture(Workspace, () =>
-            {
-                using var temp = new GpuBigUInt(Workspace, Words);
-                Workspace.Provider.CopyDeviceToDevice(_result.DevicePointer, temp.DevicePointer, Words,
-                    Workspace.Stream);
-                throw expected;
-            }));
-        Assert.Same(expected, actual);
-
-        WriteWords(_a, 13);
-        WriteWords(_b, 29);
-        using var nextGraph = CaptureWithDeferredTemp(Workspace, _a, _b, _result);
-        nextGraph.Launch();
-        Workspace.Provider.SynchronizeStream(Workspace.Stream);
-        Assert.Equal(new BigInteger(42), _result.ToBigInteger());
-    }
+            using var temp = new GpuBigUInt(Workspace, Words);
+            Workspace.Provider.CopyDeviceToDevice(_result.DevicePointer, temp.DevicePointer, Words, Workspace.Stream);
+            throw error;
+        }, graphProvider ?? Workspace.Provider);
 
     private static CapturedStreamGraph CaptureWithDeferredTemp(GpuWorkspace workspace, GpuBigUInt a, GpuBigUInt b,
         GpuBigUInt result)
@@ -695,30 +528,6 @@ public sealed class CapturedStreamGraphTests : IDisposable
             }
         }
     }
-
-    private sealed class LegacyCopyOnCaptureObserver(
-        GpuWorkspace workspace,
-        ManualResetEventSlim start,
-        ManualResetEventSlim done) : IGpuMemoryObserver
-    {
-        private bool _fired;
-
-        public bool Fired => Volatile.Read(ref _fired);
-
-        public void Leased(IntPtr pointer, int numWords)
-        {
-            if (!_fired && CaptureChecks.IsCapturing(workspace))
-            {
-                Volatile.Write(ref _fired, true);
-                start.Set();
-                Assert.True(done.Wait(TimeSpan.FromSeconds(10)), "Timed out waiting for thread B legacy copy.");
-            }
-        }
-
-        public void Released(IntPtr pointer, int numWords)
-        {
-        }
-    }
 }
 
 /// <summary>
@@ -744,7 +553,7 @@ public sealed class CapturedStreamGraphCpuFallbackTests
 
     // When original is already an AggregateException, ThrowIfCleanupFailed must preserve it intact at
     // InnerExceptions[0] rather than flattening its inner exceptions.
-    // mutant: CapturedStreamGraph.cs:357 `errors.Insert(0, original);`
+    // mutant: CapturedStreamGraph.cs:366 `errors.Insert(0, original);`
     // -> flattened into aggregate.InnerExceptions (InnerExceptions[0] is no longer original)
     [Fact]
     [Scenario(TestScenario.Boundary)]

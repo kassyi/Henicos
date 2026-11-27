@@ -7,6 +7,14 @@ namespace Henicos.Benchmarks.Tests;
 [TestTarget(ExecutionTarget.CpuExecution)]
 public class GpuBigIntModPowBenchmarkTests
 {
+    public static TheoryData<int, int> ValidBitWidths => new()
+    {
+        { 2048, 1 },
+        { 2048, 31 },
+        { 2048, 64 },
+        { 8192, 1024 },
+    };
+
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void ParameterSources_ExposedValues_CoverExpectedModulusAndExponentMatrix()
@@ -20,33 +28,44 @@ public class GpuBigIntModPowBenchmarkTests
 
     [Theory]
     [Scenario(TestScenario.Boundary)]
-    [InlineData(2048, 1)]
-    [InlineData(2048, 31)]
-    [InlineData(2048, 64)]
-    [InlineData(8192, 1024)]
-    public void CreateInputs_ValidBitWidths_SatisfiesModulusBaseAndExponentInvariants(
-        int modulusBits,
-        int exponentBits)
+    [MemberData(nameof(ValidBitWidths))]
+    public void CreateInputs_ValidBitWidths_ProducesExpectedWordLengths(int modulusBits, int exponentBits)
     {
         var (baseWords, expWords, modWords) = GpuBigIntModPowBenchmark.CreateInputs(modulusBits, exponentBits);
 
-        Assert.Equal(modulusBits / 32, modWords.Length);
-        Assert.Equal(modulusBits / 32, baseWords.Length);
-        Assert.Equal((exponentBits + 31) / 32, expWords.Length);
+        Assert.Equal((modulusBits / 32, modulusBits / 32, (exponentBits + 31) / 32),
+            (modWords.Length, baseWords.Length, expWords.Length));
+    }
 
-        // Modulus has both LSB (odd) and MSB set.
-        Assert.Equal(1u, modWords[0] & 1u);
-        Assert.True((modWords[^1] & 0x8000_0000u) != 0);
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(ValidBitWidths))]
+    public void CreateInputs_ValidBitWidths_ProducesOddFullWidthModulus(int modulusBits, int exponentBits)
+    {
+        var (_, _, modWords) = GpuBigIntModPowBenchmark.CreateInputs(modulusBits, exponentBits);
 
-        // Base is non-zero and strictly less than modulus.
+        Assert.Equal((1u, true), (modWords[0] & 1u, (modWords[^1] & 0x8000_0000u) != 0));
+    }
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(ValidBitWidths))]
+    public void CreateInputs_ValidBitWidths_ProducesPositiveBaseLessThanModulus(int modulusBits, int exponentBits)
+    {
+        var (baseWords, _, modWords) = GpuBigIntModPowBenchmark.CreateInputs(modulusBits, exponentBits);
         var baseVal = ToBigInteger(baseWords);
-        var expVal = ToBigInteger(expWords);
-        var modVal = ToBigInteger(modWords);
-        Assert.True(baseVal > BigInteger.Zero);
-        Assert.True(baseVal < modVal);
 
-        // Exponent has exact bit-length ExponentBits.
-        Assert.Equal(exponentBits, expVal.GetBitLength());
+        Assert.InRange(baseVal, BigInteger.One, ToBigInteger(modWords) - 1);
+    }
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(ValidBitWidths))]
+    public void CreateInputs_ValidBitWidths_ProducesExactExponentBitLength(int modulusBits, int exponentBits)
+    {
+        var (_, expWords, _) = GpuBigIntModPowBenchmark.CreateInputs(modulusBits, exponentBits);
+
+        Assert.Equal(exponentBits, ToBigInteger(expWords).GetBitLength());
     }
 
     [Theory]

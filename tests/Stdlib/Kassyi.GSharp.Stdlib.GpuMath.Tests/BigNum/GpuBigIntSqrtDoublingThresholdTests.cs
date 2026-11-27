@@ -85,7 +85,7 @@ public class GpuBigIntSqrtDoublingThresholdTests
     // root of 5957 words takes the doubling, and both give the floor for the operands at the ends of the range: bit
     // length 64r and 64r - 1, all ones, the lowest value, the square of the largest root and one below it, and a
     // negative D in a wide stage.
-    // mutant: GpuWorkspace.cs:145 `} = 5956;` -> `} = 5955;` (5956 counts a doubling run)
+    // mutant: GpuWorkspace.cs:151 `} = 5956;` -> `} = 5955;` (5956 counts a doubling run)
     // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:69 `>` -> `>=` (5956 counts a doubling run)
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
@@ -151,7 +151,7 @@ public class GpuBigIntSqrtDoublingThresholdTests
     }
 
     // The threshold is a word count: a negative value is rejected and the previous value stays.
-    // mutant: GpuWorkspace.cs:142 `ArgumentOutOfRangeException.ThrowIfNegative(value)` removed
+    // mutant: GpuWorkspace.cs:148 `ArgumentOutOfRangeException.ThrowIfNegative(value)` removed
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
     public void SqrtPrecisionDoublingThresholdWords_NegativeValue_ThrowsAndKeepsTheValue()
@@ -211,7 +211,7 @@ public class GpuBigIntSqrtDoublingThresholdTests
 
     // A new workspace starts at the documented default of 5956 root words, the largest root whose mega-kernel
     // transforms fit 65536 points.
-    // mutant: GpuWorkspace.cs:145 `} = 5956;` -> `} = 5955;`
+    // mutant: GpuWorkspace.cs:151 `} = 5956;` -> `} = 5955;`
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void SqrtPrecisionDoublingThresholdWords_NewWorkspace_Is5956()

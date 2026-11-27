@@ -53,13 +53,7 @@ public class GpuBigIntModPowBenchmark : IDisposable
     /// </summary>
     internal static (uint[] Base, uint[] Exponent, uint[] Modulus) CreateInputs(int modulusBits, int exponentBits)
     {
-        if (modulusBits <= 0 || modulusBits % 32 != 0)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(modulusBits), modulusBits, "ModulusBits must be a positive multiple of 32.");
-        }
-
-        ArgumentOutOfRangeException.ThrowIfLessThan(exponentBits, 1);
+        ThrowIfInvalidWidths(modulusBits, exponentBits);
 
         var modWords = modulusBits / 32;
         var expWords = (exponentBits + 31) / 32;
@@ -135,6 +129,17 @@ public class GpuBigIntModPowBenchmark : IDisposable
         _workspace = null;
         _scope = null;
         GC.SuppressFinalize(this);
+    }
+
+    private static void ThrowIfInvalidWidths(int modulusBits, int exponentBits)
+    {
+        if (modulusBits <= 0 || modulusBits % 32 != 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(modulusBits), modulusBits, "ModulusBits must be a positive multiple of 32.");
+        }
+
+        ArgumentOutOfRangeException.ThrowIfLessThan(exponentBits, 1);
     }
 
     private static GpuBigUInt Buffer(GpuBigUInt? buffer) =>

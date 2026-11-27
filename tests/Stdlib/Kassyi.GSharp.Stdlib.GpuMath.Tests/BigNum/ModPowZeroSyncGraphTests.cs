@@ -81,14 +81,17 @@ public sealed class ModPowZeroSyncGraphTests
 
         // Coverage witness: the legacy copy ran while the ladder capture was active, and graph playback ran.
         // Word 0 (0x89ABCDEF): 32 squares + 20 multiplies = 52; word 1 (0x01234567): 25 squares + 12 multiplies = 37;
-        // total 89 steps, minus 1 eager warm-up step = 88 graph launches.
+        // total 89 steps, minus the eager first step = 88 graph launches.
         Assert.True(observer.Fired, "The memory observer never observed an active graph capture.");
         Assert.Equal(88L, workspace.ModPowGraphLaunches - launchesBefore);
 
         // Neither the concurrent legacy-stream copy nor ModPow may fail, and the result must match BigInteger.ModPow.
-        // mutant: CapturedStreamGraph.cs:173 `graphProvider.BeginCapture(captureStream);` -> `graphProvider.BeginCapture(workspace.BaseStream);`
-        // mutant: CapturedStreamGraph.cs:11 `private const uint NonBlockingStreamFlag = 1;` -> `private const uint NonBlockingStreamFlag = 0;`
-        // mutant: GpuWorkspace.cs:53 `public IntPtr Stream => _manager?.CurrentStream ?? _stream;` -> `public IntPtr Stream => _stream;`
+        // mutant: CapturedStreamGraph.cs:182 `graphProvider.BeginCapture(captureStream);`
+        // -> `graphProvider.BeginCapture(workspace.BaseStream);`
+        // mutant: CapturedStreamGraph.cs:11 `private const uint NonBlockingStreamFlag = 1;`
+        // -> `private const uint NonBlockingStreamFlag = 0;`
+        // mutant: GpuWorkspace.cs:56 `public IntPtr Stream => _manager?.CurrentStream ?? _stream;`
+        // -> `public IntPtr Stream => _stream;`
         Assert.Null(otherThreadError);
         Assert.True(expected == gpuResult.ToBigInteger(), $"seed {Seed} mismatch");
         workspace.ThrowIfDeviceErrors();
@@ -166,7 +169,8 @@ public sealed class ModPowZeroSyncGraphTests
         }
 
         // Non-blocking capture stream keeps concurrent legacy-stream copies free of implicit capture conflicts.
-        // mutant: CapturedStreamGraph.cs:11 `private const uint NonBlockingStreamFlag = 1;` -> `private const uint NonBlockingStreamFlag = 0;`
+        // mutant: CapturedStreamGraph.cs:11 `private const uint NonBlockingStreamFlag = 1;`
+        // -> `private const uint NonBlockingStreamFlag = 0;`
         Assert.Equal(0, legacyFailures);
         Assert.Null(firstLegacyError);
         Assert.True(copiesCompleted > 0, "Background thread completed zero legacy copies.");
@@ -233,7 +237,8 @@ public sealed class ModPowZeroSyncGraphTests
         {
             // When another thread holds the workspace capture session, ExecuteLadder must fall back to the plain
             // loop (skipping the eager first step) instead of throwing InvalidOperationException.
-            // mutant: ModPowZeroSyncController.cs:102 `if (!TryCaptureStepGraphs(buffers, out var multiplyGraph, out var squareGraph))`
+            // mutant: ModPowZeroSyncController.cs:103
+            // `if (!TryCaptureStepGraphs(buffers, out var multiplyGraph, out var squareGraph))`
             // -> throw InvalidOperationException instead of running the plain-loop fallback
             GpuBigIntDivRem.ModPow(gpuBase, gpuExp, gpuMod, gpuResult);
         }
@@ -247,6 +252,239 @@ public sealed class ModPowZeroSyncGraphTests
         Assert.Equal(0L, workspace.ModPowGraphLaunches - launchesBefore);
         Assert.True(expected == gpuResult.ToBigInteger(), $"seed {seed} mismatch");
         workspace.ThrowIfDeviceErrors();
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(2048, 64)]
+    [InlineData(2048, 2048)]
+    [InlineData(4096, 64)]
+    [InlineData(4096, 4096)]
+    [InlineData(8192, 64)]
+    public void ModPow_ZeroSyncGraphWidths_MatchesBigIntegerReference(int modulusBits, int expBits)
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        var numWords = modulusBits / 32;
+        var expWords = (expBits + 31) / 32;
+        using var workspace = new GpuWorkspace(Math.Max(4096, numWords * 16), GpuExecutionEngine.GSharpAot);
+
+        var seed = 2346 + modulusBits * 17 + expBits;
+        var random = new Random(seed);
+        var modValue = GenerateFullWidthBigInteger(random, modulusBits) | BigInteger.One;
+        var baseValue = GenerateFullWidthBigInteger(random, modulusBits) % modValue;
+        var expValue = GenerateFullWidthBigInteger(random, expBits);
+        var expected = BigInteger.ModPow(baseValue, expValue, modValue);
+
+        using var gpuBase = GpuBigUInt.FromBigInteger(workspace, baseValue, numWords);
+        using var gpuExp = GpuBigUInt.FromBigInteger(workspace, expValue, expWords);
+        using var gpuMod = GpuBigUInt.FromBigInteger(workspace, modValue, numWords);
+        using var gpuResult = new GpuBigUInt(workspace, numWords);
+
+        var launchesBefore = workspace.ModPowGraphLaunches;
+        GpuBigIntDivRem.ModPow(gpuBase, gpuExp, gpuMod, gpuResult);
+        var actual = gpuResult.ToBigInteger();
+
+        // Result must match host BigInteger.ModPow and use CUDA Graph launches for wide moduli.
+        // mutant: ModPowZeroSyncController.cs:380 `squareGraph.Launch();`
+        // -> `squareGraph.Launch(); squareGraph.Launch();`
+        Assert.True(expected == actual, $"seed {seed}: expected {expected}, actual {actual}");
+        Assert.True(workspace.ModPowGraphLaunches - launchesBefore > 0);
+        workspace.ThrowIfDeviceErrors();
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(64, true, 128)]
+    [InlineData(63, false, 65)]
+    public void ModPow_AllOnesAndPowerOfTwoExponents_MatchesReferenceAndLaunchCount(
+        int bitCount,
+        bool allOnes,
+        int expectedSteps)
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        const int NumWords = 64;
+        using var workspace = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
+
+        var seed = 2347 + bitCount;
+        var random = new Random(seed);
+        var modValue = GenerateFullWidthBigInteger(random, NumWords * 32) | BigInteger.One;
+        var baseValue = GenerateFullWidthBigInteger(random, NumWords * 32) % modValue;
+        var expValue = allOnes ? (BigInteger.One << bitCount) - 1 : BigInteger.One << bitCount;
+        var expected = BigInteger.ModPow(baseValue, expValue, modValue);
+
+        using var gpuBase = GpuBigUInt.FromBigInteger(workspace, baseValue, NumWords);
+        using var gpuExp = GpuBigUInt.FromBigInteger(workspace, expValue, 2);
+        using var gpuMod = GpuBigUInt.FromBigInteger(workspace, modValue, NumWords);
+        using var gpuResult = new GpuBigUInt(workspace, NumWords);
+
+        var launchesBefore = workspace.ModPowGraphLaunches;
+        GpuBigIntDivRem.ModPow(gpuBase, gpuExp, gpuMod, gpuResult);
+
+        // Every multiply and square step must execute; exact graph launches equal steps - 1 (after 1 eager step).
+        // mutant: ModPowZeroSyncController.cs:369 `multiplyGraph.Launch();` -> removed
+        // mutant: ModPowZeroSyncController.cs:381 `workspace.CountModPowGraphLaunch();` -> removed
+        Assert.True(expected == gpuResult.ToBigInteger(), $"seed {seed} mismatch");
+        Assert.Equal(expectedSteps - 1L, workspace.ModPowGraphLaunches - launchesBefore);
+        workspace.ThrowIfDeviceErrors();
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ModPow_SparseExponentWithZeroWordsInPaddedBuffer_BreaksAtTopNonZeroWord()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        const int NumWords = 64;
+        using var workspace = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
+
+        const int Seed = 2349;
+        var random = new Random(Seed);
+        var modValue = GenerateFullWidthBigInteger(random, NumWords * 32) | BigInteger.One;
+        var baseValue = GenerateFullWidthBigInteger(random, NumWords * 32) % modValue;
+        var expValue = (BigInteger.One << 200) + 1;
+        var expected = BigInteger.ModPow(baseValue, expValue, modValue);
+
+        using var gpuBase = GpuBigUInt.FromBigInteger(workspace, baseValue, NumWords);
+        using var gpuExp = GpuBigUInt.FromBigInteger(workspace, expValue, NumWords);
+        using var gpuMod = GpuBigUInt.FromBigInteger(workspace, modValue, NumWords);
+        using var gpuResult = new GpuBigUInt(workspace, NumWords);
+
+        // Word 0 has 1 mul + 32 sq = 33; words 1..5 have 5 * 32 = 160 sq; word 6 has 32 sq + 1 mul = 33;
+        // total = 226 steps, minus 1 eager first step = 225 graph launches.
+        const long ExpectedLaunches = 225L;
+        var launchesBefore = workspace.ModPowGraphLaunches;
+        GpuBigIntDivRem.ModPow(gpuBase, gpuExp, gpuMod, gpuResult);
+
+        // Outer all-zero break must stop at word 7 rather than launching 56 full words of 32 squarings plus 1
+        // squaring of the last word (1793 extra launches).
+        // mutant: ModPowZeroSyncController.cs:215 `break;` -> removed
+        Assert.True(expected == gpuResult.ToBigInteger(), $"seed {Seed} mismatch");
+        Assert.Equal(ExpectedLaunches, workspace.ModPowGraphLaunches - launchesBefore);
+        workspace.ThrowIfDeviceErrors();
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0u, 0L)]
+    [InlineData(1u, 0L)]
+    [InlineData(2u, 0L)]
+    [InlineData(3u, 0L)]
+    [InlineData(4u, 0L)]
+    [InlineData(5u, 4L)]
+    [InlineData(8u, 4L)]
+    public void ModPow_FewStepsAndMinimumGraphStepsBoundary_UsesExpectedPathAndMatchesReference(
+        uint expWord,
+        long expectedLaunches)
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        const int NumWords = 64;
+        using var workspace = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
+
+        var seed = 2350 + (int)expWord;
+        var random = new Random(seed);
+        var modValue = GenerateFullWidthBigInteger(random, NumWords * 32) | BigInteger.One;
+        var baseValue = GenerateFullWidthBigInteger(random, NumWords * 32) % modValue;
+        var expValue = new BigInteger(expWord);
+        var expected = BigInteger.ModPow(baseValue, expValue, modValue);
+
+        using var gpuBase = GpuBigUInt.FromBigInteger(workspace, baseValue, NumWords);
+        using var gpuExp = GpuBigUInt.FromBigInteger(workspace, expValue, 1);
+        using var gpuMod = GpuBigUInt.FromBigInteger(workspace, modValue, NumWords);
+        using var gpuResult = new GpuBigUInt(workspace, NumWords);
+
+        var launchesBefore = workspace.ModPowGraphLaunches;
+        GpuBigIntDivRem.ModPow(gpuBase, gpuExp, gpuMod, gpuResult);
+
+        // Below MinimumGraphSteps (5) the plain loop must run with 0 graph launches; at 5 steps, graph playback runs.
+        // mutant: ModPowZeroSyncController.cs:12 `internal const int MinimumGraphSteps = 5;` -> `... = 0;`
+        Assert.True(expected == gpuResult.ToBigInteger(), $"seed {seed}, exp {expWord} mismatch");
+        Assert.Equal(expectedLaunches, workspace.ModPowGraphLaunches - launchesBefore);
+        workspace.ThrowIfDeviceErrors();
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ExecuteLadder_InsideUserStreamCapture_SkipsInternalCaptureAndReplaysCorrectly()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        const int NumWords = 64;
+        using var workspace = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
+
+        const int Seed = 2351;
+        var random = new Random(Seed);
+        var modValue = GenerateFullWidthBigInteger(random, NumWords * 32) | BigInteger.One;
+        var baseValue = GenerateFullWidthBigInteger(random, NumWords * 32) % modValue;
+        var expValue = (BigInteger.One << 64) - 1;
+        var expected = BigInteger.ModPow(baseValue, expValue, modValue);
+
+        using var gpuBase = GpuBigUInt.FromBigInteger(workspace, baseValue, NumWords);
+        using var gpuExp = GpuBigUInt.FromBigInteger(workspace, expValue, 2);
+        using var gpuMod = GpuBigUInt.FromBigInteger(workspace, modValue, NumWords);
+        using var gpuResult = new GpuBigUInt(workspace, NumWords);
+
+        // Run one ModPow call before stream capture so pooled buffers and loaded modules are already initialized.
+        GpuBigIntDivRem.ModPow(gpuBase, gpuExp, gpuMod, gpuResult);
+        Assert.True(expected == gpuResult.ToBigInteger(), $"seed {Seed} pre-capture call mismatch");
+
+        using var buffers = ModPowZeroSyncController.PrepareLadder(gpuBase, gpuMod);
+        uint[] hostExp = [uint.MaxValue, uint.MaxValue];
+
+        var launchesBefore = workspace.ModPowGraphLaunches;
+        var graph = IntPtr.Zero;
+        var graphExec = IntPtr.Zero;
+        var manager = (DefaultGpuMemoryManager)workspace.MemoryManager;
+        var deferral = manager.BeginDeferral();
+        CapturedResources? captured = null;
+        try
+        {
+            workspace.Provider.BeginCapture(workspace.Stream);
+            // CaptureChecks.IsCapturing(workspace) must skip nested graph capture inside a user-started capture.
+            // mutant: ModPowZeroSyncController.cs:85 `CaptureChecks.IsCapturing(buffers.Workspace) ||` -> removed
+            ModPowZeroSyncController.ExecuteLadder(buffers, hostExp, 2);
+            graph = workspace.Provider.EndCapture(workspace.Stream);
+            captured = manager.EndDeferral(deferral);
+            graphExec = workspace.Provider.InstantiateGraph(graph);
+            workspace.Provider.LaunchGraph(graphExec, workspace.Stream);
+            workspace.Provider.SynchronizeStream(workspace.Stream);
+
+            gpuResult.CopyFrom(buffers.TempResult, numWords: NumWords);
+            Assert.True(expected == gpuResult.ToBigInteger(), $"seed {Seed} captured replay mismatch");
+            Assert.Equal(0L, workspace.ModPowGraphLaunches - launchesBefore);
+            workspace.ThrowIfDeviceErrors();
+        }
+        finally
+        {
+            if (captured is null)
+            {
+                AbortUserStreamCaptureIfActive(workspace);
+                captured = manager.EndDeferral(deferral);
+            }
+
+            if (graph != IntPtr.Zero || graphExec != IntPtr.Zero)
+            {
+                workspace.Provider.DestroyGraph(graph, graphExec);
+            }
+
+            manager.ReturnDeferred(captured.Value.Buffers);
+        }
+    }
+
+    private static void AbortUserStreamCaptureIfActive(GpuWorkspace workspace)
+    {
+        using var scope = workspace.ActivateContext();
+        if (CudaDriverApi.cuStreamIsCapturing(workspace.Stream, out var status) == CUresult.CudaSuccess &&
+            status != CUstreamCaptureStatus.None)
+        {
+            CudaDriverApi.cuStreamEndCapture(workspace.Stream, out var aborted);
+            if (aborted != IntPtr.Zero)
+            {
+                CudaDriverApi.cuGraphDestroy(aborted);
+            }
+        }
     }
 
     private static BigInteger GenerateFullWidthBigInteger(Random random, int bits)

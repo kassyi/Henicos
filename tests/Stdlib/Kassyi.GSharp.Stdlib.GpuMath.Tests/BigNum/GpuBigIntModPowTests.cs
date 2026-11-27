@@ -84,7 +84,7 @@ public class GpuBigIntModPowTests
         using var m = new GpuBigUInt(ctx, mArr);
         using var result = new GpuBigUInt(ctx, NumWords);
 
-        // mutant: ModPowZeroSyncController.cs:227 `e == 0 && i == expWords - 1` -> `e != 0 && ...`
+        // mutant: ModPowZeroSyncController.cs:228 `e == 0 && i == expWords - 1` -> `e != 0 && ...`
         // (the last word would stop after its first bit)
         GpuBigIntDivRem.ModPow(a, e, m, result);
 
@@ -226,7 +226,7 @@ public class GpuBigIntModPowTests
         using var m = GpuBigUInt.FromBigInteger(ctx, modValue, NumWords);
         using var result = new GpuBigUInt(ctx, NumWords);
 
-        // Warm-up call populates pooled buffers and loads modules before steady-state tracking.
+        // Run one ModPow call before steady-state tracking so pooled buffers and loaded modules are initialized.
         GpuBigIntDivRem.ModPow(a, e, m, result);
         Assert.Equal(expected, result.ToBigInteger());
         var baseline = ctx.GetMemoryStatistics();
@@ -235,10 +235,7 @@ public class GpuBigIntModPowTests
         for (var i = 0; i < 10; i++)
         {
             GpuBigIntDivRem.ModPow(a, e, m, result);
-            var stats = ctx.GetMemoryStatistics();
-            Assert.Equal(0, stats.DeferredBuffers);
-            Assert.Equal(baseline.LiveBuffers, stats.LiveBuffers);
-            Assert.Equal(baseline.DriverAllocations, stats.DriverAllocations);
+            AssertSameSteadyState(baseline, ctx.GetMemoryStatistics());
         }
 
         Assert.Equal(expected, result.ToBigInteger());
@@ -248,7 +245,7 @@ public class GpuBigIntModPowTests
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.SadPath)]
-    public void ModPow_FullMethodInsideUserStreamCapture_ThrowsOnPreLadderSync()
+    public void ModPow_FullMethodInsideUserStreamCapture_ThrowsNotSupportedAndKeepsCaptureActive()
     {
         CudaCapability.EnsureGpuAvailable();
         const int NumWords = 64;
@@ -263,25 +260,29 @@ public class GpuBigIntModPowTests
         ctx.Provider.BeginCapture(ctx.Stream);
         try
         {
-            // ModPowZeroSyncController.Execute calls GetActualBits(mod) and synchronizes before ExecuteLadder.
-            var ex = Assert.Throws<CudaException>(() => GpuBigIntDivRem.ModPow(a, e, m, result));
-            Assert.NotEqual(CUresult.CudaSuccess, ex.Result);
+            // ModPow reads modulus bit length (and exponent on the zero-sync path) on the host, so it must refuse
+            // capture via CaptureChecks.ThrowIfCapturing without invalidating the caller's active stream capture.
+            // mutant: GpuBigIntDivRem.ModPow.cs:40
+            // `CaptureChecks.ThrowIfCapturing(baseVal.Workspace, "The bit length of the modulus and the exponent");`
+            // -> removed
+            Assert.Throws<NotSupportedException>(() => GpuBigIntDivRem.ModPow(a, e, m, result));
+            Assert.True(CaptureChecks.IsCapturing(ctx));
         }
         finally
         {
-            try
+            var graph = ctx.Provider.EndCapture(ctx.Stream);
+            if (graph != IntPtr.Zero)
             {
-                var aborted = ctx.Provider.EndCapture(ctx.Stream);
-                if (aborted != IntPtr.Zero)
-                {
-                    ctx.Provider.DestroyGraph(aborted, IntPtr.Zero);
-                }
-            }
-            catch (CudaException)
-            {
-                // Capture is already invalidated after cuStreamSynchronize failure.
+                ctx.Provider.DestroyGraph(graph, IntPtr.Zero);
             }
         }
+    }
+
+    private static void AssertSameSteadyState(GpuMemoryStatistics baseline, GpuMemoryStatistics stats)
+    {
+        Assert.Equal(0, stats.DeferredBuffers);
+        Assert.Equal(baseline.LiveBuffers, stats.LiveBuffers);
+        Assert.Equal(baseline.DriverAllocations, stats.DriverAllocations);
     }
 
     private static BigInteger CreateModulus(ModulusKind kind, int numWords, int seed)

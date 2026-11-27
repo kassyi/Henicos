@@ -37,7 +37,9 @@ internal sealed class CapturedStreamGraph : IDisposable
     /// handle that replays it on the stream of <paramref name="workspace"/>. On failure, partial graph handles and
     /// deferred buffers are released first.
     /// </summary>
-    /// <param name="workspace">The workspace whose memory manager hosts the capture and whose stream replays the graph.</param>
+    /// <param name="workspace">
+    /// The workspace whose memory manager hosts the capture and whose stream replays the graph.
+    /// </param>
     /// <param name="body">The zero-sync operations to record into the graph.</param>
     /// <returns>A <see cref="CapturedStreamGraph"/> owning the instantiated graph and deferred buffers.</returns>
     public static CapturedStreamGraph Capture(GpuWorkspace workspace, Action body)
@@ -56,11 +58,18 @@ internal sealed class CapturedStreamGraph : IDisposable
     /// replays on the stream of <paramref name="workspace"/>. Returns <see langword="false"/> without throwing when
     /// another capture is already running on <paramref name="workspace"/>.
     /// </summary>
-    /// <param name="workspace">The workspace whose memory manager hosts the capture and whose stream replays the graph.</param>
+    /// <param name="workspace">
+    /// The workspace whose memory manager hosts the capture and whose stream replays the graph.
+    /// </param>
     /// <param name="body">The zero-sync operations to record into the graph.</param>
-    /// <param name="graph">When this method returns <see langword="true"/>, the instantiated graph; otherwise <see langword="null"/>.</param>
-    /// <returns><see langword="true"/> if the graph was captured; <see langword="false"/> if another capture is already active.</returns>
-    public static bool TryCapture(GpuWorkspace workspace, Action body, [NotNullWhen(true)] out CapturedStreamGraph? graph)
+    /// <param name="graph">
+    /// When this method returns <see langword="true"/>, the instantiated graph; otherwise <see langword="null"/>.
+    /// </param>
+    /// <returns>
+    /// <see langword="true"/> if the graph was captured; <see langword="false"/> if another capture is already active.
+    /// </returns>
+    public static bool TryCapture(
+        GpuWorkspace workspace, Action body, [NotNullWhen(true)] out CapturedStreamGraph? graph)
     {
         ArgumentNullException.ThrowIfNull(workspace);
         return TryCapture(workspace, body, workspace.Provider, out graph);
@@ -279,7 +288,7 @@ internal sealed class CapturedStreamGraph : IDisposable
         }
     }
 
-    // The failure path of a capture (O14): end the capture, drop the partial graph and give back the deferred buffers.
+    // The failure path of a capture: end the capture, drop the partial graph and give back the deferred buffers.
     // When that succeeds, the caller rethrows the original exception; when a step fails too, both are thrown together.
     internal static void AbortCapture(GpuWorkspace workspace, DefaultGpuMemoryManager manager, CaptureDeferral deferral,
         Exception original) =>
@@ -315,7 +324,7 @@ internal sealed class CapturedStreamGraph : IDisposable
     }
 
     // A capture ended but no executable graph came of it: destroy the partial graph and return the deferred buffers.
-    // As in AbortCapture, a failing step is thrown with the original (O14).
+    // As in AbortCapture, a failing step is thrown with the original.
     private static void ReleaseAfterFailure(DefaultGpuMemoryManager manager, IGpuGraphProvider graphProvider,
         CapturedResources captured, IntPtr graph, Exception original)
     {
@@ -346,7 +355,7 @@ internal sealed class CapturedStreamGraph : IDisposable
 
     // After the cleanup of a failure path: nothing to throw when every step succeeded (the caller rethrows the
     // original), otherwise the original first (preserving any AggregateException wrapper intact) and then the cleanup
-    // errors (O14).
+    // errors.
     internal static void ThrowIfCleanupFailed(string message, Exception original, List<Exception>? errors)
     {
         if (errors is null)

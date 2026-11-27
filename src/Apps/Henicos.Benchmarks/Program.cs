@@ -192,6 +192,24 @@ internal class Program
         return 0;
     }
 
+    private static readonly (string Target, Action<string[]> Run)[] s_arithmeticBenchmarks =
+    [
+        ("gbf", static args => RunNamedBenchmark<GpuBigFloatBenchmark>(nameof(GpuBigFloatBenchmark), args)),
+        ("gbi", static args => RunNamedBenchmark<GpuBigIntBenchmark>(nameof(GpuBigIntBenchmark), args)),
+        ("wide", static args => RunNamedBenchmark<GpuBigFloatWideOperandBenchmark>(
+            nameof(GpuBigFloatWideOperandBenchmark), args)),
+        ("sqrt-path", static args => RunNamedBenchmark<GpuBigIntSqrtPathBenchmark>(
+            nameof(GpuBigIntSqrtPathBenchmark), args)),
+        ("modpow", static args => RunNamedBenchmark<GpuBigIntModPowBenchmark>(
+            nameof(GpuBigIntModPowBenchmark), args)),
+    ];
+
+    private static void RunNamedBenchmark<T>(string name, string[] args)
+    {
+        Logger<Program>.Info($"Running {name}...");
+        BenchmarkRunner.Run<T>(args: args);
+    }
+
     private static int RunArithmeticBench(string[] args)
     {
 #pragma warning disable RS0030 // CLI argument normalization
@@ -199,34 +217,12 @@ internal class Program
 #pragma warning restore RS0030
         var bdnArgs = args.Length > 0 && !args[0].StartsWith('-') ? args[1..] : args;
 
-        if (target is "all" or "gbf")
+        foreach (var entry in s_arithmeticBenchmarks)
         {
-            Logger<Program>.Info("Running GpuBigFloatBenchmark...");
-            BenchmarkRunner.Run<GpuBigFloatBenchmark>(args: bdnArgs);
-        }
-
-        if (target is "all" or "gbi")
-        {
-            Logger<Program>.Info("Running GpuBigIntBenchmark...");
-            BenchmarkRunner.Run<GpuBigIntBenchmark>(args: bdnArgs);
-        }
-
-        if (target is "all" or "wide")
-        {
-            Logger<Program>.Info("Running GpuBigFloatWideOperandBenchmark...");
-            BenchmarkRunner.Run<GpuBigFloatWideOperandBenchmark>(args: bdnArgs);
-        }
-
-        if (target is "all" or "sqrt-path")
-        {
-            Logger<Program>.Info("Running GpuBigIntSqrtPathBenchmark...");
-            BenchmarkRunner.Run<GpuBigIntSqrtPathBenchmark>(args: bdnArgs);
-        }
-
-        if (target is "all" or "modpow")
-        {
-            Logger<Program>.Info("Running GpuBigIntModPowBenchmark...");
-            BenchmarkRunner.Run<GpuBigIntModPowBenchmark>(args: bdnArgs);
+            if (target == "all" || target == entry.Target)
+            {
+                entry.Run(bdnArgs);
+            }
         }
 
         return 0;
