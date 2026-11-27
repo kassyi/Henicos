@@ -13,23 +13,36 @@ internal static class StackPointerProvenance
     /// <summary>
     /// Collects all pointer locals that may point to stack memory into <see cref="KernelBarrierScan.TrackedLocals"/>.
     /// </summary>
-    public static void CollectStackPointerLocals(KernelBarrierScan scan)
+    public static void CollectStackPointerLocals(KernelBarrierScan scan) =>
+        CollectStackPointerLocals(scan.Method, scan.SemanticModel, scan.PointerLocals, scan.TrackedLocals);
+
+    /// <summary>
+    /// Collects all pointer locals that may point to stack memory into <paramref name="trackedLocals"/>.
+    /// </summary>
+    public static void CollectStackPointerLocals(
+        MethodDeclarationSyntax method,
+        SemanticModel semanticModel,
+        IReadOnlyList<(VariableDeclaratorSyntax Declarator, ILocalSymbol Symbol)> pointerLocals,
+        ImmutableArray<TrackedLocalInfo>.Builder trackedLocals)
     {
-        if (scan.PointerLocals.Count == 0)
+        if (pointerLocals.Count == 0)
         {
             return;
         }
 
-        var pointerAssignments = CollectPointerAssignments(scan);
-        var stackPointers = PropagateStackPointers(pointerAssignments, scan.SemanticModel);
-        AddTrackedStackPointers(scan, stackPointers);
+        var pointerAssignments = CollectPointerAssignments(method, semanticModel, pointerLocals);
+        var stackPointers = PropagateStackPointers(pointerAssignments, semanticModel);
+        AddTrackedStackPointers(pointerLocals, trackedLocals, stackPointers);
     }
 
     /// <summary>Collects all initializers and simple assignments of pointer locals in the method.</summary>
-    private static ImmutableArray<(ILocalSymbol Target, ExpressionSyntax Value)> CollectPointerAssignments(KernelBarrierScan scan)
+    private static ImmutableArray<(ILocalSymbol Target, ExpressionSyntax Value)> CollectPointerAssignments(
+        MethodDeclarationSyntax method,
+        SemanticModel semanticModel,
+        IReadOnlyList<(VariableDeclaratorSyntax Declarator, ILocalSymbol Symbol)> pointerLocals)
     {
         var assignments = ImmutableArray.CreateBuilder<(ILocalSymbol, ExpressionSyntax)>();
-        foreach (var (declarator, symbol) in scan.PointerLocals)
+        foreach (var (declarator, symbol) in pointerLocals)
         {
             if (declarator.Initializer is { } initializer)
             {
@@ -37,11 +50,11 @@ internal static class StackPointerProvenance
             }
         }
 
-        foreach (var node in scan.Method.DescendantNodes())
+        foreach (var node in method.DescendantNodes())
         {
             if (node is AssignmentExpressionSyntax assignment &&
                 assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) &&
-                scan.SemanticModel.GetSymbol(assignment.Left) is ILocalSymbol { Type: IPointerTypeSymbol } target)
+                semanticModel.GetSymbol(assignment.Left) is ILocalSymbol { Type: IPointerTypeSymbol } target)
             {
                 assignments.Add((target, assignment.Right));
             }
@@ -73,14 +86,17 @@ internal static class StackPointerProvenance
         return stackPointers;
     }
 
-    /// <summary>Adds the discovered stack pointer locals to the barrier scan's tracked locals.</summary>
-    private static void AddTrackedStackPointers(KernelBarrierScan scan, HashSet<ILocalSymbol> stackPointers)
+    /// <summary>Adds the discovered stack pointer locals to the tracked locals.</summary>
+    private static void AddTrackedStackPointers(
+        IReadOnlyList<(VariableDeclaratorSyntax Declarator, ILocalSymbol Symbol)> pointerLocals,
+        ImmutableArray<TrackedLocalInfo>.Builder trackedLocals,
+        HashSet<ILocalSymbol> stackPointers)
     {
-        foreach (var (declarator, symbol) in scan.PointerLocals)
+        foreach (var (declarator, symbol) in pointerLocals)
         {
             if (stackPointers.Contains(symbol))
             {
-                scan.TrackedLocals.Add(
+                trackedLocals.Add(
                     new TrackedLocalInfo(
                         declarator,
                         symbol,

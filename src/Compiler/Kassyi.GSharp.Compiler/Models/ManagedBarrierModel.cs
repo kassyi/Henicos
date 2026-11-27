@@ -23,7 +23,7 @@ internal static class ManagedBarrierModels
     /// </summary>
     public static ManagedBarrierModel Read(AnalyzerConfigOptions options) =>
         options.TryGetValue(Property, out var value) &&
-        string.Equals(value, "Stack", StringComparison.OrdinalIgnoreCase)
+        value.AsSpan().Trim().Equals("Stack".AsSpan(), StringComparison.OrdinalIgnoreCase)
             ? ManagedBarrierModel.Stack
             : ManagedBarrierModel.StateMachine;
 }

@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Models;
+
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
 /// <summary>What must not cross a barrier: recursion into it (GSH0045), jumps (GSH0040) and locals (GSH0039, GSH0041, GSH0072) (<see cref="KernelBarrierValidator"/>).</summary>
@@ -109,104 +111,54 @@ internal static class CrossBarrierChecks
     /// </summary>
     internal static void ValidateCrossBarrierLocals(KernelBarrierScan scan)
     {
-        if (!scan.HasSplitPoint)
+        var locals = CrossBarrierLocals.Find(scan);
+        if (locals.IsEmpty)
         {
             return;
         }
 
-        ReportRefForEachAroundSplit(scan);
-        StackPointerProvenance.CollectStackPointerLocals(scan);
-
-        // The tracked locals, then the by-value ref struct parameters
-        var variables = ImmutableArray.CreateBuilder<ISymbol>(scan.TrackedLocals.Count);
-        foreach (var local in scan.TrackedLocals)
+        var hasLiftedCandidate = false;
+        foreach (var local in locals)
         {
-            variables.Add(local.Symbol);
-        }
-
-        AddTrackedParameters(scan, variables);
-        if (variables.Count == 0 || !scan.Flow.TryGetLiveness(out var graph, out var liveness))
-        {
-            return;
-        }
-
-        var liveAcrossSplit = CrossBarrierLiveness.FindLiveAcrossSplit(graph, liveness, variables);
-        for (var i = scan.TrackedLocals.Count; i < variables.Count; i++)
-        {
-            if (liveAcrossSplit[i])
+            if (local.Descriptor.Id == GSharpDiagnostics.IteratorBodyConstructNotSupported.Id)
             {
-                scan.Context.ReportDiagnostic(
-                    GSharpDiagnostics.CrossBarrierRefStructProhibited,
-                    variables[i].Locations[0],
-                    variables[i].Name);
+                scan.Context.ReportDiagnostic(local.Descriptor, local.Location, local.Name);
+            }
+            else
+            {
+                hasLiftedCandidate = true;
             }
         }
 
-        for (var i = 0; i < scan.TrackedLocals.Count; i++)
-        {
-            if (!liveAcrossSplit[i])
-            {
-                continue;
-            }
-
-            var tracked = scan.TrackedLocals[i];
-            if (tracked.IsRefLikeOrRef)
-            {
-                scan.Context.ReportDiagnostic(
-                    GSharpDiagnostics.CrossBarrierRefStructProhibited,
-                    tracked.Declarator.Identifier.GetLocation(),
-                    tracked.IdentifierText);
-            }
-            else if (tracked.IsLocalPointer)
-            {
-                scan.Context.ReportDiagnostic(
-                    GSharpDiagnostics.CrossBarrierLocalPointerProhibited,
-                    tracked.Declarator.Identifier.GetLocation());
-            }
-            else if (tracked.IsIteratorLocal)
-            {
-                scan.Context.ReportDiagnostic(
-                    GSharpDiagnostics.IteratorBodyConstructNotSupported,
-                    tracked.Declarator.Identifier.GetLocation(),
-                    tracked.IdentifierText);
-            }
-        }
-    }
-
-    // GSH0039 at the variable of a foreach (ref ...) whose loop has a barrier or a call that suspends in it: the loop
-    // walks its source, a span or a temporary of one, across the split, which the state machine cannot keep in its
-    // frame, so the variable is held across the split like a ref local that is live there (#1657)
-    private static void ReportRefForEachAroundSplit(KernelBarrierScan scan)
-    {
-        foreach (var node in scan.Method.DescendantNodes(static n =>
-                     n is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)))
-        {
-            if (node is ForEachStatementSyntax loop &&
-                RefForEachSplit.IsRefLoop(loop) &&
-                RefForEachSplit.HoldsSplitPoint(loop, scan.SemanticModel))
-            {
-                scan.Context.ReportDiagnostic(
-                    GSharpDiagnostics.CrossBarrierRefStructProhibited,
-                    loop.Identifier.GetLocation(),
-                    loop.Identifier.ValueText);
-            }
-        }
-    }
-
-    // The parameters that the liveness follows (LivenessRecorder.IsTrackedParameter); the location of each is its
-    // identifier
-    private static void AddTrackedParameters(KernelBarrierScan scan, ImmutableArray<ISymbol>.Builder variables)
-    {
-        if (scan.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(scan.Method) is not { } method)
+        if (!hasLiftedCandidate || scan.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(scan.Method) is not { } method)
         {
             return;
         }
 
-        method.Parameters
-            .AsStackEnumerable()
-            .Where(LivenessRecorder.IsTrackedParameter)
-            .Select(static ISymbol (p) => p)
-            .AddTo(variables);
+        var models = CpuBarrierModels.Read(scan.Context.Options.AnalyzerConfigOptionsProvider.GlobalOptions);
+        if (StackOnlyExecution.FindStateMachineReason(method, scan.Method, scan.SemanticModel, models) is not { } reason)
+        {
+            return;
+        }
+
+        foreach (var local in locals)
+        {
+            if (local.Descriptor.Id == GSharpDiagnostics.CrossBarrierRefStructProhibited.Id)
+            {
+                scan.Context.ReportDiagnostic(
+                    local.Descriptor,
+                    local.Location,
+                    local.Name,
+                    StackOnlyExecution.FormatRefStructReason(method, reason, models));
+            }
+            else if (local.Descriptor.Id == GSharpDiagnostics.CrossBarrierLocalPointerProhibited.Id)
+            {
+                scan.Context.ReportDiagnostic(
+                    local.Descriptor,
+                    local.Location,
+                    StackOnlyExecution.FormatLocalPointerReason(method, reason, models));
+            }
+        }
     }
 
     private static InvocationExpressionSyntax? FindFirstBarrierAfter(IReadOnlyList<InvocationExpressionSyntax> barriers,

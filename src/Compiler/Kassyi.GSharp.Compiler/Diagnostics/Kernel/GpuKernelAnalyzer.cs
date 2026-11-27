@@ -26,8 +26,7 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
             // Exported unless the project turns it off, as the generator reads it
             var exports = !(globalOptions.TryGetValue("build_property.GSharpExportDeviceCode", out var export) &&
                             string.Equals(export, "false", StringComparison.OrdinalIgnoreCase));
-            var bothOnStacks = NativeBarrierModels.Read(globalOptions) == NativeBarrierModel.Stack &&
-                               ManagedBarrierModels.Read(globalOptions) == ManagedBarrierModel.Stack;
+            var bothOnStacks = CpuBarrierModels.Read(globalOptions).BothOnStacks;
             // The launch limits of the target GPUs, resolved once per compilation from the MSBuild property
             globalOptions.TryGetValue("build_property.GSharpTargetArchitectures", out var architectures);
             var targetLimits = GpuArchitectureLimits.Resolve(architectures);
