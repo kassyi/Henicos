@@ -39,5 +39,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="BigNum\TestData\InverseSqrtDoublingGolden.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="BigNum\TestData\SqrtKarpMarksteinGolden.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

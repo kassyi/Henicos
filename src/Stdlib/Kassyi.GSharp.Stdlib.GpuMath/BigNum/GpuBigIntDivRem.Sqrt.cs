@@ -131,17 +131,27 @@ public static partial class GpuBigIntDivRem
     /// <see cref="IGpuAdvancedMathProvider.SqrtFloorCorrection"/> then moves <c>r'</c> to the floor on the device, from
     /// <c>a - r'^2</c>: no host synchronization beyond those of <see cref="InverseSqrt"/>.
     /// </para>
+    /// <para>
+    /// A root wider than <see cref="GpuWorkspace.SqrtPrecisionDoublingThresholdWords"/> words takes <c>y</c>, the
+    /// inverse square root of <c>A_top</c> to half the precision, by precision doubling driven from the host, the
+    /// half-precision root <c>s = floor(A_top·y / 2^P)·2^(16n - 16)</c> and one Karp-Markstein step
+    /// <c>s + floor(y·floor((a - s^2) / 2^(32n - 1)) / 2^(u - 32n + 1))</c>, which is <c>floor(sqrt(a))</c> or one
+    /// less; the same correction follows.
+    /// </para>
     /// </remarks>
     internal static void SqrtFloor(GpuBigUInt operand, GpuBigUInt root)
     {
+        ThrowIfNotTwiceTheRoot(operand, root);
         var n = root.NumWords;
-        if (operand.NumWords != 2 * n)
+        var workspace = operand.Workspace;
+        if (n > workspace.SqrtPrecisionDoublingThresholdWords)
         {
-            throw new ArgumentException(
-                $"SqrtFloor needs an operand of twice the root words. operand: {operand.NumWords}, root: {n} words.");
+            // Wide roots: half-precision inverse square root by precision doubling and one Karp-Markstein step
+            workspace.CountInverseSqrtDoubling();
+            SqrtFloorKarpMarkstein(operand, root, trace: null);
+            return;
         }
 
-        var workspace = operand.Workspace;
         var marginWords = SqrtFloorMarginWords(n);
 
         // A_top: the top n + 1 words of a, borrowed without a copy.
@@ -153,6 +163,24 @@ public static partial class GpuBigIntDivRem
         GpuBigIntMath.Mul(top, inverse, product);
         GpuBigIntMath.ShiftAndResize(product, -SqrtFloorEstimateShift(n, marginWords), root);
 
+        CorrectSqrtFloor(operand, root);
+    }
+
+    private static void ThrowIfNotTwiceTheRoot(GpuBigUInt operand, GpuBigUInt root)
+    {
+        var n = root.NumWords;
+        if (operand.NumWords != 2 * n)
+        {
+            throw new ArgumentException(
+                $"SqrtFloor needs an operand of twice the root words. operand: {operand.NumWords}, root: {n} words.");
+        }
+    }
+
+    // r^2, then SqrtFloorCorrection moves root, within a few steps of floor(sqrt(operand)), to it on the device
+    private static void CorrectSqrtFloor(GpuBigUInt operand, GpuBigUInt root)
+    {
+        var workspace = operand.Workspace;
+        var n = root.NumWords;
         using var rootSquared = workspace.RentTemp(2 * n);
         GpuBigIntMath.Mul(root, root, rootSquared);
         using var slack = workspace.RentTemp(2 * n + 1);
@@ -186,8 +214,9 @@ public static partial class GpuBigIntDivRem
     /// <para><b>Algorithm:</b> Shifts the operand left by an even number of bits so that its root fills whole words,
     /// takes that root with an inverse square root and an exact correction, and shifts it back: exactly the floor. The
     /// work is queued on the workspace stream; only the operand's bit length is read back to the host first.</para>
-    /// <para>A root wider than <see cref="GpuWorkspace.SqrtPrecisionDoublingThresholdWords"/> words takes its inverse
-    /// square root by precision doubling driven from the host; the result is the same.</para>
+    /// <para>A root wider than <see cref="GpuWorkspace.SqrtPrecisionDoublingThresholdWords"/> words takes a
+    /// half-precision inverse square root by precision doubling driven from the host and one Karp-Markstein step; the
+    /// result is the same.</para>
     /// </remarks>
     public static void Sqrt(scoped GpuBigUIntView leftOperand, scoped GpuBigUIntView resultBuffer) =>
         SqrtCore(leftOperand.AsBorrowedBigUInt(), resultBuffer.AsBorrowedBigUInt());
