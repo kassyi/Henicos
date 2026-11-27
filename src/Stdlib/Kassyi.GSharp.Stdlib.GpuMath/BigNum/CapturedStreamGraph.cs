@@ -50,50 +50,61 @@ internal sealed class CapturedStreamGraph : IDisposable
         using (workspace.ActivateContext())
         {
             var manager = (DefaultGpuMemoryManager)workspace.MemoryManager;
-            var deferral = manager.BeginDeferral();
-            try
-            {
-                graphProvider.BeginCapture(workspace.Stream);
-            }
-            catch
-            {
-                manager.EndDeferral(deferral);
-                throw;
-            }
+            var (graph, captured) = RecordStream(workspace, manager, graphProvider, body);
+            return InstantiateCapturedGraph(workspace, manager, graphProvider, graph, captured);
+        }
+    }
 
-            try
-            {
-                body();
-            }
-            catch (Exception original)
-            {
-                AbortCapture(workspace, manager, graphProvider, deferral, original);
-                throw;
-            }
+    private static (IntPtr Graph, CapturedResources Captured) RecordStream(
+        GpuWorkspace workspace, DefaultGpuMemoryManager manager, IGpuGraphProvider graphProvider, Action body)
+    {
+        var deferral = manager.BeginDeferral();
+        try
+        {
+            graphProvider.BeginCapture(workspace.Stream);
+        }
+        catch
+        {
+            manager.EndDeferral(deferral);
+            throw;
+        }
 
-            var graph = IntPtr.Zero;
-            CapturedResources captured;
-            try
-            {
-                graph = graphProvider.EndCapture(workspace.Stream);
-                captured = manager.EndDeferral(deferral);
-            }
-            catch (Exception original)
-            {
-                ReleaseAfterFailure(manager, graphProvider, manager.EndDeferral(deferral), graph, original);
-                throw;
-            }
+        try
+        {
+            body();
+        }
+        catch (Exception original)
+        {
+            AbortCapture(workspace, manager, graphProvider, deferral, original);
+            throw;
+        }
 
-            try
-            {
-                var graphExec = graphProvider.InstantiateGraph(graph);
-                return new CapturedStreamGraph(workspace, manager, graphProvider, graph, graphExec, captured);
-            }
-            catch (Exception original)
-            {
-                ReleaseAfterFailure(manager, graphProvider, captured, graph, original);
-                throw;
-            }
+        var graph = IntPtr.Zero;
+        try
+        {
+            graph = graphProvider.EndCapture(workspace.Stream);
+            return (graph, manager.EndDeferral(deferral));
+        }
+        catch (Exception original)
+        {
+            ReleaseAfterFailure(manager, graphProvider, manager.EndDeferral(deferral), graph, original);
+            throw;
+        }
+    }
+
+    private static CapturedStreamGraph InstantiateCapturedGraph(
+        GpuWorkspace workspace, DefaultGpuMemoryManager manager, IGpuGraphProvider graphProvider, IntPtr graph,
+        CapturedResources captured)
+    {
+        try
+        {
+            var graphExec = graphProvider.InstantiateGraph(graph);
+            return new CapturedStreamGraph(workspace, manager, graphProvider, graph, graphExec, captured);
+        }
+        catch (Exception original)
+        {
+            ReleaseAfterFailure(manager, graphProvider, captured, graph, original);
+            throw;
         }
     }
 
@@ -211,20 +222,13 @@ internal sealed class CapturedStreamGraph : IDisposable
     }
 
     // After the cleanup of a failure path: nothing to throw when every step succeeded (the caller rethrows the
-    // original), otherwise the original first and then the cleanup errors (O14).
+    // original), otherwise the original first (preserving any AggregateException wrapper intact) and then the cleanup
+    // errors (O14).
     internal static void ThrowIfCleanupFailed(string message, Exception original, List<Exception>? errors)
     {
         if (errors is null)
         {
             return;
-        }
-
-        if (original is AggregateException aggregate)
-        {
-            var combined = new List<Exception>(aggregate.InnerExceptions.Count + errors.Count);
-            combined.AddRange(aggregate.InnerExceptions);
-            combined.AddRange(errors);
-            throw new AggregateException(message, combined);
         }
 
         errors.Insert(0, original);
