@@ -1,61 +1,48 @@
-## Description & Context
-
-<!-- Provide a brief summary of the changes and the architectural motivation (Why). -->
-<!-- If applicable, link related issues below (e.g., Fixes #123, Relates to #456). -->
-Fixes #
-
----
-
-## Type of Change
-
-<!-- Please check the options that are relevant: -->
-- [ ] Bug fix (non-breaking change fixing an issue)
-- [ ] New feature (non-breaking change adding functionality)
-- [ ] Performance improvement
-- [ ] Refactoring / Code cleanup
-- [ ] Breaking change (fix or feature that would break existing API or behavior)
-- [ ] Documentation / Tooling update
-
----
-
-## Key Changes
-
-### Detailed Highlights
-<!-- Group changes logically by component (e.g., Stdlib.Math, PiBenchmark, Runtime, Compiler). -->
-- **Component / Feature**:
-  - Detailed description of changes.
-
-<!-- For non-trivial bug fixes, please document the technical context: -->
 <!--
-#### [Bug Fix Title]
-- **Symptom**: Observed behavior / failure.
-- **Cause**: Technical root cause.
-- **Solution**: How the issue was resolved.
+Write for a reviewer who has not read the issue, the design notes or the code.
+Each section answers one question in sentences. A list of the types and files you touched answers none of
+them: the Files changed tab already has that list.
+Name a type only when the reader needs it to find the code, and say what it does when you name it.
 -->
 
----
+## Why
 
-## Breaking Changes / API Impact
+<!--
+What was wrong or missing, and who hit it: a wrong result, a missing feature, a slow build, a step that a
+later change needs. One short paragraph. Link the issue (Fixes #123 only when this PR really fixes it,
+Relates to #456 otherwise) and say in a few words where this PR stands in a larger plan.
+-->
 
-- [ ] None
-<!-- If there are breaking changes, list them here: -->
+## What changes
 
----
+<!--
+What a user, the compiler output or the next change sees differently after this PR, and what stays the same.
+Be concrete: "generated code is identical for all 1086 files", "a ref local of a struct now gives 5 on CUDA
+(was 0)", "the IR route is off unless -p:GSharpIrCpp=true".
+For groundwork that changes no output, say what the next change can rely on that it could not before.
+-->
 
-## Verification & Testing
+## How it works
 
-- **Automated Tests**:
-  - [ ] All unit tests pass locally (`dotnet test`)
-  - [ ] Added new test cases covering Happy / Sad / Edge paths
-- **GPU Hardware / Benchmark Validation**:
-  - Command: `just test` or `just bench-pi <digits>`
-  - Result: <!-- e.g., Passed 10M digits in 63.1s with 100% verification -->
+<!--
+The shape of the solution in a few sentences: the path the data takes from input to output, and where each
+new piece sits on that path. Then the decisions a reviewer would question: why this way, and which other
+way you rejected and why. Skip this section for a small fix whose "What changes" already says it all.
+For a bug fix: the cause, in one or two sentences.
+-->
 
----
+## Human check
 
-## Checklist
+<!--
+What a person should look at, because the agent cannot judge it alone: a contract or behavior decision, a
+trade-off, a cost, an open question. For each item, say what was decided and what the reviewer should
+decide or confirm. Quote 1-2 short test excerpts (or the expected table) that check the main behavior.
+Put long output (snapshots, tables, logs) inside <details> or in a file, never inline.
+-->
 
-- [ ] My code adheres to the project's coding style and zero-allocation guidelines.
-- [ ] I have performed a self-review of my own code.
-- [ ] Relevant XML documentation / comments have been added or updated.
-- [ ] No unintended commits or debug scratch files are included.
+## Verification
+
+<!--
+What you ran and what it showed, as results, not as a checklist: the test command and its pass / fail
+counts, generated code parity, benchmarks with numbers. Say what you did not run and why.
+-->
