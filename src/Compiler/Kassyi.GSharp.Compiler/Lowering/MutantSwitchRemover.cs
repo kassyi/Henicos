@@ -27,10 +27,6 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// </remarks>
 internal sealed class MutantSwitchRemover : CSharpSyntaxRewriter
 {
-    private const string HelperNamespacePrefix = "Stryker";
-    private const string HelperClassName = "MutantControl";
-    private const string SwitchMethodName = "IsActive";
-
     private static readonly ConditionalWeakTable<Compilation, IMethodSymbol[]> s_switchMethods = new();
 
     private readonly SemanticModel _semanticModel;
@@ -137,7 +133,7 @@ internal sealed class MutantSwitchRemover : CSharpSyntaxRewriter
     private bool IsSwitch(InvocationExpressionSyntax invocation) =>
         invocation is
         {
-            Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: SwitchMethodName },
+            Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: StrykerSwitchMethods.SwitchMethodName },
             ArgumentList.Arguments.Count: 1
         } &&
         _semanticModel.GetSymbol(invocation) is IMethodSymbol method &&
@@ -146,25 +142,6 @@ internal sealed class MutantSwitchRemover : CSharpSyntaxRewriter
             .Any(method, static (switchMethod, called) => switchMethod.IsEqualTo(called));
 
     // public static bool IsActive(int id) of Stryker<random>.MutantControl, declared in the compilation's own source
-    private static IMethodSymbol[] FindSwitchMethods(Compilation compilation)
-    {
-        var methods = ImmutableArray.CreateBuilder<IMethodSymbol>();
-        // GetNamespaceMembers is a lazy sequence, which StackLinq does not enumerate
-        ImmutableArray.CreateRange(compilation.Assembly.GlobalNamespace.GetNamespaceMembers())
-            .AsStackEnumerable()
-            .Where(static helperNamespace => helperNamespace.Name.StartsWith(HelperNamespacePrefix, StringComparison.Ordinal))
-            .SelectMany(static helperNamespace => helperNamespace.GetTypeMembers(HelperClassName)
-                .AsStackEnumerable()
-            ).SelectMany(static helperClass => helperClass.GetMembers(SwitchMethodName)
-                .AsStackEnumerable()
-            ).OfType<IMethodSymbol>()
-            .Where(static method => method is
-            {
-                IsStatic: true,
-                ReturnType.SpecialType: SpecialType.System_Boolean,
-                Parameters: [{ Type.SpecialType: SpecialType.System_Int32 }]
-            })
-            .AddTo(methods);
-        return methods.ToArray();
-    }
+    private static IMethodSymbol[] FindSwitchMethods(Compilation compilation) =>
+        StrykerSwitchMethods.Find(compilation);
 }
