@@ -88,7 +88,7 @@ internal static class CollectionInitializerElements
             return CollectionAddFailure.Generic;
         }
 
-        if (!CppNameResolver.IsEmittedDeviceFunction(method, dialect))
+        if (!method.IsStatic || !CppNameResolver.IsEmittedDeviceFunction(method, dialect))
         {
             return CollectionAddFailure.NotEmitted;
         }

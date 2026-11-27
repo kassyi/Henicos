@@ -738,6 +738,7 @@ try
 void** __gsharp_kernel_params = stackalloc void*[2];
 // Find the arguments that overlap and give each group one device region
 __gsharp_alias_held = new();
+__gsharp_alias_held.MapConversion(typeof(global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder), 1, sizeof(global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.AotContexts.PfHolder));
 __gsharp_alias_held.CopiesBack = true;
 global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.AotContexts.AliasHeldArrays_PfHolder(ref holder, __gsharp_alias_held);
 __gsharp_alias_held.Pin();
@@ -1111,6 +1112,7 @@ try
 void** __gsharp_kernel_params = stackalloc void*[2];
 // Find the arguments that overlap and give each group one device region
 __gsharp_alias_held = new();
+__gsharp_alias_held.MapConversion(typeof(global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder), 1, sizeof(global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.AotContexts.LibInternalFieldHolder));
 __gsharp_alias_held.CopiesBack = true;
 global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.AotContexts.AliasHeldArrays_LibInternalFieldHolder(ref holder, __gsharp_alias_held);
 __gsharp_alias_held.Pin();

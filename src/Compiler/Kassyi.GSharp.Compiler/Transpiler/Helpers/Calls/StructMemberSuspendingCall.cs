@@ -52,7 +52,7 @@ internal static class StructMemberSuspendingCall
     }
 
     // The member whose body holds the call; a lambda or local function belongs to the member that declares it
-    private static string DescribeMember(SyntaxNode invocation, SemanticModel model)
+    internal static string DescribeMember(SyntaxNode invocation, SemanticModel model)
     {
         var member = invocation.SyntaxTree == model.SyntaxTree
             ? model.GetEnclosingSymbol(invocation.SpanStart).GetDeclaringMember()

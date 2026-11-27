@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 /// does not implement (GSH0054, a warning: the transpiler writes a runtime failure), from the decision the transpiler
 /// writes the call by (<see cref="CallTargetClassifier"/>). The calls that C# makes without a call in the source are
 /// decided the same way: the builder of a collection expression (<see cref="CollectionBuilderMethod"/>) and the
-/// <c>GetPinnableReference</c> of a <c>fixed</c> statement (<see cref="PinnableReferenceMethod"/>).
+/// <c>GetPinnableReference</c> of a <c>fixed</c> statement (<see cref="PinnableReferenceLookup"/>).
 /// </summary>
 /// <remarks>
 /// [WHY] The analyzer runs the transpiler for the CUDA dialect only (<see cref="TranspilerFailureCheck"/>), whose
@@ -81,7 +81,7 @@ internal sealed class CallTargetRule :
     {
         if (node.Parent?.Parent is FixedStatementSyntax &&
             node.Initializer?.Value is { } value &&
-            PinnableReferenceMethod.Find(value, context.SemanticModel) is { } method)
+            PinnableReferenceLookup.Find(value, context.SemanticModel) is { } method)
         {
             Report(value, method, ref context, reportsUnsupportedIntrinsic: true);
         }

@@ -56,9 +56,12 @@ internal static class CpuHostLaunchEmitter
             LaunchLimitEmitter.WriteCpuCheck(writer, kernel.Host, targetLimits);
             AutoResultEmitter.WriteAllocation(writer, kernel.Host);
             CSharpExecutionEmitter.WriteBranch(writer, CSharpExecutionPlan.Create(kernel.Host, isDevicePtr: false));
-            using (AliasGroupEmitter.WriteCpuGroups(writer, sharing))
+            using (AliasGroupEmitter.WriteCpuHeldTry(writer, sharing.Aliases))
             {
-                CpuArrayCopyEmitter.WriteKernelCopies(writer, sharing);
+                using (AliasGroupEmitter.WriteCpuGroups(writer, sharing))
+                {
+                    CpuArrayCopyEmitter.WriteKernelCopies(writer, sharing);
+                }
             }
 
             AliasGroupEmitter.WriteCpuHeldRelease(writer, sharing.Aliases);

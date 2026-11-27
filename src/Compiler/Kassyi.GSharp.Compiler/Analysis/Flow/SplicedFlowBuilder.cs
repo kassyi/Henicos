@@ -45,6 +45,34 @@ internal static class SplicedFlowBuilder
     }
 
     /// <summary>
+    /// Builds one graph from <paramref name="parts"/> in execution order, for <paramref name="recorders"/>.
+    /// </summary>
+    public static SplicedFlowGraph BuildSequence(
+        IReadOnlyList<(ControlFlowGraph Graph, SemanticModel Model)> parts,
+        SemanticModel defaultModel,
+        ImmutableArray<IFlowRecorder> recorders)
+    {
+        var context = new SplicedFlowContext(defaultModel, recorders);
+        var previous = context.Current;
+        if (parts.Count == 0)
+        {
+            var emptyExit = context.NewNode();
+            SplicedFlowContext.Connect(previous, emptyExit);
+            return new SplicedFlowGraph(context.ToNodes(), emptyExit.Index);
+        }
+
+        foreach (var (graph, partModel) in parts)
+        {
+            context.Model = partModel;
+            var (entry, exit) = BuildGraph(context, graph, gaps: null, isRoot: true);
+            SplicedFlowContext.Connect(previous, entry);
+            previous = exit;
+        }
+
+        return new SplicedFlowGraph(context.ToNodes(), previous.Index);
+    }
+
+    /// <summary>
     /// Builds the nodes of <paramref name="graph"/>; returns the node of its entry block and the last node of its exit
     /// block.
     /// </summary>
@@ -56,25 +84,54 @@ internal static class SplicedFlowBuilder
         context.Gaps = gaps;
 
         var blocks = graph.Blocks;
-        var starts = new SplicedFlowNode[blocks.Length];
-        var ends = new SplicedFlowNode[blocks.Length];
+        var starts = new SplicedFlowNode?[blocks.Length];
+        var ends = new SplicedFlowNode?[blocks.Length];
         for (var i = 0; i < blocks.Length; i++)
         {
-            starts[i] = context.Current = context.NewNode();
-            context.LastRange = null;
-            BuildBlock(context, blocks[i], graph, isRoot);
-            ends[i] = context.Current;
+            if (FindEnclosingFinallyRegion(blocks[i]) != null)
+            {
+                continue;
+            }
+
+            BuildBlockNodes(context, blocks[i], graph, isRoot, out starts[i], out ends[i]);
         }
 
         for (var i = 0; i < blocks.Length - 1; i++)
         {
-            SplicedFlowEdges.ConnectBlock(context, blocks, starts, ends, i);
+            if (starts[i] != null)
+            {
+                SplicedFlowEdges.ConnectBlock(context, blocks, starts, ends, i, graph, isRoot);
+            }
         }
 
-        var result = (starts[0], ends[blocks.Length - 1]);
+        var entry = starts[0] ?? throw new InvalidOperationException("Entry block was not built.");
+        var exit = ends[blocks.Length - 1] ?? throw new InvalidOperationException("Exit block was not built.");
+        var result = (entry, exit);
         (context.Current, context.Gaps, context.LastRange, context.TopRange) =
             (savedCurrent, savedGaps, savedLast, savedTop);
         return result;
+    }
+
+    internal static ControlFlowRegion? FindEnclosingFinallyRegion(BasicBlock block)
+    {
+        for (var region = block.EnclosingRegion; region != null; region = region.EnclosingRegion)
+        {
+            if (region.Kind == ControlFlowRegionKind.Finally)
+            {
+                return region;
+            }
+        }
+
+        return null;
+    }
+
+    internal static void BuildBlockNodes(SplicedFlowContext context, BasicBlock block, ControlFlowGraph graph,
+        bool isRoot, out SplicedFlowNode start, out SplicedFlowNode end)
+    {
+        start = context.Current = context.NewNode();
+        context.LastRange = null;
+        BuildBlock(context, block, graph, isRoot);
+        end = context.Current;
     }
 
     // The operations of a block, then its branch value: the condition of a branch, or the value the method or a spliced

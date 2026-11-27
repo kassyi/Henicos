@@ -44,6 +44,14 @@ internal static class HostAliasGrouping
             group.Alignment = Math.Max(group.Alignment, GetAlignment(ranges, i));
         }
 
+        if (group.ConversionKey >= HostAliasHeldArrays.HeldConversionKey ||
+            (group.ConversionKey != 0 && group.DeviceElementSize <= 0))
+        {
+            throw new NotSupportedException(
+                $"The arguments '{group.Names}' overlap one memory through struct fields whose elements are " +
+                "converted between the host and device layouts, so no device region converts them together.");
+        }
+
         group.Length = end - start;
         SetOffsets(ref group, ranges, groupOf, g, start, offsets, deviceOffsets);
         group.Shift = GetShift(ranges, groupOf, g, deviceOffsets, group.Alignment, group.Names);
@@ -70,7 +78,8 @@ internal static class HostAliasGrouping
         {
             throw new NotSupportedException(
                 $"The arguments '{group.Names}' overlap one memory, and the host and device layouts of their " +
-                "elements differ in different ways, so no device region holds the bytes of all of them.");
+                "elements differ in different ways, so no device region holds the bytes of all of them. Use an " +
+                "element type whose device layout is its host layout, or copy one of the arguments.");
         }
     }
 
@@ -107,7 +116,83 @@ internal static class HostAliasGrouping
 
     private static NotSupportedException NotAtElementBoundaries(string names) =>
         new($"The arguments '{names}' overlap one memory at offsets that are not element boundaries of their " +
-            "converted elements, so no device region holds the elements of all of them.");
+            "converted elements, so no device region holds the elements of all of them. Use an element type whose " +
+            "device layout is its host layout, or copy one of the arguments.");
+
+    internal static NotSupportedException NotAligned(string names) =>
+        new($"The arguments '{names}' overlap one memory at offsets that are not aligned for all of their element " +
+            "types. The GPU reads an element only at an address aligned for its type, and C# leaves a misaligned " +
+            "view to the platform (MemoryMarshal.Cast). Pass views whose offsets differ by a multiple of the " +
+            "element alignment, or copy one of them.");
+
+    // Checks that every group of overlapping arguments has a device alignment shift under deviceAlignments, skipping
+    // any group that contains a CUDA-converted member (deviceAlignments[i] < 0): a homogeneous converted group scales
+    // element offsets by DeviceSize (a multiple of its device alignment), and a mixed group is rejected on CUDA
+    internal static void ThrowIfNoDeviceAlignment(ReadOnlySpan<nint> ranges, ReadOnlySpan<byte> traits, string names,
+        ReadOnlySpan<int> deviceAlignments)
+    {
+        var count = traits.Length;
+        var parent = Unite(ranges, traits);
+        var groupOf = NumberGroups(parent, out var groupCount);
+        var offsets = new nint[count];
+        for (var g = 0; g < groupCount; g++)
+        {
+            CheckGroupDeviceAlignment(ranges, groupOf, g, offsets, names, deviceAlignments);
+        }
+    }
+
+    private static void CheckGroupDeviceAlignment(ReadOnlySpan<nint> ranges, int[] groupOf, int g, nint[] offsets,
+        string names, ReadOnlySpan<int> deviceAlignments)
+    {
+        nint start = 0;
+        var hasLeader = false;
+        var alignment = 1;
+        for (var i = 0; i < groupOf.Length; i++)
+        {
+            if (groupOf[i] != g)
+            {
+                continue;
+            }
+
+            if (i < deviceAlignments.Length && deviceAlignments[i] < 0)
+            {
+                return;
+            }
+
+            var address = ranges[i * F];
+            if (!hasLeader || address < start)
+            {
+                start = address;
+                hasLeader = true;
+            }
+
+            alignment = Math.Max(alignment, GetDeviceAlignment(ranges, i, deviceAlignments));
+        }
+
+        nint shift = -1;
+        for (var i = 0; i < groupOf.Length; i++)
+        {
+            if (groupOf[i] != g)
+            {
+                continue;
+            }
+
+            offsets[i] = ranges[i * F] - start;
+            if (shift < 0 && GetDeviceAlignment(ranges, i, deviceAlignments) == alignment)
+            {
+                shift = -offsets[i] & (alignment - 1);
+            }
+        }
+
+        for (var i = 0; i < groupOf.Length; i++)
+        {
+            if (groupOf[i] == g &&
+                ((shift + offsets[i]) & (GetDeviceAlignment(ranges, i, deviceAlignments) - 1)) != 0)
+            {
+                throw NotAligned(JoinNames(names, groupOf, g));
+            }
+        }
+    }
 
     // The shift s past an aligned address at which every member m of group g starts aligned: (s + offset(m)) is a
     // multiple of the alignment of m. Alignments are powers of two, so the widest one fixes s and the others must agree
@@ -127,13 +212,27 @@ internal static class HostAliasGrouping
         {
             if (groupOf[i] == g && ((shift + deviceOffsets[i]) & (GetAlignment(ranges, i) - 1)) != 0)
             {
-                throw new NotSupportedException(
-                    $"The arguments '{names}' overlap one memory at offsets that are not aligned for all of their " +
-                    "element types, so the device cannot address them in one region.");
+                throw NotAligned(names);
             }
         }
 
         return shift;
+    }
+
+    private static int GetDeviceAlignment(ReadOnlySpan<nint> ranges, int i, ReadOnlySpan<int> deviceAlignments)
+    {
+        if (i >= deviceAlignments.Length)
+        {
+            return GetAlignment(ranges, i);
+        }
+
+        var given = deviceAlignments[i];
+        if (given > 0)
+        {
+            return Math.Min(given, MaxAlignment);
+        }
+
+        return DeriveAlignmentFromHostSize(ranges, i);
     }
 
     // The device alignment of the elements of argument i: the one the launcher passes, or, when it passes 0, the
@@ -146,6 +245,11 @@ internal static class HostAliasGrouping
             return (int)Math.Min(given, MaxAlignment);
         }
 
+        return DeriveAlignmentFromHostSize(ranges, i);
+    }
+
+    private static int DeriveAlignmentFromHostSize(ReadOnlySpan<nint> ranges, int i)
+    {
         var elementSize = ranges[(i * F) + 2];
         if (elementSize <= 0)
         {

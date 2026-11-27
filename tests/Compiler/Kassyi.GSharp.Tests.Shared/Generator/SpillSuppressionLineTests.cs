@@ -217,6 +217,112 @@ public class SpillSuppressionLineTests
         Assert.Contains("__gsharp_fn_PolymorphicRecursion__Kernels__Step", names);
     }
 
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("DirectAttrDefKernel")]
+    [InlineData("DirectAttrImplKernel")]
+    [InlineData("DirectExtAttrImplKernel")]
+    [InlineData("IndirectAttrDefKernel")]
+    [InlineData("IndirectAttrImplKernel")]
+    public async Task GetReachedFunctionNames_PartialPolymorphicRecursion_Ends(string kernelName)
+    {
+        const string Source = """
+            using Kassyi.GSharp.Core;
+
+            namespace PartialPolymorphicReach;
+
+            public struct Wrap<T> where T : struct
+            {
+                public T Inner;
+            }
+
+            public static partial class Kernels
+            {
+                [GpuDeviceFunction]
+                public static int Leaf(int x) => x + 1;
+
+                [GpuDeviceFunction]
+                public static partial int DirectDef<T>(int depth);
+
+                public static partial int DirectDef<T>(int depth) =>
+                    depth <= 0 ? Leaf(depth) : DirectDef<Wrap<T>>(depth - 1);
+
+                public static partial int DirectImpl<T>(int depth);
+
+                [GpuDeviceFunction]
+                public static partial int DirectImpl<T>(int depth) =>
+                    depth <= 0 ? Leaf(depth) : DirectImpl<Wrap<T>>(depth - 1);
+
+                public static partial int DirectExtImpl<T>(this int depth, T value);
+
+                [GpuDeviceFunction]
+                public static partial int DirectExtImpl<T>(this int depth, T value) =>
+                    depth <= 0 ? Leaf(depth) : (depth - 1).DirectExtImpl(new Wrap<T> { Inner = value });
+
+                [GpuDeviceFunction]
+                public static partial int IndirectDef<T>(int depth);
+
+                public static partial int IndirectDef<T>(int depth) =>
+                    depth <= 0 ? Leaf(depth) : RelayDef<T>(depth);
+
+                [GpuDeviceFunction]
+                public static int RelayDef<U>(int depth) => IndirectDef<Wrap<U>>(depth - 1);
+
+                public static partial int IndirectImpl<T>(int depth);
+
+                [GpuDeviceFunction]
+                public static partial int IndirectImpl<T>(int depth) =>
+                    depth <= 0 ? Leaf(depth) : RelayImpl<T>(depth);
+
+                [GpuDeviceFunction]
+                public static int RelayImpl<U>(int depth) => IndirectImpl<Wrap<U>>(depth - 1);
+
+                [GpuKernel]
+                public static void DirectAttrDefKernel(int[] d)
+                {
+                    d[0] = DirectDef<int>(2);
+                }
+
+                [GpuKernel]
+                public static void DirectAttrImplKernel(int[] d)
+                {
+                    d[0] = DirectImpl<int>(2);
+                }
+
+                [GpuKernel]
+                public static void DirectExtAttrImplKernel(int[] d)
+                {
+                    d[0] = 2.DirectExtImpl(0);
+                }
+
+                [GpuKernel]
+                public static void IndirectAttrDefKernel(int[] d)
+                {
+                    d[0] = IndirectDef<int>(2);
+                }
+
+                [GpuKernel]
+                public static void IndirectAttrImplKernel(int[] d)
+                {
+                    d[0] = IndirectImpl<int>(2);
+                }
+            }
+            """;
+
+        var compilation = RoslynTestUtility.CreateCompilation(Source);
+        var declaration = compilation.SyntaxTrees
+            .SelectMany(static tree => tree.GetRoot().DescendantNodes())
+            .OfType<MethodDeclarationSyntax>()
+            .Single(method => method.Identifier.ValueText == kernelName);
+        var kernel = Assert.IsAssignableFrom<IMethodSymbol>(
+            compilation.GetSemanticModel(declaration.SyntaxTree).GetDeclaredSymbol(declaration));
+
+        var names = await Task.Run(() => DeviceFunctionReach.GetReachedFunctionNames(kernel, declaration, compilation))
+            .WaitAsync(TimeSpan.FromSeconds(60));
+
+        Assert.Contains("__gsharp_fn_PartialPolymorphicReach__Kernels__Leaf", names);
+    }
+
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void CppModule_KernelUnderThePragma_HasNoSuppressionLine()

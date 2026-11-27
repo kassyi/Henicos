@@ -75,7 +75,7 @@ internal static class ImplicitDeviceCall
             return GenericMethod;
         }
 
-        if (!CppNameResolver.IsEmittedDeviceFunction(function, context.Emitter.Dialect))
+        if (!function.IsStatic || !CppNameResolver.IsEmittedDeviceFunction(function, context.Emitter.Dialect))
         {
             return NotStaticDeviceFunction;
         }

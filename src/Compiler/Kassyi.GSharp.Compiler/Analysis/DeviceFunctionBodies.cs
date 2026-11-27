@@ -11,17 +11,17 @@ internal static class DeviceFunctionBodies
     // declaration through a referenced compilation
     internal static bool TryGet(IMethodSymbol method, Compilation compilation, out ImmutableArray<SyntaxNode> bodies)
     {
+        if (IsDefaultStructConstructor(method))
+        {
+            bodies = default;
+            return false;
+        }
+
         var builder = ImmutableArray.CreateBuilder<SyntaxNode>();
         if (method.MethodKind == MethodKind.Constructor && method.ContainingType is { TypeKind: TypeKind.Struct } type &&
             !DeviceExportTable.IsOutside(type, compilation))
         {
-            foreach (var reference in type.DeclaringSyntaxReferences)
-            {
-                if (reference.GetSyntax() is TypeDeclarationSyntax declaration)
-                {
-                    AddInstanceInitializers(declaration, builder);
-                }
-            }
+            AddStructInstanceInitializers(type, compilation, builder);
 
             if (method.TryGetDeclaringSyntax<ConstructorDeclarationSyntax>(out var constructor))
             {
@@ -56,8 +56,31 @@ internal static class DeviceFunctionBodies
     private static bool IsFunctionWithBody(IMethodSymbol method, SyntaxNode syntax) =>
         (syntax is LocalFunctionStatementSyntax && method.MethodKind == MethodKind.LocalFunction) ||
         (syntax is BaseMethodDeclarationSyntax or AccessorDeclarationSyntax or ArrowExpressionClauseSyntax &&
-         (method.HasAttribute(KnownAttributes.GpuDeviceFunction) ||
-          (method.ContainingType is { } type && GlobalCppNames.IsEmittedUserType(type))));
+         (HasDeviceFunctionAttribute(method) ||
+          (method.ContainingType is { } type && EmittedUserTypes.IsEmittedUserType(type))));
+
+    private static bool HasDeviceFunctionAttribute(IMethodSymbol method)
+    {
+        var original = (method.ReducedFrom ?? method).OriginalDefinition;
+        return original.HasAttribute(KnownAttributes.GpuDeviceFunction) ||
+               (original.PartialImplementationPart is { } implementation &&
+                implementation.HasAttribute(KnownAttributes.GpuDeviceFunction)) ||
+               (original.PartialDefinitionPart is { } definition &&
+                definition.HasAttribute(KnownAttributes.GpuDeviceFunction));
+    }
+
+    internal static void AddStructInstanceInitializers(INamedTypeSymbol type, Compilation compilation,
+        ImmutableArray<SyntaxNode>.Builder builder)
+    {
+        foreach (var reference in type.DeclaringSyntaxReferences)
+        {
+            if (reference.GetSyntax() is TypeDeclarationSyntax declaration &&
+                compilation.ContainsSyntaxTree(declaration.SyntaxTree))
+            {
+                AddInstanceInitializers(declaration, builder);
+            }
+        }
+    }
 
     private static void AddInstanceInitializers(TypeDeclarationSyntax declaration,
         ImmutableArray<SyntaxNode>.Builder bodies)
@@ -80,6 +103,14 @@ internal static class DeviceFunctionBodies
             }
         }
     }
+
+    /// <summary>
+    /// Whether <paramref name="method"/> is the implicit parameterless constructor of a value type, which
+    /// zero-initializes (<c>default(T)</c>) and runs no field/property initializers or body.
+    /// </summary>
+    internal static bool IsDefaultStructConstructor(IMethodSymbol method) =>
+        method is { IsImplicitlyDeclared: true, Parameters.Length: 0, MethodKind: MethodKind.Constructor } &&
+        method.ContainingType.IsValueType;
 
     private static void AddNonNull(ImmutableArray<SyntaxNode>.Builder builder, SyntaxNode? node)
     {

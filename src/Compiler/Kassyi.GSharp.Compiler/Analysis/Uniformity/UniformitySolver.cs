@@ -72,9 +72,10 @@ internal sealed class UniformitySolver(UniformityState state)
                     when state.Observed != null:
                     state.Reader.Evaluate(observed, observedGraph, current);
                     break;
-                case { Kind: UniformityEventKind.Site, Operation: IInvocationOperation call, Graph: { } callGraph }
+                case { Kind: UniformityEventKind.Site, Operation: { } callOperation, Graph: { } callGraph }
                     when state.SiteMasks != null:
-                    state.Barriers.RecordSiteMasks(call, callGraph, current);
+                    state.Barriers.RecordSiteMasks(callOperation, callGraph, current,
+                        flowEvent.Site ?? callOperation.Syntax);
                     break;
                 case { Kind: UniformityEventKind.MemoryWrite or UniformityEventKind.MemorySync or UniformityEventKind.MemoryCall }:
                     state.Recorder.Memory.Apply(flowEvent, current, state.Reader, state.Model.Compilation);
@@ -234,6 +235,7 @@ internal sealed class UniformitySolver(UniformityState state)
             case ICompoundAssignmentOperation compound: WriteCompound(compound, graph, current, opaque); break;
             case IIncrementOrDecrementOperation increment: WriteIncrement(increment, graph, current, opaque); break;
             case IInvocationOperation invocation: WriteArguments(invocation, graph, current, opaque); break;
+            case IObjectCreationOperation creation: WriteCreationArguments(creation, graph, current, opaque); break;
         }
     }
 
@@ -245,8 +247,13 @@ internal sealed class UniformitySolver(UniformityState state)
         SyntaxNode? opaque)
     {
         var rebinds = assignment.IsRef || assignment.Target is not ILocalReferenceOperation { Local.IsRef: true };
-        var assigned = EvaluateAssigned(assignment.Target, assignment.Value, graph, current, opaque);
-        Assign(assignment.Target, assigned, rebinds, current, opaque);
+        var target = assignment.Target is IFlowCaptureReferenceOperation captureRef &&
+                     assignment.Syntax.IsKind(SyntaxKind.CoalesceAssignmentExpression) &&
+                     state.Recorder.TryGetCapturedProperty(graph, captureRef.Id, out var capturedProperty)
+            ? capturedProperty
+            : assignment.Target;
+        var assigned = EvaluateAssigned(target, assignment.Value, graph, current, opaque);
+        Assign(target, assigned, rebinds, current, opaque);
     }
 
     private void WriteCompound(ICompoundAssignmentOperation compound, ControlFlowGraph graph, ThreadVariance[] current,
@@ -389,6 +396,46 @@ internal sealed class UniformitySolver(UniformityState state)
                 Assign(target, written, strong: argument.Parameter.RefKind == RefKind.Out, current, opaque);
             }
         }
+    }
+
+    private void WriteCreationArguments(IObjectCreationOperation creation, ControlFlowGraph graph,
+        ThreadVariance[] current, SyntaxNode? opaque)
+    {
+        if (creation.Constructor is not { } constructor)
+        {
+            return;
+        }
+
+        var reader = state.Reader;
+        CalleeVariance? summary = reader.TryGetSummarizedCallee(constructor, out var callee, out var declaration)
+            ? reader.GetCalleeSummary(callee, declaration, reader.GetArgumentMasks(creation.Arguments, graph, current))
+            : null;
+        var written = summary?.ByReference ?? EvaluateCreationOperands(creation.Arguments, graph, current);
+        foreach (var argument in creation.Arguments)
+        {
+            if (argument.Parameter?.RefKind is RefKind.Ref or RefKind.Out)
+            {
+                var target = argument.Value is IDeclarationExpressionOperation declared
+                    ? declared.Expression
+                    : argument.Value;
+                Assign(target, written, strong: argument.Parameter.RefKind == RefKind.Out, current, opaque);
+            }
+        }
+    }
+
+    private ThreadVariance EvaluateCreationOperands(ImmutableArray<IArgumentOperation> arguments, ControlFlowGraph graph,
+        ThreadVariance[] current)
+    {
+        var variance = ThreadVariance.Uniform;
+        foreach (var argument in arguments)
+        {
+            if (argument.Parameter?.RefKind != RefKind.Out)
+            {
+                variance |= state.Reader.Evaluate(argument.Value, graph, current);
+            }
+        }
+
+        return variance;
     }
 
     // A write to a local or parameter: replaces its variance, or adds to it for a write that may not happen (through a

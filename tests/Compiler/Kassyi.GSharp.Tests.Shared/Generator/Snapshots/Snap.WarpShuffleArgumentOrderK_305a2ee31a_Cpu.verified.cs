@@ -340,6 +340,32 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+private static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownByHalfOfHalf(int __gsharp_warp_frame, int v)
+{
+return global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_shuffle_down_sync<int>(__gsharp_warp_frame, 0, "WarpShuffleArgumentOrderKernels.cs(64,16)", 0xFFFFFFFFu, v, global::Kassyi.GSharp.Tests.Shared.Core.WarpShuffleArgumentOrderKernels.Half / 2);
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+private static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownBy(int __gsharp_warp_frame, int v, uint delta)
+{
+return global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_shuffle_down_sync<int>(__gsharp_warp_frame, 0, "WarpShuffleArgumentOrderKernels.cs(77,16)", 0xFFFFFFFFu, v, delta);
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+private static long __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__WaitAndReturn(long x)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return x;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+private static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier(ref int target, int value)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+target += value + 1000;
+}
+
 }
 }
 

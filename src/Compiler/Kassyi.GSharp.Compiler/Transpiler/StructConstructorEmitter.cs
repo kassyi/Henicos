@@ -24,7 +24,7 @@ internal static class StructConstructorEmitter
     public static bool IsEmittedStructConstructor(IMethodSymbol? constructor, Compilation compilation) =>
         constructor is { MethodKind: MethodKind.Constructor, IsImplicitlyDeclared: false, IsStatic: false } &&
         constructor.ContainingType is { } containingType &&
-        GlobalCppNames.IsEmittedUserType(containingType) &&
+        EmittedUserTypes.IsEmittedUserType(containingType) &&
         (TryGetConstructorDeclaration(constructor, out _, out _) ||
          (DeviceExportTable.IsOutside(constructor, compilation) && DeviceExportTable.TryFind(constructor, out _)));
 
@@ -158,9 +158,9 @@ internal static class StructConstructorEmitter
         ParameterListSyntax parameterList, ConstructorDeclarationSyntax? declaration, ref TranspileContext context)
     {
         var saved = SemanticModelSwitch.Enter(ref context, parameterList.SyntaxTree);
-        var previousCtorType = context.Emitter.StructConstructorType;
+        var previousSelf = context.Emitter.StructSelf;
         var previousCallableDepth = context.Emitter.CallableDepth;
-        context.Emitter.StructConstructorType = structSym;
+        context.Emitter.StructSelf = new StructSelfReference(structSym, SelfForm.ConstructorSelf);
         context.Emitter.CallableDepth = 1;
 
         try
@@ -181,7 +181,7 @@ internal static class StructConstructorEmitter
         }
         finally
         {
-            context.Emitter.StructConstructorType = previousCtorType;
+            context.Emitter.StructSelf = previousSelf;
             context.Emitter.CallableDepth = previousCallableDepth;
             saved.Restore(ref context);
         }
