@@ -115,11 +115,15 @@ internal static class JumpStatementTranspilers
         {
             WriteLabelName(node, ref context);
             context.Emitter.Writer.AppendLine(":;");
+            ActiveMaskIterationEmitter.EmitLabelIncrement(node, ref context);
+            ActiveMaskIterationEmitter.EmitPostLabelResets(node, ref context);
             return;
         }
 
         var targetPlan = LabeledJumps.PlanTarget(node, context.Query.SemanticModel);
         WriteLabel(node, ref context);
+        ActiveMaskIterationEmitter.EmitLabelIncrement(node, ref context);
+        ActiveMaskIterationEmitter.EmitPostLabelResets(node, ref context);
         context.Visitor.Visit(node.Statement);
 
         if (targetPlan.NeedsBreakLabel)

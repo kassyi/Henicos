@@ -105,15 +105,7 @@ internal static class RefLocals
 
             CppNameResolver.AppendDeclaredName(node, node.Identifier, ref context);
             context.Emitter.Writer.AppendLine($" = &{GSharpInternalNames.Lowering.ForEachElementPrefix}{rawElement};");
-            if (node.Statement is BlockSyntax block)
-            {
-                context.Visitor.VisitBlock(block);
-            }
-            else
-            {
-                context.Visitor.Visit(node.Statement);
-                context.Emitter.Writer.AppendLine();
-            }
+            LoopBodyWriter.WriteInOpenScope(node, node.Statement, visitBlockDirectlyWhenUnlabeled: true, ref context);
         }
     }
 

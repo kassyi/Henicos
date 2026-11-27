@@ -100,6 +100,7 @@ internal static class UsingTranspiler
             }
             else
             {
+                ActiveMaskIterationEmitter.EmitResets(node.Statement, ref context);
                 context.Visitor.Visit(node.Statement);
                 context.Emitter.Writer.AppendLine();
             }

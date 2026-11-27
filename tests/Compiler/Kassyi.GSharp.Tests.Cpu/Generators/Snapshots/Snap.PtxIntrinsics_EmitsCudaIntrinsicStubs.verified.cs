@@ -732,7 +732,7 @@ public static partial class Warp
 #pragma warning disable IDE0051 // Remove unused private members
 // ReSharper disable UnusedMember.Global
 /// <summary>Returns a 32-bit mask of all currently active threads in the calling warp.</summary>
-/// <returns>A 32-bit bitmask where bit i corresponds to active lane i. It holds the calling lane and no lane that has exited; which other lanes of the current path it holds is up to the GPU scheduler (from Volta on it may be fewer). The CPU paths return the lanes that took the same way through the thread-dependent branches since the warp last ran together, which is the value the GPU gives in practice.</returns>
+/// <returns>A 32-bit bitmask where bit i corresponds to active lane i. It holds the calling lane and no lane that has exited; which other lanes of the current path it holds is up to the GPU scheduler (from Volta on it may be fewer). Inside a loop, the GPU value holds only lanes in the same iteration of that loop (via __match_any_sync, which costs one warp instruction per call and is omitted outside loops and in uniform loops). The CPU paths return the lanes that took the same way through the thread-dependent branches since the warp last ran together, which is the value the GPU gives in practice.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__activemask")]
 public static uint ActiveMask() => Kassyi.GSharp.Core.ManagedGpuContext.ActiveMask();
 /// <summary>Exchanges a variable between threads within a warp.</summary>

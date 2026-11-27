@@ -154,6 +154,35 @@ internal static class SemanticModelExtensions
     }
 
     /// <summary>
+    /// Gets the C# constant boolean value of <paramref name="condition"/> (a node of the model's tree or of a lowered
+    /// tree mapped to it), or <see langword="null"/> when it is not a constant boolean.
+    /// </summary>
+    public static bool? GetConstantCondition(this SemanticModel? semanticModel, ExpressionSyntax condition)
+    {
+        if (condition is LiteralExpressionSyntax literal)
+        {
+            if (literal.IsKind(SyntaxKind.TrueLiteralExpression))
+            {
+                return true;
+            }
+
+            if (literal.IsKind(SyntaxKind.FalseLiteralExpression))
+            {
+                return false;
+            }
+        }
+
+        if (semanticModel != null &&
+            semanticModel.TryGetOriginalNode(condition, out var original, out var originalModel) &&
+            originalModel.GetConstantValue(original) is { HasValue: true, Value: bool value })
+        {
+            return value;
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// The element of the collection initializer in the user's source that <paramref name="element"/> (an element of a
     /// collection or complex element initializer, also of a lowered tree) stands for, with the semantic model of its
     /// tree; false when the initializer is unmapped.

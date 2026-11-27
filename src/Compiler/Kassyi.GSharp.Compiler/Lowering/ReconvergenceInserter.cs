@@ -137,7 +137,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         _cycles = CyclePlanner.Plan(
             block,
             BarrierHelper.ContainsPhaseBarrier,
-            GetConstantCondition,
+            condition => _model.GetConstantCondition(condition),
             _model,
             _stackForm);
         return LabeledStatementSplitter.Split(
@@ -725,7 +725,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
     {
         var before = _open.ToImmutable();
         var beforeReaches = _reaches;
-        var condition = GetConstantCondition(ifStatement.Condition);
+        var condition = _model.GetConstantCondition(ifStatement.Condition);
 
         _reaches = beforeReaches && condition != false;
         var thenBranch = RewriteEmbedded(ifStatement.Statement);
@@ -809,7 +809,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
     }
 
     private bool ReachesEnd(StatementSyntax statement) =>
-        StatementFlow.ReachesEnd(statement, GetConstantCondition, _stackForm);
+        StatementFlow.ReachesEnd(statement, condition => _model.GetConstantCondition(condition), _stackForm);
 
     private ImmutableArray<Region> SliceOpen(int count)
     {
@@ -1098,10 +1098,10 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         var bodyEntryOpen = _open.ToImmutable();
         var beforeReaches = _reaches;
         if (!beforeReaches ||
-            (loop is WhileStatementSyntax whileLoop && GetConstantCondition(whileLoop.Condition) == false) ||
+            (loop is WhileStatementSyntax whileLoop && _model.GetConstantCondition(whileLoop.Condition) == false) ||
             (loop is ForStatementSyntax forLoop &&
              forLoop.Condition != null &&
-             GetConstantCondition(forLoop.Condition) == false))
+             _model.GetConstantCondition(forLoop.Condition) == false))
         {
             _reaches = false;
         }
@@ -1212,10 +1212,10 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
     private bool CanExitByCondition(StatementSyntax loop) =>
         loop switch
         {
-            WhileStatementSyntax whileStatement => GetConstantCondition(whileStatement.Condition) != true,
+            WhileStatementSyntax whileStatement => _model.GetConstantCondition(whileStatement.Condition) != true,
             ForStatementSyntax forStatement =>
-                forStatement.Condition != null && GetConstantCondition(forStatement.Condition) != true,
-            DoStatementSyntax doStatement => GetConstantCondition(doStatement.Condition) != true,
+                forStatement.Condition != null && _model.GetConstantCondition(forStatement.Condition) != true,
+            DoStatementSyntax doStatement => _model.GetConstantCondition(doStatement.Condition) != true,
             CommonForEachStatementSyntax => true,
             _ => throw new InvalidOperationException($"Not a loop: {loop.Kind()}")
         };
@@ -1718,31 +1718,6 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         }
 
         return _uniformity.IsThreadVariant(original);
-    }
-
-    private bool? GetConstantCondition(ExpressionSyntax condition)
-    {
-        if (condition is LiteralExpressionSyntax literal)
-        {
-            if (literal.IsKind(SyntaxKind.TrueLiteralExpression))
-            {
-                return true;
-            }
-
-            if (literal.IsKind(SyntaxKind.FalseLiteralExpression))
-            {
-                return false;
-            }
-        }
-
-        if (_model != null &&
-            _model.TryGetOriginalNode(condition, out var original, out var originalModel) &&
-            originalModel.GetConstantValue(original) is { HasValue: true, Value: bool value })
-        {
-            return value;
-        }
-
-        return null;
     }
 
     // __gsharp_warp_region_enter(__gsharp_root, __gsharp_ctx, <site>); or, in the stack form,

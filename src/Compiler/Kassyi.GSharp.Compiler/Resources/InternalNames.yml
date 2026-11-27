@@ -144,6 +144,9 @@ Lowering:
     ReceiverParameter: __gsharp_this
     ForEachSourcePrefix: __gsharp_foreach_src_
     ForEachIndexPrefix: __gsharp_foreach_i_
+    # Per-iteration 64-bit counter of a keyed loop on CUDA, reset in front of the loop and incremented in its body or after its label:
+    # unsigned long long __gsharp_iteration_<n> = 0ull;
+    IterationCounterPrefix: __gsharp_iteration_
     # The raw element of a C++ range-for whose loop variable converts it with a .NET conversion helper (#995):
     # for (auto __gsharp_foreach_e_<n> : <source>) { int x = __gsharp_to_i32(__gsharp_foreach_e_<n>); ... }
     ForEachElementPrefix: __gsharp_foreach_e_
