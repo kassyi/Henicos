@@ -63,8 +63,8 @@ public static partial class GpuBigIntDivRemKernels
         {
             // 1. x̂ = T(resultBuffer), currentProduct = b * x (n, resultWords -> n + resultWords)
             ExecuteNttTransformOperand(core, ops.ResultBuffer, resultWords, nttScratch.Kept1);
-            ExecuteNttPointwiseResidues(core, nttScratch.Kept1, nttScratch.Kept2, nttScratch.Product);
-            ExecuteNttResiduesToWords(core, nttScratch.Product, currentProduct, n + resultWords, chunkSize);
+            ExecuteNttMultiplyKept(core, nttScratch.Kept1, nttScratch.Kept2, currentProduct, n + resultWords,
+                chunkSize);
 
             // 2. diff = constant - currentProduct (block-parallel subtraction on block 0)
             int subWords = n + resultWords;
@@ -74,35 +74,17 @@ public static partial class GpuBigIntDivRemKernels
 
             // 3. nextIter = x * diff (resultWords, n + resultWords -> n + 2 * resultWords)
             uint[] nextIter = Gpu.NotNull(iterScratch.NextIter);
-            ExecuteNttTransformOperand(core, iterScratch.Diff, n + resultWords, nttScratch.Product);
-            ExecuteNttPointwiseResidues(core, nttScratch.Product, nttScratch.Kept1, nttScratch.Product);
-            ExecuteNttResiduesToWords(core, nttScratch.Product, nextIter, n + 2 * resultWords, chunkSize);
+            ExecuteNttMultiplyByKept(core, iterScratch.Diff, n + resultWords, nttScratch.Kept1, nextIter,
+                n + 2 * resultWords, chunkSize);
 
-            // 4. copy resultBuffer = nextIter >> (2 * numBits + marginBits)
-            int shiftTotal = dims.TargetBits;
-            int wordShift = shiftTotal / 32;
-            int bitShift = shiftTotal % 32;
-            int destWords = resultWords;
-            int srcMaxWords = n + 2 * resultWords;
-
-            Gpu.GridStrideLoop(destWords, idx =>
-            {
-                int srcIdx = idx + wordShift;
-                // Ensure we don't read out of bounds.
-                uint w0 = (srcIdx < srcMaxWords) ? nextIter[srcIdx] : 0u;
-                uint w1 = (srcIdx + 1 < srcMaxWords) ? nextIter[srcIdx + 1] : 0u;
-
-                uint shiftedValue = (w0 >> bitShift) | (bitShift == 0 ? 0u : (w1 << (32 - bitShift)));
-                ops.ResultBuffer[idx] = shiftedValue;
-            });
-            Gpu.SyncGrid();
+            // 4. copy resultBuffer = nextIter >> targetBits
+            ShiftRightIntoResult(nextIter, n + 2 * resultWords, ops.ResultBuffer, resultWords, dims.TargetBits);
         }
 
         // Final correction to x = floor(2^T / b): r = 2^T - b * x, then r moves into [0, b) and x by the same steps.
         // The Newton result is floor(2^T / b) or one less, so this takes at most one step after convergence.
         ExecuteNttTransformOperand(core, ops.ResultBuffer, resultWords, nttScratch.Kept1);
-        ExecuteNttPointwiseResidues(core, nttScratch.Kept1, nttScratch.Kept2, nttScratch.Product);
-        ExecuteNttResiduesToWords(core, nttScratch.Product, currentProduct, n + resultWords, chunkSize);
+        ExecuteNttMultiplyKept(core, nttScratch.Kept1, nttScratch.Kept2, currentProduct, n + resultWords, chunkSize);
 
         // Constant holds 2^(T+1) in n + 2 * resultWords words; reading it shifted right by one bit gives 2^T.
         int remainderWords = n + resultWords;

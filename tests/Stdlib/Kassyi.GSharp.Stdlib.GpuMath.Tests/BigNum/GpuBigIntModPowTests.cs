@@ -130,7 +130,8 @@ public class GpuBigIntModPowTests
         GpuBigIntDivRem.ModPow(a, e, m, result);
 
         // x^0 mod m is 1 mod m: 0 for m = 1, 1 otherwise. The expected value comes from the inputs the test holds.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.ModPow.cu.cs:225 `idx == 0 ? oneModulo : 0u` -> `idx == 0 ? 1u : 0u`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.ModPow.cu.cs:133
+        //   `idx == 0 ? oneModulo : 0u` -> `idx == 0 ? 1u : 0u`
         // input: (16, One) (NTT MegaKernel path)
         // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.ModPow.cu.cs:35 `result[0] = OneModulo(modulus, numWords);` -> `result[0] = 1u;`
         // input: (64, One) (ZeroSync path)

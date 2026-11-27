@@ -281,7 +281,7 @@ one of three shapes:
   the same work on fewer SMs; above it the grid is capped at one block per SM and a larger block runs fewer batches.
   The rule is a pure function of `M`, the SM count, the largest block that fits and the candidates; the result does
   not depend on the block size. ModPow runs on one block and applies `ChooseBlockDim` with one SM (256 threads up to
-  512 points, 512 at 1024, and the largest block that fits above, 768 on sm_86 with 66 registers per thread).
+  512 points, 512 at 1024, and the largest block that fits above, 768 on sm_86 with 80 registers per thread).
 - **Registers**: a block of 1024 threads fits an SM only with at most 64 registers per thread (56 for the inverse square
   root and the reciprocal). The occupancy test (`MegaKernelOccupancyTests`) asks the driver whether each mega-kernel
   fits with 1024 threads (ModPow with 768) at the least and the most shared memory, since the launcher otherwise

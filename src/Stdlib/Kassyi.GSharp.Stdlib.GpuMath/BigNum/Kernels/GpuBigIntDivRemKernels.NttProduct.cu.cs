@@ -112,4 +112,70 @@ public static partial class GpuBigIntDivRemKernels
             chunkSize, numBlocks);
         Gpu.SyncGrid();
     }
+
+    /// <summary>
+    /// Multiplies <paramref name="operand"/> by a pre-transformed residue slot <paramref name="kept"/> using
+    /// <c>NttScratch.Product</c> as temporary storage and writes <paramref name="numWordsResult"/> words to
+    /// <paramref name="resultDest"/>. Ends with a grid synchronization.
+    /// </summary>
+    [GpuDeviceFunction]
+    internal static void ExecuteNttMultiplyByKept(
+        NewtonRaphsonContext core,
+        [GpuReadOnly] uint[] operand,
+        int numWords,
+        NttResidues kept,
+        uint[] resultDest,
+        int numWordsResult,
+        int chunkSize)
+    {
+        var product = core.Workspace.NttScratch.Product;
+        ExecuteNttTransformOperand(core, operand, numWords, product);
+        ExecuteNttPointwiseResidues(core, product, kept, product);
+        ExecuteNttResiduesToWords(core, product, resultDest, numWordsResult, chunkSize);
+    }
+
+    /// <summary>
+    /// Multiplies two pre-transformed residue slots <paramref name="left"/> and <paramref name="right"/> through
+    /// <c>NttScratch.Product</c> and writes <paramref name="numWordsResult"/> words to
+    /// <paramref name="resultDest"/>. Ends with a grid synchronization.
+    /// </summary>
+    [GpuDeviceFunction]
+    internal static void ExecuteNttMultiplyKept(
+        NewtonRaphsonContext core,
+        NttResidues left,
+        NttResidues right,
+        uint[] resultDest,
+        int numWordsResult,
+        int chunkSize)
+    {
+        var product = core.Workspace.NttScratch.Product;
+        ExecuteNttPointwiseResidues(core, left, right, product);
+        ExecuteNttResiduesToWords(core, product, resultDest, numWordsResult, chunkSize);
+    }
+
+    /// <summary>
+    /// Copies <paramref name="source"/> shifted right by <paramref name="shiftBits"/> bits into
+    /// <paramref name="destination"/>, zero-filling reads past <paramref name="sourceWords"/>. Ends with a grid
+    /// synchronization.
+    /// </summary>
+    [GpuDeviceFunction]
+    internal static void ShiftRightIntoResult(
+        [GpuReadOnly] uint[] source,
+        int sourceWords,
+        uint[] destination,
+        int destWords,
+        int shiftBits)
+    {
+        int wordShift = shiftBits / 32;
+        int bitShift = shiftBits % 32;
+
+        Gpu.GridStrideLoop(destWords, idx =>
+        {
+            int srcIdx = idx + wordShift;
+            uint w0 = (srcIdx < sourceWords) ? source[srcIdx] : 0u;
+            uint w1 = (srcIdx + 1 < sourceWords) ? source[srcIdx + 1] : 0u;
+            destination[idx] = (w0 >> bitShift) | (bitShift == 0 ? 0u : (w1 << (32 - bitShift)));
+        });
+        Gpu.SyncGrid();
+    }
 }

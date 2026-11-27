@@ -78,6 +78,8 @@ The workspace's correction status words.
 
 A cooperative GPU mega-kernel (`[GpuKernel(Cooperative = true)]`) that executes modular exponentiation over a range of exponent words using dual-prime NTT multiplication and in-kernel Barrett reduction.
 
+Slices of one exponent must be launched in order starting from word 0 (`StartWord == 0`) with the same context: the first launch initializes the running state and pre-transforms `ReciprocalMod` into `Kept2` and the modulus into `Kept3`, and later launches read those slots directly without re-reading `ReciprocalMod`. Nothing else may write the context's `Iteration` or `NttScratch` buffers between slices.
+
 ```csharp
 [GpuKernel(Cooperative = true)]
 public static void ModPowNttMegaKernel(ModPowNttContext ctx);

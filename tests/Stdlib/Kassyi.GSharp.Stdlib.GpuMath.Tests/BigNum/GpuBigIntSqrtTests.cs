@@ -150,7 +150,7 @@ public class GpuBigIntSqrtTests
     // mutant: GpuBigIntDivRem.Sqrt.cs:168 `(rootWords + 1) / 2` -> `Math.Max(1, (rootWords + 1) / 2 - 1)` (SquarePlus2R
     //         and SquareMinus1 at
     // n = 4, 8, 16: the estimate is more than one below, beyond what the design allows)
-    // mutant: GpuBigIntSqrtKernels.cu.cs:204 `AddSmallSigned(trial, slackWords, -1)` removed (Highest, n = 16, 17)
+    // mutant: GpuBigIntSqrtKernels.cu.cs:188 `AddSmallSigned(trial, slackWords, -1)` removed (Highest, n = 16, 17)
     [SkippableTheory]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]

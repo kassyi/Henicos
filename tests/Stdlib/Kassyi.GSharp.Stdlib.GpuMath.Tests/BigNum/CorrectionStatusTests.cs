@@ -55,7 +55,7 @@ public class CorrectionStatusTests : IDisposable
         GpuBigIntDivRem.ReduceZeroSync(gpuA, gpuB, zeroReciprocal, TargetBits, DividendWords, gpuQ, gpuR);
 
         // The unconverged correction is reported at the next read, naming the operation.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:302
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:228
         //         `Gpu.AtomicAdd(ref status[0], 1u);` -> `status[1] = failureCode;` (not counted)
         // input: this test and every ReciprocalMega test
         // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:548
@@ -242,7 +242,7 @@ public class CorrectionStatusTests : IDisposable
         new KernelAdvancedMathHandler().InverseSqrtMega(workspace, gpuA, gpuX, MarginWords,
             actualBits: NumWords * 32, iterations: 0);
 
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:299
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:303
         //         `Gpu.AtomicAdd(ref status[0], 1u);` -> `status[1] = failureCode;` (not counted)
         // input: both offsets
         // mutant: CooperativeMegaKernelLauncher.cs:76
@@ -304,7 +304,7 @@ public class CorrectionStatusTests : IDisposable
 
         RunReciprocalMega(workspace, gpuB, gpuX, iterations: 0);
 
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:263
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:189
         //         `step <= maxSteps` -> `step < maxSteps` (no check after the last move)
         // input: offsets -1000 and 1000
         Assert.Equal(floorY, gpuX.ToBigInteger());
@@ -326,7 +326,7 @@ public class CorrectionStatusTests : IDisposable
 
         RunReciprocalMega(workspace, gpuB, gpuX, iterations: 0);
 
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:167
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:93
         //         `CorrectIntoDivisorRange(..., n, 1000,` -> `1001`
         // input: both offsets
         Assert.Throws<InvalidOperationException>(() => gpuX.ToBigInteger());
@@ -346,7 +346,7 @@ public class CorrectionStatusTests : IDisposable
         {
             RunInverseSqrtMega(workspace, gpuA, gpuX);
 
-            // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:248
+            // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:252
             //         `step <= maxSteps` -> `step < maxSteps`
             // input: offsets -1000 and 1000
             Assert.Equal(floorY, gpuX.ToBigInteger());
@@ -368,7 +368,7 @@ public class CorrectionStatusTests : IDisposable
         {
             RunInverseSqrtMega(workspace, gpuA, gpuX);
 
-            // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:111
+            // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:115
             //         `slackWords, axWords, n, 1000,` (the step limit of CorrectInverseSqrtSlack) -> `1001`
             // input: both offsets
             Assert.Throws<InvalidOperationException>(() => gpuX.ToBigInteger());
@@ -394,11 +394,11 @@ public class CorrectionStatusTests : IDisposable
     // SqrtFloorCorrection moves an estimate to floor(sqrt(a)) from below (stepping up while (r + 1)² <= a) and from
     // above (stepping down while r² > a), up to its limit of 4 steps, and keeps an exact estimate. The largest
     // remainder 2r is the boundary of the step-up test: r + 1 must not be taken there.
-    // mutant: GpuBigIntSqrtKernels.cu.cs:175 `AddSmallSigned(root, rootWords, -1)` removed (offsets 1 and 4)
-    // mutant: GpuBigIntSqrtKernels.cu.cs:174 `AddSmallSigned(slack, slackWords, -1)` removed (offsets 1 and 4 with the
+    // mutant: GpuBigIntSqrtKernels.cu.cs:179 `AddSmallSigned(root, rootWords, -1)` removed (offsets 1 and 4)
+    // mutant: GpuBigIntSqrtKernels.cu.cs:178 `AddSmallSigned(slack, slackWords, -1)` removed (offsets 1 and 4 with the
     //         largest
     // remainder: the slack after stepping down is one too large, so r + 1 looks allowed)
-    // mutant: GpuBigIntSqrtKernels.cu.cs:157 `step <= maxSteps` -> `step < maxSteps` (offsets -4 and 4)
+    // mutant: GpuBigIntSqrtKernels.cu.cs:161 `step <= maxSteps` -> `step < maxSteps` (offsets -4 and 4)
     [SkippableTheory]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stdlib)]
@@ -462,7 +462,7 @@ public class CorrectionStatusTests : IDisposable
         using var shortTrial = new GpuBigUInt(workspace, 8);
         using var shortSquare = new GpuBigUInt(workspace, 7);
 
-        // mutant: KernelAdvancedMathHandler.cs:213 `trial.NumWords < slackWords` -> `trial.NumWords < slackWords - 1`
+        // mutant: KernelAdvancedMathHandler.cs:219 `trial.NumWords < slackWords` -> `trial.NumWords < slackWords - 1`
         Assert.Throws<ArgumentException>(() =>
             workspace.Provider.SqrtFloorCorrection(workspace, operand, square, root, slack, shortTrial));
         Assert.Throws<ArgumentException>(() =>
@@ -643,7 +643,7 @@ public class CorrectionStatusTests : IDisposable
             workspace.Stream);
         status.MarkPending();
 
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:498
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:392
         //         `status?.EndRead();` -> removed
         // input: this test
         var exception = Assert.Throws<InvalidOperationException>(() =>
@@ -902,7 +902,7 @@ public class CorrectionStatusTests : IDisposable
         }
 
         // Every failing launch is counted and reported; a read may report several at once.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:246
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:228
         //         `Gpu.AtomicAdd(ref status[0], 1u);` -> `status[0] = 1u;`
         // input: this test (the count stays at 1)
         Assert.Equal(Threads * Iterations, status.ReportedFailures);
@@ -932,10 +932,10 @@ public class CorrectionStatusTests : IDisposable
         RunReciprocalMega(workspace, gpuB, gpuX, iterations: 0);
         Assert.Throws<InvalidOperationException>(() => gpuX.ToBigInteger());
 
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:231
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:213
         //         `if (belowZero || step == maxSteps)` -> `if (belowZero)` (moves on the last pass)
         // input: offset -1001
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:214
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.cu.cs:196
         //         `if (step == maxSteps)` -> `if (step > maxSteps)` (moves on the last pass)
         // input: offset 1001
         Assert.Equal(floorY + Math.Sign(offset), gpuX.ToBigInteger());

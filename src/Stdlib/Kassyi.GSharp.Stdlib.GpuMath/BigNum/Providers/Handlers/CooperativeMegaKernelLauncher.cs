@@ -401,28 +401,7 @@ internal static class CooperativeMegaKernelLauncher
                     NextXUnshifted = nextXUnshifted.ToProxy(),
                     NextXShifted = nextXShifted.ToProxy()
                 },
-                NttScratch = new GpuBigIntSqrtKernels.AotContexts.NttConvolutionScratch
-                {
-                    Product = new GpuBigIntSqrtKernels.AotContexts.NttResidues
-                    {
-                        Buffer1 = buffers.ProductBuf1.ToProxy(),
-                        Buffer2 = buffers.ProductBuf2.ToProxy()
-                    },
-                    Kept1 = new GpuBigIntSqrtKernels.AotContexts.NttResidues
-                    {
-                        Buffer1 = buffers.Kept1Buf1.ToProxy(),
-                        Buffer2 = buffers.Kept1Buf2.ToProxy()
-                    },
-                    Kept2 = new GpuBigIntSqrtKernels.AotContexts.NttResidues
-                    {
-                        Buffer1 = buffers.Kept2Buf1.ToProxy(),
-                        Buffer2 = buffers.Kept2Buf2.ToProxy()
-                    },
-                    TmpBuf = buffers.TmpBuf.ToProxy(),
-                    UncarriedLow = buffers.UncarriedLow.ToProxy(),
-                    UncarriedHigh = buffers.UncarriedHigh.ToProxy(),
-                    BlockCarries = buffers.BlockCarries.ToProxy()
-                }
+                NttScratch = buffers.ToSqrtScratch()
             },
             CarryBuffer = new GSharpArrayProxy(carryBuffer.DevicePointer, carryBuffer.NumWords / 2)
         };
@@ -467,28 +446,7 @@ internal static class CooperativeMegaKernelLauncher
                     Diff = diff.ToProxy(),
                     NextIter = nextIter.ToProxy()
                 },
-                NttScratch = new GpuBigIntDivRemKernels.AotContexts.NttConvolutionScratch
-                {
-                    Product = new GpuBigIntDivRemKernels.AotContexts.NttResidues
-                    {
-                        Buffer1 = buffers.ProductBuf1.ToProxy(),
-                        Buffer2 = buffers.ProductBuf2.ToProxy()
-                    },
-                    Kept1 = new GpuBigIntDivRemKernels.AotContexts.NttResidues
-                    {
-                        Buffer1 = buffers.Kept1Buf1.ToProxy(),
-                        Buffer2 = buffers.Kept1Buf2.ToProxy()
-                    },
-                    Kept2 = new GpuBigIntDivRemKernels.AotContexts.NttResidues
-                    {
-                        Buffer1 = buffers.Kept2Buf1.ToProxy(),
-                        Buffer2 = buffers.Kept2Buf2.ToProxy()
-                    },
-                    TmpBuf = buffers.TmpBuf.ToProxy(),
-                    UncarriedLow = buffers.UncarriedLow.ToProxy(),
-                    UncarriedHigh = buffers.UncarriedHigh.ToProxy(),
-                    BlockCarries = buffers.BlockCarries.ToProxy()
-                }
+                NttScratch = buffers.ToDivRemScratch()
             },
             CarryBuffer = new GSharpArrayProxy(carryBuffer.DevicePointer, carryBuffer.NumWords / 2)
         };
@@ -514,14 +472,8 @@ internal static class CooperativeMegaKernelLauncher
         public readonly int ChunkSize;
 
         public NttWorkspaceBuffers(GpuWorkspace workspace, int requiredLen, int maxOutWords, int carryChunkSize,
-            KernelAdvancedMathHandler handler, int keptCount = 2)
+            KernelAdvancedMathHandler handler, bool rentsModulusSlot = false)
         {
-            if (keptCount is < 2 or > 3)
-            {
-                throw new ArgumentOutOfRangeException(nameof(keptCount), keptCount,
-                    "Mega-kernel NTT scratch supports 2 or 3 kept transform slots.");
-            }
-
             var m = TransformLengthFor(requiredLen);
 
             TransformLength = m;
@@ -533,8 +485,8 @@ internal static class CooperativeMegaKernelLauncher
             Kept1Buf2 = workspace.RentTemp(m);
             Kept2Buf1 = workspace.RentTemp(m);
             Kept2Buf2 = workspace.RentTemp(m);
-            Kept3Buf1 = keptCount == 3 ? workspace.RentTemp(m) : null;
-            Kept3Buf2 = keptCount == 3 ? workspace.RentTemp(m) : null;
+            Kept3Buf1 = rentsModulusSlot ? workspace.RentTemp(m) : null;
+            Kept3Buf2 = rentsModulusSlot ? workspace.RentTemp(m) : null;
             TmpBuf = workspace.RentTemp(m);
 
             UncarriedLow = workspace.RentTemp(m);
@@ -544,6 +496,59 @@ internal static class CooperativeMegaKernelLauncher
             NumBlocks = (maxOutWords + ChunkSize - 1) / ChunkSize;
             BlockCarries = workspace.RentTemp(NumBlocks * 2);
         }
+
+        public GpuBigIntSqrtKernels.AotContexts.NttConvolutionScratch ToSqrtScratch() => new()
+        {
+            Product = new GpuBigIntSqrtKernels.AotContexts.NttResidues
+            {
+                Buffer1 = ProductBuf1.ToProxy(),
+                Buffer2 = ProductBuf2.ToProxy()
+            },
+            Kept1 = new GpuBigIntSqrtKernels.AotContexts.NttResidues
+            {
+                Buffer1 = Kept1Buf1.ToProxy(),
+                Buffer2 = Kept1Buf2.ToProxy()
+            },
+            Kept2 = new GpuBigIntSqrtKernels.AotContexts.NttResidues
+            {
+                Buffer1 = Kept2Buf1.ToProxy(),
+                Buffer2 = Kept2Buf2.ToProxy()
+            },
+            TmpBuf = TmpBuf.ToProxy(),
+            UncarriedLow = UncarriedLow.ToProxy(),
+            UncarriedHigh = UncarriedHigh.ToProxy(),
+            BlockCarries = BlockCarries.ToProxy()
+        };
+
+        public GpuBigIntDivRemKernels.AotContexts.NttConvolutionScratch ToDivRemScratch() => new()
+        {
+            Product = new GpuBigIntDivRemKernels.AotContexts.NttResidues
+            {
+                Buffer1 = ProductBuf1.ToProxy(),
+                Buffer2 = ProductBuf2.ToProxy()
+            },
+            Kept1 = new GpuBigIntDivRemKernels.AotContexts.NttResidues
+            {
+                Buffer1 = Kept1Buf1.ToProxy(),
+                Buffer2 = Kept1Buf2.ToProxy()
+            },
+            Kept2 = new GpuBigIntDivRemKernels.AotContexts.NttResidues
+            {
+                Buffer1 = Kept2Buf1.ToProxy(),
+                Buffer2 = Kept2Buf2.ToProxy()
+            },
+            Kept3 = Kept3Buf1 is { } kept3Buf1 && Kept3Buf2 is { } kept3Buf2
+                ? new GpuBigIntDivRemKernels.AotContexts.NttResidues
+                {
+                    Buffer1 = kept3Buf1.ToProxy(),
+                    Buffer2 = kept3Buf2.ToProxy()
+                }
+                : default,
+            TmpBuf = TmpBuf.ToProxy(),
+            UncarriedLow = UncarriedLow.ToProxy(),
+            UncarriedHigh = UncarriedHigh.ToProxy(),
+            BlockCarries = BlockCarries.ToProxy()
+        };
 
         public void Dispose()
         {

@@ -646,10 +646,10 @@ public class GpuBigFloatRoundingTests : IDisposable
     // mutant: GSharpKernelFloatProvider.cs:335 `checked((int)shift)` -> `checked((int)Math.Max(shift, 0))` (Width9, Width16, Width16ZeroLow)
     // mutant: GSharpKernelFloatProvider.cs:328 `2L * 32 * n` -> `2 * 32 * n` (ParityMin, ParityMinPlus1: E - t wraps)
     // mutant: GpuBigIntDivRem.Sqrt.cs:175 `+ 48` -> `+ 47` (the estimate is twice the root)
-    // mutant: GpuBigIntSqrtKernels.cu.cs:204 `AddSmallSigned(trial, slackWords, -1)` removed (NearSquarePlus2R steps to
+    // mutant: GpuBigIntSqrtKernels.cu.cs:188 `AddSmallSigned(trial, slackWords, -1)` removed (NearSquarePlus2R steps to
     //         r + 1,
     // NearSquareMinus1)
-    // mutant: GpuBigIntSqrtKernels.cu.cs:220 `AddSmallSigned(root, rootWords, 1)` -> `0` (NearSquareExact,
+    // mutant: GpuBigIntSqrtKernels.cu.cs:204 `AddSmallSigned(root, rootWords, 1)` -> `0` (NearSquareExact,
     //         NearSquarePlus1,
     // NearSquareNext, SquareWide: the estimate one below the root is not raised)
     [SkippableTheory]

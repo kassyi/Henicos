@@ -5,10 +5,14 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GSharpTargetDialect>Cuda</GSharpTargetDialect>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <GSharpRemoteOffload>local</GSharpRemoteOffload>
   </PropertyGroup>
+  <ItemGroup>
+    <CompilerVisibleProperty Include="GSharpTargetDialect" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />

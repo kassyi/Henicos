@@ -84,7 +84,7 @@ public class ModPowPolyAlgorithmTests : IDisposable
     // (1 chunk of 512), n = 100 gives 516 words (1 chunk of 768), n = 200 gives 1016 words (2 chunks of 768, more than
     // a 1024-word chunk allocation holds), and n = 3270 gives 16366 words (22 chunks of 768).
     // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/
-    //   CooperativeMegaKernelLauncher.cs:473 `ChunkSize = carryChunkSize;` -> `ChunkSize = 1024;`
+    //   CooperativeMegaKernelLauncher.cs:495 `ChunkSize = carryChunkSize;` -> `ChunkSize = 1024;`
     //   input: numWords 200 and 3270 (ThrowIfBlockCarriesTooSmall throws before the launch)
     // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.NttProduct.cu.cs:107
     //   `int numBlocks = (numWordsResult + chunkSize - 1) / chunkSize;` -> `int numBlocks = 1;`
@@ -113,14 +113,14 @@ public class ModPowPolyAlgorithmTests : IDisposable
 
     // ModPowNttHostController launches one block (smCount: 1), so ChooseBlockDim selects 256 threads for 48 words
     // (M = 512 <= 2 * 1 * 256), 512 for 99 words (M = 1024 <= 2 * 1 * 512), and the largest block that fits for 100
-    // words (M = 2048; 768 on sm_86 with 66 registers per thread).
-    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/ModPowNttHostController.cs:56
+    // words (M = 2048; 768 on sm_86 with 80 registers per thread).
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/ModPowNttHostController.cs:54
     //   `gridDim: 1, blockDim: shape.BlockDim` -> `blockDim: 256`
     //   input: numWords 99 and 100
-    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/ModPowNttHostController.cs:50
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/ModPowNttHostController.cs:48
     //   `smCount: 1` -> `smCount: null`
     //   input: numWords 99 and 100 on a multi-SM GPU
-    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/CooperativeMegaKernelLauncher.cs:321
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/CooperativeMegaKernelLauncher.cs:356
     //   `var blockDim = ChooseBlockDim(transformLength, effectiveSmCount, largestFitting, candidates);`
     //   -> `largestFitting`
     //   input: numWords 48 and 99
@@ -165,8 +165,8 @@ public class ModPowPolyAlgorithmTests : IDisposable
     }
 
     // A 9-word exponent (288 bits) spans two ModPowNttMegaKernel launches (chunkWords = 8: [0, 8) and [8, 9)).
-    // Kept2 (R̂) and Kept3 (Q̂) are transformed once on StartWord == 0 and reused across the second launch.
-    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.ModPow.cu.cs:160
+    // The second launch continues the state initialized at StartWord == 0 (TempResult, TempBase, Kept2, Kept3).
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.ModPow.cu.cs:165
     //   `if (expSlice.StartWord == 0)` -> `if (expSlice.StartWord == 0 && expSlice.EndWord == expWords)`
     //   input: numWords 48, 9-word exponent (288 bits)
     [SkippableFact]
@@ -339,7 +339,7 @@ public class ModPowPolyAlgorithmTests : IDisposable
     // A block size that passes the warp rules can still be too large for the registers of the ModPow kernel (1024
     // threads on an sm_86 device): the cooperative launch then fails with CUDA error 720 after the buffers are rented.
     // The method must reject it with ArgumentOutOfRangeException before renting.
-    // mutant: KernelAdvancedMathHandler.cs:279 `ThrowIfModPowBlockDimDoesNotFit(` call removed (CudaException)
+    // mutant: KernelAdvancedMathHandler.cs:276 `ThrowIfModPowBlockDimDoesNotFit(` call removed (CudaException)
     // input: n = 64, blockDim = 1024 (skipped on a device where one block of 1024 threads fits)
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
@@ -414,7 +414,7 @@ public class ModPowPolyAlgorithmTests : IDisposable
 
     // When m > 65536 (n = 6600 -> m = 131072), TransposeTileBatches requires blockDim >= 256; warp multiples below
     // 256 must throw ArgumentOutOfRangeException before any NttWorkspaceBuffers or twiddle allocation.
-    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:278
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:275
     //         `ThrowIfStridedColumnBlockDimTooSmall(blockDim, transformLength);` -> removed
     // input: n = 6600, targetBits = 96 * 6600 + 512, exp = 3, blockDim = 32, 96, 224
     [SkippableTheory]
@@ -456,7 +456,7 @@ public class ModPowPolyAlgorithmTests : IDisposable
 
     // Boundary check at m = 131072 > 65536: blockDim = 256 meets TransposeTileBatches' 8-warp tile minimum and
     // matches BigInteger.ModPow.
-    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:587
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:567
     //         `blockDim < StridedColumnMinBlockDim` -> `blockDim <= StridedColumnMinBlockDim` (256u throws)
     // input: n = 6600, targetBits = 96 * 6600 + 512, exp = 3, blockDim = 256
     [SkippableFact]
