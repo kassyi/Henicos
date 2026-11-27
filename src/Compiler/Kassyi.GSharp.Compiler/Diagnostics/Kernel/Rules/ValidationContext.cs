@@ -14,13 +14,18 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 /// </param>
 /// <param name="exportsDeviceCode">Whether the project exports its device code (<c>GSharpExportDeviceCode</c>).</param>
 /// <param name="targetLimits">The launch limits of the target GPUs (<c>GSharpTargetArchitectures</c>).</param>
+/// <param name="bothOnStacks">
+/// Whether both CPU barrier models (<c>GSharpNativeBarrierModel</c> and <c>GSharpManagedBarrierModel</c>) are
+/// <c>Stack</c>.
+/// </param>
 internal readonly struct ValidationContext(
     SemanticModel semanticModel,
     IMethodSymbol methodSymbol,
     Action<Diagnostic> reportDiagnostic,
     ITranspilerDialect? dialect = null,
     bool exportsDeviceCode = true,
-    TargetLimits targetLimits = default)
+    TargetLimits targetLimits = default,
+    bool bothOnStacks = false)
 {
     private sealed class MethodAnalysisCache
     {
@@ -40,6 +45,12 @@ internal readonly struct ValidationContext(
 
     /// <summary>The launch limits of the target GPUs (<c>GSharpTargetArchitectures</c>).</summary>
     public readonly TargetLimits TargetLimits = targetLimits;
+
+    /// <summary>
+    /// Whether both CPU barrier models (<c>GSharpNativeBarrierModel</c> and <c>GSharpManagedBarrierModel</c>) are
+    /// <c>Stack</c>.
+    /// </summary>
+    public readonly bool BothOnStacks = bothOnStacks;
 
     /// <summary>
     /// Whether the method being checked has a managed form that calls the managed state machines of the suspending
