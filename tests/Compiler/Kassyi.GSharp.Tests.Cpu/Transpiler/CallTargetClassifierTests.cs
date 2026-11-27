@@ -78,7 +78,7 @@ public class CallTargetClassifierTests
 
     [Theory]
     [InlineData(nameof(CallTargetCases.CallsUnmarked), "Unmarked", "add [GpuDeviceFunction]")]
-    [InlineData(nameof(CallTargetCases.CallsInstance), "Set", "instance methods of structs")]
+    [InlineData(nameof(CallTargetCases.CallsInstance), "Set", "add [GpuDeviceFunction]")]
     [InlineData(nameof(CallTargetCases.CallsThroughInterface), "Apply", "through an interface")]
     [Scenario(TestScenario.SadPath)]
     public void Classify_ProjectMethodWithoutDeviceDefinition_ReturnsUnemittedWithReason(string caller, string method,

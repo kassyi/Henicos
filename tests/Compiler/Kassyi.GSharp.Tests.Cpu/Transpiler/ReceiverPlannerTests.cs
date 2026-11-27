@@ -1,6 +1,8 @@
 #nullable enable
 #pragma warning disable CS0649, CS8656
 using Kassyi.GSharp.Compiler.Dialects;
+using Kassyi.GSharp.Compiler.Extensions;
+using Kassyi.GSharp.Compiler.Lowering;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 
@@ -72,6 +74,9 @@ public class ReceiverPlannerTests
 
             [GpuDeviceFunction]
             public readonly int ReadOnlyCallsMutating() => Mutate(1);
+
+            [GpuDeviceFunction]
+            public readonly int ReadOnlyCallsExplicitMutating() => this.Mutate(1);
 
             [GpuDeviceFunction]
             public readonly int ReadOnlyCallsReadOnly() => Read();
@@ -1233,5 +1238,39 @@ public class ReceiverPlannerTests
             out _);
         Assert.Contains("__gsharp_seq_0 = __gsharp_fn_ReceiverPlannerFixture__PlannerStruct__Mutate(",
             aliasText, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("ReadOnlyCallsMutating")]
+    [InlineData("ReadOnlyCallsExplicitMutating")]
+    public void ReceiverPlanner_SpilledThisTemporary_SetsIsSelfFalse(string callerMethod)
+    {
+        var (call, callee, model) = FindCall("PlannerStruct", callerMethod, "Mutate");
+        var op = Assert.IsAssignableFrom<Microsoft.CodeAnalysis.Operations.IInvocationOperation>(
+            model.GetSafeOperation(call));
+        Assert.IsAssignableFrom<Microsoft.CodeAnalysis.Operations.IInstanceReferenceOperation>(op.Instance);
+
+        var spilledExpression = SyntaxFactory.MemberAccessExpression(
+            SyntaxKind.SimpleMemberAccessExpression,
+            SyntaxFactory.IdentifierName("__gsharp_arg_temp_0"),
+            SyntaxFactory.IdentifierName("Mutate"));
+        var rewrittenCall = call
+            .WithExpression(spilledExpression)
+            .WithAdditionalAnnotations(new SyntaxAnnotation(
+                LoweringAnnotations.OriginalSpanAnnotationKind,
+                LoweringAnnotations.FormatOriginalSpanData(call)));
+
+        var plan = ReceiverPlanner.PlanInstanceCall(
+            rewrittenCall,
+            callee,
+            model,
+            currentStruct: null,
+            SelfForm.ReceiverParameter);
+
+        Assert.Equal(ReceiverForm.Copy, plan.Form);
+        Assert.False(plan.IsSelf);
+        var receiverIdentifier = Assert.IsType<IdentifierNameSyntax>(plan.Expression);
+        Assert.Equal("__gsharp_arg_temp_0", receiverIdentifier.Identifier.ValueText);
     }
 }

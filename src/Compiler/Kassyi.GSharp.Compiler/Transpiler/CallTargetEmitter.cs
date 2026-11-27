@@ -86,13 +86,12 @@ internal static class CallTargetEmitter
             return true;
         }
 
-        if (method is { IsStatic: false, ReducedFrom: null } &&
-            CppNameResolver.IsEmittedDeviceFunction(method, context.Emitter.Dialect))
+        if (CallTargetClassifier.IsUnsupportedInstanceMethodGroup(method, context.Emitter.Dialect))
         {
             context.Reporter.Fail(
                 GSharpDiagnostics.UnsupportedSyntax,
                 node,
-                "instance device function used as a method group");
+                CallTargetClassifier.InstanceDeviceFunctionMethodGroup);
             context.Visitor.AppendUnsupportedPlaceholder(node);
             return true;
         }

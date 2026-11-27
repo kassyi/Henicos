@@ -189,6 +189,61 @@ public class ManagedRoutingTests
         Assert.Equal(SpecialType.System_Int32, typeArguments[1].SpecialType);
     }
 
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void SpellCallee_ReceiverImplicitThisAndStatic_SpellsExpectedSyntax()
+    {
+        const string source = """
+            using Kassyi.GSharp.Core;
+
+            namespace SpellCalleeCases;
+
+            public partial struct S
+            {
+                [GpuDeviceFunction]
+                public int Inst() => 1;
+
+                [GpuDeviceFunction]
+                public int InstGen<T>() => 2;
+
+                [GpuDeviceFunction]
+                public static int Stat() => 3;
+            }
+            """;
+        var compilation = RoslynTestUtility.CreateCompilation(source);
+        var type = compilation.GetTypeByMetadataName("SpellCalleeCases.S")
+            ?? throw new InvalidOperationException("SpellCalleeCases.S not found.");
+        var inst = type.GetMembers("Inst").OfType<IMethodSymbol>().Single();
+        var instGen = type.GetMembers("InstGen").OfType<IMethodSymbol>().Single();
+        var stat = type.GetMembers("Stat").OfType<IMethodSymbol>().Single();
+
+        const string prefix = GSharpInternalNames.ManagedVersion.MethodPrefix;
+        var expectedInstName = GlobalCppNames.GetKernelDerivedName(prefix, inst);
+        var expectedInstGenName = GlobalCppNames.GetKernelDerivedName(prefix, instGen);
+        var expectedStatName = GlobalCppNames.GetKernelDerivedName(prefix, stat);
+
+        var receiverExpr = SyntaxFactory.ParseExpression("s");
+        var explicitReceiver = ManagedExecutionRewriter.SpellCallee(inst, null, prefix, receiverExpr);
+        SyntaxAssert.Equivalent($"s.{expectedInstName}", explicitReceiver);
+
+        var typeArgs = SyntaxFactory.TypeArgumentList(
+            SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
+                SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.IntKeyword))));
+        var pointerReceiver = ManagedExecutionRewriter.SpellCallee(
+            instGen,
+            typeArgs,
+            prefix,
+            SyntaxFactory.ParseExpression("p"),
+            SyntaxKind.PointerMemberAccessExpression);
+        SyntaxAssert.Equivalent($"p->{expectedInstGenName}<int>", pointerReceiver);
+
+        var implicitThis = ManagedExecutionRewriter.SpellCallee(inst, null, prefix, receiver: null);
+        SyntaxAssert.Equivalent(expectedInstName, implicitThis);
+
+        var staticCallee = ManagedExecutionRewriter.SpellCallee(stat, null, prefix, receiver: receiverExpr);
+        SyntaxAssert.Equivalent($"global::SpellCalleeCases.S.{expectedStatName}", staticCallee);
+    }
+
     private static IMethodSymbol GetMethod(string type, string name) =>
         (s_compilation.GetTypeByMetadataName($"ManagedVersionCases.{type}") ??
          throw new InvalidOperationException($"Type '{type}' not found."))

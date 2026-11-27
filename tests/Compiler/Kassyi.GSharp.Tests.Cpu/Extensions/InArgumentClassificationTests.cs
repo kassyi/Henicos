@@ -36,6 +36,7 @@ public class InArgumentClassificationTests
     [InlineData("PointerMember")]
     [InlineData("DereferencedMember")]
     [InlineData("KeywordPointerIndirection")]
+    [InlineData("KeywordSpanElement")]
     public void ClassifyByReference_VariableWithAKeptRoot_IsALocation(string name)
     {
         var (argument, model) = GetArgument(name);
@@ -51,6 +52,7 @@ public class InArgumentClassificationTests
     [InlineData("RefReturn")]
     [InlineData("ElementOfARefReturn")]
     [InlineData("RefProperty")]
+    [InlineData("KeywordExternalSpanElement")]
     public void ClassifyByReference_VariableThatACallSelects_IsReselected(string name)
     {
         var (argument, model) = GetArgument(name);
@@ -64,6 +66,7 @@ public class InArgumentClassificationTests
     [InlineData("ElementOfAValue", false)]
     [InlineData("Sum", false)]
     [InlineData("SpanElement", true)]
+    [InlineData("ExternalSpanElement", true)]
     public void ClassifyByReference_ValueOrSpanElement_IsAValue(string name, bool isVariable)
     {
         var (argument, model) = GetArgument(name);

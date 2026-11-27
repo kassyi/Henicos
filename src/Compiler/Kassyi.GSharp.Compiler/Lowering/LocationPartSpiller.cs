@@ -17,31 +17,34 @@ internal static class LocationPartSpiller
         SeparatedSyntaxList<ArgumentSyntax> arguments,
         int index,
         SemanticModel? model,
-        Func<ExpressionSyntax, ExpressionSyntax> spill)
+        Func<ExpressionSyntax, ExpressionSyntax> spill,
+        bool laterOnly = false)
     {
         switch (location)
         {
             case ParenthesizedExpressionSyntax parenthesized:
                 return parenthesized.WithExpression(
-                    SpillLocation(parenthesized.Expression, arguments, index, model, spill));
+                    SpillLocation(parenthesized.Expression, arguments, index, model, spill, laterOnly));
             case MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } member:
-                return member.WithExpression(SpillLocation(member.Expression, arguments, index, model, spill));
+                return member.WithExpression(
+                    SpillLocation(member.Expression, arguments, index, model, spill, laterOnly));
             case MemberAccessExpressionSyntax
             {
                 RawKind: (int)SyntaxKind.PointerMemberAccessExpression
             } pointerMember:
                 return pointerMember.WithExpression(
-                    SpillPointer(pointerMember.Expression, arguments, index, model, spill));
+                    SpillPointer(pointerMember.Expression, arguments, index, model, spill, laterOnly));
             case PrefixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.PointerIndirectionExpression } indirection:
-                return indirection.WithOperand(SpillPointer(indirection.Operand, arguments, index, model, spill));
+                return indirection.WithOperand(
+                    SpillPointer(indirection.Operand, arguments, index, model, spill, laterOnly));
             case ElementAccessExpressionSyntax elementAccess:
-                var receiver = SpillReceiver(elementAccess.Expression, arguments, index, model, spill);
+                var receiver = SpillReceiver(elementAccess.Expression, arguments, index, model, spill, laterOnly);
                 var indices = elementAccess.ArgumentList.Arguments;
                 var spilledIndices = ImmutableArray.CreateBuilder<ArgumentSyntax>(indices.Count);
                 foreach (var elementIndex in indices)
                 {
                     spilledIndices.Add(
-                        SpilledArguments.CanStayInPlace(elementIndex.Expression, arguments, index, model)
+                        SpilledArguments.CanStayInPlace(elementIndex.Expression, arguments, index, model, laterOnly)
                         ? elementIndex
                         : elementIndex.WithExpression(spill(elementIndex.Expression)));
                 }
@@ -62,16 +65,17 @@ internal static class LocationPartSpiller
         SeparatedSyntaxList<ArgumentSyntax> arguments,
         int index,
         SemanticModel? model,
-        Func<ExpressionSyntax, ExpressionSyntax> spill)
+        Func<ExpressionSyntax, ExpressionSyntax> spill,
+        bool laterOnly)
     {
-        if (SpilledArguments.IsSpilledReceiver(receiver, arguments, index, model))
+        if (SpilledArguments.IsSpilledReceiver(receiver, arguments, index, model, laterOnly))
         {
             return spill(receiver);
         }
 
         return model != null && SpilledArguments.IsValueReceiver(receiver, model)
             ? receiver
-            : SpillLocation(receiver, arguments, index, model, spill);
+            : SpillLocation(receiver, arguments, index, model, spill, laterOnly);
     }
 
     // The pointer of *p or p->F: a value, evaluated once unless it can stay in place
@@ -80,8 +84,9 @@ internal static class LocationPartSpiller
         SeparatedSyntaxList<ArgumentSyntax> arguments,
         int index,
         SemanticModel? model,
-        Func<ExpressionSyntax, ExpressionSyntax> spill) =>
-        SpilledArguments.CanStayInPlace(pointer, arguments, index, model)
+        Func<ExpressionSyntax, ExpressionSyntax> spill,
+        bool laterOnly) =>
+        SpilledArguments.CanStayInPlace(pointer, arguments, index, model, laterOnly)
             ? pointer
             : spill(pointer);
 }
