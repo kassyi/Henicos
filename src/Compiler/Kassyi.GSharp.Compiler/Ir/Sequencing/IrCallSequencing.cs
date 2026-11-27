@@ -67,7 +67,7 @@ internal static class IrCallSequencing
         var reduced = call.Arguments is [{ Kind: IrArgumentKind.ExtensionReceiver } receiver, ..] ? receiver : default;
         var hasReceiver = reduced.Kind == IrArgumentKind.ExtensionReceiver;
         var extensionForm = hasReceiver && !mapped &&
-                            CppNameResolver.IsEmittedDeviceFunction(call.Method, context.Decisions.NativeDialect);
+                            CppNameResolver.IsEmittedDeviceFunction(call.Method, context.Decisions.Dialect);
         var operands = IrArgumentSequencing.OperandsOf(call.Arguments, extensionForm);
 
         // The mapped rule passes no receiver; the standard rule passes the receiver of an instance call or of another
