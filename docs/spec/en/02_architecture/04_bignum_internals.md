@@ -213,10 +213,10 @@ flowchart LR
 
 ### Precision-Doubling Inverse Square Root
 
-`SqrtFloor` takes the approximate inverse square root of the top `w = n + 1` words `A` of its operand (bit length `32w` or `32w - 1`) with `m = ceil(n / 2)` margin words, `B = 32(w + m)`. A root wider than `GpuWorkspace.SqrtPrecisionDoublingThresholdWords` words computes it from the host with ordinary launches instead of the cooperative mega-kernel (`GpuBigIntDivRem.InverseSqrtDoubling.cs`):
+For a `SqrtFloor` root of `n` words wider than `GpuWorkspace.SqrtPrecisionDoublingThresholdWords`, the half-precision inverse square root of the top `w = n + 1` words `A` of the operand (bit length `32w` or `32w - 1`) is computed from the host with ordinary launches (`GpuBigIntDivRem.InverseSqrtDoubling.cs`):
 
-- **Scale**: `E = 16w + 32m + 2`. The stage of `p` working words holds `Y`, an approximation of `x* / 2^E` (`x* = 2^B / sqrt(A)`) with `32p` fraction bits.
-- **Schedule**: `p_K = w + 1`, `p_(k-1) = ceil(p_k / 2) + 1` (2 before a stage of 3 words), down to a first stage of 2 words. The first stage reads the initial guess `x0` (about 30 correct bits) as `floor(x0 / 2^(E - 64))`.
+- **Scale**: the stage of `p` working words holds `Y`, an approximation of `Y*(p) = 2^(16w - 2 + 32p) / sqrt(A)` in `p` words.
+- **Schedule**: `p_K = p_y = max(3, floor(n / 2) + 1)` for the Karp-Markstein step (any `p_K >= 3` is supported), `p_(k-1) = ceil(p_k / 2) + 1` (2 before a stage of 3 words), down to a first stage of 2 words. The first stage reads `InitialGuess(A, 16w + 62)` (about 30 correct bits) directly into its top two words.
 - **One stage** (`dw = max(2, ceil(p / 2))`, four floors, all other products exact):
   - `S = floor(Y^2 / 2^(32(p - 1)))` (first floor);
   - `A_k = floor(A / 2^(32(w - p - 1)))`, the top `p + 1` words of `A` (second floor);

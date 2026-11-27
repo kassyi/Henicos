@@ -27,9 +27,9 @@ public class GpuBigIntInverseSqrtDoublingTests(ITestOutputHelper output)
     // The golden cases run on the GPU give the same width and Y in every stage and the same x~ as the Python model.
     // Only an equality per stage shows a wrong intermediate stage; the final x~ alone can hide it.
     // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:57 `words - words / 2 + 1` -> `words - words / 2`
-    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:185 `-(32 * residualWords + 1)` -> `-(32 * residualWords +
+    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:172 `-(32 * residualWords + 1)` -> `-(32 * residualWords +
     //         (words == finalWords ? 1 : 2))` (an intermediate stage)
-    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:195 `Math.Max(2, words - words / 2)` -> `... - 1`
+    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:182 `Math.Max(2, words - words / 2)` -> `... - 1`
     [SkippableTheory]
     [Scenario(TestScenario.HappyPath)]
     [MemberData(nameof(InverseSqrtDoublingReference.GoldenCases), MemberType = typeof(InverseSqrtDoublingReference))]
@@ -43,8 +43,7 @@ public class GpuBigIntInverseSqrtDoublingTests(ITestOutputHelper output)
         using var ctx = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
         using var operand = GpuBigUInt.FromBigInteger(ctx, golden.A, g.W);
 
-        var stages = GpuBigIntDivRem.InverseSqrtDoublingStagesForTest(operand, g.FinalWords,
-            InverseSqrtDoublingReference.FirstY(golden.A, g));
+        var stages = RunDeviceStages(operand, g, InverseSqrtDoublingReference.FirstY(golden.A, g), out var xTilde);
 
         // The same schedule, and in every stage the same Y as the reference model.
         Assert.Equal(golden.Stages.Count, stages.Count);
@@ -55,7 +54,6 @@ public class GpuBigIntInverseSqrtDoublingTests(ITestOutputHelper output)
         }
 
         // x~ = floor(Y_K / 2^(32 p_K - E)), computed from the last stage Y_K.
-        var xTilde = stages[^1].Y >> (32 * g.FinalWords - g.E);
         Assert.Equal(golden.XTilde, xTilde);
     }
 
@@ -82,7 +80,7 @@ public class GpuBigIntInverseSqrtDoublingTests(ITestOutputHelper output)
     //      intermediate stage that the final shift hides still shows here.
     // T1: x~ is within ProvenBound of floor(x*), x* = 2^B / sqrt(A).
     // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:57 `words - words / 2 + 1` -> `words - words / 2` (R, T1Y, T1)
-    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:185 `-(32 * residualWords + 1)` -> `-(32 * residualWords +
+    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:172 `-(32 * residualWords + 1)` -> `-(32 * residualWords +
     //         (words == finalWords ? 1 : 2))` (R, T1Y, T1)
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
@@ -96,19 +94,14 @@ public class GpuBigIntInverseSqrtDoublingTests(ITestOutputHelper output)
         using var ctx = new GpuWorkspace((g.W + g.M) * 8, GpuExecutionEngine.GSharpAot);
         using var operand = GpuBigUInt.FromBigInteger(ctx, a, g.W);
 
-        var stages = GpuBigIntDivRem.InverseSqrtDoublingStagesForTest(operand, g.FinalWords, firstY);
-        var x = stages[^1].Y >> (32 * g.FinalWords - g.E);
+        var stages = RunDeviceStages(operand, g, firstY, out var x);
         var reference = InverseSqrtDoublingReference.Run(a, g, firstY, out var referenceX);
 
         // R: the same stages, Y and D, and the same x~ as the model.
-        Assert.Equal(reference.Count, stages.Count);
+        AssertStagesFollowTheModel(reference, stages, $"{kind} n={rootWords}");
         var smallestSpare = long.MaxValue;
-        for (var k = 0; k < stages.Count; k++)
+        for (var k = 0; k < reference.Count; k++)
         {
-            Assert.True(
-                reference[k].Words == stages[k].Words && reference[k].Y == stages[k].Y && reference[k].D == stages[k].D,
-                $"{kind} n={rootWords}: stage {k} (p = {stages[k].Words}) differs from the model");
-
             // TD: the model's D fits in dw words with its offset, dw = max(2, ceil(p / 2)).
             var residualBits = 32L * Math.Max(2, (reference[k].Words + 1) / 2) - 1;
             var magnitudeBits = BigInteger.Abs(reference[k].D).GetBitLength();
@@ -128,7 +121,7 @@ public class GpuBigIntInverseSqrtDoublingTests(ITestOutputHelper output)
 
         // T1: x~ is within the proven bound of floor(x*); floor(Y*) shifted down is floor(x*), checked directly where
         // the oracle is cheap.
-        var floorX = yStar >> (32 * g.FinalWords - g.E);
+        var floorX = g.XTilde(yStar);
         if (rootWords <= 127)
         {
             Assert.Equal(InverseSqrtDoublingReference.FloorScaledInverseSqrt(a, g.B), floorX);
@@ -155,7 +148,7 @@ public class GpuBigIntInverseSqrtDoublingTests(ITestOutputHelper output)
     // A first Y 2^24 above floor(Y*) at 2 words makes the first D negative, which the initial guess (never above the
     // root) does not reach: the offset representation of D and of Yt·D must still give the model's stages bit for bit.
     // The start is outside the premise of the proof, so x~ is held to ApproximateInverseSqrtMaxError only.
-    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:164 and :181 D unsigned: `residualShift + 32 * residualWords - 1`
+    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:151 and :168 D unsigned: `residualShift + 32 * residualWords - 1`
     //         -> `64 * words + 60 - 32 * padWords` and `ShiftAndResize(yTop, 32 * residualWords - 1, offset)` ->
     //         `offset.Clear()` (the first stage differs)
     [SkippableTheory]
@@ -172,27 +165,18 @@ public class GpuBigIntInverseSqrtDoublingTests(ITestOutputHelper output)
         using var ctx = new GpuWorkspace((g.W + g.M) * 8, GpuExecutionEngine.GSharpAot);
         using var operand = GpuBigUInt.FromBigInteger(ctx, a, g.W);
 
-        var stages = GpuBigIntDivRem.InverseSqrtDoublingStagesForTest(operand, g.FinalWords, firstY);
-        var x = stages[^1].Y >> (32 * g.FinalWords - g.E);
+        var stages = RunDeviceStages(operand, g, firstY, out var x);
         var reference = InverseSqrtDoublingReference.Run(a, g, firstY, out var referenceX);
 
         // The input reaches the negative branch: the first D is below zero.
         Assert.True(stages[0].D.Sign < 0, $"{kind} n={rootWords}: the first D {stages[0].D} is not negative");
 
         // Every stage and x~ agree with the model, signed D included.
-        Assert.Equal(reference.Count, stages.Count);
-        for (var k = 0; k < stages.Count; k++)
-        {
-            Assert.True(
-                reference[k].Words == stages[k].Words && reference[k].Y == stages[k].Y && reference[k].D == stages[k].D,
-                $"{kind} n={rootWords}: stage {k} (p = {stages[k].Words}) differs from the model");
-        }
-
+        AssertStagesFollowTheModel(reference, stages, $"{kind} n={rootWords}");
         Assert.Equal(referenceX, x);
 
         // The doubling still converges: x~ lies within ApproximateInverseSqrtMaxError of floor(x*).
-        var floorX = InverseSqrtDoublingReference.FloorScaledInverseSqrt(a, g.YExponent(g.FinalWords))
-            >> (32 * g.FinalWords - g.E);
+        var floorX = g.XTilde(InverseSqrtDoublingReference.FloorScaledInverseSqrt(a, g.YExponent(g.FinalWords)));
         Assert.True(BigInteger.Abs(x - floorX) <= GpuBigIntDivRem.ApproximateInverseSqrtMaxError,
             $"{kind} n={rootWords}: x~ - floor(x*) = {x - floorX}");
     }
@@ -200,8 +184,8 @@ public class GpuBigIntInverseSqrtDoublingTests(ITestOutputHelper output)
 #if DEBUG
     // Debug builds check |D| < 2^(32 dw - 1) on the device. With Y = 0 the first stage has D = 2^64, which does not fit
     // in dw = 2 words with the offset: the stage readback throws OverflowException, and the error is reported once.
-    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:169 `CheckFitsBits(...)` removed (no exception)
-    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:195 `Math.Max(2, words - words / 2)` -> `... - 1` (the golden
+    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:156 `CheckFitsBits(...)` removed (no exception)
+    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:182 `Math.Max(2, words - words / 2)` -> `... - 1` (the golden
     //         and normalized inputs throw)
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
@@ -223,7 +207,7 @@ public class GpuBigIntInverseSqrtDoublingTests(ITestOutputHelper output)
     // model gives D = -1 or -(2^32 + 1) in the last or an intermediate stage); the first-Y test reaches D < 0 only in
     // the first stage. The stages follow the model, x~ is within one of the floor, and SqrtFloor of an operand with
     // these top words is the floor.
-    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:164 `residualShift + 32 * residualWords - 1` ->
+    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:151 `residualShift + 32 * residualWords - 1` ->
     //         `64 * words + 60 - 32 * padWords` (D without its offset: the negative D differs)
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
@@ -246,8 +230,7 @@ public class GpuBigIntInverseSqrtDoublingTests(ITestOutputHelper output)
         ctx.SqrtPrecisionDoublingThresholdWords = 0;
         using var operand = GpuBigUInt.FromBigInteger(ctx, a, g.W);
 
-        var stages = GpuBigIntDivRem.InverseSqrtDoublingStagesForTest(operand, g.FinalWords, firstY);
-        var x = stages[^1].Y >> (32 * g.FinalWords - g.E);
+        var stages = RunDeviceStages(operand, g, firstY, out var x);
         var reference = InverseSqrtDoublingReference.Run(a, g, firstY, out var referenceX);
 
         // The input reaches what it is for: the model has a negative D in a stage of more than two words.
@@ -304,8 +287,7 @@ public class GpuBigIntInverseSqrtDoublingTests(ITestOutputHelper output)
         var firstY = InverseSqrtDoublingReference.FirstY(a, g);
         using var ctx = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
         using var operand = GpuBigUInt.FromBigInteger(ctx, a, g.W);
-        var stages = GpuBigIntDivRem.InverseSqrtDoublingStagesForTest(operand, g.FinalWords, firstY);
-        var x = stages[^1].Y >> (32 * g.FinalWords - g.E);
+        var stages = RunDeviceStages(operand, g, firstY, out var x);
         var reference = InverseSqrtDoublingReference.Run(a, g, firstY, out var referenceX);
 
         // Every stage and x~ agree with the model.
@@ -399,7 +381,7 @@ public class GpuBigIntInverseSqrtDoublingTests(ITestOutputHelper output)
     }
 
     // A first Y of 2^64 does not fit in the top two words of y and throws ArgumentOutOfRangeException.
-    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:86 `firstY.GetBitLength() > 64` -> `firstY.GetBitLength() > 65`
+    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:87 `firstY.GetBitLength() > 64` -> `firstY.GetBitLength() > 65`
     //         (the conversion at :105 throws OverflowException instead)
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
@@ -437,6 +419,18 @@ public class GpuBigIntInverseSqrtDoublingTests(ITestOutputHelper output)
     {
         var r = (BigInteger.One << (16 * operandWords)) - 1;
         return r * r + delta;
+    }
+
+    /// <summary>
+    /// Runs <see cref="GpuBigIntDivRem.InverseSqrtDoublingStagesForTest"/> to <c>g.FinalWords</c> and computes
+    /// <c>x~ = floor(Y_K / 2^(32 p_K - E))</c>.
+    /// </summary>
+    internal static List<GpuBigIntDivRem.InverseSqrtDoublingStage> RunDeviceStages(GpuBigUInt operand, Geometry g,
+        BigInteger firstY, out BigInteger xTilde)
+    {
+        var stages = GpuBigIntDivRem.InverseSqrtDoublingStagesForTest(operand, g.FinalWords, firstY);
+        xTilde = g.XTilde(stages[^1].Y);
+        return stages;
     }
 
     /// <summary>Asserts that every stage (width, <c>Y</c> and signed <c>D</c>) equals the model's.</summary>
@@ -485,7 +479,7 @@ public class GpuBigIntInverseSqrtDoublingCpuFallbackTests
     // In CPU fallback mode the switch is taken as well, and every step of the doubling runs through the BigInteger
     // branches of the host helpers. SqrtFloorCorrection then writes the exact root, so the stages are compared with the
     // model here, and Sqrt is the floor.
-    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:185 `-(32 * residualWords + 1)` -> `-(32 * residualWords + 2)`
+    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:172 `-(32 * residualWords + 1)` -> `-(32 * residualWords + 2)`
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(1)]
@@ -508,12 +502,12 @@ public class GpuBigIntInverseSqrtDoublingCpuFallbackTests
             };
             using var operandTop = GpuBigUInt.FromBigInteger(ctx, top, g.W);
 
-            var stages = GpuBigIntDivRem.InverseSqrtDoublingStagesForTest(operandTop, g.FinalWords, firstY);
+            var stages = GpuBigIntInverseSqrtDoublingTests.RunDeviceStages(operandTop, g, firstY, out var xTilde);
             var reference = InverseSqrtDoublingReference.Run(top, g, firstY, out var referenceX);
 
             // Every stage and x~ agree with the model.
             GpuBigIntInverseSqrtDoublingTests.AssertStagesFollowTheModel(reference, stages, $"{kind} n={rootWords}");
-            Assert.Equal(referenceX, stages[^1].Y >> (32 * g.FinalWords - g.E));
+            Assert.Equal(referenceX, xTilde);
 
             // Sqrt through the doubling is the floor.
             using var operand = GpuBigUInt.FromBigInteger(ctx, a, 2 * rootWords);

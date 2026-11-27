@@ -22,9 +22,14 @@ public static partial class GpuBigIntDivRem
         scoped GpuBigUIntView targetOperand,
         scoped GpuBigUIntView resultBuffer,
         int marginWords = 0
-    ) =>
-        InverseSqrtCore(targetOperand.AsBorrowedBigUInt(), resultBuffer.AsBorrowedBigUInt(), marginWords,
-            correctsToFloor: true);
+    )
+    {
+        var operand = targetOperand.AsBorrowedBigUInt();
+        var result = resultBuffer.AsBorrowedBigUInt();
+        PrepareInverseSqrt(operand, result, marginWords, out var actualBits, out var iterations);
+        operand.Workspace.Provider.InverseSqrtMega(
+            operand.Workspace, operand, result, marginWords, actualBits, iterations);
+    }
 
     /// <summary>
     /// The largest distance <c>floor(2^B / sqrt(a)) - x</c> of an <see cref="ApproximateInverseSqrt"/> result
@@ -51,13 +56,18 @@ public static partial class GpuBigIntDivRem
         scoped GpuBigUIntView targetOperand,
         scoped GpuBigUIntView resultBuffer,
         int marginWords
-    ) =>
-        InverseSqrtCore(targetOperand.AsBorrowedBigUInt(), resultBuffer.AsBorrowedBigUInt(), marginWords,
-            correctsToFloor: false);
+    )
+    {
+        var operand = targetOperand.AsBorrowedBigUInt();
+        var result = resultBuffer.AsBorrowedBigUInt();
+        PrepareInverseSqrt(operand, result, marginWords, out var actualBits, out var iterations);
+        operand.Workspace.Provider.ApproximateInverseSqrtMega(
+            operand.Workspace, operand, result, marginWords, actualBits, iterations);
+    }
 
-    // InverseSqrt on the owned type; the internal methods above take views and borrow them
-    private static void InverseSqrtCore(GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int marginWords,
-        bool correctsToFloor)
+    // Validates the inverse-square-root buffers, writes the initial guess and computes the Newton iteration count.
+    private static void PrepareInverseSqrt(GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int marginWords,
+        out int actualBits, out int iterations)
     {
         var n = targetOperand.NumWords;
         if (resultBuffer.NumWords != n + marginWords)
@@ -65,30 +75,16 @@ public static partial class GpuBigIntDivRem
             throw new ArgumentException("Result buffer for InverseSqrt must be targetOperand.NumWords + marginWords.");
         }
 
-        var actualBits = GetActualBits(targetOperand);
+        actualBits = GetActualBits(targetOperand);
         if (actualBits == 0)
         {
             throw new DivideByZeroException();
         }
 
         var targetBits = (n + marginWords) * 32;
-        var currentBits = 31; // X_top has 31 bits
-
+        const int CurrentBits = 31; // X_top has 31 bits
         ComputeInitialGuess(targetOperand, resultBuffer, targetBits, isSquareRoot: true);
-
-        var iterations = CalculateNewtonRaphsonIterationCount(currentBits, targetBits);
-
-        IGpuAdvancedMathProvider provider = targetOperand.Workspace.Provider;
-        if (correctsToFloor)
-        {
-            provider.InverseSqrtMega(
-                targetOperand.Workspace, targetOperand, resultBuffer, marginWords, actualBits, iterations);
-        }
-        else
-        {
-            provider.ApproximateInverseSqrtMega(
-                targetOperand.Workspace, targetOperand, resultBuffer, marginWords, actualBits, iterations);
-        }
+        iterations = CalculateNewtonRaphsonIterationCount(CurrentBits, targetBits);
     }
 
     /// <summary>

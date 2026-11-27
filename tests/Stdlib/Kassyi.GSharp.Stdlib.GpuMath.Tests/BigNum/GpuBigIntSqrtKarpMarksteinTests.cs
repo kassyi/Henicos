@@ -17,13 +17,13 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 public class GpuBigIntSqrtKarpMarksteinTests(ITestOutputHelper output)
 {
     // K-P1: every stage, intermediate value and final root on the GPU matches the Python golden set bit for bit.
-    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:116 `GpuBigIntMath.Sub(y, 2u, y);` -> `GpuBigIntMath.Sub(y, 0u, y);`
-    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:170 `-31` -> `-32`
-    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:172 `BorrowWords(w.InverseWords, w.StepWords)` ->
+    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:117 `GpuBigIntMath.Sub(y, 2u, y);` -> `GpuBigIntMath.Sub(y, 0u, y);`
+    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:171 `-31` -> `-32`
+    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:173 `BorrowWords(w.InverseWords, w.StepWords)` ->
     //         `BorrowWords(w.InverseWords - 1, w.StepWords)`
-    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:220 `16 * RootWords - 16` -> `16 * RootWords - 15`
-    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:96 `CorrectSqrtFloor(operand, root);` removed
-    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:214 `(RootWords + 1) / 2` -> `(RootWords + 1) / 2 - 1`
+    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:221 `16 * RootWords - 16` -> `16 * RootWords - 15`
+    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:97 `CorrectSqrtFloor(operand, root);` removed
+    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:215 `(RootWords + 1) / 2` -> `(RootWords + 1) / 2 - 1`
     [SkippableTheory]
     [Scenario(TestScenario.HappyPath)]
     [MemberData(nameof(SqrtKarpMarksteinReference.GoldenCases), MemberType = typeof(SqrtKarpMarksteinReference))]
@@ -60,8 +60,8 @@ public class GpuBigIntSqrtKarpMarksteinTests(ITestOutputHelper output)
     }
 
     // K-P1..K-P5 across structured operands from n = 1 to n = 128.
-    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:205 `RootWords / 2` -> `RootWords / 2 + 1`
-    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:202 `Math.Max(3, RootWords / 2 + 1)` -> `Math.Max(3, RootWords / 2)`
+    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:206 `RootWords / 2` -> `RootWords / 2 + 1`
+    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:203 `Math.Max(3, RootWords / 2 + 1)` -> `Math.Max(3, RootWords / 2)`
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(SqrtFloorInputs))]
@@ -139,8 +139,8 @@ public class GpuBigIntSqrtKarpMarksteinTests(ITestOutputHelper output)
     }
 
     // K-P5, K-P6: SqrtFloor gives the floor and increments InverseSqrtDoublingRuns iff n > threshold.
-    // mutant: GpuBigIntDivRem.Sqrt.cs:147 `root.NumWords > workspace.SqrtPrecisionDoublingThresholdWords` -> `>=`
-    // mutant: GpuBigIntDivRem.Sqrt.cs:150 `workspace.CountInverseSqrtDoubling();` removed
+    // mutant: GpuBigIntDivRem.Sqrt.cs:127 `root.NumWords > workspace.SqrtPrecisionDoublingThresholdWords` -> `>=`
+    // mutant: GpuBigIntDivRem.Sqrt.cs:130 `workspace.CountInverseSqrtDoubling();` removed
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(ThresholdSwitchInputs))]
@@ -166,7 +166,7 @@ public class GpuBigIntSqrtKarpMarksteinTests(ITestOutputHelper output)
     }
 
     // An operand whose word count is not 2 * root.NumWords (narrower or wider) throws ArgumentException.
-    // mutant: GpuBigIntDivRem.Sqrt.cs:179 `operand.NumWords != 2 * n` -> `operand.NumWords < 2 * n` (fails on 9 vs 4)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:159 `operand.NumWords != 2 * n` -> `operand.NumWords < 2 * n` (fails on 9 vs 4)
     [SkippableTheory]
     [Scenario(TestScenario.SadPath)]
     [InlineData(7, 4)]
@@ -184,7 +184,7 @@ public class GpuBigIntSqrtKarpMarksteinTests(ITestOutputHelper output)
     }
 
     // An operand with bit length below 64n - 1 violates the normalization precondition and throws ArgumentException.
-    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:104 `actualBits < 32 * w.OperandWords - 1` ->
+    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:105 `actualBits < 32 * w.OperandWords - 1` ->
     //         `actualBits < 32 * w.OperandWords - 2`
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
@@ -205,7 +205,7 @@ public class GpuBigIntSqrtKarpMarksteinTests(ITestOutputHelper output)
     // checked subtraction as an OverflowException (in Debug, CheckFitsBits also flags the wrapped residual, so two
     // domain errors are recorded; mutating AddSubtract to AddSubtractModulo drops the count to 1 in Debug and removes
     // the exception in Release).
-    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:147 `BigIntWideOps.AddSubtract(` ->
+    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:148 `BigIntWideOps.AddSubtract(` ->
     //         `BigIntWideOps.AddSubtractModulo(`
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]

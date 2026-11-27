@@ -2,8 +2,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 // Precision-doubling inverse square root driven from the host, for SqrtFloor roots wider than
 // GpuWorkspace.SqrtPrecisionDoublingThresholdWords: a chain of ordinary launches whose working precision doubles from
-// two words to the full width, with no host synchronization between the stages. The derivation and its error bounds
-// are in docs/spec/en/02_architecture/04_bignum_internals.md.
+// two words to the requested final width (p_y for the Karp-Markstein step), with no host synchronization between the
+// stages. The derivation and its error bounds are in docs/spec/en/02_architecture/04_bignum_internals.md.
 public static partial class GpuBigIntDivRem
 {
     /// <summary>
@@ -17,8 +17,8 @@ public static partial class GpuBigIntDivRem
     /// it back.
     /// </summary>
     /// <param name="Words">The working words <c>p</c> of the stage.</param>
-    /// <param name="Y">The result <c>Y</c> of the stage: <c>x / 2^E</c> as a fixed-point number with <c>32p</c>
-    /// fraction bits, <c>E = 16w + 32m + 2</c>.</param>
+    /// <param name="Y">The result <c>Y</c> of the stage, approximating <c>Y*(p) = 2^(16w - 2 + 32p) / sqrt(A)</c> in
+    /// <c>p</c> words.</param>
     /// <param name="D">The scaled residual the stage used, signed:
     /// <c>D = floor((2^(64p + 60) - A_k·S) / 2^(32p + 60))</c>.</param>
     internal readonly record struct InverseSqrtDoublingStage(int Words, BigInteger Y, BigInteger D);

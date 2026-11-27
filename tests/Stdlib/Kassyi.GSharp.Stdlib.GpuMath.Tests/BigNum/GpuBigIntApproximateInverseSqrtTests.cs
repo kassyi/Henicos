@@ -11,19 +11,27 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 public class GpuBigIntApproximateInverseSqrtTests(ITestOutputHelper output)
 {
     /// <summary>
-    /// Inputs of the approximate inverse square root: the kind of operand and its words <c>n</c>, with the margin
-    /// <c>SqrtFloorMarginWords(n - 1)</c> that SqrtFloor uses for a root of <c>n - 1</c> words.
+    /// Inputs of the approximate inverse square root: the kind of operand, its words <c>n</c>, and the extra margin
+    /// above <c>SqrtFloorMarginWords(n - 1)</c> (0 for SqrtFloor's margin; 1 for the wider-margin contract).
     /// </summary>
-    public static TheoryData<string, int> ApproximateInverseSqrtInputs()
+    public static TheoryData<string, int, int> ApproximateInverseSqrtInputs()
     {
-        var data = new TheoryData<string, int>();
+        var data = new TheoryData<string, int, int>();
         foreach (var kind in new[] { "Random", "PowerOfFour", "TopBitOnly", "AllOnes", "TopWordOnly" })
         {
             // 41 and 640: on the mega-kernel, 32(n + floor(n / 2)) bits lie just below 31 * 2^k, so its iterations
             // have no spare one.
             foreach (var n in new[] { 2, 3, 7, 31, 32, 33, 41, 127, 640, 1000, 5000 })
             {
-                data.Add(kind, n);
+                data.Add(kind, n, 0);
+            }
+        }
+
+        foreach (var kind in new[] { "Random", "AllOnes", "PowerOfFour" })
+        {
+            foreach (var n in new[] { 2, 7, 32, 33, 41, 127 })
+            {
+                data.Add(kind, n, 1);
             }
         }
 
@@ -33,17 +41,18 @@ public class GpuBigIntApproximateInverseSqrtTests(ITestOutputHelper output)
     // The approximate inverse root x of a normalized operand (bit length 32n or 32n - 1) is never above
     // floor(2^B / sqrt(a)) and at most ApproximateInverseSqrtMaxError below it; the oracle is
     // floor(2^B / sqrt(a)) = isqrt(floor(2^(2B) / a)). ApproximateInverseSqrt always uses the mega-kernel.
-    // mutant: GpuBigIntDivRem.Sqrt.cs:79 two Newton iterations fewer for the approximate contract (14 inputs of
+    // mutant: GpuBigIntDivRem.Sqrt.cs:87 two Newton iterations fewer for the approximate contract (14 inputs of
     //         n >= 31; one fewer survives: the count keeps a spare iteration)
     [SkippableTheory]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(ApproximateInverseSqrtInputs))]
-    public void ApproximateInverseSqrt_NormalizedOperand_IsAtMostMaxErrorBelowFloor(string kind, int n)
+    public void ApproximateInverseSqrt_NormalizedOperand_IsAtMostMaxErrorBelowFloor(string kind, int n,
+        int extraMargin)
     {
         CudaCapability.EnsureGpuAvailable();
         var a = BuildApproximateInverseSqrtOperand(kind, n);
-        var marginWords = GpuBigIntDivRem.SqrtFloorMarginWords(n - 1);
+        var marginWords = GpuBigIntDivRem.SqrtFloorMarginWords(n - 1) + extraMargin;
         using var ctx = new GpuWorkspace((n + marginWords) * 8, GpuExecutionEngine.GSharpAot);
         using var operand = GpuBigUInt.FromBigInteger(ctx, a, n);
         using var inverse = new GpuBigUInt(ctx, n + marginWords);
@@ -53,10 +62,10 @@ public class GpuBigIntApproximateInverseSqrtTests(ITestOutputHelper output)
         var b = 32 * (n + marginWords);
         var floor = GpuBigIntSqrtTests.FloorSqrt((BigInteger.One << (2 * b)) / a);
         var below = floor - inverse.ToBigInteger();
-        output.WriteLine($"{kind} n={n}: floor - x = {below}");
+        output.WriteLine($"{kind} n={n} extraMargin={extraMargin}: floor - x = {below}");
         Assert.True(
             below >= 0 && below <= GpuBigIntDivRem.ApproximateInverseSqrtMaxError,
-            $"{kind} n={n}: floor(2^B / sqrt(a)) - x = {below}");
+            $"{kind} n={n} extraMargin={extraMargin}: floor(2^B / sqrt(a)) - x = {below}");
     }
 
     // The approximate path skips the final correction: with zero Newton iterations a hand-built guess 5 below the

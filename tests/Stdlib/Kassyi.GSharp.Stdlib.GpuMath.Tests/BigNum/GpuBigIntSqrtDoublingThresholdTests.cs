@@ -43,7 +43,7 @@ public class GpuBigIntSqrtDoublingThresholdTests
 
     // Sqrt is the floor on both sides of the threshold, and a root of r words takes the doubling exactly when r is
     // above the threshold (7: at 6 and 7 the mega-kernel, at 8 the doubling; 0: always; int.MaxValue: never).
-    // mutant: GpuBigIntDivRem.Sqrt.cs:131 `>` -> `>=` (threshold 7, root 7 counts a run)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:127 `>` -> `>=` (threshold 7, root 7 counts a run)
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(ThresholdInputs))]
@@ -86,7 +86,7 @@ public class GpuBigIntSqrtDoublingThresholdTests
     // length 64r and 64r - 1, all ones, the lowest value, the square of the largest root and one below it, and a
     // negative D in a wide stage.
     // mutant: GpuWorkspace.cs:145 `} = 5956;` -> `} = 5955;` (5956 counts a doubling run)
-    // mutant: GpuBigIntDivRem.Sqrt.cs:131 `>` -> `>=` (5956 counts a doubling run)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:127 `>` -> `>=` (5956 counts a doubling run)
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(DefaultThresholdInputs))]
