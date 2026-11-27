@@ -16,7 +16,8 @@ node scripts/human/job-queue.js wait <id>                   # until it ends: exi
 node scripts/human/job-queue.js status [<id>]               # the jobs ahead and the expected start and end
 ```
 
-- `--gpu` only for a command that uses the GPU (a CUDA test project, `just test-category Runtime`, a benchmark): a CPU
+- `--gpu` only for a command that uses the GPU (a CUDA test project, `just test`); a benchmark, `just test-category`
+  and any other command outside the share language take `--gpu-exclusive`, and `run --gpu` refuses them. A CPU
   suite under `--gpu` keeps the GPU from the jobs that need it. `just fuzz-diff` and `fuzz-differential.js` take the
   GPU lock themselves: queue them without `--gpu`. `just long-checks` (`scripts/human/long-checks.js`) is a slot-free
   orchestrator that queues each step through `job-queue.js` itself: run it directly without wrapping it in `run`.

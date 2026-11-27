@@ -155,20 +155,30 @@ export function isValidFilter(value: string): boolean {
   });
 }
 
-/** Validates an `RPATH` redirect target (relative or `[A-Za-z]:/` or `/[a-z]/`, no `..` or Windows device names). */
-export function isValidRedirectPath(token: string): boolean {
+/**
+ * Validates an `RPATH` redirect target: relative, `[A-Za-z]:/`, or `/[a-z]/` under bash and sh only (cmd and
+ * PowerShell read `/c/x` as `\c\x` on the current drive). A relative path starts with a letter or `_`, since
+ * PowerShell reads a bare `1kb`, `0x10` or `1e2` as a number. No `..`, no segment ending in `.` (Win32 drops it), no
+ * Windows device names.
+ */
+export function isValidRedirectPath(token: string, shell: ShellName): boolean {
   let rest = token;
   if (/^[A-Za-z]:\//.test(rest)) {
     rest = rest.slice(3);
   } else if (/^\/[a-z]\//.test(rest)) {
+    if (shell !== "bash" && shell !== "sh") {
+      return false;
+    }
     rest = rest.slice(3);
+  } else if (!/^[A-Za-z_]/.test(rest)) {
+    return false;
   }
   if (rest.length === 0) {
     return false;
   }
   const segments = rest.split("/");
   return segments.every((seg) => {
-    if (!RedirectSegment.test(seg) || seg === "." || seg === "..") {
+    if (!RedirectSegment.test(seg) || seg.endsWith(".")) {
       return false;
     }
     const base = (seg.split(".")[0] ?? "").toUpperCase();
@@ -501,6 +511,7 @@ function readItems(text: string, startPos: number, shell: ShellName): ItemsResul
 function readRedirect(
   text: string,
   startPos: number,
+  shell: ShellName,
 ): { redirect: CommandRedirect; nextPos: number } | { failure: ParseFailure } {
   if (startPos >= text.length) {
     return { redirect: { stdout: null, append: false, mergeStderr: false }, nextPos: startPos };
@@ -524,12 +535,12 @@ function readRedirect(
     return { failure: { position: first.nextPos, token: "", expected: "space and redirect path" } };
   }
   const pathTok = readBareToken(text, pathPos);
-  if (!isValidRedirectPath(pathTok.token)) {
+  if (!isValidRedirectPath(pathTok.token, shell)) {
     return {
       failure: {
         position: pathPos,
         token: pathTok.token,
-        expected: "safe redirect path (no '..', backslashes, or Windows device names)",
+        expected: "safe redirect path (starts with a letter or _, no '..', backslashes, trailing dots or device names)",
       },
     };
   }
@@ -589,7 +600,7 @@ export function parseSharedCommandDetailed(
   if ("failure" in items) {
     return { ok: false, failure: items.failure };
   }
-  const redir = readRedirect(text, items.nextPos);
+  const redir = readRedirect(text, items.nextPos, shell);
   if ("failure" in redir) {
     return { ok: false, failure: redir.failure };
   }

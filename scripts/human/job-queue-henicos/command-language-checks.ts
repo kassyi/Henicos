@@ -171,6 +171,9 @@ function buildPairwiseCases(shell: ShellName, absRedirectPrefix: string): string
     " > TestResults/out.log 2>&1",
     " >> TestResults/app.log 2>&1",
     " 2>&1",
+    // Next to the rejected forms: a number-like segment under a folder or after a letter is a plain file name.
+    " > tmp/1kb",
+    " >> _1e2",
     ...(absRedirectPrefix !== "" ? [` > ${absRedirectPrefix}/abs.log 2>&1`] : []),
   ];
 
@@ -306,6 +309,19 @@ function checkFixedNegatives(assert: AssertModule): void {
     ["Windows device AUX", "dotnet test tests/X > aux"],
     ["Windows device COM1", "dotnet test tests/X > tmp/com1.log"],
     ["Windows device LPT1", "dotnet test tests/X > tmp/LPT1"],
+    // Rev 2.1 review (#2373): PowerShell number literals, Win32 trailing dots, `$` and `:` in a segment
+    ["number 1kb", "dotnet test tests/X > 1kb"],
+    ["number 0x10", "dotnet test tests/X > 0x10"],
+    ["number 1e2", "dotnet test tests/X >> 1e2"],
+    ["number 01", "dotnet test tests/X > 01"],
+    ["trailing dot", "dotnet test tests/X > x."],
+    ["trailing dot file", "dotnet test tests/X > tmp/x.log."],
+    ["trailing dot folder", "dotnet test tests/X > tmp./x.log"],
+    ["CONOUT$", "dotnet test tests/X > CONOUT$"],
+    ["nul colon", "dotnet test tests/X > nul:"],
+    ["alternate data stream", "dotnet test tests/X > x.log:s"],
+    ["drive-relative", "dotnet test tests/X > C:x"],
+    ["upper-case MSYS drive", "dotnet test tests/X > /C/x.log"],
     ["redirect without space", "dotnet test tests/X >tmp/out.log"],
     ["redirect followed by arg", "dotnet test tests/X > tmp/out.log --no-build"],
     // Disallowed env prefix names / values
@@ -340,6 +356,13 @@ function checkFixedNegatives(assert: AssertModule): void {
   assert.strictEqual(parseSharedCommand("DiffEngine_Disabled=true dotnet test tests/X", "cmd"), null);
   assert.strictEqual(parseSharedCommand("$env:DiffEngine_Disabled='true'; dotnet test tests/X", "bash"), null);
   assert.strictEqual(parseSharedCommand("$env:DiffEngine_Disabled='true'; dotnet test tests/X", "cmd"), null);
+  // cmd and PowerShell read /c/x as \c\x on the current drive; only bash and sh map it to C:\x.
+  for (const shell of ["cmd", "pwsh", "powershell"] as const) {
+    assert.strictEqual(parseSharedCommand("dotnet test tests/X > /c/x.log", shell), null, `${shell} rejects /c/`);
+  }
+  for (const shell of ["bash", "sh"] as const) {
+    assert.notStrictEqual(parseSharedCommand("dotnet test tests/X > /c/x.log", shell), null, `${shell} takes /c/`);
+  }
 }
 
 function listFilesRelative(dir: string): string[] {

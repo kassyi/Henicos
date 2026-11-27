@@ -99,7 +99,7 @@ test-stability count="10" continue_on_error="false" shuffle="true" seed="" *args
 
 # Run the tests of one TestCategory (values: the TestCategory enum), e.g. `just test-category Stress`
 test-category category *args="":
-    {{queue}} {{ if args == "" { "--gpu" } else { "--gpu-exclusive" } }} -- dotnet test --filter "Category={{category}}" {{blame_crash}} {{args}}
+    {{queue}} --gpu-exclusive -- dotnet test --filter "Category={{category}}" {{blame_crash}} {{args}}
 
 # e.g. `just test-memory Kassyi.GSharp.Tests.Cpu -c Release --filter "Category!=GpuExecution"`; test-memory.js --help
 # One run of a test project: its memory peak, the tests that raised it, dotnet-counters and a gcdump at the end; a
