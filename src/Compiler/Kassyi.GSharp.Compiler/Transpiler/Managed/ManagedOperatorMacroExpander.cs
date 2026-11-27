@@ -74,6 +74,29 @@ internal static class ManagedOperatorMacroExpander
         return SyntaxFactory.Block(expansion.Statements.ToImmutable());
     }
 
+    /// <summary>
+    /// Builds the managed call of the <c>operator false</c> or <c>operator true</c> test for a user-defined
+    /// <c>&amp;&amp;</c> or <c>||</c>: <c>&lt;accessor&gt;([in] &lt;operand&gt;)</c>.
+    /// </summary>
+    internal static InvocationExpressionSyntax CreateTruthTestCall(
+        IMethodSymbol test,
+        ExpressionSyntax operand,
+        ManagedAccessorSet accessors)
+    {
+        var argument = WithModifier(operand, test.Parameters[0].RefKind);
+        var argumentList = SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(argument));
+        return SyntaxFactory.InvocationExpression(
+            accessors.Spell(test, test.Name),
+            argumentList
+        );
+    }
+
+    // <modifier> <expression>: ref, out or in by the parameter, nothing for a value parameter
+    private static ArgumentSyntax WithModifier(ExpressionSyntax expression, RefKind refKind) =>
+        ManagedRefKinds.ArgumentKeyword(refKind) is var keyword && keyword != SyntaxKind.None
+            ? SyntaxFactory.Argument(expression).WithRefKindKeyword(SyntaxFactory.Token(keyword))
+            : SyntaxFactory.Argument(expression);
+
     private sealed class Expansion(SyntaxNode site, SemanticModel semanticModel,
         CSharpSyntaxVisitor<SyntaxNode?> visitor, Func<IMethodSymbol, ExpressionSyntax> spellCallee,
         ManagedAccessorSet accessors)
@@ -113,12 +136,7 @@ internal static class ManagedOperatorMacroExpander
             }
 
             // <test accessor>([in] <left temporary>)
-            var test = SyntaxFactory.InvocationExpression(
-                accessors.Spell(plan.Test, plan.Test.Name),
-                SyntaxFactory.ArgumentList(
-                    SyntaxFactory.SingletonSeparatedList(WithModifier(Temp(leftTemp), plan.Test.Parameters[0].RefKind))
-                )
-            );
+            var test = CreateTruthTestCall(plan.Test, Temp(leftTemp), accessors);
 
             // <target> = <left temporary>;
             var assignLeft = SyntaxFactory.ExpressionStatement(
@@ -440,12 +458,6 @@ internal static class ManagedOperatorMacroExpander
         private static IdentifierNameSyntax Temp(string? name) =>
             SyntaxFactory.IdentifierName(name ?? throw new InvalidOperationException(
                 "An operator macro without a result operand is not an inner operator macro."));
-
-        // <modifier> <expression>: ref, out or in by the parameter, nothing for a value parameter
-        private static ArgumentSyntax WithModifier(ExpressionSyntax expression, RefKind refKind) =>
-            ManagedRefKinds.ArgumentKeyword(refKind) is var keyword && keyword != SyntaxKind.None
-                ? SyntaxFactory.Argument(expression).WithRefKindKeyword(SyntaxFactory.Token(keyword))
-                : SyntaxFactory.Argument(expression);
 
         // [ref [readonly]] <type> <name> = <value>;   (var when the type is not known)
         private static LocalDeclarationStatementSyntax DeclareLocal(ITypeSymbol? type, string name,

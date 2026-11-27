@@ -147,6 +147,11 @@ internal static class RefSyntaxHelper
         return expression.UnwrapParentheses() switch
         {
             DeclarationExpressionSyntax => CppLocation.Storage,
+            // [WHY] A condition temporary declared by lowering has no symbol; in C++ it is a local variable or context
+            // field (not a temporary rvalue), so passing it by reference takes its address directly.
+            IdentifierNameSyntax identifier when model.GetSymbol(identifier) is null &&
+                                                 LoweringTempNames.IsConditionTemp(identifier.Identifier.ValueText) =>
+                CppLocation.Storage,
             IdentifierNameSyntax identifier => ClassifySymbol(model.GetSymbol(identifier) ?? model.GetDeclaredSymbol<ISymbol>(identifier)),
             MemberAccessExpressionSyntax access => ClassifyMemberAccess(access, model),
             ElementAccessExpressionSyntax element => ClassifyElementAccess(element, model),

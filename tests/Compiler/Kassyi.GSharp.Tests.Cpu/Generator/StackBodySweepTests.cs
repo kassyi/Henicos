@@ -19,12 +19,6 @@ public class StackBodySweepTests
 {
     private const string StackFormPrefix = "__gsharp_stackmodel_";
 
-    // [WHY] #2320 (User-defined && / || whose right operand reaches a split point lose the & / | call in the shared
-    // lowering): the lowering of such an operator writes !t for ||, which C# rejects for such a type, and the right
-    // operand alone in place of the operator, for the state machine as for the stacks. The file stays out of the sweep
-    // until #2320 is fixed
-    private const string UserDefinedShortCircuitFile = "OperatorMacroConditionalKernels.cu.cs";
-
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void SharedFunctionsWithActiveMask_StackModel_StackFormsCompile()
@@ -79,8 +73,7 @@ public class StackBodySweepTests
         var count = 0;
         foreach (var tree in shared.SyntaxTrees)
         {
-            if (!tree.FilePath.EndsWith(".cu.cs", StringComparison.OrdinalIgnoreCase) ||
-                tree.FilePath.EndsWith(UserDefinedShortCircuitFile, StringComparison.OrdinalIgnoreCase))
+            if (!tree.FilePath.EndsWith(".cu.cs", StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
