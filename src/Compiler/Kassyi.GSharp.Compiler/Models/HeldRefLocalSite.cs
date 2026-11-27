@@ -7,7 +7,7 @@ namespace Kassyi.GSharp.Compiler.Models;
 /// (<see cref="LoweredStateMachine.SpansAcrossStates"/>), which the generator reports as GSH0039
 /// (<see cref="SpanName"/>). Also where a goto jumps to the inner label of chained labels from another state
 /// (<see cref="ChainedLabelJumpChecks.FindReported"/>), which the generator reports as GSH0121 (<see cref="Label"/>),
-/// as the analyzer does: the same diagnostic at the same place, which the compiler shows once.
+/// from the generator alone: the analyzer does not report it, as an IDE would show the same diagnostic of both twice.
 /// </summary>
 /// <remarks>
 /// Values only (the path and the spans of the declaration), so a result taken from the cache never refers to an earlier
@@ -82,7 +82,7 @@ internal readonly record struct HeldRefLocalSite(string Path, int TreeOrdinal, T
     /// <summary>
     /// Reports GSH0003 (<see cref="GpuCodeConstraints.RefLocalHeldByCpuStateMachine"/>), GSH0039 for a span local, or
     /// GSH0121 (GSH0040 across a barrier) for a goto, at this site: in the syntax tree of <paramref name="compilation"/> that holds it, so that the
-    /// editor marks it and the analyzer's diagnostic at the same place is shown once.
+    /// editor marks it.
     /// </summary>
     public void Report(SourceProductionContext context, Compilation compilation)
     {

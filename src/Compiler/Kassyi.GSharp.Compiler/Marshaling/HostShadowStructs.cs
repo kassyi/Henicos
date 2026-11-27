@@ -77,6 +77,100 @@ internal static class HostShadowStructs
         TransferClassifier.TryFindArrayField(named, out _);
 
     /// <summary>
+    /// Whether <paramref name="type"/> holds a non-array view field (<c>Memory&lt;T&gt;</c>,
+    /// <c>ReadOnlyMemory&lt;T&gt;</c>, <c>ArraySegment&lt;T&gt;</c>, <c>ImmutableArray&lt;T&gt;</c>, or a nullable
+    /// one) at any depth, including inside elements of an array-like field.
+    /// </summary>
+    public static bool HoldsViewFields(ITypeSymbol type)
+    {
+        using var visits = StructVisits.Start();
+        return HoldsViewFields(type, visits);
+    }
+
+    private static bool HoldsViewFields(ITypeSymbol type, StructVisits visits)
+    {
+        var unwrapped = type.UnwrapNullable();
+        if (unwrapped.IsArrayLikeType() && unwrapped is not IArrayTypeSymbol)
+        {
+            return true;
+        }
+
+        if (unwrapped.TryGetArrayLikeElementType(out var element))
+        {
+            return HoldsViewFields(element, visits);
+        }
+
+        if (unwrapped is not INamedTypeSymbol { TypeKind: TypeKind.Struct } named ||
+            !TypeLayoutCalculator.IsUserStruct(named) ||
+            !visits.TryVisit(named))
+        {
+            return false;
+        }
+
+        foreach (var member in StructAbiMembers.Get(named))
+        {
+            if (HoldsViewFields(member.Type, visits))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Whether <paramref name="type"/> can hold two or more array-like values (arrays or views) across its fields,
+    /// inline array elements, or elements of array-like fields.
+    /// </summary>
+    public static bool HoldsSeveralArrayLikes(ITypeSymbol type) =>
+        CountArrayLikes(type, structPath: null) >= 2;
+
+    private static int CountArrayLikes(ITypeSymbol type, StructPath? structPath)
+    {
+        var unwrapped = type.UnwrapNullable();
+        if (unwrapped.IsArrayLikeType())
+        {
+            return unwrapped.TryGetArrayLikeElementType(out var element) &&
+                   (HoldsArrayFields(element) || element.IsArrayLikeType() || element.IsNullableArrayLike())
+                ? 2
+                : 1;
+        }
+
+        if (unwrapped is not INamedTypeSymbol { TypeKind: TypeKind.Struct } named ||
+            !TypeLayoutCalculator.IsUserStruct(named))
+        {
+            return 0;
+        }
+
+        using var step = StructPath.Enter(structPath, named);
+        if (step.IsCycle)
+        {
+            return 0;
+        }
+
+        var count = 0;
+        foreach (var member in StructAbiMembers.Get(named))
+        {
+            var perElement = CountArrayLikes(member.Type, step.Path);
+            if (perElement == 0)
+            {
+                continue;
+            }
+
+            var contribution = member.Kind == StructAbiMemberKind.InlineArrayElement
+                ? perElement * Math.Min(member.ElementCount, 2)
+                : perElement;
+            count += contribution;
+            if (count >= 2)
+            {
+                return 2;
+            }
+        }
+
+        return count;
+    }
+
+    /// <summary>
     /// Collects the shadowed types that <paramref name="type"/> reaches: the type itself, the members of a user struct
     /// (the element of an array-like member), and the value of a <c>Nullable&lt;T&gt;</c>. A <c>Nullable&lt;T&gt;</c>
     /// member is collected only when <paramref name="dialect"/> converts it (<see cref="UsesShadow"/>; either dialect
@@ -98,8 +192,7 @@ internal static class HostShadowStructs
             // The value of an identical Nullable member is copied with its bytes and needs no shadow of its own
             if (used && types.Add((INamedTypeSymbol)type))
             {
-                var valueType = value.TryGetArrayLikeElementType(out var valueElement) ? valueElement : value;
-                Collect(valueType, types, dialect, isMember: false);
+                Collect(UnwrapArrayLikeElements(value), types, dialect, isMember: value.IsArrayLikeType());
             }
 
             return;
@@ -114,8 +207,17 @@ internal static class HostShadowStructs
 
         foreach (var member in StructAbiMembers.Get((INamedTypeSymbol)type))
         {
-            var memberType = member.Type.TryGetArrayLikeElementType(out var element) ? element : member.Type;
-            Collect(memberType, types, dialect, isMember: true);
+            Collect(UnwrapArrayLikeElements(member.Type), types, dialect, isMember: true);
         }
+    }
+
+    private static ITypeSymbol UnwrapArrayLikeElements(ITypeSymbol type)
+    {
+        while (type.TryGetArrayLikeElementType(out var element))
+        {
+            type = element;
+        }
+
+        return type;
     }
 }

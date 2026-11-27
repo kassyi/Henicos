@@ -148,7 +148,7 @@ internal static class StructDefinitionEmitter
 
         // [WHY] Declared in every definition, defined only by the methods that dispose the struct (UsingTranspiler):
         // the include guard keeps the first definition of the struct that any method writes.
-        if (UsingTranspiler.FindDisposeMethod(structSym, context.Query.SemanticModel.Compilation) != null)
+        if (UsingDisposeLookup.Find(structSym, context.Query.SemanticModel.Compilation) != null)
         {
             context.Emitter.Writer.AppendLine($"__device__ void {GSharpInternalNames.Using.Dispose}();");
         }

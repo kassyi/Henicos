@@ -72,15 +72,16 @@ internal sealed class MethodFlowGraph(SemanticModel semanticModel, MethodDeclara
 
     /// <summary>
     /// The Roslyn graph of <paramref name="body"/>: a method, operator, conversion, constructor or accessor
-    /// declaration, or the expression body of a property or indexer; none when it has no body or the body does not
-    /// bind (an invalid operation).
+    /// declaration, a field or property initializer, or the expression body of a property or indexer; none when it has
+    /// no body or the body does not bind (an invalid operation).
     /// </summary>
     public static bool TryCreate(SemanticModel semanticModel, SyntaxNode body,
         [NotNullWhen(true)] out ControlFlowGraph? graph)
     {
         graph = null;
         var operation = semanticModel.GetOperation(body);
-        if (operation is not (IMethodBodyOperation or IConstructorBodyOperation or IBlockOperation { Parent: null }))
+        if (operation is not (IMethodBodyOperation or IConstructorBodyOperation
+            or IFieldInitializerOperation or IPropertyInitializerOperation or IBlockOperation { Parent: null }))
         {
             return false;
         }
@@ -97,6 +98,8 @@ internal sealed class MethodFlowGraph(SemanticModel semanticModel, MethodDeclara
         {
             IMethodBodyOperation methodBody => ControlFlowGraph.Create(methodBody),
             IConstructorBodyOperation constructorBody => ControlFlowGraph.Create(constructorBody),
+            IFieldInitializerOperation fieldInitializer => ControlFlowGraph.Create(fieldInitializer),
+            IPropertyInitializerOperation propertyInitializer => ControlFlowGraph.Create(propertyInitializer),
             _ => ControlFlowGraph.Create((IBlockOperation)operation)
         };
         return true;

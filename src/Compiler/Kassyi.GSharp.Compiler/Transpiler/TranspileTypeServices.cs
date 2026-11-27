@@ -17,7 +17,7 @@ internal readonly struct TranspileTypeServices(
     /// Returns the emitted C++ name when <paramref name="type"/> is an emitted user struct, or <see langword="null"/>.
     /// </summary>
     internal static string? ResolveUserTypeName(INamedTypeSymbol type) =>
-        GlobalCppNames.IsEmittedUserType(type) ? GlobalCppNames.GetTypeName(type) : null;
+        EmittedUserTypes.IsEmittedUserType(type) ? GlobalCppNames.GetTypeName(type) : null;
 
     /// <inheritdoc />
     public ITypeSymbol? SubstituteTypeParameters(ITypeSymbol? typeSymbol) =>

@@ -531,4 +531,50 @@ public static partial class MarshalingOverlapDifferentialKernels
             observed[2] = other.Tag;
         }
     }
+
+    // --- Overlapping views or fields at offsets that no device address aligns for all element types ---
+    [GpuKernel]
+    public static void TwoLongViewsKernel(Span<long> a, Span<long> b, [Out] long[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            a[0] += 10L;
+            observed[0] = b[0];
+        }
+    }
+
+    [GpuKernel]
+    public static void TwoRefLongsKernel(ref long a, ref long b, [Out] long[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            a += 10L;
+            observed[0] = b;
+        }
+    }
+
+    [GpuKernel]
+    public static void TwoVector2ViewsKernel(Span<Vector2> a, Span<Vector2> b, [Out] float[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            a[0] = new Vector2(a[0].X + 1f, a[0].Y + 2f);
+            a[1] = new Vector2(a[1].X + 10f, a[1].Y + 20f);
+            observed[0] = b[0].X;
+            observed[1] = b[0].Y;
+        }
+    }
+}
+
+/// <summary>
+/// Explicit-layout struct whose two <see cref="long"/> fields overlap 4 bytes apart.
+/// </summary>
+[StructLayout(LayoutKind.Explicit, Size = 12)]
+public struct DiffSkewedLongs
+{
+    [FieldOffset(0)]
+    public long A;
+
+    [FieldOffset(4)]
+    public long B;
 }

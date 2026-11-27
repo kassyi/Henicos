@@ -654,6 +654,30 @@ if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ComprehensiveSpecKernel.ProcessPhysics", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
 }
+// Throw for overlapping arguments that no CUDA address aligns, as the CUDA launcher does
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(particles), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref totalMagnitude), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref successFlag))
+{
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[18];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = (global::System.IntPtr)(particles?.Length ?? 0) * sizeof(global::DebugReduc.PhysicsVector);
+__gsharp_alias_ranges[2] = sizeof(global::DebugReduc.PhysicsVector);
+__gsharp_alias_ranges[3] = sizeof(global::DebugReduc.PhysicsVector);
+__gsharp_alias_ranges[4] = 4;
+__gsharp_alias_ranges[5] = 0;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = sizeof(global::System.Single);
+__gsharp_alias_ranges[8] = sizeof(global::System.Single);
+__gsharp_alias_ranges[9] = sizeof(global::System.Single);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+__gsharp_alias_ranges[12] = (global::System.IntPtr)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[13] = sizeof(global::System.Boolean);
+__gsharp_alias_ranges[14] = sizeof(global::System.Boolean);
+__gsharp_alias_ranges[15] = sizeof(global::System.Boolean);
+__gsharp_alias_ranges[16] = 1;
+__gsharp_alias_ranges[17] = 0;
+global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.ThrowIfNoDeviceAlignment(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 18), new byte[] {11, 3, 3}, "particles,totalMagnitude,successFlag", stackalloc int[] {4, 4, 1});
+}
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_MegaTestCompilationBase{__gsharp_arch_suffix}.dll";
 string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);

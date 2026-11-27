@@ -21,7 +21,7 @@ internal static class StackWarpEmitter
     /// stack form of a method that reaches a warp collective.
     /// </summary>
     public static bool TakesFrame(IMethodSymbol method, ITranspilerDialect dialect, Compilation compilation) =>
-        dialect.RunsThreadsOnOwnStacks() && SuspensionAnalysis.ReachesWarpShuffle(method, compilation);
+        dialect.RunsThreadsOnOwnStacks() && SuspensionAnalysis.ReachesWarpShuffleOnStack(method, compilation);
 
     /// <summary>
     /// The frame of the method of <paramref name="plan"/> when its native stack form reaches a warp collective, or
@@ -74,7 +74,7 @@ internal static class StackWarpEmitter
     public static BlockSyntax? GetActiveMaskBody(in MethodEmissionPlan plan, ITranspilerDialect dialect)
     {
         if (plan.Symbol is not { } method || !dialect.RunsThreadsOnOwnStacks() ||
-            !SuspensionAnalysis.ReachesActiveMask(method, plan.SemanticModel.Compilation))
+            !SuspensionAnalysis.ReachesActiveMaskOnStack(method, plan.SemanticModel.Compilation))
         {
             return null;
         }
@@ -115,7 +115,7 @@ internal static class StackWarpEmitter
         }
 
         if (!CppNameResolver.IsEmittedDeviceFunction(callee, dialect) ||
-            !SuspensionAnalysis.ReachesWarpShuffle(callee, compilation))
+            !SuspensionAnalysis.ReachesWarpShuffleOnStack(callee, compilation))
         {
             return StackWarpCall.None;
         }

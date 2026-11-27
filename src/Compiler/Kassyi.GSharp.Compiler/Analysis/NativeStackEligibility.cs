@@ -27,7 +27,9 @@ internal static class NativeStackEligibility
         // A method that reaches Warp.ActiveMask() whose body the stack lowering fails on
         StackBodyLowering = 64,
         // A suspending device function that reaches a warp collective is passed as a method group
-        WarpMethodGroup = 128
+        WarpMethodGroup = 128,
+        // A struct member reaching a split point (has no stack form yet)
+        StructMemberSplit = 256
     }
 
     public static bool CanRunOnStack(MethodDeclarationSyntax declaration, SemanticModel semanticModel) =>
@@ -128,6 +130,11 @@ internal static class NativeStackEligibility
             return NativeStackObstacle.StackBodyLowering;
         }
 
+        if ((facts & BodyFacts.StructMemberSplit) != 0)
+        {
+            return NativeStackObstacle.StructMemberSplit;
+        }
+
         if ((facts & (BodyFacts.BlockBarrier | BodyFacts.WarpCollective)) != 0 &&
             (facts & BodyFacts.CaseWithoutLabel) != 0)
         {
@@ -187,7 +194,7 @@ internal static class NativeStackEligibility
         targetType.GetMembers(targetName)
             .AsStackEnumerable()
             .Any(compilation, static (member, c) =>
-                member is IMethodSymbol target && SuspensionAnalysis.ReachesWarpShuffle(target, c));
+                member is IMethodSymbol target && SuspensionAnalysis.ReachesWarpShuffleOnStack(target, c));
 
     private static void EnqueueSuspendingCallees(
         MethodDeclarationSyntax declaration,
@@ -264,7 +271,7 @@ internal static class NativeStackEligibility
     {
         if (method is null)
         {
-            return ScanBody(declaration, semanticModel);
+            return ScanBody(declaration, TypeArgumentMap.None, semanticModel);
         }
 
         var bodies = s_bodies.For(semanticModel.Compilation);
@@ -273,8 +280,8 @@ internal static class NativeStackEligibility
             return cached;
         }
 
-        var facts = ScanBody(declaration, semanticModel);
-        if (SuspensionAnalysis.ReachesActiveMask(method, semanticModel.Compilation) &&
+        var facts = ScanBody(declaration, TypeArgumentMap.Of(method), semanticModel);
+        if (SuspensionAnalysis.ReachesActiveMaskOnStack(method, semanticModel.Compilation) &&
             !CanLowerForStack(method, declaration, semanticModel))
         {
             facts |= BodyFacts.StackBodyLowering;
@@ -315,7 +322,7 @@ internal static class NativeStackEligibility
         {
             var (method, methodDeclaration) = queue.Dequeue();
             var model = compilation.GetCachedSemanticModel(methodDeclaration.SyntaxTree);
-            if (methodDeclaration.HasBody() && SuspensionAnalysis.ReachesActiveMask(method, compilation) &&
+            if (methodDeclaration.HasBody() && SuspensionAnalysis.ReachesActiveMaskOnStack(method, compilation) &&
                 GetStackBody(method, methodDeclaration, model).Reason is { } reason)
             {
                 return MessageText.Name(method) + ": " + reason;
@@ -338,7 +345,8 @@ internal static class NativeStackEligibility
         return null;
     }
 
-    private static BodyFacts ScanBody(MethodDeclarationSyntax declaration, SemanticModel semanticModel)
+    private static BodyFacts ScanBody(MethodDeclarationSyntax declaration, TypeArgumentMap typeArguments,
+        SemanticModel semanticModel)
     {
         var facts = BodyFacts.None;
         foreach (var node in RemovedCalls.DescendantNodesThatRun(declaration, semanticModel))
@@ -376,6 +384,13 @@ internal static class NativeStackEligibility
             };
         }
 
+        var body = declaration.GetBodyNode();
+        if (body != null &&
+            SuspensionAnalysis.HasStructMemberSplit(body, typeArguments, semanticModel.Compilation))
+        {
+            facts |= BodyFacts.StructMemberSplit;
+        }
+
         return facts | ScanWarpMethodGroups(declaration, semanticModel);
     }
 
@@ -391,7 +406,7 @@ internal static class NativeStackEligibility
         foreach (var (referenced, isMethodGroup) in
                  SuspensionAnalysis.GetReferencedSuspendingFunctions(body, compilation, semanticModel))
         {
-            if (isMethodGroup && SuspensionAnalysis.ReachesWarpShuffle(referenced, compilation))
+            if (isMethodGroup && SuspensionAnalysis.ReachesWarpShuffleOnStack(referenced, compilation))
             {
                 return BodyFacts.WarpMethodGroup;
             }

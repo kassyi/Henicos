@@ -264,6 +264,34 @@ throw new global::System.InvalidOperationException("The device function state ma
 }
 #pragma warning restore CS8500
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static unsafe int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__InArgumentAliasDifferentialKernels__ReadAfterWrite(in int x, ref int target)
+{
+int before = x;
+target = before + 7;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return x;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static unsafe int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__InArgumentAliasDifferentialKernels__ReadOnlyAfterWrite(ref readonly int x, ref int target)
+{
+int before = x;
+target = before + 7;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return x;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static unsafe int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__InArgumentAliasDifferentialKernels__ReadAfterWriteMovingIndex(in int x, ref int target, ref int index)
+{
+int before = x;
+target = before + 7;
+index = 1;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return x;
+}
+
 }
 }
 

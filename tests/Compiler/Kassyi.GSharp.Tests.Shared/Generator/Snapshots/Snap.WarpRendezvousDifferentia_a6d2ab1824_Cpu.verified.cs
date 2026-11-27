@@ -434,6 +434,30 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__WarpRendezvousDifferentialKernels__HalfThenFull(int __gsharp_warp_frame, int v, int lane)
+{
+if (lane >= 16)
+{
+v += global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_shuffle_xor_sync<int>(__gsharp_warp_frame, 0, "WarpRendezvousDifferentialKernels.cs(17,18)", 0xFFFF0000u, v, 1);
+}
+
+return v + global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_shuffle_xor_sync<int>(__gsharp_warp_frame, 1, "WarpRendezvousDifferentialKernels.cs(20,20)", 0xFFFFFFFFu, v, 16);
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__WarpRendezvousDifferentialKernels__HalfThenFullTwice(int __gsharp_warp_frame, int v, int lane)
+{
+int w = global::Kassyi.GSharp.Tests.Shared.Differential.WarpRendezvousDifferentialKernels.__gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__WarpRendezvousDifferentialKernels__HalfThenFull(__gsharp_warp_frame + 1, v, lane);
+return global::Kassyi.GSharp.Tests.Shared.Differential.WarpRendezvousDifferentialKernels.__gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__WarpRendezvousDifferentialKernels__HalfThenFull(__gsharp_warp_frame + 4, w, lane) - w;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__WarpRendezvousDifferentialKernels__PairSum(int __gsharp_warp_frame, int v, uint mask) => v + global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_shuffle_xor_sync<int>(__gsharp_warp_frame, 0, "WarpRendezvousDifferentialKernels.cs(33,56)", mask, v, 1);
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__WarpRendezvousDifferentialKernels__FullPairSum(int __gsharp_warp_frame, int v) => v + global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_shuffle_xor_sync<int>(__gsharp_warp_frame, 0, "WarpRendezvousDifferentialKernels.cs(37,49)", 0xFFFFFFFFu, v, 1);
+
 }
 }
 

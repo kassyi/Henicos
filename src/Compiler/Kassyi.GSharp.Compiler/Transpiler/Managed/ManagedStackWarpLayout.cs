@@ -40,7 +40,7 @@ internal sealed class ManagedStackWarpLayout
     public static ManagedStackWarpLayout? Create(IMethodSymbol method, MethodDeclarationSyntax declaration,
         Compilation compilation, bool isKernel)
     {
-        if (!SuspensionAnalysis.ReachesWarpShuffle(method, compilation))
+        if (!SuspensionAnalysis.ReachesWarpShuffleOnStack(method, compilation))
         {
             return null;
         }

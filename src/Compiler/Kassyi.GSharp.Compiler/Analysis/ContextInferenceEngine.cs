@@ -32,7 +32,7 @@ public static class ContextInferenceEngine
             return false;
         }
 
-        return EvaluateParallelDependency(methodSymbol, new EvaluationState(cache, compilation));
+        return EvaluateParallelDependency(methodSymbol, caller: null, new EvaluationState(cache, compilation));
     }
 
     // One query: the cache and compilation it answers for, and the methods being evaluated, outermost first, with their
@@ -62,6 +62,42 @@ public static class ContextInferenceEngine
             return true;
         }
 
+        // Polymorphic recursion (Deep<T> -> Deep<Wrap<T>>): stop once the canonical definition is already open and an
+        // expanding cycle connects it to the caller, treating the cut as depending on that open ancestor.
+        public bool StopsPolymorphicRecursion(IMethodSymbol method, IMethodSymbol? caller)
+        {
+            if (caller is null)
+            {
+                return false;
+            }
+
+            var definition = GenericExpansion.GetCanonicalDefinition(method);
+            if (!GenericExpansion.GetExpandingCallees(GenericExpansion.GetCanonicalDefinition(caller), compilation)
+                    .AsStackEnumerable()
+                    .Any(definition, static (callee, own) => callee.IsEqualTo(own)))
+            {
+                return false;
+            }
+
+            var cutDepth = int.MaxValue;
+            foreach (var entry in _visiting)
+            {
+                if (GenericExpansion.GetCanonicalDefinition(entry.Key).IsEqualTo(definition) &&
+                    entry.Value < cutDepth)
+                {
+                    cutDepth = entry.Value;
+                }
+            }
+
+            if (cutDepth == int.MaxValue)
+            {
+                return false;
+            }
+
+            _minCutDepth = Math.Min(_minCutDepth, cutDepth);
+            return true;
+        }
+
         // Opens method; the returned scope is passed to Exit
         public (int Depth, int OuterMinCutDepth) Enter(IMethodSymbol method)
         {
@@ -82,7 +118,8 @@ public static class ContextInferenceEngine
         }
     }
 
-    private static bool EvaluateParallelDependency(IMethodSymbol methodSymbol, EvaluationState state)
+    private static bool EvaluateParallelDependency(IMethodSymbol methodSymbol, IMethodSymbol? caller,
+        EvaluationState state)
     {
         if (TryGetKnownAnswer(methodSymbol, state, out var known))
         {
@@ -90,7 +127,7 @@ public static class ContextInferenceEngine
         }
 
         // Cycle detected, break infinite recursion. The false answer depends on the open method, so it is not cached.
-        if (state.IsOpen(methodSymbol))
+        if (state.IsOpen(methodSymbol) || state.StopsPolymorphicRecursion(methodSymbol, caller))
         {
             return false;
         }
@@ -99,7 +136,8 @@ public static class ContextInferenceEngine
         // an exception (cancellation) needs no cleanup
         var bodies = GetBodies(methodSymbol, state.Compilation);
         var scope = state.Enter(methodSymbol);
-        var result = !bodies.IsEmpty && ReachesParallelDependency(bodies, TypeArgumentMap.Of(methodSymbol), state);
+        var result = !bodies.IsEmpty &&
+                     ReachesParallelDependency(bodies, methodSymbol, TypeArgumentMap.Of(methodSymbol), state);
         if (state.Exit(methodSymbol, scope, result))
         {
             state.Cache[methodSymbol] = result;
@@ -132,12 +170,12 @@ public static class ContextInferenceEngine
         return false;
     }
 
-    private static bool ReachesParallelDependency(ImmutableArray<IOperation> bodies, TypeArgumentMap typeArguments,
-        EvaluationState state)
+    private static bool ReachesParallelDependency(ImmutableArray<IOperation> bodies, IMethodSymbol enclosingMethod,
+        TypeArgumentMap typeArguments, EvaluationState state)
     {
         foreach (var body in bodies)
         {
-            if (Reaches(body, typeArguments, state))
+            if (Reaches(body, enclosingMethod, typeArguments, state))
             {
                 return true;
             }
@@ -148,21 +186,23 @@ public static class ContextInferenceEngine
 
     // Whether operation or an operation that runs inside it reads a thread index or calls a parallel-dependent method;
     // the argument of nameof is not run
-    private static bool Reaches(IOperation operation, TypeArgumentMap typeArguments, EvaluationState state)
+    private static bool Reaches(IOperation operation, IMethodSymbol enclosingMethod, TypeArgumentMap typeArguments,
+        EvaluationState state)
     {
         if (operation is INameOfOperation)
         {
             return false;
         }
 
-        if (ThreadIntrinsics.IsIndex(operation) || CallsParallelDependentMethod(operation, typeArguments, state))
+        if (ThreadIntrinsics.IsIndex(operation) ||
+            CallsParallelDependentMethod(operation, enclosingMethod, typeArguments, state))
         {
             return true;
         }
 
         foreach (var child in operation.ChildOperations)
         {
-            if (Reaches(child, typeArguments, state))
+            if (Reaches(child, enclosingMethod, typeArguments, state))
             {
                 return true;
             }
@@ -171,8 +211,8 @@ public static class ContextInferenceEngine
         return false;
     }
 
-    private static bool CallsParallelDependentMethod(IOperation operation, TypeArgumentMap typeArguments,
-        EvaluationState state)
+    private static bool CallsParallelDependentMethod(IOperation operation, IMethodSymbol enclosingMethod,
+        TypeArgumentMap typeArguments, EvaluationState state)
     {
         // A copy: the evaluation of a callee reuses the shared builder
         var called = state.Called;
@@ -181,7 +221,7 @@ public static class ContextInferenceEngine
         var methods = called.ToImmutable();
         foreach (var method in methods)
         {
-            if (EvaluateParallelDependency(method, state))
+            if (EvaluateParallelDependency(method, enclosingMethod, state))
             {
                 return true;
             }
@@ -197,7 +237,7 @@ public static class ContextInferenceEngine
     private static ImmutableArray<IOperation> GetBodies(IMethodSymbol method, Compilation compilation)
     {
         var bodies = ImmutableArray.CreateBuilder<IOperation>();
-        var definition = method.OriginalDefinition;
+        var definition = (method.ReducedFrom ?? method).OriginalDefinition;
         if (definition.MethodKind == MethodKind.Constructor)
         {
             AddConstructorBodies(definition, compilation, bodies);

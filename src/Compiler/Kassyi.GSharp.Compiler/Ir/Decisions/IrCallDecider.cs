@@ -24,7 +24,7 @@ internal static class IrCallDecider
         var trees = SemanticModelExtensions.GetSyntaxTrees(context.Compilation);
         var tree = trees[call.Source.TreeOrdinal];
         var classified = CallTargetClassifier.ClassifyMethod(call.Method, tree, context.Compilation,
-            context.NativeDialect);
+            context.Dialect);
         if (classified is { Kind: CallTargetKind.Removed })
         {
             claim = IrCallClaim.None;
@@ -54,12 +54,12 @@ internal static class IrCallDecider
     {
         var notRemoved = targetPlan?.Kind != CallTargetKind.Removed;
         var checksCaller = notRemoved &&
-                           CppNameResolver.IsEmittedDeviceFunction(call.Method, context.NativeDialect) &&
+                           CppNameResolver.IsEmittedDeviceFunction(call.Method, context.Dialect) &&
                            !call.Method.IsExtensionMethod &&
                            NonNullProof.ChecksArguments(call.Method);
         var convertsStandard = notRemoved &&
                                claim == IrCallClaim.None &&
-                               CallTargetClassifier.ConvertsArguments(call.Method, context.NativeDialect);
+                               CallTargetClassifier.ConvertsArguments(call.Method, context.Dialect);
         var bclMapping = claim == IrCallClaim.BclIntrinsicMap &&
                          BclIntrinsicMapBuilder.GetOrBuildMap(context.Compilation)
                              .TryGetValue(call.Method.OriginalDefinition, out var info)

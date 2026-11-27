@@ -110,7 +110,10 @@ internal static class SharedMemorySiteKey
         ref TranspileContext context)
     {
         var model = context.Query.SemanticModel;
-        var siteKey = ToCppLiteral(Compute(model, creation, context.Emitter.StructConstructorType));
+        var constructorStruct = context.Emitter.StructSelf.Form == SelfForm.ConstructorSelf
+            ? context.Emitter.StructSelf.Type
+            : null;
+        var siteKey = ToCppLiteral(Compute(model, creation, constructorStruct));
         var isDynamic = DynamicSharedMemoryAnalysis.TryGetCount(creation, model, out var count, out var constantCount) &&
                         constantCount == null;
 

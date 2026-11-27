@@ -125,7 +125,7 @@ internal static class MemberEffects
     // A computed property (with accessor bodies) of a user struct that G# defines on the device
     public static bool IsUserAccessorProperty(IPropertySymbol property) =>
         property.ContainingType is { } containingType &&
-        GlobalCppNames.IsEmittedUserType(containingType) &&
+        EmittedUserTypes.IsEmittedUserType(containingType) &&
         StructAbiMembers.HasAccessorFunctions(property);
 
     // ThreadIndex.X, BlockDim.Y ...: a value that no expression of the thread changes
@@ -137,7 +137,7 @@ internal static class MemberEffects
     public static bool MayMutateValueTypeReceiver(IPropertySymbol property, Compilation compilation) =>
         !property.IsStatic &&
         property.ContainingType is { } type &&
-        GlobalCppNames.IsEmittedUserType(type) &&
+        EmittedUserTypes.IsEmittedUserType(type) &&
         !type.IsReadOnly &&
         (StructAbiMembers.HasAccessorFunctions(property) || property.IsIndexer) &&
         property.GetMethod is { IsReadOnly: false } getter &&

@@ -168,7 +168,7 @@ internal sealed class WarpFrameLayout
             {
                 sites.Add(call.Span, sites.Count);
             }
-            else if (SuspensionAnalysis.ReachesWarpShuffle(callee, compilation))
+            else if (SuspensionAnalysis.ReachesWarpShuffleOnStack(callee, compilation))
             {
                 // Only a device function gets a frame. A kernel called like a function has a body here (Build takes
                 // kernels as roots), so it would get one without this check; a device function of another assembly

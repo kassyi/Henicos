@@ -60,7 +60,7 @@ const Usage = [
   "  node scripts/human/job-queue.js remote-reset [<name>] [--clean]",
   "  node scripts/human/job-queue.js serve [--slots <n>] [--memory-mb <n>] [--policy hrrn|backfill|fifo]",
   "                                        [--gpu-slots <n>] [--config <path>]",
-  "  node scripts/human/job-queue.js --self-test",
+  "  node scripts/human/job-queue.js --self-test [--language-fuzz <n>]",
   "  node scripts/human/job-queue.js --screenshots <dir>",
   "",
   "An <id> is the full number, or the last four digits as the queue shows them: 8739, j8739 or 18739 (the digits name",
@@ -173,6 +173,10 @@ interface Options extends RunOptions {
   remoteTarget: string;
   /** remote-reset --clean: wipe remote bin/, obj/, TestResults/, tmp/. */
   clean: boolean;
+  /**
+   * --self-test --language-fuzz <n>: cap/run <n> command-language property cases per shell (0 = full pairwise).
+   */
+  languageFuzz: number;
 }
 
 function parsePositive(name: string, text: string | undefined, allowZero = false): number {
@@ -233,6 +237,7 @@ export function parseArgs(argv: string[]): Options {
     screenshotDir: "",
     remoteTarget: "",
     clean: false,
+    languageFuzz: 0,
     command: command.join(" "),
     // Several words after `--` are argv that the calling shell has already split: re-quote them for the shell that
     // runs them (see run), instead of joining them into a different command.
@@ -271,6 +276,9 @@ export function parseArgs(argv: string[]): Options {
         break;
       case "--self-test":
         options.mode = "self-test";
+        break;
+      case "--language-fuzz":
+        options.languageFuzz = parsePositive("--language-fuzz", own[++i]);
         break;
       case "--screenshots":
         options.mode = "screenshots";
@@ -400,6 +408,9 @@ export function parseArgs(argv: string[]): Options {
   }
   if (options.clean && options.mode !== "remote-reset") {
     usageError("--clean goes with remote-reset alone.");
+  }
+  if (options.languageFuzz > 0 && options.mode !== "self-test") {
+    usageError("--language-fuzz goes with --self-test alone.");
   }
   if (options.local && options.remote) {
     usageError("--local and --remote cannot be used together.");
@@ -551,7 +562,7 @@ export async function main(argv: string[]): Promise<void> {
         break;
       case "self-test": {
         const { selfTest } = await import("./self-test.ts");
-        await selfTest();
+        await selfTest(options.languageFuzz > 0 ? { languageFuzz: options.languageFuzz } : undefined);
         break;
       }
       case "screenshots": {

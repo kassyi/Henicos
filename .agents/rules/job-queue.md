@@ -16,13 +16,16 @@ node scripts/human/job-queue.js wait <id>                   # until it ends: exi
 node scripts/human/job-queue.js status [<id>]               # the jobs ahead and the expected start and end
 ```
 
-- `--gpu` only for a command that uses the GPU (a CUDA test project, `just test-category Runtime`, a benchmark): a CPU
+- `--gpu` only for a command that uses the GPU (a CUDA test project, `just test`); a benchmark, `just test-category`
+  and any other command outside the share language take `--gpu-exclusive`, and `run --gpu` refuses them. A CPU
   suite under `--gpu` keeps the GPU from the jobs that need it. `just fuzz-diff` and `fuzz-differential.js` take the
   GPU lock themselves: queue them without `--gpu`. `just long-checks` (`scripts/human/long-checks.js`) is a slot-free
   orchestrator that queues each step through `job-queue.js` itself: run it directly without wrapping it in `run`.
 - Whether a `--gpu` run shares the GPU or uses it alone is decided for it: only a test run whose filter excludes
-  Stress, Benchmark and GpuTrap (as `just test` does) may share; a filter that names tests alone uses the GPU alone.
-  `--gpu-exclusive` asks for the GPU alone.
+  Stress, Benchmark and GpuTrap (as `just test` does) may share; a filter that names tests alone shares only when
+  `--list-tests` finds none of them. `--gpu-exclusive` asks for the GPU alone. Queue non-test timing measurements
+  (scripts, direct `.exe` launches, env-prefixed timing runs (`ROWBATCH_*`)) with `--gpu-exclusive` so they never share
+  the GPU with another job.
 - A build and the tests of what it built go into one job, as one quoted string:
   `run -- "dotnet build X && dotnet test X --no-build"`. Under `--gpu`, `run` puts the build into a CPU job of its own.
 - A test run outside `just` sets `DiffEngine_Disabled=true` (`run -- "DiffEngine_Disabled=true dotnet test X"`): a
