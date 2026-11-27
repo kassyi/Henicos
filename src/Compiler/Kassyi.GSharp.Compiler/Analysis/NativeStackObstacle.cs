@@ -45,5 +45,10 @@ internal enum NativeStackObstacle
     /// (<c>AstLoweringPipeline.LowerForStack</c> failed): the method keeps its state machine, as on the managed stack
     /// model, instead of the stack form failing the native build.
     /// </summary>
-    StackBodyLowering
+    StackBodyLowering,
+
+    /// <summary>
+    /// A barrier or warp collective reached only through a struct member, which has no stack form yet.
+    /// </summary>
+    StructMemberSplit
 }

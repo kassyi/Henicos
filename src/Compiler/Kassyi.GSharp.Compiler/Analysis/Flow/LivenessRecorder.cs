@@ -47,8 +47,7 @@ internal sealed class LivenessRecorder : IFlowRecorder
 
     private (SyntaxNode Body, int Carrier)? _pendingCarrier;
 
-    private IInvocationOperation? _lastCall;
-    private IInvocationOperation? _splitCall;
+    private IOperation? _splitOperation;
 
     /// <param name="model">The semantic model of the method.</param>
     /// <param name="method">The syntax of the method, where the carriers are looked for.</param>
@@ -172,8 +171,10 @@ internal sealed class LivenessRecorder : IFlowRecorder
     {
     }
 
-    /// <summary>Records the last invocation operation seen in the walk.</summary>
-    public void OnCall(IInvocationOperation invocation, int node) => _lastCall = invocation;
+    /// <summary>Invoked for invocation operations.</summary>
+    public void OnCall(IInvocationOperation invocation, int node)
+    {
+    }
 
     /// <summary>Places statement events around a split point or records a barrier split.</summary>
     public void OnSplit(SplitPoint split, int node)
@@ -183,10 +184,10 @@ internal sealed class LivenessRecorder : IFlowRecorder
             return;
         }
 
-        if (split.Kind == SplitKind.Call && _lastCall is { } call && call.Syntax == split.Syntax)
+        if (split is { Kind: SplitKind.Call, Operation: { } operation })
         {
-            LivenessSplitPlacement.PlaceAroundSplit(_log, _model, call, node);
-            _splitCall = call;
+            LivenessSplitPlacement.PlaceAroundSplit(_log, _model, operation, split.Target, node);
+            _splitOperation = operation;
             return;
         }
 
@@ -197,17 +198,29 @@ internal sealed class LivenessRecorder : IFlowRecorder
     /// Records the writes of the <c>out</c> arguments after a call returns: a local, or a tracked parameter, which is
     /// written whole and changed (#1003).
     /// </summary>
-    public void OnCallReturned(IInvocationOperation invocation, ControlFlowGraph graph, int node)
+    public void OnCallReturned(IInvocationOperation invocation, ControlFlowGraph graph, int node) =>
+        RecordOutArguments(invocation, invocation.Arguments, node);
+
+    /// <summary>
+    /// Records the writes of the <c>out</c> arguments after an object creation returns (before its initializer).
+    /// </summary>
+    public void OnObjectCreationReturned(IObjectCreationOperation creation, ControlFlowGraph graph, int node) =>
+        RecordOutArguments(creation, creation.Arguments, node);
+
+    private void RecordOutArguments(IOperation operation, ImmutableArray<IArgumentOperation> arguments, int node)
     {
-        var syntax = invocation == _splitCall ? null : invocation.Syntax;
-        foreach (var argument in invocation.Arguments)
+        var syntax = operation == _splitOperation ? null : operation.Syntax;
+        foreach (var argument in arguments)
         {
             if (argument.Parameter?.RefKind != RefKind.Out)
             {
                 continue;
             }
 
-            switch (argument.Value)
+            var target = argument.Value is IDeclarationExpressionOperation declared
+                ? declared.Expression
+                : argument.Value;
+            switch (target)
             {
                 case ILocalReferenceOperation { Local: { IsRef: false } local }:
                     _log.AddAssigned(local, syntax, node, replaces: true);

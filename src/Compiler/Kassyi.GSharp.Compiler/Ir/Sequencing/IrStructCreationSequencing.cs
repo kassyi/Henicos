@@ -32,7 +32,7 @@ internal static class IrStructCreationSequencing
         var operands = IrArgumentSequencing.OperandsOf(creation.Arguments, withExtensionReceiver: false);
         var ordinals = IrArgumentSequencing.ParameterOrdinalsOf(creation.Arguments, operands, 0);
         switch (StructCreationClassifier.Classify(creation.Type, constructor, context.Compilation,
-                    context.Decisions.NativeDialect, out _))
+                    context.Decisions.Dialect, out _))
         {
             case StructCreationKind.Factory or StructCreationKind.Mapped:
                 return IrArgumentSequencing.Plan(creation.Arguments, operands, false, null,

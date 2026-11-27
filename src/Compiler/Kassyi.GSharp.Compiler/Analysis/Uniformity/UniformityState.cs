@@ -68,7 +68,7 @@ internal sealed class UniformityState
     public bool MetCalleeInProgress { get; set; }
 
     /// <summary>The argument masks of each barrier-reaching call, once recorded.</summary>
-    public Dictionary<SyntaxNode, ArgumentMasks>? SiteMasks { get; set; }
+    public Dictionary<SiteMaskKey, ArgumentMasks>? SiteMasks { get; set; }
 
     /// <summary>The node data that the recorder kept for the graph node <paramref name="node"/>.</summary>
     public UniformityNode NodeAt(int node) => Recorder.Nodes[node];

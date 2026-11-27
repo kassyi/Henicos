@@ -30,7 +30,7 @@ internal static class ImportedDeviceFunctionEffects
     // A constructor with a body, or the getter of a computed property, of an emitted struct of another assembly
     private static bool HasImportedBody(IMethodSymbol method, Compilation compilation) =>
         method.ContainingType is { TypeKind: TypeKind.Struct } type &&
-        GlobalCppNames.IsEmittedUserType(type) &&
+        EmittedUserTypes.IsEmittedUserType(type) &&
         !type.ContainingNamespace.IsCoreNamespace() &&
         DeviceExportTable.IsOutside(type, compilation) &&
         method switch

@@ -245,7 +245,7 @@ public sealed class MemoryExtensionsTranspilerRule : IInvocationTranspilerRule
         }
 
         if (model.GetTypeSymbol(expression) is not INamedTypeSymbol { TypeKind: TypeKind.Struct, IsGenericType: false } comparer ||
-            !GlobalCppNames.IsEmittedUserType(comparer))
+            !EmittedUserTypes.IsEmittedUserType(comparer))
         {
             context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, argument, ComparerNotStruct);
             return false;
@@ -278,7 +278,7 @@ public sealed class MemoryExtensionsTranspilerRule : IInvocationTranspilerRule
         }
 
         if (key is INamedTypeSymbol { TypeKind: TypeKind.Struct, IsGenericType: false } named &&
-            GlobalCppNames.IsEmittedUserType(named) &&
+            EmittedUserTypes.IsEmittedUserType(named) &&
             SortComparisonMembers.TryGetCompareTo(named, context.Query.SemanticModel.Compilation, out compareTo))
         {
             return true;

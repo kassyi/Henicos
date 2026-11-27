@@ -49,7 +49,8 @@ internal sealed class UniformityValueReader(UniformityState state)
             IObjectCreationOperation { Constructor: { } constructor } creation
                 when TryGetSummarizedCallee(constructor, out var constructorCallee, out var constructorDeclaration) =>
                 GetCalleeSummary(constructorCallee, constructorDeclaration,
-                    GetArgumentMasks(creation.Arguments, graph, current)).This,
+                    GetArgumentMasks(creation.Arguments, graph, current)).This |
+                (creation.Initializer is { } initializer ? Evaluate(initializer, graph, current) : ThreadVariance.Uniform),
             IBinaryOperation { OperatorMethod: { } binaryOperator } binary =>
                 EvaluateOperator(binary, binaryOperator, binary.LeftOperand, binary.RightOperand, graph, current),
             IUnaryOperation { OperatorMethod: { } unaryOperator } unary =>
@@ -117,6 +118,7 @@ internal sealed class UniformityValueReader(UniformityState state)
         [NotNullWhen(true)] out SyntaxNode? declaration)
     {
         callee = (method.ReducedFrom ?? method).OriginalDefinition;
+        callee = callee.PartialImplementationPart ?? callee;
         var compilation = state.Model.Compilation;
         if (SuspensionAnalysis.TryGetDeviceFunctionBody(callee, compilation, out var deviceFunction))
         {
@@ -126,11 +128,13 @@ internal sealed class UniformityValueReader(UniformityState state)
 
         if (callee is
             {
-                MethodKind: MethodKind.Ordinary or MethodKind.PropertyGet or MethodKind.UserDefinedOperator
-                or MethodKind.Conversion or MethodKind.Constructor,
+                IsImplicitlyDeclared: false,
+                MethodKind: MethodKind.Ordinary or MethodKind.PropertyGet or MethodKind.PropertySet
+                or MethodKind.UserDefinedOperator or MethodKind.Conversion or MethodKind.Constructor
+                or MethodKind.ExplicitInterfaceImplementation,
                 ContainingType: { } type
             } &&
-            GlobalCppNames.IsEmittedUserType(type) &&
+            EmittedUserTypes.IsEmittedUserType(type) &&
             callee.TryGetDeclaringSyntax(out declaration) &&
             compilation.ContainsSyntaxTree(declaration.SyntaxTree) &&
             HasBody(declaration))
@@ -293,12 +297,13 @@ internal sealed class UniformityValueReader(UniformityState state)
             : operands;
     }
 
-    // A method, operator, conversion, constructor or accessor with a block or expression body, or the expression body
-    // of a property or indexer
+    // A method, operator, conversion, constructor (primary included) or accessor with a block or expression body, or
+    // the expression body of a property or indexer
     private static bool HasBody(SyntaxNode declaration) => declaration switch
     {
         BaseMethodDeclarationSyntax method => method.Body != null || method.ExpressionBody != null,
         AccessorDeclarationSyntax accessor => accessor.Body != null || accessor.ExpressionBody != null,
+        TypeDeclarationSyntax type => type.ParameterList != null,
         _ => declaration is ArrowExpressionClauseSyntax
     };
 
@@ -356,12 +361,57 @@ internal sealed class UniformityValueReader(UniformityState state)
     {
         metCalleeInProgress = false;
         var model = state.Model.Compilation.GetCachedSemanticModel(declaration.SyntaxTree);
+        if (callee is { MethodKind: MethodKind.Constructor, ContainingType.TypeKind: TypeKind.Struct })
+        {
+            return AnalyzeStructConstructor(callee, declaration, model, masks, out metCalleeInProgress);
+        }
+
         if (!MethodFlowGraph.TryCreate(model, declaration, out var graph))
         {
             return default;
         }
 
         var analysis = UniformityAnalysis.AnalyzeBody(graph, model, callee, masks, state.CalleesInProgress);
+        var summary = analysis.Summarize();
+        metCalleeInProgress = analysis.MetCalleeInProgress;
+        return summary;
+    }
+
+    private CalleeVariance AnalyzeStructConstructor(IMethodSymbol constructor, SyntaxNode declaration,
+        SemanticModel model, ArgumentMasks masks, out bool metCalleeInProgress)
+    {
+        metCalleeInProgress = false;
+        var compilation = state.Model.Compilation;
+        var parts = ImmutableArray.CreateBuilder<(ControlFlowGraph Graph, SemanticModel Model)>();
+        var chainsToThis = declaration is ConstructorDeclarationSyntax { Initializer: not null };
+        if (!chainsToThis)
+        {
+            var initializers = ImmutableArray.CreateBuilder<SyntaxNode>();
+            DeviceFunctionBodies.AddStructInstanceInitializers(constructor.ContainingType, compilation, initializers);
+            foreach (var init in initializers)
+            {
+                var initModel = compilation.GetCachedSemanticModel(init.SyntaxTree);
+                if (!MethodFlowGraph.TryCreate(initModel, init, out var initGraph))
+                {
+                    return default;
+                }
+
+                parts.Add((initGraph, initModel));
+            }
+        }
+
+        if (declaration is ConstructorDeclarationSyntax)
+        {
+            if (!MethodFlowGraph.TryCreate(model, declaration, out var ctorGraph))
+            {
+                return default;
+            }
+
+            parts.Add((ctorGraph, model));
+        }
+
+        var analysis = UniformityAnalysis.AnalyzeBodySequence(parts.ToImmutable(), model, constructor, masks,
+            state.CalleesInProgress);
         var summary = analysis.Summarize();
         metCalleeInProgress = analysis.MetCalleeInProgress;
         return summary;

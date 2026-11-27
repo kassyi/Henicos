@@ -1,8 +1,3 @@
-using Kassyi.GSharp.Compiler.Models;
-using Kassyi.GSharp.Compiler.Transpiler;
-using Kassyi.GSharp.Compiler.Transpiler.Helpers.Calls;
-using Microsoft.CodeAnalysis.Operations;
-
 namespace Kassyi.GSharp.Compiler.Analysis;
 
 /// <summary>
@@ -65,9 +60,9 @@ internal static class DeviceFunctionReach
         var body = (SyntaxNode?)declaration.Body ?? declaration.ExpressionBody;
         if (body != null)
         {
-            CollectCallees([body], TypeArgumentMap.Of(kernel), compilation)
+            DirectCallees.Of([body], TypeArgumentMap.Of(kernel), compilation)
                 .AsStackEnumerable()
-                .Do(pending, static (callee, stack) => stack.Push(new ReachStep(callee, null)));
+                .Do(pending, static (site, stack) => stack.Push(new ReachStep(site.Callee, null)));
         }
 
         while (pending.Count > 0)
@@ -94,236 +89,21 @@ internal static class DeviceFunctionReach
 
     private static ImmutableArray<IMethodSymbol> GetDirectCallees(IMethodSymbol function, Compilation compilation) =>
         s_callees.For(compilation).GetOrAdd(function, f =>
-            !IsDefaultStructConstructor(f) &&
-            DeviceFunctionBodies.TryGet(DeviceFunctionEffects.GetDefinition(f), compilation, out var bodies)
-                ? CollectCallees(bodies, TypeArgumentMap.Of(f), compilation)
-                : ImmutableArray<IMethodSymbol>.Empty);
-
-    // The functions with code of their own that the bodies call: those of the compilation with a body, and the device
-    // functions and struct members of another assembly that recorded them or their struct
-    private static ImmutableArray<IMethodSymbol> CollectCallees(IReadOnlyList<SyntaxNode> bodies,
-        TypeArgumentMap typeArguments, Compilation compilation)
-    {
-        var callees = ImmutableArray.CreateBuilder<IMethodSymbol>();
-        var called = ImmutableArray.CreateBuilder<IMethodSymbol>();
-        foreach (var body in bodies)
         {
-            if (compilation.ContainsSyntaxTree(body.SyntaxTree) &&
-                compilation.GetCachedSemanticModel(body.SyntaxTree).GetOperation(body) is { } operation)
+            if (IsDefaultStructConstructor(f) ||
+                !DeviceFunctionBodies.TryGet(DeviceFunctionEffects.GetDefinition(f), compilation, out var bodies))
             {
-                AddCalls(operation, typeArguments, compilation, called);
+                return ImmutableArray<IMethodSymbol>.Empty;
             }
-        }
 
-        foreach (var method in called)
-        {
-            var function = method.GetConstructedReducedFrom() ?? method;
-            var definition = DeviceFunctionEffects.GetDefinition(function);
-            if (DeviceFunctionBodies.TryGet(definition, compilation, out _) ||
-                (DeviceExportTable.IsOutside(definition, compilation) &&
-                 (DeviceExportTable.TryFind(definition, out _) || TryFindImportedStruct(function, out _))) ||
-                definition.ContainingType is { TypeKind: TypeKind.Interface })
-            {
-                callees.Add(function);
-            }
-        }
-
-        return callees.ToImmutable();
-    }
-
-    // The calls of operation and of the operations that run inside it; the argument of nameof is not run
-    private static void AddCalls(IOperation operation, TypeArgumentMap typeArguments, Compilation compilation,
-        ImmutableArray<IMethodSymbol>.Builder called)
-    {
-        if (operation is INameOfOperation)
-        {
-            return;
-        }
-
-        if (!AddConstrainedCalls(operation, typeArguments, compilation, called))
-        {
-            OperationCalls.Add(operation, typeArguments, called);
-        }
-
-        AddCallsWithoutOperation(operation, typeArguments, compilation, called);
-        foreach (var child in operation.ChildOperations)
-        {
-            AddCalls(child, typeArguments, compilation, called);
-        }
-    }
-
-    // A member of an interface reached through a type parameter (default(T).Value on T : IHas, T.Create(), a + b on
-    // T : IAdditionOperators): the call runs the implementation of the type argument, found as the walk has replaced
-    // the type parameter. A member that the type argument does not implement in the compilation (a default interface
-    // member) stays the interface member, named UnknownFunctions; one of a type outside the compilation (int) runs no
-    // device code of the compilation and adds nothing. False when operation is no such call
-    private static bool AddConstrainedCalls(IOperation operation, TypeArgumentMap typeArguments,
-        Compilation compilation, ImmutableArray<IMethodSymbol>.Builder called)
-    {
-        if (GetConstrainedReceiver(operation) is not { } receiver)
-        {
-            return false;
-        }
-
-        var members = ImmutableArray.CreateBuilder<IMethodSymbol>();
-        OperationCalls.Add(operation, TypeArgumentMap.None, members);
-        var concrete = typeArguments.Substitute(receiver);
-        foreach (var member in members)
-        {
-            if (FindImplementation(typeArguments.Substitute(member), concrete, compilation) is { } implementation)
-            {
-                called.Add(implementation);
-            }
-        }
-
-        return true;
-    }
-
-    /// <summary>
-    /// The type parameter through which <paramref name="operation"/> calls a member of an interface, or null when it
-    /// calls none that way: the constrained type of a static member or operator, or the receiver of an instance member.
-    /// </summary>
-    internal static ITypeParameterSymbol? GetConstrainedReceiver(IOperation operation) => operation switch
-    {
-        IInvocationOperation invocation when IsInterfaceMember(invocation.TargetMethod) =>
-            AsTypeParameter(invocation.ConstrainedToType ?? invocation.Instance?.Type),
-        IPropertyReferenceOperation property when IsInterfaceMember(property.Property) =>
-            AsTypeParameter(property.ConstrainedToType ?? property.Instance?.Type),
-        IBinaryOperation binary => AsTypeParameter(binary.ConstrainedToType),
-        IUnaryOperation unary => AsTypeParameter(unary.ConstrainedToType),
-        ICompoundAssignmentOperation compound => AsTypeParameter(compound.ConstrainedToType),
-        IIncrementOrDecrementOperation increment => AsTypeParameter(increment.ConstrainedToType),
-        IConversionOperation conversion => AsTypeParameter(conversion.ConstrainedToType),
-        _ => null
-    };
-
-    private static bool IsInterfaceMember(ISymbol member) => member.ContainingType is { TypeKind: TypeKind.Interface };
-
-    private static ITypeParameterSymbol? AsTypeParameter(ITypeSymbol? type) => type as ITypeParameterSymbol;
-
-    // The implementation of member in type; member itself when type is of the compilation and does not implement it
-    // with a member of its own (a default interface member, or a type parameter not replaced); null for a type outside
-    // the compilation without one
-    private static IMethodSymbol? FindImplementation(IMethodSymbol member, ITypeSymbol type, Compilation compilation)
-    {
-        if (type is INamedTypeSymbol named && named.FindImplementationForInterfaceMember(member) is IMethodSymbol
-            {
-                ContainingType.TypeKind: not TypeKind.Interface
-            } implementation)
-        {
-            return implementation;
-        }
-
-        return type is INamedTypeSymbol outside && DeviceExportTable.IsOutside(outside, compilation) ? null : member;
-    }
-
-    // The calls that C# makes for operation without an operation of their own (OperationCalls does not list them)
-    private static void AddCallsWithoutOperation(IOperation operation, TypeArgumentMap typeArguments,
-        Compilation compilation, ImmutableArray<IMethodSymbol>.Builder called)
-    {
-        switch (operation)
-        {
-            case IMethodReferenceOperation reference:
-                called.Add(typeArguments.Substitute(reference.Method));
-                break;
-            case IUsingOperation usingOperation:
-                AddUsingDisposes(usingOperation, typeArguments, compilation, called);
-                break;
-            case IUsingDeclarationOperation declaration:
-                AddUsingDeclarationDisposes(declaration, typeArguments, compilation, called);
-                break;
-            case ICollectionExpressionOperation { ConstructMethod: { } builder }:
-                called.Add(typeArguments.Substitute(builder));
-                break;
-            case IVariableDeclaratorOperation declarator:
-                AddFixedPinnable(declarator, typeArguments, compilation, called);
-                break;
-            case IBinaryOperation binary:
-                AddMacroTarget(binary.OperatorMethod, typeArguments, compilation, called);
-                AddTruthTest(binary, typeArguments, called);
-                break;
-            case IUnaryOperation unary:
-                AddMacroTarget(unary.OperatorMethod, typeArguments, compilation, called);
-                break;
-        }
-    }
-
-    // using (var r = ...): the Dispose of each local; using (r): the Dispose of the resource's type
-    private static void AddUsingDisposes(IUsingOperation usingOperation, TypeArgumentMap typeArguments,
-        Compilation compilation, ImmutableArray<IMethodSymbol>.Builder called)
-    {
-        if (!usingOperation.Locals.IsEmpty)
-        {
-            usingOperation.Locals
+            var sites = DirectCallees.Of(bodies, TypeArgumentMap.Of(f), compilation);
+            var callees = ImmutableArray.CreateBuilder<IMethodSymbol>(sites.Length);
+            sites
                 .AsStackEnumerable()
-                .Do((typeArguments, compilation, called), static (local, state) => AddDispose(local.Type,
-                    state.typeArguments, state.compilation, state.called));
-        }
-        else if (usingOperation.Resources is { } resource)
-        {
-            AddDispose(resource.Type, typeArguments, compilation, called);
-        }
-    }
-
-    // using var r = ...: the Dispose of each declared variable
-    private static void AddUsingDeclarationDisposes(IUsingDeclarationOperation declaration,
-        TypeArgumentMap typeArguments, Compilation compilation, ImmutableArray<IMethodSymbol>.Builder called) =>
-        declaration.DeclarationGroup.Declarations
-            .AsStackEnumerable()
-            .SelectMany(static group => group.Declarators
-                .AsStackEnumerable()
-            ).Do((typeArguments, compilation, called), static (declarator, state) => AddDispose(
-                declarator.Symbol.Type, state.typeArguments, state.compilation, state.called));
-
-    // The Dispose of type as the walk has replaced its type parameters (using (var r = new T()) runs the Dispose of
-    // the type argument)
-    private static void AddDispose(ITypeSymbol? type, TypeArgumentMap typeArguments, Compilation compilation,
-        ImmutableArray<IMethodSymbol>.Builder called)
-    {
-        if (type is not null && typeArguments.Substitute(type) is INamedTypeSymbol named &&
-            UsingTranspiler.FindDisposeMethod(named, compilation) is { } dispose)
-        {
-            called.Add(dispose);
-        }
-    }
-
-    // fixed (int* p = e): the GetPinnableReference that C# calls for e
-    // [WHY] Roslyn does not make the operation of a fixed statement public: its declarators are read
-    private static void AddFixedPinnable(IVariableDeclaratorOperation declarator, TypeArgumentMap typeArguments,
-        Compilation compilation, ImmutableArray<IMethodSymbol>.Builder called)
-    {
-        if (declarator.Syntax is VariableDeclaratorSyntax
-            {
-                Parent.Parent: FixedStatementSyntax, Initializer.Value: { } initializer
-            } &&
-            PinnableReferenceMethod.Find(initializer, compilation.GetCachedSemanticModel(initializer.SyntaxTree)) is
-                { } pinnable)
-        {
-            called.Add(typeArguments.Substitute(pinnable.GetConstructedReducedFrom() ?? pinnable));
-        }
-    }
-
-    // The operator true / false that && and || test (the UnaryOperatorMethod of the operation, which Roslyn does not
-    // make public), found as the operator macro expansion finds it
-    private static void AddTruthTest(IBinaryOperation binary, TypeArgumentMap typeArguments,
-        ImmutableArray<IMethodSymbol>.Builder called)
-    {
-        if (binary.OperatorKind is BinaryOperatorKind.ConditionalAnd or BinaryOperatorKind.ConditionalOr &&
-            OperatorMacroSyntax.FindTest(binary) is { } test)
-        {
-            called.Add(typeArguments.Substitute(test));
-        }
-    }
-
-    private static void AddMacroTarget(IMethodSymbol? operatorMethod, TypeArgumentMap typeArguments,
-        Compilation compilation, ImmutableArray<IMethodSymbol>.Builder called)
-    {
-        if (operatorMethod != null &&
-            OperatorMacroResolver.TryGetTarget(typeArguments.Substitute(operatorMethod), compilation, out var target))
-        {
-            called.Add(typeArguments.Substitute(target));
-        }
-    }
+                .Select(static site => site.Callee)
+                .AddTo(callees);
+            return callees.ToImmutable();
+        });
 
     // The name ptxas gives the function when it is a C++ function of its own; null for a struct member, a local
     // function, an operator macro (whose body never runs) or the parameterless constructor of a struct (default(T)).
@@ -338,7 +118,7 @@ internal static class DeviceFunctionReach
         }
 
         if (DeviceExportTable.IsOutside(definition, compilation) && !DeviceExportTable.TryFind(definition, out _) &&
-            TryFindImportedStruct(function, out var structRecord))
+            DirectCallees.TryFindImportedStruct(function, out var structRecord))
         {
             return structRecord.Record.Names.CppName;
         }
@@ -356,24 +136,9 @@ internal static class DeviceFunctionReach
         };
     }
 
-    // The record of the struct of another assembly that declares function (as constructed)
-    private static bool TryFindImportedStruct(IMethodSymbol function, out ImportedDeviceRecord structRecord)
-    {
-        if (function.ContainingType is { TypeKind: TypeKind.Struct } type &&
-            DeviceExportTable.TryFind(type, out structRecord) &&
-            structRecord.Record.Kind == DeviceExportRecord.StructKind)
-        {
-            return true;
-        }
-
-        structRecord = default;
-        return false;
-    }
-
     // The implicit parameterless constructor of a struct is default(T) and runs nothing
     private static bool IsDefaultStructConstructor(IMethodSymbol function) =>
-        function is { IsImplicitlyDeclared: true, Parameters.Length: 0, MethodKind: MethodKind.Constructor } &&
-        function.ContainingType.IsValueType;
+        DeviceFunctionBodies.IsDefaultStructConstructor(function);
 
     // One function of the walk and the step that called it
     private sealed class ReachStep(IMethodSymbol function, ReachStep? caller)
@@ -393,8 +158,8 @@ internal static class DeviceFunctionReach
             return false;
         }
 
-        var definition = DeviceFunctionEffects.GetDefinition(step.Function);
-        if (!GenericExpansion.GetExpandingCallees(DeviceFunctionEffects.GetDefinition(caller.Function), compilation)
+        var definition = GenericExpansion.GetCanonicalDefinition(step.Function);
+        if (!GenericExpansion.GetExpandingCallees(GenericExpansion.GetCanonicalDefinition(caller.Function), compilation)
                 .AsStackEnumerable()
                 .Any(definition, static (callee, own) => callee.IsEqualTo(own)))
         {
@@ -403,41 +168,12 @@ internal static class DeviceFunctionReach
 
         for (var enclosing = caller; enclosing != null; enclosing = enclosing.Caller)
         {
-            if (DeviceFunctionEffects.GetDefinition(enclosing.Function).IsEqualTo(definition))
+            if (GenericExpansion.GetCanonicalDefinition(enclosing.Function).IsEqualTo(definition))
             {
                 return true;
             }
         }
 
         return false;
-    }
-
-    /// <summary>
-    /// The methods that the bodies of <paramref name="definition"/> call as written, with their type parameters not
-    /// replaced (extension methods in their static form); empty when it has no body in the compilation.
-    /// </summary>
-    internal static ImmutableArray<IMethodSymbol> GetWrittenCallees(IMethodSymbol definition, Compilation compilation)
-    {
-        if (!DeviceFunctionBodies.TryGet(definition, compilation, out var bodies))
-        {
-            return ImmutableArray<IMethodSymbol>.Empty;
-        }
-
-        var called = ImmutableArray.CreateBuilder<IMethodSymbol>();
-        foreach (var body in bodies)
-        {
-            if (compilation.ContainsSyntaxTree(body.SyntaxTree) &&
-                compilation.GetCachedSemanticModel(body.SyntaxTree).GetOperation(body) is { } operation)
-            {
-                AddCalls(operation, TypeArgumentMap.None, compilation, called);
-            }
-        }
-
-        var written = ImmutableArray.CreateBuilder<IMethodSymbol>(called.Count);
-        called
-            .AsStackEnumerable()
-            .Select(static method => method.GetConstructedReducedFrom() ?? method)
-            .AddTo(written);
-        return written.ToImmutable();
     }
 }
