@@ -11,6 +11,10 @@ export const MaxCommandLength = 4000;
 export const AllowedPrefixEnvNames = ["DiffEngine_Disabled", "DOTNET_CLI_UI_LANGUAGE"] as const;
 export type AllowedPrefixEnvName = (typeof AllowedPrefixEnvNames)[number];
 
+/** Mutation testing phases allowed in `just mutate <phase>` and `node scripts/human/mutate.js --phase <phase> --`. */
+export const MutatePhases = ["gpumath", "compiler", "compiler-cuda"] as const;
+export type MutatePhase = (typeof MutatePhases)[number];
+
 /** Closed set of values allowed in leading environment prefixes. */
 export const AllowedPrefixEnvValues = ["true", "false", "1", "0", "en", "en-US"] as const;
 export type AllowedPrefixEnvValue = (typeof AllowedPrefixEnvValues)[number];
@@ -68,6 +72,10 @@ export type SharedCommand =
   | {
       kind: "recipe";
       name: string;
+    }
+  | {
+      kind: "mutate";
+      phase: MutatePhase;
     };
 
 export interface ParseFailure {
@@ -81,6 +89,8 @@ const PrintableAscii = /^[ -~]+$/;
 const AllowedNameSet = new Set<string>(AllowedPrefixEnvNames);
 const AllowedValueSet = new Set<string>(AllowedPrefixEnvValues);
 const AllowedFilterKeySet = new Set<string>(AllowedFilterKeys);
+const AllowedFilterKeyLowerSet = new Set<string>(AllowedFilterKeys.map((k) => k.toLowerCase()));
+const MutatePhaseSet = new Set<string>(MutatePhases);
 const RecipeName = /^[A-Za-z][A-Za-z0-9_-]*$/;
 const ProjectSegment = /^[A-Za-z0-9_.]+$/;
 const RedirectSegment = /^[A-Za-z0-9_.][A-Za-z0-9_.-]*$/;
@@ -144,14 +154,18 @@ export function isValidProject(token: string): boolean {
 }
 
 /** Validates a `FILTER` expression (`TERM { ("&" | "|") TERM }`, no parentheses or spaces). */
-export function isValidFilter(value: string): boolean {
+export function isValidFilter(value: string, caseInsensitiveKeys = false): boolean {
   if (value.length === 0) {
     return false;
   }
   const terms = value.split(/[&|]/);
   return terms.every((term) => {
     const m = /^([A-Za-z]+)(!=|!~|=|~)([A-Za-z0-9_.]+)$/.exec(term);
-    return m !== null && AllowedFilterKeySet.has(m[1] as string) && FilterWord.test(m[3] as string);
+    if (m === null || !FilterWord.test(m[3] as string)) {
+      return false;
+    }
+    const key = m[1] as string;
+    return caseInsensitiveKeys ? AllowedFilterKeyLowerSet.has(key.toLowerCase()) : AllowedFilterKeySet.has(key);
   });
 }
 
@@ -248,6 +262,7 @@ function readPrefixes(
 type HeadResult =
   | { kind: "test"; nextPos: number }
   | { kind: "recipe"; name: string; nextPos: number }
+  | { kind: "mutate"; phase: MutatePhase; nextPos: number }
   | { failure: ParseFailure };
 
 function readHead(text: string, startPos: number, envCount: number): HeadResult {
@@ -263,14 +278,53 @@ function readHead(text: string, startPos: number, envCount: number): HeadResult 
     }
     return { kind: "test", nextPos: sub.nextPos };
   }
+  if (first.token === "node" && envCount === 0) {
+    // Inner form queued by `just mutate <phase>`: `node scripts/human/mutate.js --phase <phase> --`
+    const tokens = text.slice(startPos).split(/ +/);
+    if (
+      tokens.length === 5 &&
+      tokens[1] === "scripts/human/mutate.js" &&
+      tokens[2] === "--phase" &&
+      MutatePhaseSet.has(tokens[3] ?? "") &&
+      tokens[4] === "--"
+    ) {
+      return { kind: "mutate", phase: tokens[3] as MutatePhase, nextPos: text.length };
+    }
+    return {
+      failure: {
+        position: startPos,
+        token: text.slice(startPos),
+        expected: "node scripts/human/mutate.js --phase <gpumath|compiler|compiler-cuda> --",
+      },
+    };
+  }
   if (first.token === "just" && envCount === 0) {
     const afterSpace = skipSpaces(text, first.nextPos);
     if (afterSpace === first.nextPos) {
-      return { failure: { position: first.nextPos, token: "", expected: "just <sharedRecipe>" } };
+      return {
+        failure: { position: first.nextPos, token: "", expected: "just <sharedRecipe> or just mutate <phase>" },
+      };
     }
     const rec = readBareToken(text, afterSpace);
     if (!RecipeName.test(rec.token)) {
       return { failure: { position: afterSpace, token: rec.token, expected: "<sharedRecipe>" } };
+    }
+    if (rec.token === "mutate") {
+      const phasePos = skipSpaces(text, rec.nextPos);
+      if (phasePos === rec.nextPos) {
+        return { failure: { position: rec.nextPos, token: "", expected: "gpumath|compiler|compiler-cuda" } };
+      }
+      const phaseTok = readBareToken(text, phasePos);
+      if (!MutatePhaseSet.has(phaseTok.token) || phaseTok.nextPos !== text.length) {
+        return {
+          failure: {
+            position: phasePos,
+            token: text.slice(phasePos),
+            expected: "gpumath|compiler|compiler-cuda (no extra arguments)",
+          },
+        };
+      }
+      return { kind: "mutate", phase: phaseTok.token as MutatePhase, nextPos: phaseTok.nextPos };
     }
     if (rec.nextPos !== text.length) {
       const extra = readBareToken(text, skipSpaces(text, rec.nextPos));
@@ -288,7 +342,7 @@ function readHead(text: string, startPos: number, envCount: number): HeadResult 
     failure: {
       position: startPos,
       token: first.token,
-      expected: envCount === 0 ? "dotnet test or just <sharedRecipe>" : "dotnet test",
+      expected: envCount === 0 ? "dotnet test, just <sharedRecipe>, or just mutate <phase>" : "dotnet test",
     },
   };
 }
@@ -594,6 +648,9 @@ export function parseSharedCommandDetailed(
   }
   if (head.kind === "recipe") {
     return { ok: true, value: { kind: "recipe", name: head.name } };
+  }
+  if (head.kind === "mutate") {
+    return { ok: true, value: { kind: "mutate", phase: head.phase } };
   }
 
   const items = readItems(text, head.nextPos, shell);

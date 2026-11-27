@@ -5,7 +5,26 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { type ClientContext, type ShareMode } from "../job-queue/plugin-api.ts";
-import { parseSharedCommand, type SharedCommand } from "./command-language.ts";
+import { isValidFilter, parseSharedCommand, type MutatePhase, type SharedCommand } from "./command-language.ts";
+
+/** Relative directory of each mutation testing phase's `stryker-config.json`. */
+const MutatePhaseDirs: Readonly<Record<MutatePhase, string>> = {
+  gpumath: "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests",
+  compiler: "tests/Compiler/Kassyi.GSharp.Tests.Cpu",
+  "compiler-cuda": "tests/Compiler/Kassyi.GSharp.Tests.Cuda",
+};
+
+/** Allow-listed keys inside `stryker-config` (unknown keys such as `test-runner` fail closed to exclusive). */
+const AllowedStrykerConfigKeys = new Set([
+  "project",
+  "test-projects",
+  "mutate",
+  "coverage-analysis",
+  "test-case-filter",
+  "concurrency",
+  "reporters",
+  "verbosity",
+]);
 
 /** The options of the henicos plugin entry that the share rules read (job-queue.config.json). */
 export interface ShareOptions {
@@ -196,12 +215,65 @@ export function nameFilterCheck(
 }
 
 /**
+ * Reads `stryker-config.test-case-filter` for `phase` under `rootDir` (never following a link/junction outside it).
+ * Rejects unknown top-level or `stryker-config` keys and filters that do not match the closed `FILTER` grammar.
+ */
+function readMutateTestCaseFilter(phase: MutatePhase, rootDir: string): string | null {
+  try {
+    const realRoot = fs.realpathSync.native(rootDir);
+    const configPath = path.resolve(realRoot, MutatePhaseDirs[phase], "stryker-config.json");
+    const realConfig = fs.realpathSync.native(configPath);
+    const rel = path.relative(realRoot, realConfig);
+    if (rel.startsWith("..") || path.isAbsolute(rel)) {
+      return null;
+    }
+    const raw = JSON.parse(fs.readFileSync(realConfig, "utf8")) as unknown;
+    if (raw === null || typeof raw !== "object" || Array.isArray(raw)) {
+      return null;
+    }
+    const topKeys = Object.keys(raw as Record<string, unknown>);
+    if (topKeys.length !== 1 || topKeys[0] !== "stryker-config") {
+      return null;
+    }
+    const cfg = (raw as Record<string, unknown>)["stryker-config"];
+    if (cfg === null || typeof cfg !== "object" || Array.isArray(cfg)) {
+      return null;
+    }
+    const cfgObj = cfg as Record<string, unknown>;
+    if (!Object.keys(cfgObj).every((key) => AllowedStrykerConfigKeys.has(key))) {
+      return null;
+    }
+    const filter = cfgObj["test-case-filter"];
+    if (typeof filter !== "string" || !isValidFilter(filter, true)) {
+      return null;
+    }
+    return filter;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Single decision branch for a parsed command: returns null when the command may share, or the short veto reason token
  * when it must stay exclusive. Both the share decision and the reason come from the exact same branch.
  */
 function commandShareVeto(parsed: SharedCommand, options: ShareOptions, context: ClientContext): string | null {
   if (usesExclusiveEnv(options, context)) {
     return "exclusive-env";
+  }
+  if (parsed.kind === "mutate") {
+    const rootDir = context.worktree || context.cwd;
+    const filter = readMutateTestCaseFilter(parsed.phase, rootDir);
+    if (filter === null) {
+      return "mutate-config-unreadable";
+    }
+    if (selectsExclusiveCategory(filter, options.exclusiveCategories)) {
+      return "exclusive-category";
+    }
+    if (!excludesCategories(filter, options.exclusiveCategories)) {
+      return "mutate-filter-categories";
+    }
+    return null;
   }
   if (parsed.kind === "recipe") {
     return options.sharedRecipes.includes(parsed.name) ? null : "exclusive-recipe";
@@ -242,7 +314,8 @@ export function shareDecision(command: string, context: ClientContext): ShareDec
   if (veto !== null) {
     return { share: "exclusive", reason: veto };
   }
-  return { share: "shared", reason: parsed.kind === "recipe" ? "shared-recipe" : "categories" };
+  const reason = parsed.kind === "mutate" ? "mutate-config" : parsed.kind === "recipe" ? "shared-recipe" : "categories";
+  return { share: "shared", reason };
 }
 
 /**
