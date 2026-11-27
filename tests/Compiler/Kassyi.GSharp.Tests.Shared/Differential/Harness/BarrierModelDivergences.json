@@ -5,5 +5,12 @@
     "issue": 2241,
     "reason": "seeds 1 and 2 index the inline array below 0; the native path reads the neighbouring memory unchecked, so the value depends on the build",
     "undefinedBehavior": true
+  },
+  {
+    "case": "ArrayArgumentNullEmptyDifferentialKernels.ImmutableKernel.Empty.Element",
+    "path": "Native",
+    "issue": 718,
+    "reason": "seed 0 reads element 0 of an empty ImmutableArray<int>; the native path reads past the empty array unchecked, so the adjacent memory value depends on the build",
+    "undefinedBehavior": true
   }
 ]
