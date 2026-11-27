@@ -178,6 +178,7 @@ internal static class KernelHostNames
         LauncherLocal.AliasPinned => GSharpInternalNames.Launcher.AliasPinPrefix,
         LauncherLocal.AliasCopy => GSharpInternalNames.Launcher.AliasCopyPrefix,
         LauncherLocal.AliasStart => GSharpInternalNames.Launcher.AliasStartPrefix,
+        LauncherLocal.AliasReference => GSharpInternalNames.Launcher.AliasReferencePrefix,
         _ => throw new System.ArgumentOutOfRangeException(nameof(kind), kind, null)
     };
 

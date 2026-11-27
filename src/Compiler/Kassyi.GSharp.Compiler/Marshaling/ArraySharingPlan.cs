@@ -191,6 +191,15 @@ internal readonly struct ArraySharingPlan
     }
 
     /// <summary>
+    /// CPU: whether <c>in</c> parameter <paramref name="index"/> keeps a <c>ref readonly</c> local in the launcher
+    /// that rebinds to its group's copy when every member of the group is copied in only. Converted structs stay on
+    /// <c>HostAliasStaging</c> instead.
+    /// </summary>
+    public bool TakesInReferenceGroupCopy(int index) =>
+        _parameters[index] is { IsInReference: true, IsCpuConvertedStruct: false } &&
+        Aliases.MayTakeGroupCopy(index);
+
+    /// <summary>
     /// CPU: whether <paramref name="other"/> is an <c>[In]</c> <c>T[]</c> before <c>[In]</c> <c>T[]</c>
     /// <paramref name="index"/>, whose copy <paramref name="index"/> takes when they are one array.
     /// </summary>

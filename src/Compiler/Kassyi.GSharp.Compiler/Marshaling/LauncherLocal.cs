@@ -104,4 +104,10 @@ internal enum LauncherLocal
     /// The element index of a member in its group's copy on the CPU, <c>__gsharp_alias_start_{ordinal}</c>.
     /// </summary>
     AliasStart,
+
+    /// <summary>
+    /// The <c>ref readonly</c> local of an <c>in</c> parameter that may rebind to its group's copy on the CPU,
+    /// <c>__gsharp_alias_ref_{ordinal}</c>.
+    /// </summary>
+    AliasReference,
 }

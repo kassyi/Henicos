@@ -105,20 +105,70 @@ public static class HostAliasCopies
     public static bool TryGetHostView<T>(HostAliasGroups groups, int index, ReadOnlySpan<nint> ranges,
         out Span<T> view)
     {
-        ref var group = ref groups.GroupAt(groups.GetGroup(index));
-        var count = GetCount<T>(ranges, index);
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        if (!groups.IsMember(index))
         {
-            // Elements with references are never reinterpreted: one typed copy serves every member
-            var found = TryGetHostCopy<T>(groups, index, ranges, out var copy, out var start);
-            view = found ? copy.AsSpan(start, count) : default;
-            return found;
+            view = default;
+            return false;
         }
 
+        ref var group = ref groups.GroupAt(groups.GetGroup(index));
         if (!group.KernelGetsCopy)
         {
             view = default;
             return false;
+        }
+
+        var count = GetCount<T>(ranges, index);
+        view = MemoryMarshal.CreateSpan(ref GetHostElement<T>(ref group, groups, index, ranges), count);
+        return true;
+    }
+
+    /// <summary>
+    /// Gets the reference that an <c>in</c> parameter at member <paramref name="index"/> passes to the kernel: the
+    /// member's element in the group's copy (viewed as <typeparamref name="T"/> when the copy holds another element
+    /// type without references), or <paramref name="current"/> when the group passes the caller's memory.
+    /// </summary>
+    /// <param name="groups">The groups of the launch.</param>
+    /// <param name="index">The member.</param>
+    /// <param name="ranges">
+    /// The range list of <see cref="HostAliasGroups.Find"/>, with the arguments still pinned.
+    /// </param>
+    /// <param name="current">The caller's reference to fall back to when the group passes the caller's memory.</param>
+    /// <typeparam name="T">The type of the <c>in</c> parameter.</typeparam>
+    /// <exception cref="NotSupportedException">
+    /// The group's copy holds references of another element type, or the member has references and does not start at
+    /// an element boundary.
+    /// </exception>
+    public static ref readonly T GetHostReference<T>(HostAliasGroups groups, int index, ReadOnlySpan<nint> ranges,
+        in T current)
+    {
+        if (!groups.IsMember(index))
+        {
+            return ref current;
+        }
+
+        ref var group = ref groups.GroupAt(groups.GetGroup(index));
+        if (!group.KernelGetsCopy)
+        {
+            return ref current;
+        }
+
+        return ref GetHostElement<T>(ref group, groups, index, ranges);
+    }
+
+    // The first element of member <index> inside a KernelGetsCopy group's host copy, typed as T
+    private static ref T GetHostElement<T>(ref HostAliasGroup group, HostAliasGroups groups, int index,
+        ReadOnlySpan<nint> ranges)
+    {
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        {
+            // Elements with references are never reinterpreted: one typed copy serves every member
+            if (!TryGetHostCopy<T>(groups, index, ranges, out var copy, out var start))
+            {
+                throw new InvalidOperationException("Expected a copy for a KernelGetsCopy group member.");
+            }
+
+            return ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(copy), start);
         }
 
         if (group.HostCopyHasReferences)
@@ -131,9 +181,7 @@ public static class HostAliasCopies
         var data = group.HostCopy ?? (group.ViewsOnly || !IsAtBoundaries<T>(ref group, offset)
             ? (Array)CopyBytes(ref group, ranges)
             : CopyGroup<T>(ref group, ranges, null, null));
-        ref var first = ref Unsafe.As<byte, T>(ref GetByte(ref group, data, offset));
-        view = MemoryMarshal.CreateSpan(ref first, count);
-        return true;
+        return ref Unsafe.As<byte, T>(ref GetByte(ref group, data, offset));
     }
 
     /// <summary>

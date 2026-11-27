@@ -91,7 +91,8 @@ internal static class CpuArrayCopyEmitter
     // memory, so it gets no branch
     private static SourceWriterScope WriteGroupMemberBranch(SourceWriter writer, in ArraySharingPlan plan, int index)
     {
-        if (!plan.Parameters[index].IsArray || !plan.Aliases.MayTakeGroupCopy(index) ||
+        var takesInRefCopy = plan.TakesInReferenceGroupCopy(index);
+        if ((!plan.Parameters[index].IsArray && !takesInRefCopy) || !plan.Aliases.MayTakeGroupCopy(index) ||
             AliasGroupEmitter.MemberTest(plan.Aliases, index) is not { } member)
         {
             return default;
@@ -100,7 +101,14 @@ internal static class CpuArrayCopyEmitter
         writer.AppendLine($"if ({member})");
         using (writer.Scope())
         {
-            AliasGroupEmitter.WriteCpuMemberCopy(writer, plan, index);
+            if (takesInRefCopy)
+            {
+                AliasGroupEmitter.WriteCpuInReferenceCopy(writer, plan, index);
+            }
+            else
+            {
+                AliasGroupEmitter.WriteCpuMemberCopy(writer, plan, index);
+            }
         }
 
         if (!plan.NeedsKernelCopy(index))

@@ -7,9 +7,9 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 internal static class ManagedStackLaunchEmitter
 {
     /// <summary>Writes the stack-model launch call and return for <paramref name="kernel"/>.</summary>
-    public static void Write(SourceWriter writer, in KernelHostModel kernel)
+    public static void Write(SourceWriter writer, in KernelHostModel kernel, in ArraySharingPlan sharing)
     {
-        var plan = CSharpExecutionPlan.CreateForStack(kernel);
+        var plan = CSharpExecutionPlan.CreateForStack(kernel).WithCpuInReferenceCopies(sharing);
         if (plan.CannotRunReason is { } reason)
         {
             throw new InvalidOperationException(
