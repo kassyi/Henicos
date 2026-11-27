@@ -80,10 +80,10 @@ public static partial class GpuBigIntDivRem
         if (targetOperand.NumWords < 2)
         {
             throw new ArgumentException(
-                $"The precision doubling needs an operand of at least 2 words. operand: {targetOperand.NumWords} words.");
+                "The precision doubling needs an operand of at least 2 words. "
+                + $"operand: {targetOperand.NumWords} words.");
         }
 
-        ArgumentOutOfRangeException.ThrowIfLessThan(finalWords, 3);
         if (firstY.Sign < 0 || firstY.GetBitLength() > 64)
         {
             throw new ArgumentOutOfRangeException(nameof(firstY), firstY, "The first Y must lie in [0, 2^64).");
@@ -110,25 +110,12 @@ public static partial class GpuBigIntDivRem
     private static void RunInverseSqrtDoublingStages(GpuBigUInt operand, GpuBigUInt y,
         List<InverseSqrtDoublingStage>? trace)
     {
-        var workspace = operand.Workspace;
         var finalWords = y.NumWords;
-        var maxResidualWords = InverseSqrtDoublingResidualWords(finalWords);
-        // aw + p + 1 of the last stage, aw = min(p + 1, w): the widest A_k·S and its residual
-        var maxProductWords = Math.Min(finalWords + 1, operand.NumWords) + finalWords + 1;
         Span<int> schedule = stackalloc int[InverseSqrtDoublingMaxStages];
         var stageCount = InverseSqrtDoublingSchedule(finalWords, schedule);
 
-        using var squared = workspace.RentTemp(2 * finalWords);
-        using var product = workspace.RentTemp(maxProductWords);
-        using var residual = workspace.RentTemp(maxProductWords);
-        using var offsetResidual = workspace.RentTemp(maxResidualWords);
-        using var correction = workspace.RentTemp(2 * maxResidualWords);
-        using var offset = workspace.RentTemp(2 * maxResidualWords);
-        using var difference = workspace.RentTemp(finalWords + maxResidualWords + 1);
-        using var step = workspace.RentTemp(finalWords);
-        var buffers = new InverseSqrtDoublingBuffers(y, squared, product, residual, offsetResidual, correction,
-            offset, difference, step);
-
+        using var scratch = InverseSqrtDoublingScratch.Rent(operand.Workspace, finalWords, operand.NumWords);
+        var buffers = scratch.WithY(y);
         foreach (var words in schedule[..stageCount])
         {
             RunInverseSqrtDoublingStage(operand, buffers, finalWords, words, trace);
@@ -247,5 +234,44 @@ public static partial class GpuBigIntDivRem
 
         /// <summary><c>dY</c> modulo <c>2^(32p)</c>.</summary>
         public GpuBigUInt Step { get; } = step;
+    }
+
+    /// <summary>
+    /// Owns the eight rented scratch buffers of <see cref="RunInverseSqrtDoublingStages"/> and returns them on
+    /// disposal.
+    /// </summary>
+    private readonly ref struct InverseSqrtDoublingScratch(GpuBigUInt squared, GpuBigUInt product, GpuBigUInt residual,
+        GpuBigUInt offsetResidual, GpuBigUInt correction, GpuBigUInt offset, GpuBigUInt difference, GpuBigUInt step)
+    {
+        public static InverseSqrtDoublingScratch Rent(GpuWorkspace workspace, int finalWords, int operandWords)
+        {
+            var maxResidualWords = InverseSqrtDoublingResidualWords(finalWords);
+            // aw + p + 1 of the last stage, aw = min(p + 1, w): the widest A_k·S and its residual
+            var maxProductWords = Math.Min(finalWords + 1, operandWords) + finalWords + 1;
+            return new InverseSqrtDoublingScratch(
+                workspace.RentTemp(2 * finalWords),
+                workspace.RentTemp(maxProductWords),
+                workspace.RentTemp(maxProductWords),
+                workspace.RentTemp(maxResidualWords),
+                workspace.RentTemp(2 * maxResidualWords),
+                workspace.RentTemp(2 * maxResidualWords),
+                workspace.RentTemp(finalWords + maxResidualWords + 1),
+                workspace.RentTemp(finalWords));
+        }
+
+        public InverseSqrtDoublingBuffers WithY(GpuBigUInt y) =>
+            new(y, squared, product, residual, offsetResidual, correction, offset, difference, step);
+
+        public void Dispose()
+        {
+            step.Dispose();
+            difference.Dispose();
+            offset.Dispose();
+            correction.Dispose();
+            offsetResidual.Dispose();
+            residual.Dispose();
+            product.Dispose();
+            squared.Dispose();
+        }
     }
 }

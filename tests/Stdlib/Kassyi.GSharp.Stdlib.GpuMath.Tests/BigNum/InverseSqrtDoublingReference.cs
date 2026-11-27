@@ -174,26 +174,47 @@ internal static class InverseSqrtDoublingReference
         var cases = new List<GoldenCase>();
         foreach (var element in document.RootElement.EnumerateArray())
         {
-            var stages = new List<(int Words, BigInteger Y)>();
-            foreach (var stage in element.GetProperty("stages").EnumerateArray())
-            {
-                stages.Add((stage.GetProperty("p").GetInt32(), ParseHex(GetString(stage, "Y"))));
-            }
-
             cases.Add(new GoldenCase(
                 element.GetProperty("n").GetInt32(),
                 GetString(element, "label"),
                 element.GetProperty("m").GetInt32(),
-                ParseHex(GetString(element, "A")),
-                ParseHex(GetString(element, "x0")),
-                stages,
-                ParseHex(GetString(element, "x_tilde"))));
+                ReadHex(element, "A"),
+                ReadHex(element, "x0"),
+                ReadStages(element),
+                ReadHex(element, "x_tilde")));
         }
 
         return cases;
     }
 
-    private static string GetString(JsonElement element, string name) =>
+    internal static List<(int Words, BigInteger Y)> ReadStages(JsonElement element)
+    {
+        var stages = new List<(int Words, BigInteger Y)>();
+        foreach (var stage in element.GetProperty("stages").EnumerateArray())
+        {
+            stages.Add((stage.GetProperty("p").GetInt32(), ReadHex(stage, "Y")));
+        }
+
+        return stages;
+    }
+
+    internal static List<(int Words, BigInteger Y, BigInteger D)> ReadStagesWithResidual(JsonElement element)
+    {
+        var stages = new List<(int Words, BigInteger Y, BigInteger D)>();
+        foreach (var stage in element.GetProperty("stages").EnumerateArray())
+        {
+            stages.Add((
+                stage.GetProperty("p").GetInt32(),
+                ReadHex(stage, "Y"),
+                BigInteger.Parse(GetString(stage, "D"), CultureInfo.InvariantCulture)));
+        }
+
+        return stages;
+    }
+
+    internal static BigInteger ReadHex(JsonElement element, string name) => ParseHex(GetString(element, name));
+
+    internal static string GetString(JsonElement element, string name) =>
         element.GetProperty(name).GetString()
         ?? throw new InvalidDataException($"The golden value {name} is not a string.");
 }

@@ -1,5 +1,4 @@
 #nullable enable
-using System.Globalization;
 using System.Text.Json;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
@@ -89,6 +88,60 @@ internal static class SqrtKarpMarksteinReference
         return data;
     }
 
+    /// <summary>
+    /// Asserts that every stage, intermediate value and final root matches <paramref name="expected"/>.
+    /// </summary>
+    internal static void AssertTraceEquals(Trace expected, Trace actual, string label)
+    {
+        Assert.Equal(expected.Stages.Count, actual.Stages.Count);
+        for (var k = 0; k < expected.Stages.Count; k++)
+        {
+            Assert.True(
+                expected.Stages[k].Words == actual.Stages[k].Words
+                && expected.Stages[k].Y == actual.Stages[k].Y
+                && expected.Stages[k].D == actual.Stages[k].D,
+                $"{label}: stage {k} (p = {actual.Stages[k].Words}) differs from the model");
+        }
+
+        Assert.Equal(expected.Y, actual.Y);
+        Assert.Equal(expected.S0, actual.S0);
+        Assert.Equal(expected.DHigh, actual.DHigh);
+        Assert.Equal(expected.DShifted, actual.DShifted);
+        Assert.Equal(expected.Delta, actual.Delta);
+        Assert.Equal(expected.Estimate, actual.Estimate);
+        Assert.Equal(expected.Root, actual.Root);
+    }
+
+    /// <summary>
+    /// Asserts K-P2 (<c>0 &lt;= floor(2^P / sqrt(A)) - y &lt;= 3</c>), K-P3 (buffer bounds for <c>s0</c>, <c>d_hi</c>,
+    /// <c>d'</c>, <c>delta</c>) and K-P4 (<c>floor(sqrt(a)) - r'' in {0, 1}</c>). Returns <c>floor(2^P / sqrt(A)) - y</c>.
+    /// </summary>
+    internal static BigInteger AssertTraceProperties(BigInteger a, int rootWords, Trace trace, string label)
+    {
+        var g = new Widths(rootWords);
+        var top = a >> (32 * (rootWords - 1));
+
+        // K-P2: 0 <= floor(2^P / sqrt(A)) - y <= 3 (never above the root).
+        var yFloor = InverseSqrtDoublingReference.FloorScaledInverseSqrt(top, g.P);
+        var yGap = yFloor - trace.Y;
+        Assert.True(yGap >= 0 && yGap <= 3, $"{label}: floor(2^P / sqrt(A)) - y = {yGap}");
+
+        // K-P3: the bounds that size the buffers.
+        var sqrtTop = GpuBigIntSqrtTests.FloorSqrt(top);
+        Assert.True(trace.S0 <= sqrtTop, $"{label}: s0 exceeds floor(sqrt(A))");
+        Assert.Equal(top - trace.S0 * trace.S0, trace.DHigh);
+        Assert.True(trace.DHigh.Sign >= 0 && trace.DHigh < (BigInteger.One << (16 * rootWords + 21)),
+            $"{label}: d_hi out of [0, 2^(16n + 21))");
+        var stepBound = BigInteger.One << (32 * g.StepWords);
+        Assert.True(trace.DShifted.Sign >= 0 && trace.DShifted < stepBound, $"{label}: d' out of stepWords");
+        Assert.True(trace.Delta.Sign >= 0 && trace.Delta < stepBound, $"{label}: delta out of stepWords");
+
+        // K-P4: floor(sqrt(a)) - r'' in {0, 1}.
+        var gap = trace.Root - trace.Estimate;
+        Assert.True(gap >= 0 && gap <= 1, $"{label}: floor(sqrt(a)) - r'' = {gap}");
+        return yGap;
+    }
+
     private static IReadOnlyList<GoldenCase> LoadGolden()
     {
         var path = Path.Combine(AppContext.BaseDirectory, "BigNum", "TestData", "SqrtKarpMarksteinGolden.json");
@@ -96,37 +149,24 @@ internal static class SqrtKarpMarksteinReference
         var cases = new List<GoldenCase>();
         foreach (var element in document.RootElement.EnumerateArray())
         {
-            var stages = new List<(int Words, BigInteger Y, BigInteger D)>();
-            foreach (var stage in element.GetProperty("stages").EnumerateArray())
-            {
-                stages.Add((
-                    stage.GetProperty("p").GetInt32(),
-                    InverseSqrtDoublingReference.ParseHex(GetString(stage, "Y")),
-                    BigInteger.Parse(GetString(stage, "D"), CultureInfo.InvariantCulture)));
-            }
-
             var trace = new Trace(
-                stages,
-                InverseSqrtDoublingReference.ParseHex(GetString(element, "y")),
-                InverseSqrtDoublingReference.ParseHex(GetString(element, "s0")),
-                InverseSqrtDoublingReference.ParseHex(GetString(element, "d_high")),
-                InverseSqrtDoublingReference.ParseHex(GetString(element, "d_shifted")),
-                InverseSqrtDoublingReference.ParseHex(GetString(element, "delta")),
-                InverseSqrtDoublingReference.ParseHex(GetString(element, "estimate")),
-                InverseSqrtDoublingReference.ParseHex(GetString(element, "root")));
+                InverseSqrtDoublingReference.ReadStagesWithResidual(element),
+                InverseSqrtDoublingReference.ReadHex(element, "y"),
+                InverseSqrtDoublingReference.ReadHex(element, "s0"),
+                InverseSqrtDoublingReference.ReadHex(element, "d_high"),
+                InverseSqrtDoublingReference.ReadHex(element, "d_shifted"),
+                InverseSqrtDoublingReference.ReadHex(element, "delta"),
+                InverseSqrtDoublingReference.ReadHex(element, "estimate"),
+                InverseSqrtDoublingReference.ReadHex(element, "root"));
 
             cases.Add(new GoldenCase(
                 element.GetProperty("n").GetInt32(),
-                GetString(element, "label"),
+                InverseSqrtDoublingReference.GetString(element, "label"),
                 element.GetProperty("py").GetInt32(),
-                InverseSqrtDoublingReference.ParseHex(GetString(element, "a")),
+                InverseSqrtDoublingReference.ReadHex(element, "a"),
                 trace));
         }
 
         return cases;
     }
-
-    private static string GetString(JsonElement element, string name) =>
-        element.GetProperty(name).GetString()
-        ?? throw new InvalidDataException($"The golden value {name} is not a string.");
 }

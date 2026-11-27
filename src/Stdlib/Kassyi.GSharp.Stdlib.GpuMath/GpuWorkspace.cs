@@ -123,7 +123,7 @@ public class GpuWorkspace : IGpuResourceScope
     /// The size is the word count of the root: <c>r</c> words for an operand of <c>2r</c> words of
     /// <c>GpuBigIntDivRem.Sqrt</c>, and the significand words of a big-float square root. A root of at most this many
     /// words runs every Newton iteration at full width in one cooperative kernel; a wider root runs a chain of ordinary
-    /// launches doubling from two words to half the root, then three products and a squaring at most as wide as it.
+    /// launches doubling from two words to half the root, then two products and two squarings at most as wide as it.
     /// </para>
     /// <para>
     /// The result is exactly the same either way; only the time differs. The size at which the two take the same time

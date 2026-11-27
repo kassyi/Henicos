@@ -117,18 +117,18 @@ public static partial class GpuBigIntDivRem
     /// </para>
     /// <para>
     /// A root wider than <see cref="GpuWorkspace.SqrtPrecisionDoublingThresholdWords"/> words takes <c>y</c>, the
-    /// inverse square root of <c>A_top</c> to half the precision, by precision doubling driven from the host, the
-    /// half-precision root <c>s = floor(A_top·y / 2^P)·2^(16n - 16)</c> and one Karp-Markstein step
-    /// <c>s + floor(y·floor((a - s^2) / 2^(32n - 1)) / 2^(u - 32n + 1))</c>, which is <c>floor(sqrt(a))</c> or one
-    /// less; the same correction follows.
+    /// inverse square root of <c>A_top</c> to half the precision, by precision doubling driven from the host,
+    /// <c>A_t = floor(A_top / 2^(32j))</c> (<c>j = floor(n / 2)</c>), the half-precision root
+    /// <c>s0 = floor(A_t·y / 2^(P - 32j))</c>, <c>s = s0·2^(16n - 16)</c>, and one Karp-Markstein step
+    /// <c>s + floor(y·floor((A_top - s0^2) / 2^31) / 2^(32 p_y))</c>, which is <c>floor(sqrt(a))</c> or one less; the
+    /// same correction follows.
     /// </para>
     /// </remarks>
     internal static void SqrtFloor(GpuBigUInt operand, GpuBigUInt root)
     {
         ThrowIfNotTwiceTheRoot(operand, root);
-        var n = root.NumWords;
         var workspace = operand.Workspace;
-        if (n > workspace.SqrtPrecisionDoublingThresholdWords)
+        if (root.NumWords > workspace.SqrtPrecisionDoublingThresholdWords)
         {
             // Wide roots: half-precision inverse square root by precision doubling and one Karp-Markstein step
             workspace.CountInverseSqrtDoubling();
@@ -136,6 +136,13 @@ public static partial class GpuBigIntDivRem
             return;
         }
 
+        SqrtFloorMegaKernel(operand, root);
+    }
+
+    private static void SqrtFloorMegaKernel(GpuBigUInt operand, GpuBigUInt root)
+    {
+        var n = root.NumWords;
+        var workspace = operand.Workspace;
         var marginWords = SqrtFloorMarginWords(n);
 
         // A_top: the top n + 1 words of a, borrowed without a copy.

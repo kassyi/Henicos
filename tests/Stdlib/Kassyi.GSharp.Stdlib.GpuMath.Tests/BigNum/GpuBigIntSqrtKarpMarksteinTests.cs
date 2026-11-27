@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 // Properties checked here (property-test-design §1):
 // - K-P1: every doubling stage (p, Y, D) and every intermediate value (y, s0, d_hi, d', delta, r'') and the final root
 //   agree bit for bit with the golden set and with the BigInteger reference model.
-// - K-P2: 0 <= floor(2^P / sqrt(A)) - y <= ApproximateInverseSqrtMaxError (never above the root).
+// - K-P2: 0 <= floor(2^P / sqrt(A)) - y <= 3 (never above the root).
 // - K-P3: buffer bounds: s0 <= floor(sqrt(A)), 0 <= d_hi = A - s0^2 < 2^(16n + 21), d' and delta fit stepWords words.
 // - K-P4: floor(sqrt(a)) - r'' in {0, 1}, so SqrtFloorCorrection needs at most one upward step.
 // - K-P5: root == floor(sqrt(a)) and r^2 <= a < (r + 1)^2.
@@ -16,19 +16,14 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 [Category(TestCategory.Stdlib)]
 public class GpuBigIntSqrtKarpMarksteinTests(ITestOutputHelper output)
 {
-    private static readonly string[] s_sqrtFloorKinds =
-    [
-        "TopSquareMaxLow", "Random", "RandomOddLength", "Square", "SquareMinus1", "SquarePlus2R", "Lowest", "Highest",
-    ];
-
     // K-P1: every stage, intermediate value and final root on the GPU matches the Python golden set bit for bit.
-    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:89 `GpuBigIntMath.Sub(y, 2u, y);` -> `GpuBigIntMath.Sub(y, 0u, y);`
-    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:109 `-31` -> `-32`
-    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:112 `BorrowWords(inverseWords, stepWords)` ->
-    //         `BorrowWords(inverseWords - 1, stepWords)`
-    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:115 `16 * n - 16` -> `16 * n - 15`
-    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:128 `CorrectSqrtFloor(operand, root);` removed
-    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:80 `(n + 1) / 2` -> `(n + 1) / 2 - 1`
+    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:116 `GpuBigIntMath.Sub(y, 2u, y);` -> `GpuBigIntMath.Sub(y, 0u, y);`
+    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:170 `-31` -> `-32`
+    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:172 `BorrowWords(w.InverseWords, w.StepWords)` ->
+    //         `BorrowWords(w.InverseWords - 1, w.StepWords)`
+    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:220 `16 * RootWords - 16` -> `16 * RootWords - 15`
+    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:96 `CorrectSqrtFloor(operand, root);` removed
+    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:214 `(RootWords + 1) / 2` -> `(RootWords + 1) / 2 - 1`
     [SkippableTheory]
     [Scenario(TestScenario.HappyPath)]
     [MemberData(nameof(SqrtKarpMarksteinReference.GoldenCases), MemberType = typeof(SqrtKarpMarksteinReference))]
@@ -41,18 +36,19 @@ public class GpuBigIntSqrtKarpMarksteinTests(ITestOutputHelper output)
         using var root = new GpuBigUInt(ctx, rootWords);
 
         var trace = GpuBigIntDivRem.SqrtFloorKarpMarksteinForTest(operand, root);
-        var actualRoot = root.ToBigInteger();
-        var expected = golden.Trace;
+        var actual = ToReferenceTrace(trace, root.ToBigInteger());
 
-        AssertTraceEquals(expected, trace, actualRoot, $"{label} n={rootWords}");
+        SqrtKarpMarksteinReference.AssertTraceEquals(golden.Trace, actual, $"{label} n={rootWords}");
         ctx.ThrowIfDeviceErrors();
     }
 
-    /// <summary>Structured operands for <see cref="SqrtFloorKarpMarkstein_SqrtFloorOperand_FollowsTheModelOntoTheFloor"/>.</summary>
+    /// <summary>
+    /// Structured operands for <see cref="SqrtFloorKarpMarkstein_SqrtFloorOperand_FollowsTheModelOntoTheFloor"/>.
+    /// </summary>
     public static TheoryData<string, int> SqrtFloorInputs()
     {
         var data = new TheoryData<string, int>();
-        foreach (var kind in s_sqrtFloorKinds)
+        foreach (var kind in GpuBigIntSqrtTests.SqrtFloorOperandKinds)
         {
             foreach (var n in new[] { 1, 2, 3, 4, 5, 6, 7, 8, 15, 16, 17, 31, 32, 33, 46, 47, 64, 65, 127, 128 })
             {
@@ -64,8 +60,8 @@ public class GpuBigIntSqrtKarpMarksteinTests(ITestOutputHelper output)
     }
 
     // K-P1..K-P5 across structured operands from n = 1 to n = 128.
-    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:77 `n / 2` -> `n / 2 + 1`
-    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:76 `Math.Max(3, n / 2 + 1)` -> `Math.Max(3, n / 2)`
+    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:205 `RootWords / 2` -> `RootWords / 2 + 1`
+    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:202 `Math.Max(3, RootWords / 2 + 1)` -> `Math.Max(3, RootWords / 2)`
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(SqrtFloorInputs))]
@@ -100,42 +96,23 @@ public class GpuBigIntSqrtKarpMarksteinTests(ITestOutputHelper output)
         CudaCapability.EnsureGpuAvailable();
         var a = GpuBigIntSqrtTests.BuildSqrtFloorOperand(kind, rootWords);
         var expected = SqrtKarpMarksteinReference.Run(a, rootWords);
-        var g = new SqrtKarpMarksteinReference.Widths(rootWords);
-        var top = a >> (32 * (rootWords - 1));
         using var ctx = new GpuWorkspace(Math.Max(4096, rootWords * 16), GpuExecutionEngine.GSharpAot);
         using var operand = GpuBigUInt.FromBigInteger(ctx, a, 2 * rootWords);
         using var root = new GpuBigUInt(ctx, rootWords);
 
         var trace = GpuBigIntDivRem.SqrtFloorKarpMarksteinForTest(operand, root);
-        var actualRoot = root.ToBigInteger();
+        var actual = ToReferenceTrace(trace, root.ToBigInteger());
         var label = $"{kind} n={rootWords}";
 
         // K-P1: every stage and every value of the tail agree with the model.
-        AssertTraceEquals(expected, trace, actualRoot, label);
+        SqrtKarpMarksteinReference.AssertTraceEquals(expected, actual, label);
 
-        // K-P2: y stays at most ApproximateInverseSqrtMaxError below floor(2^P / sqrt(A)), never above.
-        var yFloor = InverseSqrtDoublingReference.FloorScaledInverseSqrt(top, g.P);
-        var yGap = yFloor - trace.Y;
+        // K-P2..K-P4: y bound (<= 3), buffer bounds, and floor(sqrt(a)) - r'' in {0, 1}.
+        var yGap = SqrtKarpMarksteinReference.AssertTraceProperties(a, rootWords, actual, label);
         output.WriteLine($"{label}: floor(2^P / sqrt(A)) - y = {yGap}");
-        Assert.True(yGap >= 0 && yGap <= GpuBigIntDivRem.ApproximateInverseSqrtMaxError,
-            $"{label}: floor(2^P / sqrt(A)) - y = {yGap}");
-
-        // K-P3: the bounds that size the buffers.
-        var sqrtTop = GpuBigIntSqrtTests.FloorSqrt(top);
-        Assert.True(trace.S0 <= sqrtTop, $"{label}: s0 exceeds floor(sqrt(A))");
-        Assert.Equal(top - trace.S0 * trace.S0, trace.DHigh);
-        Assert.True(trace.DHigh.Sign >= 0 && trace.DHigh < (BigInteger.One << (16 * rootWords + 21)),
-            $"{label}: d_hi out of [0, 2^(16n + 21))");
-        var stepBound = BigInteger.One << (32 * g.StepWords);
-        Assert.True(trace.DShifted.Sign >= 0 && trace.DShifted < stepBound, $"{label}: d' out of stepWords");
-        Assert.True(trace.Delta.Sign >= 0 && trace.Delta < stepBound, $"{label}: delta out of stepWords");
-
-        // K-P4: floor(sqrt(a)) - r'' in {0, 1}.
-        var gap = expected.Root - trace.Estimate;
-        Assert.True(gap >= 0 && gap <= 1, $"{label}: floor(sqrt(a)) - r'' = {gap}");
 
         // K-P5: the root is the floor and r^2 <= a < (r + 1)^2.
-        GpuBigIntSqrtTests.AssertIsFloorSquareRoot(a, actualRoot, label);
+        GpuBigIntSqrtTests.AssertIsFloorSquareRoot(a, actual.Root, label);
         ctx.ThrowIfDeviceErrors();
     }
 
@@ -162,8 +139,8 @@ public class GpuBigIntSqrtKarpMarksteinTests(ITestOutputHelper output)
     }
 
     // K-P5, K-P6: SqrtFloor gives the floor and increments InverseSqrtDoublingRuns iff n > threshold.
-    // mutant: GpuBigIntDivRem.Sqrt.cs:131 `n > workspace.SqrtPrecisionDoublingThresholdWords` -> `>=`
-    // mutant: GpuBigIntDivRem.Sqrt.cs:134 `workspace.CountInverseSqrtDoubling();` removed
+    // mutant: GpuBigIntDivRem.Sqrt.cs:147 `root.NumWords > workspace.SqrtPrecisionDoublingThresholdWords` -> `>=`
+    // mutant: GpuBigIntDivRem.Sqrt.cs:150 `workspace.CountInverseSqrtDoubling();` removed
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(ThresholdSwitchInputs))]
@@ -188,40 +165,81 @@ public class GpuBigIntSqrtKarpMarksteinTests(ITestOutputHelper output)
         ctx.ThrowIfDeviceErrors();
     }
 
-    // An operand whose word count is not 2 * root.NumWords throws ArgumentException.
-    // mutant: GpuBigIntDivRem.Sqrt.cs:156 `operand.NumWords != 2 * n` -> `operand.NumWords < 2 * n`
-    [SkippableFact]
+    // An operand whose word count is not 2 * root.NumWords (narrower or wider) throws ArgumentException.
+    // mutant: GpuBigIntDivRem.Sqrt.cs:179 `operand.NumWords != 2 * n` -> `operand.NumWords < 2 * n` (fails on 9 vs 4)
+    [SkippableTheory]
     [Scenario(TestScenario.SadPath)]
-    public void SqrtFloorKarpMarkstein_OperandNotTwiceTheRoot_ThrowsArgumentException()
+    [InlineData(7, 4)]
+    [InlineData(9, 4)]
+    public void SqrtFloorKarpMarkstein_OperandNotTwiceTheRoot_ThrowsArgumentException(int operandWords, int rootWords)
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
-        using var operand = new GpuBigUInt(ctx, 7);
-        using var root = new GpuBigUInt(ctx, 4);
+        var value = (BigInteger.One << (32 * operandWords)) - 1;
+        using var operand = GpuBigUInt.FromBigInteger(ctx, value, operandWords);
+        using var root = new GpuBigUInt(ctx, rootWords);
 
-        Assert.Throws<ArgumentException>(() => GpuBigIntDivRem.SqrtFloorKarpMarksteinForTest(operand, root));
+        var ex = Assert.Throws<ArgumentException>(() => GpuBigIntDivRem.SqrtFloorKarpMarksteinForTest(operand, root));
+        Assert.Contains("SqrtFloor needs an operand of twice the root words", ex.Message, StringComparison.Ordinal);
     }
 
-    internal static void AssertTraceEquals(SqrtKarpMarksteinReference.Trace expected,
-        GpuBigIntDivRem.SqrtKarpMarksteinTrace actual, BigInteger actualRoot, string label)
+    // An operand with bit length below 64n - 1 violates the normalization precondition and throws ArgumentException.
+    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:104 `actualBits < 32 * w.OperandWords - 1` ->
+    //         `actualBits < 32 * w.OperandWords - 2`
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void SqrtFloorKarpMarkstein_SubnormalOperand_ThrowsArgumentException()
     {
-        Assert.Equal(expected.Stages.Count, actual.Stages.Count);
-        for (var k = 0; k < expected.Stages.Count; k++)
+        CudaCapability.EnsureGpuAvailable();
+        const int RootWords = 4;
+        var subnormal = (BigInteger.One << (64 * RootWords - 2)) - 1;
+        using var ctx = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        using var operand = GpuBigUInt.FromBigInteger(ctx, subnormal, 2 * RootWords);
+        using var root = new GpuBigUInt(ctx, RootWords);
+
+        var ex = Assert.Throws<ArgumentException>(() => GpuBigIntDivRem.SqrtFloorKarpMarksteinForTest(operand, root));
+        Assert.Contains("normalized operand", ex.Message, StringComparison.Ordinal);
+    }
+
+    // An overestimated y makes s0 exceed sqrt(A) on a perfect square, so d_hi = A - s0^2 < 0 is reported by the
+    // checked subtraction as an OverflowException (in Debug, CheckFitsBits also flags the wrapped residual, so two
+    // domain errors are recorded; mutating AddSubtract to AddSubtractModulo drops the count to 1 in Debug and removes
+    // the exception in Release).
+    // mutant: GpuBigIntDivRem.SqrtKarpMarkstein.cs:147 `BigIntWideOps.AddSubtract(` ->
+    //         `BigIntWideOps.AddSubtractModulo(`
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void SqrtFloorKarpMarkstein_OverestimatedYOnPerfectSquare_ReportsDifferenceBelowZero()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        const int RootWords = 4;
+        // a = 2^(64n - 2) = (2^(32n - 1))^2, so A = (2^(16n + 15))^2; adding 2^16 + 4 to y pushes s0 to sqrt(A) + 1.
+        var a = BigInteger.One << (64 * RootWords - 2);
+        using var ctx = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
+        using var operand = GpuBigUInt.FromBigInteger(ctx, a, 2 * RootWords);
+        using var root = new GpuBigUInt(ctx, RootWords);
+
+        var ex = Assert.Throws<OverflowException>(
+            () => GpuBigIntDivRem.SqrtFloorKarpMarksteinForTest(operand, root, yOffset: (1u << 16) + 4u));
+#if DEBUG
+        Assert.Contains("2 domain error(s)", ex.Message, StringComparison.Ordinal);
+#else
+        Assert.Contains("below zero", ex.Message, StringComparison.OrdinalIgnoreCase);
+#endif
+        ctx.ThrowIfDeviceErrors();
+    }
+
+    internal static SqrtKarpMarksteinReference.Trace ToReferenceTrace(
+        GpuBigIntDivRem.SqrtKarpMarksteinTrace trace, BigInteger actualRoot)
+    {
+        var stages = new List<(int Words, BigInteger Y, BigInteger D)>(trace.Stages.Count);
+        foreach (var stage in trace.Stages)
         {
-            Assert.True(
-                expected.Stages[k].Words == actual.Stages[k].Words
-                && expected.Stages[k].Y == actual.Stages[k].Y
-                && expected.Stages[k].D == actual.Stages[k].D,
-                $"{label}: stage {k} (p = {actual.Stages[k].Words}) differs from the model");
+            stages.Add((stage.Words, stage.Y, stage.D));
         }
 
-        Assert.Equal(expected.Y, actual.Y);
-        Assert.Equal(expected.S0, actual.S0);
-        Assert.Equal(expected.DHigh, actual.DHigh);
-        Assert.Equal(expected.DShifted, actual.DShifted);
-        Assert.Equal(expected.Delta, actual.Delta);
-        Assert.Equal(expected.Estimate, actual.Estimate);
-        Assert.Equal(expected.Root, actualRoot);
+        return new SqrtKarpMarksteinReference.Trace(
+            stages, trace.Y, trace.S0, trace.DHigh, trace.DShifted, trace.Delta, trace.Estimate, actualRoot);
     }
 }
 
@@ -231,31 +249,39 @@ public class GpuBigIntSqrtKarpMarksteinTests(ITestOutputHelper output)
 [Category(TestCategory.Stdlib)]
 public class GpuBigIntSqrtKarpMarksteinCpuFallbackTests
 {
+    /// <summary>Root word counts and operand kinds for the CPU fallback Karp-Markstein test.</summary>
+    public static TheoryData<int, string> CpuFallbackInputs()
+    {
+        var data = new TheoryData<int, string>();
+        foreach (var rootWords in new[] { 1, 2, 7, 46, 200 })
+        {
+            foreach (var kind in new[] { "Lowest", "Highest", "Random", "SquareMinus1" })
+            {
+                data.Add(rootWords, kind);
+            }
+        }
+
+        return data;
+    }
+
     // K-P1, K-P5 in CPU fallback mode: every stage, intermediate value and final root agrees with the model.
     [Theory]
     [Scenario(TestScenario.Boundary)]
-    [InlineData(1)]
-    [InlineData(2)]
-    [InlineData(7)]
-    [InlineData(46)]
-    [InlineData(200)]
-    public void SqrtFloorKarpMarkstein_CpuFallback_MatchesTheModel(int rootWords)
+    [MemberData(nameof(CpuFallbackInputs))]
+    public void SqrtFloorKarpMarkstein_CpuFallback_MatchesTheModel(int rootWords, string kind)
     {
         using var fallback = CpuFallbackScope.Enter();
-        foreach (var kind in new[] { "Lowest", "Highest", "Random", "SquareMinus1" })
-        {
-            var a = GpuBigIntSqrtTests.BuildSqrtFloorOperand(kind, rootWords);
-            var expected = SqrtKarpMarksteinReference.Run(a, rootWords);
-            using var ctx = new GpuWorkspace(Math.Max(4096, rootWords * 16), GpuExecutionEngine.GSharpAot);
-            using var operand = GpuBigUInt.FromBigInteger(ctx, a, 2 * rootWords);
-            using var root = new GpuBigUInt(ctx, rootWords);
+        var a = GpuBigIntSqrtTests.BuildSqrtFloorOperand(kind, rootWords);
+        var expected = SqrtKarpMarksteinReference.Run(a, rootWords);
+        using var ctx = new GpuWorkspace(Math.Max(4096, rootWords * 16), GpuExecutionEngine.GSharpAot);
+        using var operand = GpuBigUInt.FromBigInteger(ctx, a, 2 * rootWords);
+        using var root = new GpuBigUInt(ctx, rootWords);
 
-            var trace = GpuBigIntDivRem.SqrtFloorKarpMarksteinForTest(operand, root);
-            var actualRoot = root.ToBigInteger();
-            var label = $"{kind} n={rootWords} (CPU)";
+        var trace = GpuBigIntDivRem.SqrtFloorKarpMarksteinForTest(operand, root);
+        var actual = GpuBigIntSqrtKarpMarksteinTests.ToReferenceTrace(trace, root.ToBigInteger());
+        var label = $"{kind} n={rootWords} (CPU)";
 
-            GpuBigIntSqrtKarpMarksteinTests.AssertTraceEquals(expected, trace, actualRoot, label);
-            GpuBigIntSqrtTests.AssertIsFloorSquareRoot(a, actualRoot, label);
-        }
+        SqrtKarpMarksteinReference.AssertTraceEquals(expected, actual, label);
+        GpuBigIntSqrtTests.AssertIsFloorSquareRoot(a, actual.Root, label);
     }
 }

@@ -755,8 +755,9 @@ public static partial class GpuBigIntDivRem
         {
             shiftedApproximation.WriteLimbs(xData.AsSpan(0, numWords));
 
-            // No stream synchronization: a pageable host-to-device copy is staged before the call returns, so the pooled
-            // host buffer may be returned immediately, and later work using resultBuffer is ordered on the same stream.
+            // No stream synchronization: a pageable host-to-device copy is staged before the call returns, so the
+            // pooled host buffer may be returned immediately, and later work using resultBuffer is ordered on the
+            // same stream.
             targetOperand.Workspace.Provider.CopyHostToDevice(resultBuffer.DevicePointer, xData, numWords,
                 targetOperand.Workspace.Stream);
         }
@@ -766,10 +767,18 @@ public static partial class GpuBigIntDivRem
         }
     }
 
-    // x0 ~ 2^targetBits / sqrt(a), or 2^targetBits / a, from the top words of the operand (one read to the host)
+    // x0 ~ 2^targetBits / sqrt(a), or 2^targetBits / a, from the top words of the operand
     private static BigInteger InitialGuessValue(GpuBigUInt targetOperand, int targetBits, bool isSquareRoot)
     {
-        var topBig = ExtractTopBitsAsBigInteger(targetOperand, out var actualBits);
+        var top = ReadSeedTop(targetOperand, isSquareRoot, out var actualBits, out var totalShift);
+        return InitialGuessFromTop(top, actualBits, totalShift, targetBits, isSquareRoot);
+    }
+
+    // Reads the top <= 4 words and shifts them into the 62-bit seed window (even totalShift for square roots).
+    private static BigInteger ReadSeedTop(GpuBigUInt operand, bool isSquareRoot, out int actualBits,
+        out int totalShift)
+    {
+        var topBig = ExtractTopBitsAsBigInteger(operand, out actualBits);
 
         var truncatedBits = 0;
         var t = topBig;
@@ -785,38 +794,55 @@ public static partial class GpuBigIntDivRem
             shiftInTruncated++; // even if negative, maintain parity
         }
 
-        var originalBigTop = shiftInTruncated >= 0
+        totalShift = actualBits - truncatedBits + shiftInTruncated;
+        return shiftInTruncated >= 0
             ? (topBig >> shiftInTruncated)
             : (topBig << -shiftInTruncated);
+    }
 
+    // Computes x0 ~ 2^targetBits / sqrt(a) from ReadLeadingBits (one host synchronization) for a normalized operand of
+    // at least 2 words, and returns the operand's bit length.
+    private static BigInteger InitialGuessSquareRootFromLeadingBits(GpuBigUInt operand, int targetBits,
+        out int actualBits)
+    {
+        operand.Workspace.Provider.ReadLeadingBits(operand.Workspace, operand, out actualBits, out var leadingBits);
+        return actualBits >= 63
+            ? InitialGuessSquareRootFromLeadingBits(actualBits, leadingBits, targetBits)
+            : BigInteger.Zero;
+    }
 
+    // Pure host computation of x0 ~ 2^targetBits / sqrt(a) from ReadLeadingBits (top bit at bit 63, actualBits >= 63).
+    internal static BigInteger InitialGuessSquareRootFromLeadingBits(int actualBits, ulong leadingBits, int targetBits)
+    {
+        // Even actualBits -> 62-bit window (>> 2); odd actualBits -> 61-bit window (>> 3), matching ReadSeedTop parity.
+        var shift = (actualBits & 1) == 0 ? 2 : 3;
+        var top = new BigInteger(leadingBits >> shift);
+        var totalShift = actualBits - (64 - shift);
+        return InitialGuessFromTop(top, actualBits, totalShift, targetBits, isSquareRoot: true);
+    }
+
+    // Computes x0 ~ 2^targetBits / sqrt(a) or 2^targetBits / a from the 62-bit seed window.
+    private static BigInteger InitialGuessFromTop(BigInteger top, int actualBits, int totalShift, int targetBits,
+        bool isSquareRoot)
+    {
         BigInteger initialApproximation;
         int finalShift;
 
         if (isSquareRoot)
         {
-            var root = originalBigTop.Sqrt() + 1;
+            var root = top.Sqrt() + 1;
             initialApproximation = (BigInteger.One << 62) / root;
-            var halfTotalShift = (actualBits - truncatedBits + shiftInTruncated) / 2;
-            finalShift = targetBits - halfTotalShift - 62;
+            finalShift = targetBits - totalShift / 2 - 62;
         }
         else
         {
-            initialApproximation = (BigInteger.One << 124) / originalBigTop;
+            initialApproximation = (BigInteger.One << 124) / top;
             finalShift = targetBits - actualBits - 62;
         }
 
-        var shiftedApproximation = initialApproximation;
-        if (finalShift >= 0)
-        {
-            shiftedApproximation <<= finalShift;
-        }
-        else
-        {
-            shiftedApproximation >>= -finalShift;
-        }
-
-        return shiftedApproximation;
+        return finalShift >= 0
+            ? (initialApproximation << finalShift)
+            : (initialApproximation >> -finalShift);
     }
 }
 

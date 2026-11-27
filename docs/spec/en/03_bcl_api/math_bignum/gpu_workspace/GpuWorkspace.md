@@ -128,7 +128,7 @@ Gets or sets the size of a square root, in 32-bit words, above which its square 
 public int SqrtPrecisionDoublingThresholdWords { get; set; }
 ```
 
-The size is the word count of the root: `r` words for an operand of `2r` words of `GpuBigIntDivRem.Sqrt`, and the significand words of a big-float square root. A root of at most this many words runs every Newton iteration at full width in one cooperative kernel; a wider root runs a chain of ordinary kernel launches whose working precision doubles from two words to half the root, then three products and a squaring at most as wide as the root.
+The size is the word count of the root: `r` words for an operand of `2r` words of `GpuBigIntDivRem.Sqrt`, and the significand words of a big-float square root. A root of at most this many words runs every Newton iteration at full width in one cooperative kernel; a wider root runs a chain of ordinary kernel launches whose working precision doubles from two words to half the root, then two products and two squarings at most as wide as the root.
 
 The result is exactly the same either way; only the time differs. The size at which the two take the same time depends on the GPU (its number of SMs and its launch latency), so measure it on yours and set it here. The default, 5956 root words, is where the cooperative mega-kernel stops being the faster path: up to 5956 words its transforms fit 65536 points, and from 5957 words they need 131072 points, where host-driven precision doubling is faster. The value comes from the `arithmetic sqrt-path` benchmark on an idle machine. `0` sends every root to the precision doubling, `int.MaxValue` every root to the mega-kernel.
 
