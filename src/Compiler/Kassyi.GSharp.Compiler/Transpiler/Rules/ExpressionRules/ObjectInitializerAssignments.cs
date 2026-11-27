@@ -42,7 +42,7 @@ internal static class ObjectInitializerAssignments
 
             AppendTarget(initializer, ref context);
             context.Emitter.Writer.Append('.');
-            PropertyAccessorCall.TranspileAssignment(assignment, " = ", ref context);
+            PropertyAccessorCallEmitter.TranspileAssignment(assignment, " = ", ref context);
             AppendStatementEnd(lineBreaks, ref context);
         }
     }

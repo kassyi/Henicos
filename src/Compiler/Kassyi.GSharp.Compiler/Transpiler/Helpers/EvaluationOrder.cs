@@ -28,21 +28,8 @@ internal static class EvaluationOrder
     /// The index of the last operand that must be evaluated into a temporary, or -1 when no two operands interfere.
     /// <paramref name="operands"/> are in the C# order of evaluation.
     /// </summary>
-    public static int LastSpilledOperand(ReadOnlySpan<ExpressionEffects> operands)
-    {
-        for (var j = operands.Length - 1; j > 0; j--)
-        {
-            for (var i = 0; i < j; i++)
-            {
-                if (operands[i].InterferesWith(operands[j]))
-                {
-                    return j;
-                }
-            }
-        }
-
-        return -1;
-    }
+    public static int LastSpilledOperand(ReadOnlySpan<ExpressionEffects> operands) =>
+        OperandEvaluationOrder.LastSpilledOperand(operands);
 
     /// <summary>
     /// Opens the lambda of a sequence: <c>([&amp;]() {</c>, or <c>([&amp;]() -&gt; &lt;returnType&gt; {</c>.

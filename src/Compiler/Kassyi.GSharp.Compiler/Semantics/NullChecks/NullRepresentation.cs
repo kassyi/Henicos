@@ -85,7 +85,7 @@ internal static class NullRepresentation
 
     /// <summary>
     /// The operand that <paramref name="node"/> compares with the <c>null</c> literal when it is written as a null test
-    /// (<see cref="NullRepresentationEmitter.AppendNullTest"/>): <c>x == null</c>, <c>null != x</c> and the like for an <paramref name="node"/>
+    /// (<c>NullRepresentationEmitter.AppendNullTest</c>): <c>x == null</c>, <c>null != x</c> and the like for an <paramref name="node"/>
     /// whose other operand is <see cref="IsNullComparable"/>; <see langword="null"/> otherwise. The test is written
     /// whatever operator C# binds (<c>Span&lt;T&gt;</c> compares through its user-defined <c>==</c>).
     /// </summary>

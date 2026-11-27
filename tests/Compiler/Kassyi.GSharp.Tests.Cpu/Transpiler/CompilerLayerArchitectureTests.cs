@@ -12,7 +12,6 @@ namespace Kassyi.GSharp.Tests.Cpu.Transpiler;
 [Collection(TestCollections.CorpusScan)]
 public class CompilerLayerArchitectureTests(ITestOutputHelper output)
 {
-    private const string DirectExpectedFile = "CompilerLayerDirect.expected.yml";
     private const string IndirectExpectedFile = "CompilerLayerIndirect.expected.yml";
 
     private static readonly UTF8Encoding s_utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
@@ -22,19 +21,24 @@ public class CompilerLayerArchitectureTests(ITestOutputHelper output)
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void CompilerLayers_DirectReferences_MatchExpected()
+    public void CompilerLayers_DirectReferences_AreEmpty()
     {
         var graph = s_layerGraph.Value;
         Assert.Empty(graph.CompilationErrors);
 
-        AssertEdgesMatchExpected(
-            name: "CompilerLayerDirect",
-            expectedFile: DirectExpectedFile,
-            headerComment:
-                "# Direct references from Ir/, Semantics/, Dialects/, " +
-                "and Backends/\r\n" +
-                "# to types or extension methods declared in Transpiler/ or Lowering/.",
-            actualEdges: graph.DirectEdges);
+        if (graph.DirectEdges.IsEmpty)
+        {
+            return;
+        }
+
+        var message = new StringBuilder();
+        message.Append("Unexpected direct references (").Append(graph.DirectEdges.Length).AppendLine("):");
+        foreach (var edge in graph.DirectEdges)
+        {
+            message.Append("  + ").AppendLine(edge);
+        }
+
+        Assert.Fail(message.ToString());
     }
 
     [Fact]

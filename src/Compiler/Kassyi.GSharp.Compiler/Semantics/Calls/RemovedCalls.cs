@@ -108,7 +108,7 @@ internal static class RemovedCalls
     /// <remarks>
     /// [WHY] The generated file has the parse options of the compilation and none of the directives of the user's
     /// files, into which the bodies of the kernels and device functions are copied, and C# decides again there. The
-    /// copies keep no call that C# removes (<c>RemovedCallEraser</c>, <see cref="ManagedExecutionRewriter"/>), so
+    /// copies keep no call that C# removes (<c>RemovedCallEraser</c>, <c>ManagedExecutionRewriter</c>), so
     /// defining these symbols keeps exactly the calls that C# keeps in the user's files. A file without a
     /// <c>#define</c> adds none.
     /// </remarks>

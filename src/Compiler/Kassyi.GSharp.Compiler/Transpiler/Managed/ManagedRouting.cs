@@ -68,15 +68,13 @@ internal static class ManagedRouting
     /// Whether <paramref name="method"/> has a managed version.
     /// </summary>
     public static bool IsRouted(IMethodSymbol method, Compilation compilation) =>
-        ManagedVersionAnalysis.HasManagedVersion(method, compilation);
+        ManagedVersionRouting.IsRouted(method, compilation);
 
     /// <summary>
     /// Whether <paramref name="symbol"/> is an unreduced device function reference that has a managed version.
     /// </summary>
     public static bool IsRoutedReference(IMethodSymbol symbol, Compilation compilation) =>
-        symbol.ReducedFrom is null &&
-        symbol.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
-        IsRouted(symbol, compilation);
+        ManagedVersionRouting.IsRoutedReference(symbol, compilation);
 
     /// <summary>
     /// The declared extension method when <paramref name="symbol"/> is a reduced extension method group with

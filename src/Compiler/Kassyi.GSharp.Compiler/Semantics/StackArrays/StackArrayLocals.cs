@@ -71,7 +71,7 @@ internal static class StackArrayLocals
 
     /// <summary>
     /// Whether <paramref name="expression"/> names a stack array local that is a C++ array, which a span needs
-    /// <see cref="StackArrayLocalsEmitter.AppendView"/> for. An empty span local is already a <c>GSharpArray&lt;T&gt;</c>
+    /// <c>StackArrayLocalsEmitter.AppendView</c> for. An empty span local is already a <c>GSharpArray&lt;T&gt;</c>
     /// (<c>VariableDeclarationTranspilerRule</c>), so it is written as it is.
     /// </summary>
     public static bool NeedsView(ExpressionSyntax expression, SemanticModel semanticModel) =>

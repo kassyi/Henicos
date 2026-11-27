@@ -19,4 +19,12 @@ internal static class EmittedUserTypes
     public static bool IsEmittedUserType(INamedTypeSymbol type) =>
         type.TypeKind == TypeKind.Struct && !type.ContainingNamespace.IsSystemOrNumerics() && !type.IsArrayLikeType() &&
         !type.IsSharedMemoryType() && !type.IsWmmaFragmentType() && !type.IsWmmaMarkerType();
+
+    /// <summary>
+    /// Whether a reference to <paramref name="type"/> or to one of its instance members uses the encoded name: an
+    /// <see cref="IsEmittedUserType">emitted user struct</see> that <paramref name="dialect"/> does not map to a type
+    /// of its own.
+    /// </summary>
+    public static bool IsEncodedUserType(INamedTypeSymbol type, ITranspilerDialect dialect) =>
+        IsEmittedUserType(type) && !dialect.IsMappedType(type);
 }

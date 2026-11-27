@@ -1,4 +1,4 @@
-using static Kassyi.GSharp.Compiler.Transpiler.StructTypeSubstitution;
+using static Kassyi.GSharp.Compiler.Semantics.StructTypeSubstitution;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 

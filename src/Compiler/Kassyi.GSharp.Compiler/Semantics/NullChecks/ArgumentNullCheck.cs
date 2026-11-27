@@ -28,7 +28,7 @@ internal static class ArgumentNullCheck
 
     /// <summary>
     /// Whether <paramref name="argument"/>, passed to <paramref name="parameter"/> of a device function, is checked at
-    /// the call (<see cref="ArgumentNullCheckEmitter.PlanArgument"/>): the parameter asks for it and the argument is not proven.
+    /// the call (<c>ArgumentNullCheckEmitter.PlanArgument</c>): the parameter asks for it and the argument is not proven.
     /// </summary>
     public static bool ChecksArgument(ExpressionSyntax argument, IParameterSymbol parameter, SemanticModel model) =>
         GetArgumentCheckKind(parameter) is var kind && kind != ArgumentCheckKind.None &&
@@ -44,9 +44,9 @@ internal static class ArgumentNullCheck
 
     /// <summary>
     /// The Prelude helper that checks a device function argument (the plan of
-    /// <see cref="ArgumentNullCheckEmitter.PlanArgument"/>): <c>__gsharp_array_ref</c> for a non-nullable array,
+    /// <c>ArgumentNullCheckEmitter.PlanArgument</c>): <c>__gsharp_array_ref</c> for a non-nullable array,
     /// <c>__gsharp_struct_ref</c> for a struct that reaches non-nullable array fields. The caller writes it, then in
-    /// parentheses the argument and <see cref="ArgumentNullCheckEmitter.AppendArgumentCheckTail"/>.
+    /// parentheses the argument and <c>ArgumentNullCheckEmitter.AppendArgumentCheckTail</c>.
     /// </summary>
     public static string GetArgumentCheckHelper(ArgumentCheck check) =>
         check.Kind == ArgumentCheckKind.Array ? GSharpInternalNames.Prelude.ArrayRef : GSharpInternalNames.Prelude.StructRef;
@@ -97,7 +97,7 @@ internal static class ArgumentNullCheck
     }
 }
 
-/// <summary>What the check of a device function argument tests (<see cref="ArgumentNullCheckEmitter.PlanArgument"/>).</summary>
+/// <summary>What the check of a device function argument tests (<c>ArgumentNullCheckEmitter.PlanArgument</c>).</summary>
 internal enum ArgumentCheckKind
 {
     /// <summary>No check: the parameter has no non-nullable array, or the argument is proven.</summary>

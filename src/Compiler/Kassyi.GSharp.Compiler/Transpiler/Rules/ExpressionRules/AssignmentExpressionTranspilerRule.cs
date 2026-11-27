@@ -36,7 +36,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
-        var isAccessorProperty = PropertyAccessorCall.IsAccessorPropertyTarget(node.Left, ref context);
+        var isAccessorProperty = PropertyAccessorCallEmitter.IsAccessorPropertyTarget(node.Left, ref context);
         if (node.IsKind(SyntaxKind.CoalesceAssignmentExpression))
         {
             TranspileCoalesceAssignment(node, isAccessorProperty, ref context);
@@ -85,7 +85,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
-        PropertyAccessorCall.TranspileAssignment(node, node.OperatorToken.Text, ref context);
+        PropertyAccessorCallEmitter.TranspileAssignment(node, node.OperatorToken.Text, ref context);
     }
 
     // x op= y

@@ -103,7 +103,7 @@ internal static class IdentifierNameTranspiler
             return;
         }
 
-        var copyType = PropertyAccessorCall.PlanCopyType(node, symbol, ref context);
+        var copyType = PropertyAccessorCallEmitter.PlanCopyType(node, symbol, ref context);
         if (copyType == null && IsSelfMember(node, symbol, ref context))
         {
             ThisExpressionTranspilerRule.AppendSelf(ref context);
@@ -137,7 +137,7 @@ internal static class IdentifierNameTranspiler
         }
 
         context.Emitter.Writer.AppendCppName(name);
-        PropertyAccessorCall.AppendCallIfGetter(node, symbol, ref context);
+        PropertyAccessorCallEmitter.AppendCallIfGetter(node, symbol, ref context);
     }
 
     // The member named by an object initializer (new Vector3(v) { Y = l }) of a type whose members the dialect maps, as

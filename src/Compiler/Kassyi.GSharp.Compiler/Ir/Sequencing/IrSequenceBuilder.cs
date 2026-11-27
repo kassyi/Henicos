@@ -90,7 +90,7 @@ internal sealed class IrSequenceBuilder
     /// spell, deduced (<c>auto</c>) without a type, for an enum, a type parameter or a type without a direct C++ type.
     /// </summary>
     public static IrDeclaredTypeForm DeclaredFormOf(ITypeSymbol? declaredAs) =>
-        declaredAs is not { TypeKind: TypeKind.Enum } && TypeMapping.HasDirectCppType(declaredAs)
+        declaredAs is not { TypeKind: TypeKind.Enum } && CppTypeMapping.HasDirectCppType(declaredAs)
             ? IrDeclaredTypeForm.Named
             : IrDeclaredTypeForm.Deduced;
 
