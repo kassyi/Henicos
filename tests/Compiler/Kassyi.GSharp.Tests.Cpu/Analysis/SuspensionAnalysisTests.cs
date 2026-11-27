@@ -658,6 +658,13 @@ public class SuspensionAnalysisTests
             public static int UnreachableRec(int n) => n <= 0 ? 0 : UnreachableRec(n - 1);
 
             [GpuDeviceFunction]
+            public static int OuterViaLocal(int x)
+            {
+                int step(int n) => n <= 0 ? 0 : OuterViaLocal(n - 1);
+                return step(x);
+            }
+
+            [GpuDeviceFunction]
             public static int WithRecursiveLocal(int x)
             {
                 int localSum(int n) => n <= 0 ? 0 : n + localSum(n - 1);
@@ -747,6 +754,19 @@ public class SuspensionAnalysisTests
             }
 
             [GpuKernel]
+            public static void LocalCallsOuterKernel(int[] data)
+            {
+                data[0] = Functions.OuterViaLocal(data[0]);
+            }
+
+            [GpuKernel]
+            public static void KernelLocalCallsDeviceKernel(int[] data)
+            {
+                int viaLocal(int n) => Functions.OuterViaLocal(n);
+                data[0] = viaLocal(data[0]);
+            }
+
+            [GpuKernel]
             public static void DeviceFunctionWithRecursiveLocalKernel(int[] data)
             {
                 data[0] = Functions.WithRecursiveLocal(data[0]);
@@ -828,6 +848,8 @@ public class SuspensionAnalysisTests
     [InlineData("MutualLocalFunctionRecursionKernel", true)]
     [InlineData("MethodGroupLocalFunctionRecursionKernel", true)]
     [InlineData("DeviceFunctionWithRecursiveLocalKernel", true)]
+    [InlineData("LocalCallsOuterKernel", true)]
+    [InlineData("KernelLocalCallsDeviceKernel", true)]
     [InlineData("OperatorMacroRecursionKernel", true)]
     [InlineData("StructCtorRecursionKernel", true)]
     [InlineData("StructPlainCtorKernel", false)]
