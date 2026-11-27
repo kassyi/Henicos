@@ -26,7 +26,7 @@ internal static class AliasGroupEmitter
     /// <summary>Declares the groups of the launch, before the launcher's <c>try</c> block.</summary>
     public static void WriteDeclaration(SourceWriter writer, in LaunchAliasPlan plan)
     {
-        writer.AppendLineIf(plan.IsActive, $"{GroupsType}? {Aliases} = null;");
+        writer.AppendLineIf(plan.IsActive && !plan.ChecksAlignmentOnly, $"{GroupsType}? {Aliases} = null;");
         writer.AppendLineIf(plan.HasHeldArrays, $"{StructArrayHelperEmitter.HeldArraysType}? {Held} = null;");
     }
 
@@ -289,6 +289,26 @@ internal static class AliasGroupEmitter
     public static string DevicePointer(in LaunchAliasPlan plan, int parameterIndex) =>
         $"{Aliases}.GetDevicePointer({plan.MemberIndexOf(parameterIndex)})";
 
+    // <declarations> [try {]   (CPU, around WriteCpuGroups and the copies)
+    // [WHY] The held arrays stay pinned until the arguments took their copies; a launch that throws on the way (an
+    // overlap that no address aligns, a view that cannot share its group's copy) unpins them in the finally block
+    // (WriteCpuHeldRelease) instead of leaving them to the finalizer
+    /// <summary>
+    /// CPU: declares the groups of the launch and, when struct arguments hold arrays, opens the <c>try</c> block that
+    /// <see cref="WriteCpuHeldRelease"/> closes.
+    /// </summary>
+    public static SourceWriterScope WriteCpuHeldTry(SourceWriter writer, in LaunchAliasPlan plan)
+    {
+        WriteDeclaration(writer, plan);
+        if (!plan.HasHeldArrays)
+        {
+            return default;
+        }
+
+        writer.AppendLine("try");
+        return writer.Scope();
+    }
+
     // <pins> { __gsharp_aliases = HostAliasGroups.Find(...); <copies> }
     /// <summary>
     /// CPU: finds the groups and opens the scope that keeps the arguments pinned while the launcher makes its copies
@@ -302,20 +322,25 @@ internal static class AliasGroupEmitter
             return default;
         }
 
-        writer.AppendLine("// Find the arguments that overlap: the [In] members of a group share one copy");
-        WriteDeclaration(writer, plan);
+        writer.AppendLine(plan.ChecksAlignmentOnly
+            ? "// Throw for overlapping arguments that no CUDA address aligns, as the CUDA launcher does"
+            : "// Find the arguments that overlap: the [In] members of a group share one copy");
         WriteHeldArrays(writer, sharing, isCuda: false);
         var scope = AliasRangeEmitter.WritePinnedRanges(writer, plan.Ranges);
-        WriteCpuDeviceAlignmentCheck(writer, plan);
-        AliasRangeEmitter.WriteFind(writer, plan.Ranges, plan.HasHeldArrays);
+        WriteCpuFind(writer, plan);
         WriteClearedOutArguments(writer, sharing);
         return scope;
     }
 
-    // HostAliasGroups.ThrowIfNoDeviceAlignment(<ranges>, <traits>, <names>, <device alignments>);
-    private static void WriteCpuDeviceAlignmentCheck(SourceWriter writer, in LaunchAliasPlan plan)
+    // __gsharp_aliases = HostAliasGroups.Find(<ranges>, <traits>, <names>, <CUDA alignments>);
+    // HostAliasGroups.ThrowIfNoDeviceAlignment(<the same arguments>);   when the launcher keeps no group
+    // [WHY] The CUDA alignments make an overlap that CUDA rejects throw on the CPU paths too (#1858); the held arrays
+    // add theirs at run time, as they add their ranges
+    private static void WriteCpuFind(SourceWriter writer, in LaunchAliasPlan plan)
     {
-        writer.Append($"{GroupsType}.ThrowIfNoDeviceAlignment");
+        writer.Append(plan.ChecksAlignmentOnly
+            ? $"{GroupsType}.ThrowIfNoDeviceAlignment"
+            : $"{Aliases} = {GroupsType}.Find");
         using (writer.Parentheses())
         {
             writer.Append($"{AliasRangeEmitter.RangesSpan(plan.Ranges, plan.HasHeldArrays)}, ");
@@ -323,6 +348,7 @@ internal static class AliasGroupEmitter
             writer.Append(", ");
             AliasRangeEmitter.WriteNamesArgument(writer, plan.Ranges, plan.HasHeldArrays);
             writer.Append(", ");
+            writer.AppendIf(plan.HasHeldArrays, $"{Held}.CombineDeviceAlignments(");
             if (plan.Ranges.Length == 0)
             {
                 writer.Append("global::System.ReadOnlySpan<int>.Empty");
@@ -339,6 +365,8 @@ internal static class AliasGroupEmitter
                     }
                 }
             }
+
+            writer.AppendIf(plan.HasHeldArrays, ")");
         }
 
         writer.AppendLine(";");
@@ -367,9 +395,21 @@ internal static class AliasGroupEmitter
         }
     }
 
-    /// <summary>CPU: unpins the held arrays, after the arguments took their copies.</summary>
-    public static void WriteCpuHeldRelease(SourceWriter writer, in LaunchAliasPlan plan) =>
-        writer.AppendLineIf(plan.HasHeldArrays, $"{Held}?.Free();");
+    // finally { __gsharp_alias_held?.Free(); }   closing WriteCpuHeldTry
+    /// <summary>CPU: unpins the held arrays, after the arguments took their copies or when the launch threw.</summary>
+    public static void WriteCpuHeldRelease(SourceWriter writer, in LaunchAliasPlan plan)
+    {
+        if (!plan.HasHeldArrays)
+        {
+            return;
+        }
+
+        writer.AppendLine("finally");
+        using (writer.Scope())
+        {
+            writer.AppendLine($"{Held}?.Free();");
+        }
+    }
 
     // if (!(__gsharp_aliases?.IsMember(<k>) == true)) <out name> = default;   for each out struct that holds arrays
     // [WHY] An out argument that no other argument refers to is cleared, as it always was; one that does keeps the

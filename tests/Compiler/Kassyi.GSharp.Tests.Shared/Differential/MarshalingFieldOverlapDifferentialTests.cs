@@ -887,4 +887,92 @@ public sealed class MarshalingFieldOverlapDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void FieldOverlap_InConvertedMemoryFieldAndAnInSlice_SeeEachOthersWritesOnEveryPath() =>
         DifferentialRunner.Run(s_inConvertedMemoryFieldAndInSlice);
+
+    // A Vector2 view that a struct holds and a span of Vector2 that starts 4 bytes before it: aligned for float, the
+    // CPU alignment of Vector2, but not for the 8 bytes of CUDA, so every path throws as CUDA does
+    internal static readonly DifferentialCase s_vector2MemoryFieldAndSkewedSlice = new(
+        FieldKernelName(nameof(MarshalingFieldOverlapDifferentialKernels.Vector2MemoryFieldAndSkewedSliceKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", [1f, 2f, 3f, 4f, 5f], OutputPolicy.Ignore)
+            .Out<float>("observed", 2, OutputPolicy.Ignore),
+        ExceptionPolicy = ExceptionPolicy.For<NotSupportedException>(
+            DiffPath.Managed | DiffPath.Native | DiffPath.Cuda,
+            messageContains: "aligned for all of their element types"),
+        Launch = static (b, s) =>
+        {
+            float[] backing = b.Get<float>("backing");
+            var bag = new DiffVector2MemoryBag { Data = new HostAliasMemoryManager<Vector2>(backing, 4, 2).Memory };
+            MarshalingFieldOverlapDifferentialKernels.LaunchVector2MemoryFieldAndSkewedSliceKernel(
+                bag, MemoryMarshal.Cast<float, Vector2>(backing.AsSpan(0, 4)), b.Get<float>("observed"),
+                gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    // The same overlap through a Vector2[] that a struct holds and a span over its floats from the second one
+    internal static readonly DifferentialCase s_vector2ArrayFieldAndSkewedSlice = new(
+        FieldKernelName(nameof(MarshalingFieldOverlapDifferentialKernels.Vector2ArrayFieldAndSkewedSliceKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .Out<float>("observed", 2, OutputPolicy.Ignore),
+        ExceptionPolicy = ExceptionPolicy.For<NotSupportedException>(
+            DiffPath.Managed | DiffPath.Native | DiffPath.Cuda,
+            messageContains: "aligned for all of their element types"),
+        Launch = static (b, s) =>
+        {
+            Vector2[] array = [new(1f, 2f), new(3f, 4f), new(5f, 6f)];
+            var bag = new DiffVector2ArrayBag { Data = array };
+            var skewed = MemoryMarshal.Cast<float, Vector2>(
+                MemoryMarshal.Cast<Vector2, float>(array.AsSpan()).Slice(1, 4));
+            MarshalingFieldOverlapDifferentialKernels.LaunchVector2ArrayFieldAndSkewedSliceKernel(
+                bag, skewed, b.Get<float>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    // An [In] ArraySegment<int> that a struct holds and an [In] Memory<short> that starts 2 bytes before it: each starts
+    // at its own alignment, so the CPU gives the group an int[] copy that the segment starts in, as CUDA aligns the
+    // region
+    internal static readonly DifferentialCase s_inIntSegmentAfterShortMemory = new(
+        FieldKernelName(
+            nameof(MarshalingFieldOverlapDifferentialKernels.InShortMemoryFieldAndInIntSegmentKernel), "Skewed"))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Backing(4), OutputPolicy.Exact, readOnly: true)
+            .Out<int>("observed", 2, OutputPolicy.Exact),
+        Reference = static (b, _) =>
+        {
+            b.Get<int>("observed")[0] = 3;
+            b.Get<int>("observed")[1] = 0;
+        },
+        Launch = static (b, s) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            var manager = new HostAliasMemoryManager<short>(backing, 2, 6);
+            DiffShortMemoryBag[] mems = [new DiffShortMemoryBag { Data = manager.Memory, Tag = 1 }];
+            DiffSegmentBag[] segs = [new DiffSegmentBag { Data = new ArraySegment<int>(backing, 1, 3), Tag = 2 }];
+            MarshalingFieldOverlapDifferentialKernels.LaunchInShortMemoryFieldAndInIntSegmentKernel(
+                mems, segs, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void FieldOverlap_Vector2MemoryFieldFourBytesFromASlice_ThrowsNotSupportedOnEveryPath() =>
+        DifferentialRunner.Run(s_vector2MemoryFieldAndSkewedSlice);
+
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void FieldOverlap_Vector2ArrayFieldFourBytesFromASlice_ThrowsNotSupportedOnEveryPath() =>
+        DifferentialRunner.Run(s_vector2ArrayFieldAndSkewedSlice);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_InIntSegmentFieldTwoBytesAfterAShortMemoryField_SeeEachOthersWritesOnEveryPath() =>
+        DifferentialRunner.Run(s_inIntSegmentAfterShortMemory);
 }

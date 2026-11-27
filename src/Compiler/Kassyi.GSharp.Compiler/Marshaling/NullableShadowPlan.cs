@@ -140,8 +140,9 @@ internal sealed record NullableShadowPlan(
                 ? 0
                 : TypeLayoutCalculator.GetDeviceLayout(element, dialect).Alignment;
             var converted = KernelParameterShape.IsConverted(element, dialect);
+            var cuda = StructArrayHelperEmitter.HeldCudaAlignment(element, dialect);
             var child = StructArrayHelperEmitter.HoldsArrays(element) ? PlanHeldValue(element, dialect) : null;
-            return new NullableHeldArray(alignment, converted, child);
+            return new NullableHeldArray(alignment, cuda, converted, child);
         }
 
         if (type.IsArrayLikeType())
@@ -156,8 +157,9 @@ internal sealed record NullableShadowPlan(
                 ? 0
                 : TypeLayoutCalculator.GetDeviceLayout(element, dialect).Alignment;
             var converted = KernelParameterShape.IsConverted(element, dialect);
+            var cuda = StructArrayHelperEmitter.HeldCudaAlignment(element, dialect);
             var child = StructArrayHelperEmitter.HoldsArrays(element) ? PlanHeldValue(element, dialect) : null;
-            return new NullableHeldView(view, alignment, converted, child);
+            return new NullableHeldView(view, alignment, cuda, converted, child);
         }
 
         if (HostShadowStructs.HoldsArrayFields(type) || type.IsNullableArrayLike())
@@ -199,19 +201,29 @@ internal abstract record NullableHeldValue;
 
 /// <summary>An array (<c>T[]</c>) element inside a <c>Nullable&lt;T&gt;</c> view.</summary>
 /// <param name="ElementAlignment">The device alignment of the element.</param>
+/// <param name="ElementCudaAlignment">
+/// The CUDA alignment of the element on a CPU launcher (<see cref="StructArrayHelperEmitter.HeldCudaAlignment"/>).
+/// </param>
 /// <param name="ElementIsConverted">Whether the element is converted on the dialect's device.</param>
 /// <param name="Element">The walk for each element when it holds arrays or views, otherwise <see langword="null"/>.</param>
-internal sealed record NullableHeldArray(int ElementAlignment, bool ElementIsConverted, NullableHeldValue? Element)
-    : NullableHeldValue;
+internal sealed record NullableHeldArray(
+    int ElementAlignment,
+    int ElementCudaAlignment,
+    bool ElementIsConverted,
+    NullableHeldValue? Element) : NullableHeldValue;
 
 /// <summary>A non-array view (<c>Memory&lt;T&gt;</c>, etc.) inside a <c>Nullable&lt;T&gt;</c>.</summary>
 /// <param name="View">The view access plan.</param>
 /// <param name="ElementAlignment">The device alignment of the element.</param>
+/// <param name="ElementCudaAlignment">
+/// The CUDA alignment of the element on a CPU launcher (<see cref="StructArrayHelperEmitter.HeldCudaAlignment"/>).
+/// </param>
 /// <param name="ElementIsConverted">Whether the element is converted on the dialect's device.</param>
 /// <param name="Element">The walk for each element when it holds arrays or views, otherwise <see langword="null"/>.</param>
 internal sealed record NullableHeldView(
     ArrayFieldView View,
     int ElementAlignment,
+    int ElementCudaAlignment,
     bool ElementIsConverted,
     NullableHeldValue? Element) : NullableHeldValue;
 

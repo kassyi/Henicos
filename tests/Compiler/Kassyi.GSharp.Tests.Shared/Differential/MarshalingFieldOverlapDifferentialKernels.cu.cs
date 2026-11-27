@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Immutable;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using Kassyi.GSharp.Core;
 
@@ -72,6 +73,18 @@ public struct DiffShortMemoryBag
 {
     public Memory<short> Data;
     public int Tag;
+}
+
+/// <summary>A struct that holds a writable <see cref="Memory{T}"/> of <see cref="Vector2"/>.</summary>
+public struct DiffVector2MemoryBag
+{
+    public Memory<Vector2> Data;
+}
+
+/// <summary>A struct that holds an array of <see cref="Vector2"/>.</summary>
+public struct DiffVector2ArrayBag
+{
+    public Vector2[] Data;
 }
 
 /// <summary>A struct that holds a <see cref="ReadOnlyMemory{T}"/> of <see cref="DiffMemoryBag"/>.</summary>
@@ -615,6 +628,34 @@ public static partial class MarshalingFieldOverlapDifferentialKernels
             observed[0] = slice[0].A;
             slice[1].A += 100f;
             observed[1] = holders[0].Items.Span[2].A;
+        }
+    }
+
+    [GpuKernel]
+    public static void Vector2MemoryFieldAndSkewedSliceKernel(
+        DiffVector2MemoryBag bag,
+        Span<Vector2> slice,
+        [Out] float[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            bag.Data.Span[0] = new Vector2(bag.Data.Span[0].X + 1f, bag.Data.Span[0].Y + 2f);
+            observed[0] = slice[0].X;
+            observed[1] = slice[0].Y;
+        }
+    }
+
+    [GpuKernel]
+    public static void Vector2ArrayFieldAndSkewedSliceKernel(
+        DiffVector2ArrayBag bag,
+        Span<Vector2> slice,
+        [Out] float[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            bag.Data[0] = new Vector2(bag.Data[0].X + 1f, bag.Data[0].Y + 2f);
+            observed[0] = slice[0].X;
+            observed[1] = slice[0].Y;
         }
     }
 }

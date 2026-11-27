@@ -550,6 +550,69 @@ public class HostAliasHeldArraysTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
+    public void ShareCopies_ArraySegmentTwoBytesAfterShortViewInAllInGroup_SharesAnIntCopyThatTheSegmentStartsIn()
+    {
+        int[] backing = [1, 2, 3, 4];
+        var shortManager = new HostAliasMemoryManager<short>(backing, 2, 6);
+        var intSeg = new ArraySegment<int>(backing, 1, 3);
+        var held = new HostAliasHeldArrays { CopiesBack = false };
+        try
+        {
+            held.AddView<short>(shortManager.Memory, writable: true, deviceAlignment: 2);
+            held.AddView<int>(MemoryExtensions.AsMemory(intSeg), writable: true, deviceAlignment: 4,
+                requiresTypedArray: true);
+            held.Pin();
+
+            var ranges = held.Combine(ReadOnlySpan<nint>.Empty);
+            var groups = HostAliasGroups.Find(ranges, held.Combine(Array.Empty<byte>()), held.Combine(""));
+            Assert.NotNull(groups);
+
+            var copies = new HostArrayCopies();
+            held.ShareCopies(groups, 0, ranges, copies);
+
+            var shortMem = shortManager.Memory;
+            Assert.False(copies.CopyView(ref shortMem));
+            Assert.False(copies.CopyView(ref intSeg));
+
+            Assert.Equal([2, 3, 4], intSeg.AsSpan().ToArray());
+            shortMem.Span[2] = 10;
+            Assert.Equal(2 + (10 << 16), intSeg[0]);
+            Assert.Equal(2, backing[1]);
+        }
+        finally
+        {
+            held.Free();
+        }
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public void CombineDeviceAlignments_ViewWithACudaAlignment_AppendsItAfterTheArguments()
+    {
+        float[] backing = [1f, 2f, 3f, 4f];
+        var held = new HostAliasHeldArrays { CopiesBack = true };
+        try
+        {
+            held.AddView<float>(backing.AsMemory(), writable: true, deviceAlignment: 4, cudaAlignment: 8);
+            held.Add(new int[] { 1 }, deviceAlignment: 4);
+            held.Pin();
+
+            Assert.Equal([16, 8, 4], held.CombineDeviceAlignments([16]).ToArray());
+        }
+        finally
+        {
+            held.Free();
+        }
+
+        Assert.Equal([16], held.CombineDeviceAlignments([16]).ToArray());
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
     public void ShareCopies_MemoryViewBeforeWholeArrayInAllInGroup_SharesHostCopy()
     {
         int[] backing = [1, 2, 3, 4];

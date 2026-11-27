@@ -654,8 +654,7 @@ if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ComprehensiveSpecKernel.ProcessPhysics", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
 }
-// Find the arguments that overlap: the [In] members of a group share one copy
-global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups? __gsharp_aliases = null;
+// Throw for overlapping arguments that no CUDA address aligns, as the CUDA launcher does
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(particles), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref totalMagnitude), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref successFlag))
 {
 global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[18];
@@ -678,7 +677,6 @@ __gsharp_alias_ranges[15] = sizeof(global::System.Boolean);
 __gsharp_alias_ranges[16] = 1;
 __gsharp_alias_ranges[17] = 0;
 global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.ThrowIfNoDeviceAlignment(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 18), new byte[] {11, 3, 3}, "particles,totalMagnitude,successFlag", stackalloc int[] {4, 4, 1});
-__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 18), new byte[] {11, 3, 3}, "particles,totalMagnitude,successFlag");
 }
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_MegaTestCompilationBase{__gsharp_arch_suffix}.dll";

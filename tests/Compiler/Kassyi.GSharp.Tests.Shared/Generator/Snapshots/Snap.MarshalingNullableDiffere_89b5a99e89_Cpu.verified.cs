@@ -365,11 +365,11 @@ public static void AliasHeldArrays_NullableDiffArrayHolder(ref global::Kassyi.GS
 {
 if (host.Items != null)
 {
-held.Add(host.Items, 4, 0, false);
+held.Add(host.Items, 4, 0, false, cudaAlignment: -1);
 }
 if (host.Inners != null)
 {
-held.Add(host.Inners, 4, 0, false);
+held.Add(host.Inners, 4, 0, false, cudaAlignment: -1);
 }
 }
 public static void CopyArrays_NullableDiffArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffArrayHolder host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
@@ -1074,8 +1074,7 @@ global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gri
 }
 return;
 }
-// Find the arguments that overlap: the [In] members of a group share one copy
-global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups? __gsharp_aliases = null;
+// Throw for overlapping arguments that no CUDA address aligns, as the CUDA launcher does
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref v), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref inner), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref i), __gsharp_alias_pin_3 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref made), __gsharp_alias_pin_4 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
 {
 global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[30];
@@ -1110,7 +1109,6 @@ __gsharp_alias_ranges[27] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[28] = 4;
 __gsharp_alias_ranges[29] = 0;
 global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.ThrowIfNoDeviceAlignment(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 30), new byte[] {3, 3, 3, 3, 11}, "v,inner,i,made,o", stackalloc int[] {-1, -1, 4, -1, 4});
-__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 30), new byte[] {3, 3, 3, 3, 11}, "v,inner,i,made,o");
 }
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
@@ -3307,9 +3305,11 @@ global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gri
 }
 return;
 }
-// Find the arguments that overlap: the [In] members of a group share one copy
 global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups? __gsharp_aliases = null;
 global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays? __gsharp_alias_held = null;
+try
+{
+// Find the arguments that overlap: the [In] members of a group share one copy
 __gsharp_alias_held = new();
 __gsharp_alias_held.CopiesBack = true;
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingNullableDifferentialKernels.AotContexts.AliasHeldArrays___gsharp_nullable_of_NullableDiffBag(ref bag, __gsharp_alias_held);
@@ -3340,10 +3340,13 @@ __gsharp_alias_ranges[14] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[15] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[16] = 4;
 __gsharp_alias_ranges[17] = 0;
-global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.ThrowIfNoDeviceAlignment(__gsharp_alias_held.Combine(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 18)), __gsharp_alias_held.Combine(new byte[] {3, 11, 11}), __gsharp_alias_held.Combine("bag,holders,probe"), stackalloc int[] {-1, -1, 4});
-__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(__gsharp_alias_held.Combine(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 18)), __gsharp_alias_held.Combine(new byte[] {3, 11, 11}), __gsharp_alias_held.Combine("bag,holders,probe"));
+__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(__gsharp_alias_held.Combine(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 18)), __gsharp_alias_held.Combine(new byte[] {3, 11, 11}), __gsharp_alias_held.Combine("bag,holders,probe"), __gsharp_alias_held.CombineDeviceAlignments(stackalloc int[] {-1, -1, 4}));
 }
+}
+finally
+{
 __gsharp_alias_held?.Free();
+}
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
 string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);

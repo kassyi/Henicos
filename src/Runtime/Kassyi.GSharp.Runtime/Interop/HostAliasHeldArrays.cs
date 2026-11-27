@@ -34,6 +34,7 @@ public sealed class HostAliasHeldArrays
     private Dictionary<Type, (int Key, int DeviceSize)>? _mappedConversions;
     private nint[] _heldRanges = [];
     private byte[] _heldTraits = [];
+    private int[] _heldCudaAlignments = [];
     private string _heldNames = "";
     private nint[]? _combined;
 
@@ -56,6 +57,7 @@ public sealed class HostAliasHeldArrays
         public nint HostSize;
         public nint DeviceSize;
         public nint Alignment;
+        public int CudaAlignment;
         public int Conversion;
         public bool CopiesBack;
         public bool RequiresTypedArray;
@@ -92,8 +94,13 @@ public sealed class HostAliasHeldArrays
     /// <param name="deviceAlignment">The device alignment of the element.</param>
     /// <param name="deviceSize">The size of the element on the device; 0 when it is the host size.</param>
     /// <param name="converted">Whether the host and device layouts of the element differ.</param>
+    /// <param name="cudaAlignment">
+    /// The alignment of the element on CUDA when it differs from <paramref name="deviceAlignment"/> (a CPU launcher);
+    /// 0 when it is the same.
+    /// </param>
     /// <typeparam name="T">The element type.</typeparam>
-    public void Add<T>(T[]? array, int deviceAlignment, int deviceSize = 0, bool converted = false)
+    public void Add<T>(T[]? array, int deviceAlignment, int deviceSize = 0, bool converted = false,
+        int cudaAlignment = 0)
     {
         if (array is null || array.Length == 0 || RuntimeHelpers.IsReferenceOrContainsReferences<T>())
         {
@@ -118,6 +125,7 @@ public sealed class HostAliasHeldArrays
             HostSize = hostSize,
             DeviceSize = resolvedDeviceSize,
             Alignment = deviceAlignment,
+            CudaAlignment = cudaAlignment == 0 ? deviceAlignment : cudaAlignment,
             Conversion = conversionKey,
             CopiesBack = CopiesBack,
             Sharer = ShareCopy<T>
@@ -139,9 +147,13 @@ public sealed class HostAliasHeldArrays
     /// Whether the view's container (<c>ArraySegment&lt;T&gt;</c>, <c>ImmutableArray&lt;T&gt;</c>) requires a typed
     /// array copy on the CPU.
     /// </param>
+    /// <param name="cudaAlignment">
+    /// The alignment of the element on CUDA when it differs from <paramref name="deviceAlignment"/> (a CPU launcher);
+    /// 0 when it is the same.
+    /// </param>
     /// <typeparam name="T">The element type.</typeparam>
     public unsafe void AddView<T>(ReadOnlyMemory<T> view, bool writable, int deviceAlignment, int deviceSize = 0,
-        bool converted = false, bool requiresTypedArray = false)
+        bool converted = false, bool requiresTypedArray = false, int cudaAlignment = 0)
     {
         if (view.IsEmpty || RuntimeHelpers.IsReferenceOrContainsReferences<T>())
         {
@@ -160,6 +172,7 @@ public sealed class HostAliasHeldArrays
             HostSize = hostSize,
             DeviceSize = resolvedDeviceSize,
             Alignment = deviceAlignment,
+            CudaAlignment = cudaAlignment == 0 ? deviceAlignment : cudaAlignment,
             Conversion = conversionKey,
             CopiesBack = CopiesBack && writable,
             RequiresTypedArray = requiresTypedArray,
@@ -220,7 +233,21 @@ public sealed class HostAliasHeldArrays
     private static void ShareCopyView<T>(HostAliasGroups groups, int member, ReadOnlySpan<nint> ranges,
         HostArrayCopies copies, in HeldEntry entry)
     {
-        if (!HostAliasCopies.TryGetHostMemory<T>(groups, member, ranges, out var memory))
+        // [WHY] An ArraySegment<T> or ImmutableArray<T> view takes a view over a T[] copy (HostArrayCopies.CopyView),
+        // so it asks for one rather than for the bytes that a Memory<T> view may take
+        Memory<T> memory;
+        bool found;
+        if (entry.RequiresTypedArray)
+        {
+            found = HostAliasCopies.TryGetHostCopy<T>(groups, member, ranges, out var copy, out var start);
+            memory = found ? new Memory<T>(copy, start, (int)(entry.Length / entry.HostSize)) : default;
+        }
+        else
+        {
+            found = HostAliasCopies.TryGetHostMemory<T>(groups, member, ranges, out memory);
+        }
+
+        if (!found)
         {
             copies.KeepView<T>(entry.Address, entry.Length);
         }
@@ -239,6 +266,7 @@ public sealed class HostAliasHeldArrays
     {
         _heldRanges = new nint[_entries.Count * HostAliasGroups.RangeFields];
         _heldTraits = new byte[_entries.Count];
+        _heldCudaAlignments = new int[_entries.Count];
         var names = new System.Text.StringBuilder();
         for (var i = 0; i < _entries.Count; i++)
         {
@@ -274,6 +302,7 @@ public sealed class HostAliasHeldArrays
             _heldRanges[at + 5] = entry.Conversion;
             var back = entry.CopiesBack ? HostAliasGroups.CopiesBack : 0;
             _heldTraits[i] = (byte)(HostAliasGroups.CopiesIn | back | whole);
+            _heldCudaAlignments[i] = entry.CudaAlignment;
         }
 
         _heldNames = names.ToString();
@@ -328,6 +357,25 @@ public sealed class HostAliasHeldArrays
         }
 
         return names.Length == 0 ? _heldNames : $"{names},{_heldNames}";
+    }
+
+    /// <summary>
+    /// The CUDA alignments of the arguments followed by those of the held arrays and views, for
+    /// <see cref="HostAliasGroups.ThrowIfNoDeviceAlignment"/>: a CPU launcher holds them at the CPU alignment, and an
+    /// overlap that CUDA cannot align throws on the CPU paths as well.
+    /// </summary>
+    /// <param name="deviceAlignments">The CUDA alignments of the arguments.</param>
+    public ReadOnlySpan<int> CombineDeviceAlignments(ReadOnlySpan<int> deviceAlignments)
+    {
+        if (_heldCudaAlignments.Length == 0)
+        {
+            return deviceAlignments;
+        }
+
+        var combined = new int[deviceAlignments.Length + _heldCudaAlignments.Length];
+        deviceAlignments.CopyTo(combined);
+        _heldCudaAlignments.CopyTo(combined, deviceAlignments.Length);
+        return combined;
     }
 
     /// <summary>
@@ -425,6 +473,7 @@ public sealed class HostAliasHeldArrays
         _mappedConversions?.Clear();
         _heldRanges = [];
         _heldTraits = [];
+        _heldCudaAlignments = [];
         _heldNames = "";
         _combined = null;
     }

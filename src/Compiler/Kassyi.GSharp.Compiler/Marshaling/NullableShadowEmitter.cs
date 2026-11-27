@@ -249,10 +249,12 @@ internal static class NullableShadowEmitter
             case NullableHeldArray array:
             {
                 var converted = array.ElementIsConverted ? "true" : "false";
+                var cuda = StructArrayHelperEmitter.CudaAlignmentArgument(
+                    array.ElementAlignment, array.ElementCudaAlignment);
                 writer.AppendLine($"if ({value} != null)");
                 using (writer.Scope())
                 {
-                    writer.AppendLine($"{Held}.Add({value}, {array.ElementAlignment}, 0, {converted});");
+                    writer.AppendLine($"{Held}.Add({value}, {array.ElementAlignment}, 0, {converted}{cuda});");
                     if (array.Element is { } element)
                     {
                         var indexVar = depth == 0 ? "i" : $"i{depth}";
@@ -272,10 +274,12 @@ internal static class NullableShadowEmitter
                 var writable = view.IsReadOnly ? "false" : "true";
                 var converted = viewPlan.ElementIsConverted ? "true" : "false";
                 var typedArray = view.RequiresTypedArray ? ", true" : "";
+                var cuda = StructArrayHelperEmitter.CudaAlignmentArgument(
+                    viewPlan.ElementAlignment, viewPlan.ElementCudaAlignment);
                 writer.AppendLine(
                     $"{Held}.AddView<{view.ElementTypeName}>(" +
                     $"{view.MemoryExpression(value)}, {writable}, {viewPlan.ElementAlignment}, 0, " +
-                    $"{converted}{typedArray});");
+                    $"{converted}{typedArray}{cuda});");
                 if (viewPlan.Element is { } element)
                 {
                     using (writer.Scope())

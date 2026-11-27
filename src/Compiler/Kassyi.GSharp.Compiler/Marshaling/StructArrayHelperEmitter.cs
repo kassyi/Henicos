@@ -100,10 +100,11 @@ internal static class StructArrayHelperEmitter
             var element = arrayType.ElementType;
             var alignment = element.IsReferenceType ? 0 : TypeLayoutCalculator.GetDeviceLayout(element, dialect).Alignment;
             var converted = KernelParameterShape.IsConverted(element, dialect) ? "true" : "false";
+            var cuda = CudaAlignmentArgument(alignment, HeldCudaAlignment(element, dialect));
             writer.AppendLine($"if ({value} != null)");
             using (writer.Scope())
             {
-                writer.AppendLine($"{HeldParameter}.Add({value}, {alignment}, 0, {converted});");
+                writer.AppendLine($"{HeldParameter}.Add({value}, {alignment}, 0, {converted}{cuda});");
                 if (!HoldsArrays(element))
                 {
                     return;
@@ -130,6 +131,27 @@ internal static class StructArrayHelperEmitter
         writer.AppendLine($"(ref {value}, {HeldParameter});");
     }
 
+    /// <summary>
+    /// The CUDA alignment that a held array or view of <paramref name="element"/> brings to the CPU launcher's check
+    /// (<c>HostAliasGroups.ThrowIfNoDeviceAlignment</c>): the CUDA layout's, or -1 for an element that CUDA converts,
+    /// whose group CUDA converts as a whole as it does for the arguments (<see cref="LaunchAliasPlan"/>); 0 on CUDA.
+    /// </summary>
+    internal static int HeldCudaAlignment(ITypeSymbol element, ITranspilerDialect dialect)
+    {
+        if (dialect.IsCuda || element.IsReferenceType)
+        {
+            return 0;
+        }
+
+        return KernelParameterShape.IsConverted(element, HostDialects.Cuda)
+            ? -1
+            : TypeLayoutCalculator.GetDeviceLayout(element, HostDialects.Cuda).Alignment;
+    }
+
+    // , cudaAlignment: <n>   when the CUDA alignment differs from the alignment that the call already passes
+    internal static string CudaAlignmentArgument(int alignment, int cudaAlignment) =>
+        cudaAlignment == 0 || cudaAlignment == alignment ? "" : $", cudaAlignment: {cudaAlignment}";
+
     private static void WriteAliasHeldArraysView(SourceWriter writer, string value, ITypeSymbol viewType,
         ArrayFieldView view, ITranspilerDialect dialect, int depth)
     {
@@ -142,9 +164,10 @@ internal static class StructArrayHelperEmitter
         var converted = KernelParameterShape.IsConverted(element, dialect) ? "true" : "false";
         var writable = view.IsReadOnly ? "false" : "true";
         var typedArray = view.RequiresTypedArray ? ", true" : "";
+        var cuda = CudaAlignmentArgument(alignment, HeldCudaAlignment(element, dialect));
         writer.AppendLine(
             $"{HeldParameter}.AddView<{view.ElementTypeName}>({view.MemoryExpression(value)}, {writable}, " +
-            $"{alignment}, 0, {converted}{typedArray});");
+            $"{alignment}, 0, {converted}{typedArray}{cuda});");
         if (!HoldsArrays(element))
         {
             return;

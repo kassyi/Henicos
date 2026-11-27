@@ -70,19 +70,22 @@ public static class HostAliasCopies
 
         var size = Unsafe.SizeOf<T>();
         var offset = groups.GetOffset(index);
-        if (!IsAtBoundaries<T>(ref group, offset))
-        {
-            throw NotAtElementBoundaries<T>(group.Names);
-        }
-
         copy = group.HostCopy switch
         {
-            null => CopyGroup(ref group, ranges, copies, copyArrays),
+            null when IsAtBoundaries<T>(ref group, offset) => CopyGroup(ref group, ranges, copies, copyArrays),
+            null when !RuntimeHelpers.IsReferenceOrContainsReferences<T>() => CopyGroupPadded<T>(ref group, ranges,
+                (size - (int)(offset % size)) % size),
+            null => throw NotAtElementBoundaries<T>(group.Names),
             T[] existing => existing,
             { } other when IsSameSizeWithoutReferences<T>(ref group) => Unsafe.As<T[]>(other),
             _ => throw DifferentElementTypes(group.Names)
         };
-        // A buffer of bytes (CopyBytes) places the group at CopyStart; a typed copy at 0
+        // A buffer of bytes (CopyBytes) and a padded copy place the group at CopyStart; a typed copy at 0
+        if ((group.CopyStart + offset) % size != 0)
+        {
+            throw NotAtElementBoundaries<T>(group.Names);
+        }
+
         start = (int)((group.CopyStart + offset) / size);
         return true;
     }
@@ -156,10 +159,13 @@ public static class HostAliasCopies
         var offset = groups.GetOffset(index);
         if (group.KernelGetsCopy && !RuntimeHelpers.IsReferenceOrContainsReferences<T>() &&
             (group.HostCopy is { } other
-                ? other is not T[] && !group.HostCopyHasReferences && !IsSameSizeWithoutReferences<T>(ref group)
+                ? !group.HostCopyHasReferences &&
+                  ((other is not T[] && !IsSameSizeWithoutReferences<T>(ref group)) ||
+                   (group.CopyStart + offset) % Unsafe.SizeOf<T>() != 0)
                 : !IsAtBoundaries<T>(ref group, offset)))
         {
-            // A copy of another element type, or none yet that T could type: the member views the copy's bytes
+            // A copy of another element type, one that the member does not start at an element of, or none yet that T
+            // could type: the member views the copy's bytes
             var data = group.HostCopy ?? CopyBytes(ref group, ranges);
             var byteOffset = checked((int)(group.CopyStart + offset));
             memory = new HostAliasMemoryManager<T>(data, byteOffset, count).Memory;
@@ -205,6 +211,29 @@ public static class HostAliasCopies
         group.HostCopy = created;
         group.HostCopyElementSize = Unsafe.SizeOf<T>();
         group.HostCopyHasReferences = RuntimeHelpers.IsReferenceOrContainsReferences<T>();
+        return created;
+    }
+
+    // One typed copy of a group that the member does not start at an element boundary of, or whose length is no
+    // multiple of the element: the group starts <pad> bytes into the copy, so that the member starts at an element, and
+    // the bytes around the group stay zero; no member reads them. Elements without references only, as the bytes are
+    // copied as they are
+    // [WHY] A T[] member (ArraySegment<T>, ImmutableArray<T>) needs a T[] that its elements start in, which a copy
+    // from the first byte of the group cannot give when another member starts before it at a smaller alignment (an
+    // ArraySegment<int> after a Memory<short> that starts 2 bytes before it); CUDA aligns the region the same way
+    private static unsafe T[] CopyGroupPadded<T>(ref HostAliasGroup group, ReadOnlySpan<nint> ranges, int pad)
+    {
+        var size = Unsafe.SizeOf<T>();
+        var length = checked((int)group.Length);
+        var created = new T[(pad + length + size - 1) / size];
+        var source = (void*)ranges[group.Leader * HostAliasGroups.RangeFields];
+        var bytes = MemoryMarshal.CreateSpan(
+            ref Unsafe.As<T, byte>(ref MemoryMarshal.GetArrayDataReference(created)), created.Length * size);
+        new ReadOnlySpan<byte>(source, length).CopyTo(bytes.Slice(pad));
+        group.HostCopy = created;
+        group.HostCopyElementSize = size;
+        group.HostCopyHasReferences = false;
+        group.CopyStart = pad;
         return created;
     }
 

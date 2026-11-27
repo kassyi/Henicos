@@ -22,8 +22,9 @@ internal readonly struct LaunchAliasPlan
 
     private LaunchAliasPlan(ImmutableArray<int> candidates, ImmutableArray<byte> traits,
         ImmutableArray<AliasRange> ranges, ImmutableArray<AliasConversion> conversions,
-        ImmutableArray<int> heldSources)
+        ImmutableArray<int> heldSources, bool checksAlignmentOnly)
     {
+        ChecksAlignmentOnly = checksAlignmentOnly;
         Candidates = candidates;
         Traits = traits;
         Ranges = ranges;
@@ -52,6 +53,13 @@ internal readonly struct LaunchAliasPlan
 
     /// <summary>The converted element types among the candidates, one per type.</summary>
     public ImmutableArray<AliasConversion> Conversions { get; }
+
+    /// <summary>
+    /// CPU: whether the launcher compares its arguments only to throw for an overlap that no CUDA address aligns
+    /// (<c>HostAliasGroups.ThrowIfNoDeviceAlignment</c>): no argument takes a copy, a shadow or a held array, so the
+    /// kernel uses the caller's memory and no group is kept.
+    /// </summary>
+    public bool ChecksAlignmentOnly { get; }
 
     /// <summary>Whether the launcher compares any arguments or held arrays/views.</summary>
     public bool IsActive => !Candidates.IsDefaultOrEmpty || HasHeldArrays;
@@ -98,6 +106,7 @@ internal readonly struct LaunchAliasPlan
             return default;
         }
 
+        var copies = false;
         var builder = new Builder(parameters, HostDialects.Cpu);
         for (var i = 0; i < parameters.Length; i++)
         {
@@ -109,14 +118,19 @@ internal readonly struct LaunchAliasPlan
 
             var readOnly = shape.IsArray && (sharing.NeedsKernelCopy(i) || shape.IsReadOnlyContainer);
             var spanView = shape.Container is ArrayContainerKind.Span or ArrayContainerKind.ReadOnlySpan;
+            // An out struct that holds arrays is compared as well: it keeps the caller's value when another argument
+            // refers to the same variable (#1841) and is cleared otherwise, which only the groups can tell
+            copies |= IsConverted(shape, HostDialects.Cpu) || (shape.IsArray && sharing.NeedsKernelCopy(i)) ||
+                shape.HeldArraysMethodName is not null || (shape.RefKind == RefKind.Out && shape.HasArrayFields);
             builder.Add(i, GetTraits(shape, copiesIn: true, copiesBack: !readOnly && !shape.IsInReference, spanView));
         }
 
-        return builder.ToPlan();
+        return builder.ToPlan(checksAlignmentOnly: !copies && GetHeldSources(parameters).IsEmpty);
     }
 
     /// <summary>The candidate number of parameter <paramref name="parameterIndex"/>, or -1.</summary>
-    public int MemberIndexOf(int parameterIndex) => IsActive ? Candidates.IndexOf(parameterIndex) : -1;
+    public int MemberIndexOf(int parameterIndex) =>
+        IsActive && !ChecksAlignmentOnly ? Candidates.IndexOf(parameterIndex) : -1;
 
     /// <summary>Whether parameter <paramref name="parameterIndex"/> is a candidate of converted elements.</summary>
     public bool IsConvertedMember(int parameterIndex) =>
@@ -218,9 +232,9 @@ internal readonly struct LaunchAliasPlan
                 : AliasRange.ForReference(pinned, shape.ReferenceExpression, element, traits, shape.Name));
         }
 
-        public LaunchAliasPlan ToPlan() =>
+        public LaunchAliasPlan ToPlan(bool checksAlignmentOnly = false) =>
             new(_candidates.ToImmutable(), _traits.ToImmutable(), _ranges.ToImmutable(), _conversions.ToImmutable(),
-                GetHeldSources(parameters));
+                GetHeldSources(parameters), checksAlignmentOnly);
 
         private AliasElement GetElement(in KernelParameterShape shape)
         {

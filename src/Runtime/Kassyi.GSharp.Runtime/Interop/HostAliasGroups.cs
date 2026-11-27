@@ -101,6 +101,29 @@ public sealed class HostAliasGroups
     }
 
     /// <summary>
+    /// CPU: finds the arguments that overlap, as <see cref="Find(ReadOnlySpan{nint}, ReadOnlySpan{byte}, string)"/>
+    /// does, after throwing for a group that CUDA cannot align (<see cref="ThrowIfNoDeviceAlignment"/>).
+    /// </summary>
+    /// <param name="ranges">
+    /// <see cref="RangeFields"/> values per argument (the length in bytes is 0 for a null or empty argument).
+    /// </param>
+    /// <param name="traits">The <see cref="CopiesIn"/>, <see cref="CopiesBack"/>, ... flags of each argument.</param>
+    /// <param name="names">The parameter names, separated by commas, for the exception messages.</param>
+    /// <param name="deviceAlignments">
+    /// The CUDA alignment of each argument (see <see cref="ThrowIfNoDeviceAlignment"/>).
+    /// </param>
+    /// <exception cref="NotSupportedException">
+    /// A group cannot share one copy, or overlapping arguments cannot align all of their element types at one CUDA
+    /// address.
+    /// </exception>
+    public static HostAliasGroups? Find(ReadOnlySpan<nint> ranges, ReadOnlySpan<byte> traits, string names,
+        ReadOnlySpan<int> deviceAlignments)
+    {
+        ThrowIfNoDeviceAlignment(ranges, traits, names, deviceAlignments);
+        return Find(ranges, traits, names);
+    }
+
+    /// <summary>
     /// CPU: checks whether any group of overlapping arguments cannot align all of its members at one device address
     /// under <paramref name="deviceAlignments"/>, throwing the same <see cref="NotSupportedException"/> as CUDA.
     /// Returns immediately without allocating when no pair of arguments overlaps.
