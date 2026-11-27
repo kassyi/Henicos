@@ -124,6 +124,19 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
                                .ReportsErrorsAsync("GSH0045");
     }
 
+    // Mutual recursion and recursion through a method group count as recursion, as a direct call does
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task LocalFunctionBarriers_MutualAndMethodGroupRecursion_ReportsGSH0045()
+    {
+        var diagnostics = await GeneratorTestRunner
+            .TestAnalyzer("Analyzers/BarrierUsage/MutualRecursiveLocalFunctionBarrierKernels.cu.cs", s_analyzer)
+            .GetDiagnosticsAsync();
+
+        // mutant: IsRecursiveLocalFunction follows only direct calls (the check before this change): 0 reports
+        Assert.Equal(2, diagnostics.Count(static d => d.Id == "GSH0045"));
+    }
+
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public async Task DeviceFunctionBarriers_NonRecursiveCalls_HasNoDiagnostics()

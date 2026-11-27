@@ -448,6 +448,52 @@ public class CppParallelBuildTests
         Assert.Contains("Mod.1.g.cpp", compiledUnit.Arguments);
     }
 
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CompileCppToNativeTask_NativeBarrierModelChanged_RecompilesAllUnits()
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("Mod.g.cpp", "// unit 0");
+        ctx.CreateDummySource("Mod.1.g.cpp", "// unit 1");
+        var objDir = Path.Combine(ctx.TempDir, "objs");
+        var hostArch = RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ? "arm64" : "x64";
+
+        var stateMachine1 = ctx.CreateCppTask(
+            ["Mod.g.cpp", "Mod.1.g.cpp"], ctx.CreateGccClangToolchain("g++"), objDir);
+        stateMachine1.GSharpNativeBarrierModel = "StateMachine";
+        Assert.True(stateMachine1.Execute());
+        Assert.Equal(2, CountGccCompiles(ctx.Runner));
+
+        ctx.Runner.Invocations.Clear();
+        var stateMachine2 = ctx.CreateCppTask(
+            ["Mod.g.cpp", "Mod.1.g.cpp"], ctx.CreateGccClangToolchain("g++"), objDir);
+        stateMachine2.GSharpNativeBarrierModel = "StateMachine";
+        Assert.True(stateMachine2.Execute());
+        Assert.Equal(0, CountGccCompiles(ctx.Runner));
+
+        ctx.Runner.Invocations.Clear();
+        var stackTask = ctx.CreateCppTask(
+            ["Mod.g.cpp", "Mod.1.g.cpp"], ctx.CreateGccClangToolchain("g++"), objDir);
+        stackTask.GSharpNativeBarrierModel = "Stack";
+        Assert.True(stackTask.Execute());
+        Assert.Equal(2, CountGccCompiles(ctx.Runner));
+        Assert.All(
+            ctx.Runner.Invocations.Where(i => i.FileName == "g++" && i.Arguments.StartsWith("-c ", StringComparison.Ordinal)),
+            i => Assert.Contains("-fstack-clash-protection", i.Arguments, StringComparison.Ordinal));
+        var recordPath = Path.Combine(objDir, hostArch, "Mod.o" + CompileCppToNativeTask.CommandRecordExtension);
+        Assert.Contains("-fstack-clash-protection", File.ReadAllText(recordPath), StringComparison.Ordinal);
+
+        ctx.Runner.Invocations.Clear();
+        var stateMachine3 = ctx.CreateCppTask(
+            ["Mod.g.cpp", "Mod.1.g.cpp"], ctx.CreateGccClangToolchain("g++"), objDir);
+        stateMachine3.GSharpNativeBarrierModel = "StateMachine";
+        Assert.True(stateMachine3.Execute());
+        Assert.Equal(2, CountGccCompiles(ctx.Runner));
+        Assert.All(
+            ctx.Runner.Invocations.Where(i => i.FileName == "g++" && i.Arguments.StartsWith("-c ", StringComparison.Ordinal)),
+            i => Assert.DoesNotContain("-fstack-clash-protection", i.Arguments, StringComparison.Ordinal));
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]

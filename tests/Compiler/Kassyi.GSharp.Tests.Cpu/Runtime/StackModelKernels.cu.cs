@@ -1,4 +1,5 @@
 #nullable enable
+using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Cpu.Runtime;
@@ -202,6 +203,92 @@ public static partial class StackModelKernels
         Gpu.SyncThreads();
         int mirrored = s[BlockDimension.X - 1 - tid];
         output[gid] = (buf[0] | (buf[256 * 1024 - 1] << 8)) + mirrored;
+    }
+
+    [GpuKernel]
+    public static void NativeLargeLocalAcrossBarrierKernel(int[] input, int[] output)
+    {
+        var s = new SharedMemory<int>(32);
+        int tid = ThreadIndex.X;
+        int gid = BlockIndex.X * BlockDimension.X + tid;
+        int stride = input.Length > 0 ? 4096 : 1;
+        Span<byte> buf = stackalloc byte[300 * 1024];
+        WriteLargeLocalBuffer(buf, input[gid], stride);
+        s[tid] = tid;
+        Gpu.SyncThreads();
+        int mirrored = s[BlockDimension.X - 1 - tid];
+        output[gid] = ReadLargeLocalBuffer(buf, stride) + mirrored;
+    }
+
+    [GpuKernel]
+    public static void HugeLocalOverflowKernel(int[] output)
+    {
+        int tid = ThreadIndex.X;
+        int gid = BlockIndex.X * BlockDimension.X + tid;
+        if (BlockIndex.X == 0 && tid == 1)
+        {
+            int stride = output.Length > 0 ? 4096 : 1;
+            output[gid] = AllocateAndTouchHugeLocal(stride, (byte)(tid + 1));
+        }
+
+        Gpu.SyncThreads();
+        if (!(BlockIndex.X == 0 && tid == 1))
+        {
+            output[gid] = 1;
+        }
+    }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static int AllocateAndTouchHugeLocal(int stride, byte seed)
+    {
+        Span<byte> huge = stackalloc byte[2 * 1024 * 1024];
+        return TouchHugeLocalSpan(huge, stride, seed);
+    }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static int TouchHugeLocalSpan(Span<byte> span, int stride, byte seed)
+    {
+        int step = stride > 0 ? stride : 1;
+        int sum = 0;
+        for (int i = 0; i < span.Length; i += step)
+        {
+            span[i] = (byte)(seed + (i >> 12));
+            sum += span[i];
+        }
+
+        int last = span.Length - 1;
+        span[last] = (byte)(seed + 1);
+        return sum + span[0] + span[last];
+    }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void WriteLargeLocalBuffer(Span<byte> buf, int value, int stride)
+    {
+        int step = stride > 0 ? stride : 1;
+        buf[0] = (byte)(value & 0xFF);
+        for (int i = step; i < buf.Length - 1; i += step)
+        {
+            buf[i] = (byte)((value + (i >> 12)) & 0xFF);
+        }
+
+        buf[buf.Length - 1] = (byte)((value >> 8) & 0xFF);
+    }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static int ReadLargeLocalBuffer(Span<byte> buf, int stride)
+    {
+        int step = stride > 0 ? stride : 1;
+        int checksum = 0;
+        for (int i = step; i < buf.Length - 1; i += step)
+        {
+            checksum += buf[i];
+        }
+
+        return (buf[0] | (buf[buf.Length - 1] << 8)) + checksum;
     }
 
     [GpuDeviceFunction]

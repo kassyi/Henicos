@@ -27,7 +27,8 @@ enum class GSharpErrorCode : int {
     DataRace = 9,
     SwitchExpression = 10,
     ArgumentNull = 11,
-    Throw = 12
+    Throw = 12,
+    InsufficientExecutionStack = 13
 };
 
 // One device error record (GSharpDeviceErrorSlot of the runtime). code and epoch are one 8-byte word, which a failing

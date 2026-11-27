@@ -29,10 +29,23 @@ internal static class NativeModuleAssembler
     /// appended when the module runs its GPU threads on their own stacks
     /// (<see cref="GeneratorConfig.RunsOnNativeStacks"/>).
     /// </summary>
-    public static string GetPreludeSource(in GeneratorConfig config) =>
-        config.RunsOnNativeStacks
-            ? GSharpPreludeResources.Cpp + GSharpPreludeResources.CppStackThreads
-            : GetPreludeSource(config.CreateDialect());
+    public static string GetPreludeSource(in GeneratorConfig config)
+    {
+        if (!config.RunsOnNativeStacks)
+        {
+            return GetPreludeSource(config.CreateDialect());
+        }
+
+        var preludeSource = GSharpPreludeResources.Cpp + GSharpPreludeResources.CppStackThreads;
+        if (config.NativeStackBytes is { } stackBytes)
+        {
+            preludeSource =
+                $"#define __GSHARP_STACK_RESERVE_BYTES ({stackBytes.ToString(CultureInfo.InvariantCulture)}u)\n" +
+                preludeSource;
+        }
+
+        return preludeSource;
+    }
 
     /// <summary>
     /// The device functions as forward declarations followed by their bodies. On the CPU dialects a frame embeds the

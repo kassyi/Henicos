@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Globalization;
 using System.Runtime.ExceptionServices;
 using Kassyi.GSharp.Core;
 
@@ -12,12 +13,22 @@ namespace Kassyi.GSharp.Runtime.Aot;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class ManagedStackRunner
 {
+    private const int DefaultWakeAheadCount = 8;
+    private const int DefaultWorkerSpinCount = 200;
+    private const string WakeAheadEnvVar = "GSHARP_TEST_STACK_WAKE_AHEAD";
+
     [ThreadStatic]
     private static ManagedStackLaunch? t_launch;
 
     // Counted per launching thread, so that a test reads only its own launches while other tests launch in parallel
     [ThreadStatic]
     private static long t_launchCount;
+
+    [ThreadStatic]
+    private static long t_lastLaunchHandOverCount;
+
+    [ThreadStatic]
+    private static long t_lastLaunchWakeAheadCount;
 
     // The launches of the calling thread that have started and not yet ended: more than one only while a wait of the
     // scheduler runs another launch
@@ -28,6 +39,10 @@ public static class ManagedStackRunner
 
     /// <summary>The launches that the calling thread has run.</summary>
     internal static long LaunchCountOnThisThread => t_launchCount;
+
+    internal static long LastLaunchHandOverCountOnThisThread => t_lastLaunchHandOverCount;
+
+    internal static long LastLaunchWakeAheadCountOnThisThread => t_lastLaunchWakeAheadCount;
 
     internal static int CreatedThreadCount => ManagedStackThreadPool.Instance.CreatedThreadCount;
 
@@ -152,6 +167,9 @@ public static class ManagedStackRunner
         var threadsPerBlock = checked((int)geometry.ThreadsPerBlock);
         launch.State = ManagedGpuContext.ShareBlockState();
         launch.Cancelled = false;
+        launch.HandOverCount = 0;
+        launch.WakeAheadSignalCount = 0;
+        var useKernelSignalAndWait = ConfigureLaunchWaits(launch, threadsPerBlock);
         ManagedGpuContext.InitializeGrid(checked((int)geometry.TotalBlocks), sharedMemBytes, blocksRunInPhases: false);
         t_launchCount++;
 
@@ -161,7 +179,7 @@ public static class ManagedStackRunner
         var seen = orderProvider is not null ? new bool[threadsPerBlock] : null;
         try
         {
-            workers = ManagedStackThreadPool.Instance.Rent(threadsPerBlock, nested);
+            workers = ManagedStackThreadPool.Instance.Rent(threadsPerBlock, nested, useKernelSignalAndWait);
             var schedule = new BlockSchedule(geometry, launch, workers, threadsPerBlock, orderProvider, seen);
             for (long block = 0; block < geometry.TotalBlocks; block++)
             {
@@ -175,6 +193,8 @@ public static class ManagedStackRunner
         }
         finally
         {
+            t_lastLaunchHandOverCount = launch.HandOverCount;
+            t_lastLaunchWakeAheadCount = launch.WakeAheadSignalCount;
             try
             {
                 Unwind(launch, workers, threadsPerBlock);
@@ -200,6 +220,9 @@ public static class ManagedStackRunner
         var threadsPerBlock = checked((int)geometry.ThreadsPerBlock);
         launch.State = ManagedGpuContext.ShareBlockState();
         launch.Cancelled = false;
+        launch.HandOverCount = 0;
+        launch.WakeAheadSignalCount = 0;
+        var useKernelSignalAndWait = ConfigureLaunchWaits(launch, threadsPerBlock);
         ManagedGpuContext.InitializeGrid(totalBlocks, sharedMemBytes, blocksRunInPhases: true);
         t_launchCount++;
 
@@ -210,7 +233,8 @@ public static class ManagedStackRunner
         try
         {
             if (!ManagedStackThreadPool.Instance.TryRent(
-                    totalThreads, nested, out var rented, out var startedCount, out var rentFailure))
+                    totalThreads, nested, useKernelSignalAndWait, out var rented, out var startedCount,
+                    out var rentFailure))
             {
                 throw new InsufficientMemoryException(
                     $"G#: the cooperative launch of {kernelName} needs {totalThreads} OS threads on the managed " +
@@ -294,6 +318,8 @@ public static class ManagedStackRunner
         }
         finally
         {
+            t_lastLaunchHandOverCount = launch.HandOverCount;
+            t_lastLaunchWakeAheadCount = launch.WakeAheadSignalCount;
             try
             {
                 Unwind(launch, workers, totalThreads);
@@ -337,6 +363,50 @@ public static class ManagedStackRunner
                 ManagedGpuContext.EndGrid();
             }
         }
+    }
+
+    internal static int BoundWakeAheadCount(int configuredK, int threadsPerBlock, int processorCount)
+    {
+        if (configuredK <= 0 || threadsPerBlock < 4)
+        {
+            return 0;
+        }
+
+        var processorBound = Math.Max(0, processorCount - 2);
+        return Math.Min(configuredK, Math.Min(threadsPerBlock / 4, processorBound));
+    }
+
+    private static bool ConfigureLaunchWaits(ManagedStackLaunch launch, int threadsPerBlock)
+    {
+        var overrideK = ReadWakeAheadOverride();
+        // On Windows, WaitHandle.SignalAndWait is fastest when wake-ahead is not requested via the test env var.
+        // On Linux, ManualResetEventSlim avoids kernel signal-and-wait overhead and honors the tuned wake-ahead default.
+        if (OperatingSystem.IsWindows() && overrideK is null)
+        {
+            launch.WakeAheadCount = 0;
+            launch.WorkerSpinCount = 0;
+            return true;
+        }
+
+        var configuredK = overrideK ?? (OperatingSystem.IsWindows() ? DefaultWakeAheadCount : 0);
+        var effectiveK = BoundWakeAheadCount(configuredK, threadsPerBlock, Environment.ProcessorCount);
+        launch.WakeAheadCount = effectiveK;
+        launch.WorkerSpinCount = effectiveK > 0 ? DefaultWorkerSpinCount : 0;
+        return false;
+    }
+
+    private static int? ReadWakeAheadOverride()
+    {
+        var raw = Environment.GetEnvironmentVariable(WakeAheadEnvVar);
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return null;
+        }
+
+        return int.TryParse(raw.AsSpan().Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed) &&
+               parsed >= 0
+            ? parsed
+            : null;
     }
 
     internal static IDisposable UseThreadOrder(Func<ManagedStackRound, int[]> order)
@@ -428,6 +498,7 @@ public static class ManagedStackRunner
                 w.Launch = launch;
                 w.Body = thread;
                 w.LinearThreadId = id;
+                w.ThreadIndexInBlock = t;
                 w.Context = geometry.ContextOf(id);
                 w.AtBlockBarrier = false;
                 w.AtGridSync = false;
@@ -469,52 +540,64 @@ public static class ManagedStackRunner
         }
 
         // One round, as the managed state-machine launcher runs it (ManagedFallbackEmitter.WriteManagedBarrierRounds):
-        // a thread that waits at a warp collective counts as one that can go on, and the threads at the block barrier
-        // pass it only when no thread can run; whether another round follows. A kernel without warp collectives brings
-        // every thread to the barrier or its end in one step, so the barrier is released after every round, as before
+        // the scheduler hands the baton to the first runnable thread of the round, each worker hands it directly to the
+        // next runnable thread via ManagedStackLaunch.FindNextRunnable, and the last thread (or a failing thread)
+        // hands it back to the scheduler.
         private bool RunRound(long block, int phase, int round, int workerOffset, ref ExceptionDispatchInfo? first)
         {
             var order = GetRoundOrder(block, phase, round);
             var warp = launch.ReachesWarpCollective;
-            var anyActive = false;
-            var stepped = false;
-            for (var k = 0; k < threadsPerBlock; k++)
+            launch.BeginRound(workers, workerOffset, threadsPerBlock, order, round);
+
+            var k = launch.FindNextRunnable(0, out var nextWorker);
+            while (nextWorker is not null)
             {
-                var t = order is null ? k : order[k];
-                var w = workers[workerOffset + t];
-                if (w.Done || w.AtBlockBarrier || w.AtGridSync)
-                {
-                    continue;
-                }
+                launch.CurrentOrderIndex = k;
+                launch.CurrentWorker = nextWorker;
+                launch.Stepped = true;
+                launch.PrimeWakeAhead(k);
+                launch.HandOverCount++;
+                ManagedBaton.HandOver(nextWorker.Go, launch.Scheduler);
 
-                if (warp && !ManagedGpuContext.WarpCanRun(t, round))
-                {
-                    anyActive = true;
-                    continue;
-                }
-
-                stepped = true;
-                Step(w, ref first);
                 if (warp)
                 {
                     // [WHY] A launch that a wait of this step ran on the scheduler's thread left its own dimensions there
                     BindWarpScheduler();
-                    if (w.Done)
-                    {
-                        ManagedGpuContext.MarkWarpLaneExited(t);
-                    }
                 }
 
-                anyActive |= !w.Done && !w.AtBlockBarrier && !w.AtGridSync;
+                if (launch.CurrentWorker is { } yielded)
+                {
+                    if (yielded.Failure is { } failure)
+                    {
+                        first ??= failure;
+                        yielded.Failure = null;
+                    }
+
+                    ValidateYield(yielded);
+                    if (warp && yielded.Done)
+                    {
+                        ManagedGpuContext.MarkWarpLaneExited(yielded.ThreadIndexInBlock);
+                    }
+
+                    launch.AnyActive |= !yielded.Done && !yielded.AtBlockBarrier && !yielded.AtGridSync;
+                }
+
+                if (launch.Cancelled)
+                {
+                    break;
+                }
+
+                k = launch.FindNextRunnable(launch.CurrentOrderIndex + 1, out nextWorker);
             }
 
             // [WHY] A round in which no thread ran while some wait at a warp collective means that they wait for lanes
             // that never reach the same call (#1468)
-            if (warp && anyActive && !stepped)
+            if (warp && launch.AnyActive && !launch.Stepped)
             {
                 throw ManagedGpuContext.WarpStall(threadsPerBlock);
             }
 
+            var anyActive = launch.AnyActive;
             if (!anyActive)
             {
                 for (var t = 0; t < threadsPerBlock; t++)
@@ -555,17 +638,8 @@ public static class ManagedStackRunner
             return GetOrder(orderProvider, roundInfo, seen);
         }
 
-        // Runs <w> until it finishes, reaches a block barrier, reaches a grid sync (if cooperative) or reaches a warp
-        // collective
-        private void Step(ManagedStackThread w, ref ExceptionDispatchInfo? first)
+        private void ValidateYield(ManagedStackThread w)
         {
-            ManagedBaton.HandOver(w.Go, launch.Scheduler);
-            if (w.Failure is { } failure)
-            {
-                first ??= failure;
-                w.Failure = null;
-            }
-
             if (!w.Done && !w.AtBlockBarrier && !w.AtWarp && !(launch.Cooperative && w.AtGridSync))
             {
                 throw new InvalidOperationException(

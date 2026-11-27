@@ -344,4 +344,85 @@ public class CompileCppToNativeTaskTests
             .ToArray();
         Assert.Equal(2, linkCalls.Length);
     }
+
+    [Theory]
+    [InlineData("g++", "Stack", true)]
+    [InlineData("clang++", "Stack", true)]
+    [InlineData("g++", "StateMachine", false)]
+    [InlineData("clang++", "StateMachine", false)]
+    [InlineData("g++", "", false)]
+    [Scenario(TestScenario.Boundary)]
+    public void CompileCppToNativeTask_GccClangStackBarrierModel_PassesStackClashProtection(
+        string compiler, string model, bool expectFlag)
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("kernel.cpp", "// source");
+
+        var objDir = Path.Combine(ctx.TempDir, "objs");
+        var toolchain = ctx.CreateGccClangToolchain(compiler);
+        var task = ctx.CreateCppTask(["kernel.cpp"], toolchain, objDir);
+        task.GSharpNativeBarrierModel = model;
+
+        Assert.True(task.Execute());
+
+        var compileCall = Assert.Single(
+            ctx.Runner.Invocations,
+            i => i.FileName == compiler && i.Arguments.StartsWith("-c ", StringComparison.Ordinal));
+        var linkCall = Assert.Single(
+            ctx.Runner.Invocations,
+            i => i.FileName == compiler && i.Arguments.Contains("-shared", StringComparison.Ordinal));
+        var hostArch = RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ? "arm64" : "x64";
+        var recordPath = Path.Combine(objDir, hostArch, "kernel.o" + CompileCppToNativeTask.CommandRecordExtension);
+        var recordText = File.ReadAllText(recordPath);
+
+        if (expectFlag)
+        {
+            Assert.Contains("-fstack-clash-protection", compileCall.Arguments, StringComparison.Ordinal);
+            Assert.Contains("-fstack-clash-protection", recordText, StringComparison.Ordinal);
+            Assert.Contains("-Wl,-z,nodelete", linkCall.Arguments, StringComparison.Ordinal);
+        }
+        else
+        {
+            Assert.DoesNotContain("-fstack-clash-protection", compileCall.Arguments, StringComparison.Ordinal);
+            Assert.DoesNotContain("-fstack-clash-protection", recordText, StringComparison.Ordinal);
+            Assert.DoesNotContain("-Wl,-z,nodelete", linkCall.Arguments, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CompileCppToNativeTask_MsvcStackBarrierModel_OmitsGccStackClashFlag()
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("kernel.cpp", "// source");
+
+        var task = ctx.CreateCppTask(["kernel.cpp"], ctx.CreateMsvcToolchain());
+        task.GSharpNativeBarrierModel = "Stack";
+
+        Assert.True(task.Execute());
+
+        var compileCall = Assert.Single(
+            ctx.Runner.Invocations,
+            i => i.FileName.Contains("cl.exe") && i.Arguments.Contains("/c "));
+        var linkCall = Assert.Single(
+            ctx.Runner.Invocations,
+            i => i.FileName.Contains("cl.exe") && i.Arguments.Contains("/LD "));
+        Assert.DoesNotContain("-fstack-clash-protection", compileCall.Arguments, StringComparison.Ordinal);
+        Assert.DoesNotContain("-Wl,-z,nodelete", linkCall.Arguments, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void CompileCppToNativeTask_InvalidNativeBarrierModel_LogsErrorAndFails()
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("kernel.cpp", "// source");
+
+        var task = ctx.CreateCppTask(["kernel.cpp"], ctx.CreateGccClangToolchain("g++"));
+        task.GSharpNativeBarrierModel = "Invalid";
+
+        Assert.False(task.Execute());
+        var error = Assert.Single(ctx.BuildEngine.LoggedErrors);
+        Assert.Contains("GSharpNativeBarrierModel", error, StringComparison.Ordinal);
+    }
 }

@@ -5,17 +5,19 @@ namespace Kassyi.GSharp.Core;
 #pragma warning disable SA1402 // Internal stack-thread transport types live together for Core/Runtime visibility
 // One OS thread that runs one GPU thread of a block at a time. Only the scheduler and the thread itself touch it, and
 // never at the same time: every field is written before the baton is handed over and read after it comes back.
-// No volatile or lock is needed on these properties because the AutoResetEvent.Set and WaitOne of ManagedBatonSignal
-// establish full memory barriers at every handoff.
-internal sealed class ManagedStackThread
+// No volatile or lock is needed on these properties because the signal handoff of ManagedWorkerSignal establishes full
+// memory barriers at every baton pass.
+internal sealed class ManagedStackThread(bool useKernelSignalAndWait = false)
 {
-    internal ManagedBatonSignal Go { get; } = new();
+    internal ManagedWorkerSignal Go { get; } = new(useKernelSignalAndWait);
 
     internal ManagedStackLaunch? Launch { get; set; }
 
     internal Action<long>? Body { get; set; }
 
     internal long LinearThreadId { get; set; }
+
+    internal int ThreadIndexInBlock { get; set; }
 
     internal GpuThreadContext Context { get; set; }
 
@@ -56,22 +58,232 @@ internal sealed class ManagedStackLaunch
     internal bool Cooperative { get; set; }
 
     internal string KernelName { get; set; } = string.Empty;
+
+    internal ManagedStackThread[]? Workers { get; private set; }
+
+    internal int WorkerOffset { get; private set; }
+
+    internal int ThreadsPerBlock { get; private set; }
+
+    internal int[]? RoundOrder { get; private set; }
+
+    internal int Round { get; private set; }
+
+    internal int CurrentOrderIndex { get; set; }
+
+    internal ManagedStackThread? CurrentWorker { get; set; }
+
+    internal bool AnyActive { get; set; }
+
+    internal bool Stepped { get; set; }
+
+    // Counted baton hand-overs during this launch, for runtime tests
+    internal long HandOverCount { get; set; }
+
+    internal int WakeAheadCount { get; set; }
+
+    internal int WorkerSpinCount { get; set; }
+
+    // Counted wake-ahead pulses sent during this launch, for runtime tests
+    internal long WakeAheadSignalCount { get; set; }
+
+    internal void BeginRound(
+        ManagedStackThread[] workers,
+        int workerOffset,
+        int threadsPerBlock,
+        int[]? order,
+        int round)
+    {
+        Workers = workers;
+        WorkerOffset = workerOffset;
+        ThreadsPerBlock = threadsPerBlock;
+        RoundOrder = order;
+        Round = round;
+        CurrentOrderIndex = -1;
+        CurrentWorker = null;
+        AnyActive = false;
+        Stepped = false;
+    }
+
+    // Wakes up to WakeAheadCount runnable candidates after <currentOrderIndex> at the start of a round (or after a
+    // mid-round failure resume) without incrementing _sent, so workers are ready in user space before the baton arrives.
+    internal void PrimeWakeAhead(int currentOrderIndex)
+    {
+        if (WakeAheadCount <= 0 || Workers is not { } workers)
+        {
+            return;
+        }
+
+        var offset = WorkerOffset;
+        var count = ThreadsPerBlock;
+        var order = RoundOrder;
+        var targetCount = WakeAheadCount;
+        var woken = 0;
+
+        for (var k = currentOrderIndex + 1; k < count && woken < targetCount; k++)
+        {
+            var t = order is null ? k : order[k];
+            var w = workers[offset + t];
+            if (w.Done || w.AtBlockBarrier || w.AtGridSync)
+            {
+                continue;
+            }
+
+            w.Go.WakeAhead();
+            WakeAheadSignalCount++;
+            woken++;
+        }
+    }
+
+    // Wakes the WakeAheadCount-th non-done/non-barrier candidate after <startOrderIndex> within the current round,
+    // without wrapping into already-finished threads at the end of the round.
+    internal void WakeAheadAtOffset(int startOrderIndex)
+    {
+        if (WakeAheadCount <= 0 || Workers is not { } workers)
+        {
+            return;
+        }
+
+        var offset = WorkerOffset;
+        var count = ThreadsPerBlock;
+        var order = RoundOrder;
+        var target = WakeAheadCount;
+        var seen = 0;
+
+        for (var k = startOrderIndex + 1; k < count; k++)
+        {
+            var t = order is null ? k : order[k];
+            var w = workers[offset + t];
+            if (w.Done || w.AtBlockBarrier || w.AtGridSync)
+            {
+                continue;
+            }
+
+            seen++;
+            if (seen == target)
+            {
+                w.Go.WakeAhead();
+                WakeAheadSignalCount++;
+                return;
+            }
+        }
+    }
+
+    // Returns the order index >= <startOrderIndex> of the next thread that can run in the active round, or -1 when
+    // the round is complete. Shared between the scheduler and direct thread hand-overs so both follow the exact same
+    // round order and warp rendezvous rule.
+    internal int FindNextRunnable(int startOrderIndex, out ManagedStackThread? nextWorker)
+    {
+        if (Workers is not { } workers)
+        {
+            nextWorker = null;
+            return -1;
+        }
+
+        var offset = WorkerOffset;
+        var count = ThreadsPerBlock;
+        var order = RoundOrder;
+        var warp = ReachesWarpCollective;
+        var round = Round;
+
+        for (var k = startOrderIndex; k < count; k++)
+        {
+            var t = order is null ? k : order[k];
+            var w = workers[offset + t];
+            if (w.Done || w.AtBlockBarrier || w.AtGridSync)
+            {
+                continue;
+            }
+
+            if (warp && !ManagedGpuContext.WarpCanRun(t, round))
+            {
+                AnyActive = true;
+                continue;
+            }
+
+            nextWorker = w;
+            return k;
+        }
+
+        nextWorker = null;
+        return -1;
+    }
+
+    // Selects the next thread of the active round when <self> yields or exits, advancing CurrentOrderIndex and
+    // CurrentWorker so the scheduler knows which worker owns the baton.
+    internal ManagedStackThread? PrepareNextHandOver(ManagedStackThread self, bool selfDone)
+    {
+        AnyActive |= !selfDone && !self.AtBlockBarrier && !self.AtGridSync;
+        var nextIndex = FindNextRunnable(CurrentOrderIndex + 1, out var nextWorker);
+        if (nextWorker is not null)
+        {
+            CurrentOrderIndex = nextIndex;
+            CurrentWorker = nextWorker;
+            Stepped = true;
+        }
+
+        return nextWorker;
+    }
 }
 
 internal static class ManagedBaton
 {
+    // Hands the baton directly from <self> to the next runnable worker of the round, or back to the launch scheduler
+    // when the round is complete. Any wake-ahead pulse is sent before signaling <nextWorker.Go> so no two threads wake
+    // concurrently.
+    internal static void HandOverNext(ManagedStackThread self, ManagedStackLaunch launch)
+    {
+        var nextWorker = launch.PrepareNextHandOver(self, selfDone: false);
+        if (nextWorker is not null)
+        {
+            launch.WakeAheadAtOffset(launch.CurrentOrderIndex);
+        }
+
+        launch.HandOverCount++;
+        if (nextWorker is not null)
+        {
+            HandOver(nextWorker.Go, self.Go, launch.WorkerSpinCount);
+        }
+        else
+        {
+            HandOver(launch.Scheduler, self.Go, launch.WorkerSpinCount);
+        }
+    }
+
     // Wakes the owner of <next> and waits for <own>: the caller stops running here.
-    // [WHY] Not WaitHandle.SignalAndWait: it throws NotSupportedException on an STA thread, and the scheduler runs on
-    // the thread that launched the kernel, which may be a UI thread. The two steps need not be atomic: AutoResetEvent
-    // keeps one pending signal, so a reply that comes before the wait starts is not lost.
+    // [WHY] Not WaitHandle.SignalAndWait on the scheduler when the launching thread is STA or carries a
+    // SynchronizationContext: SignalAndWait throws NotSupportedException on an STA thread and bypasses
+    // SynchronizationContext.Wait. When the launching thread is MTA without a SynchronizationContext and the worker
+    // uses an OS AutoResetEvent, SignalAndWait hands over in a single kernel call.
     // [WHY] A wait that ends with an exception (a Thread.Interrupt, or a SynchronizationContext that asks for wait
     // notification and throws from its Wait, for example from a launch it ran there) would leave <next> running while
     // the caller runs too, and the reply would stay pending on <own> for a later wait: the caller then reads state the
     // other thread is writing, and a later baton wakes the wrong thread. So the caller makes sure the reply has come
-    // (ManagedBatonSignal.WaitAfterFailure), and the exception is thrown after it, when the two threads are in step
-    // again.
-    internal static void HandOver(ManagedBatonSignal next, ManagedBatonSignal own)
+    // (WaitAfterFailure), and the exception is thrown after it, when the two threads are in step again. Also,
+    // SignalAndWait throws ThreadInterruptedException before signaling <next> when an interrupt is already pending, so
+    // the catch handler pulses <next>'s handle without advancing _sent again before calling WaitAfterFailure.
+    internal static void HandOver(ManagedWorkerSignal next, ManagedBatonSignal own)
     {
+        if (next.KernelHandle is { } nextHandle &&
+            !own.HasPendingSignal &&
+            SynchronizationContext.Current is null &&
+            Thread.CurrentThread.GetApartmentState() != ApartmentState.STA)
+        {
+            next.RecordSet();
+            try
+            {
+                WaitHandle.SignalAndWait(nextHandle, own.Handle);
+                own.CompleteWait();
+                return;
+            }
+            catch (Exception)
+            {
+                next.PulseHandleOnly();
+                own.WaitAfterFailure();
+                throw;
+            }
+        }
+
         next.Set();
         try
         {
@@ -80,6 +292,70 @@ internal static class ManagedBaton
         catch (Exception)
         {
             // Thrown again once the reply has come: see [WHY] above
+            own.WaitAfterFailure();
+            throw;
+        }
+    }
+
+    internal static void HandOver(ManagedWorkerSignal next, ManagedWorkerSignal own, int spin)
+    {
+        if (next.KernelHandle is { } nextHandle &&
+            own.KernelHandle is { } ownHandle &&
+            !own.HasPendingSignal)
+        {
+            next.RecordSet();
+            try
+            {
+                WaitHandle.SignalAndWait(nextHandle, ownHandle);
+                own.CompleteWait();
+                return;
+            }
+            catch (Exception)
+            {
+                next.PulseHandleOnly();
+                own.WaitAfterFailure();
+                throw;
+            }
+        }
+
+        next.Set();
+        try
+        {
+            own.Wait(spin);
+        }
+        catch (Exception)
+        {
+            own.WaitAfterFailure();
+            throw;
+        }
+    }
+
+    internal static void HandOver(ManagedBatonSignal next, ManagedWorkerSignal own, int spin)
+    {
+        if (own.KernelHandle is { } ownHandle && !own.HasPendingSignal)
+        {
+            next.RecordSet();
+            try
+            {
+                WaitHandle.SignalAndWait(next.Handle, ownHandle);
+                own.CompleteWait();
+                return;
+            }
+            catch (Exception)
+            {
+                next.PulseHandleOnly();
+                own.WaitAfterFailure();
+                throw;
+            }
+        }
+
+        next.Set();
+        try
+        {
+            own.Wait(spin);
+        }
+        catch (Exception)
+        {
             own.WaitAfterFailure();
             throw;
         }
@@ -99,6 +375,24 @@ internal sealed class ManagedBatonSignal
 
     // The interruptions that arrived while a failed wait waited for its signal; see WaitAfterFailure
     internal int DiscardedInterrupts { get; private set; }
+
+    internal WaitHandle Handle => _event;
+
+    internal bool HasPendingSignal => Volatile.Read(ref _sent) > _taken;
+
+    internal void RecordSet() => Interlocked.Increment(ref _sent);
+
+    internal void PulseHandleOnly() => _event.Set();
+
+    internal void CompleteWait()
+    {
+        while (Volatile.Read(ref _sent) <= _taken)
+        {
+            _event.WaitOne();
+        }
+
+        _taken++;
+    }
 
     // [WHY] The count goes up before the event is set: a waiter that the event wakes always finds the signal counted.
     // In the other order it could wake, find no new count, wait again and miss the set it was woken by.
@@ -148,6 +442,157 @@ internal sealed class ManagedBatonSignal
         {
             SynchronizationContext.SetSynchronizationContext(context);
         }
+    }
+}
+
+// Worker-side signal supporting either kernel SignalAndWait (AutoResetEvent) or user-mode ManualResetEventSlim with
+// wake-ahead and bounded spinning. Only one worker waits on this signal; any thread may send one.
+internal sealed class ManagedWorkerSignal
+{
+    private readonly AutoResetEvent? _event;
+    private readonly ManualResetEventSlim? _slim;
+    private long _sent;
+    private long _taken;
+    private volatile int _spinning;
+
+    // The interruptions that arrived while a failed wait waited for its signal; see WaitAfterFailure
+    internal int DiscardedInterrupts { get; private set; }
+
+    internal ManagedWorkerSignal(bool useKernelSignalAndWait)
+    {
+        if (useKernelSignalAndWait)
+        {
+            _event = new AutoResetEvent(false);
+        }
+        else
+        {
+            _slim = new ManualResetEventSlim(false, 0);
+        }
+    }
+
+    internal bool UsesKernelSignalAndWait => _event is not null;
+
+    internal WaitHandle? KernelHandle => _event;
+
+    internal bool HasPendingSignal => Volatile.Read(ref _sent) > _taken;
+
+    internal void RecordSet() => Interlocked.Increment(ref _sent);
+
+    internal void PulseHandleOnly() => _event?.Set();
+
+    internal void Set()
+    {
+        Interlocked.Increment(ref _sent);
+        if (_event is not null)
+        {
+            _event.Set();
+            return;
+        }
+
+        if (_spinning == 0)
+        {
+            _slim?.Set();
+        }
+    }
+
+    // Wakes the worker without advancing _sent so execution order stays strictly controlled by counted batons.
+    internal void WakeAhead() => _slim?.Set();
+
+    internal void Wait(int spin = 0)
+    {
+        while (Volatile.Read(ref _sent) <= _taken)
+        {
+            Park();
+            if (_slim is not null && spin > 0 && Volatile.Read(ref _sent) <= _taken)
+            {
+                SpinOnce(spin);
+            }
+        }
+
+        _taken++;
+    }
+
+    // [WHY] Reads self.Done and self.Launch after Park() returns so a worker parked idle in the pool (Launch == null,
+    // Done == true) does not spin while idle, yet still spins if woken ahead after AssignBlock attaches it to a launch.
+    internal void WaitOutsideKernel(ManagedStackThread self)
+    {
+        while (Volatile.Read(ref _sent) <= _taken)
+        {
+            Park();
+            var spin = _slim is not null && !self.Done && self.Launch is { } launch ? launch.WorkerSpinCount : 0;
+            if (spin > 0 && Volatile.Read(ref _sent) <= _taken)
+            {
+                SpinOnce(spin);
+            }
+        }
+
+        _taken++;
+    }
+
+    internal void CompleteWait()
+    {
+        while (Volatile.Read(ref _sent) <= _taken)
+        {
+            _event?.WaitOne();
+        }
+
+        _taken++;
+    }
+
+    internal void WaitAfterFailure()
+    {
+        var context = SynchronizationContext.Current;
+        SynchronizationContext.SetSynchronizationContext(null);
+        try
+        {
+            while (Volatile.Read(ref _sent) <= _taken)
+            {
+                try
+                {
+                    Park();
+                }
+                catch (ThreadInterruptedException)
+                {
+                    // [WHY] As ManagedBatonSignal.WaitAfterFailure: the thread already ends this wait with the
+                    // exception of its first failure, so a further interruption is counted and dropped
+                    DiscardedInterrupts++;
+                }
+            }
+
+            _taken++;
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(context);
+        }
+    }
+
+    private void Park()
+    {
+        if (_event is not null)
+        {
+            _event.WaitOne();
+            return;
+        }
+
+        if (_slim is not null)
+        {
+            _slim.Wait();
+            _slim.Reset();
+        }
+    }
+
+    private void SpinOnce(int spin)
+    {
+        _spinning = 1;
+        Interlocked.MemoryBarrier();
+        for (var i = 0; i < spin && Volatile.Read(ref _sent) <= _taken; i++)
+        {
+            Thread.SpinWait(8);
+        }
+
+        _spinning = 0;
+        Interlocked.MemoryBarrier();
     }
 }
 
