@@ -538,8 +538,8 @@
 
 - name: InstanceDeviceFunctionNotSupported
   id: GSH0066
-  title: "Instance [GpuDeviceFunction] methods are not supported"
-  messageFormat: "The method '{0}.{1}' is marked with [GpuDeviceFunction] but is an instance method. Mark the method as 'static' and pass the struct as a parameter."
+  title: "Instance [GpuDeviceFunction] method is not supported in this form"
+  messageFormat: "The method '{0}.{1}' is marked with [GpuDeviceFunction] but {2}."
   category: GSharpTranspiler
   defaultSeverity: Error
   isEnabledByDefault: true

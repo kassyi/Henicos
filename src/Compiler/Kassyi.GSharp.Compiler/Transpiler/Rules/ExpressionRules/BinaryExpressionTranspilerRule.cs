@@ -33,14 +33,14 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
 
         if (node.IsKind(SyntaxKind.CoalesceExpression))
         {
-            NullRepresentation.AppendCoalesce(node.Left, node.Right, ref context,
+            NullRepresentationEmitter.AppendCoalesce(node.Left, node.Right, ref context,
                 context.Query.SemanticModel.GetTypeSymbol(node));
             return;
         }
 
         if (NullRepresentation.GetNullTestOperand(node, context.Query.SemanticModel) is { } tested)
         {
-            NullRepresentation.AppendNullTest(tested, node.IsKind(SyntaxKind.EqualsExpression), ref context);
+            NullRepresentationEmitter.AppendNullTest(tested, node.IsKind(SyntaxKind.EqualsExpression), ref context);
             return;
         }
 
@@ -68,7 +68,7 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         // unspecified, so interfering operands go through temporaries
         if (operation != null && IntegerSemantics.GetBinaryHelper(operation) is { } helper)
         {
-            var site = DivisorCheck.PlanSite(helper, node, ref context);
+            var site = DivisorCheckEmitter.PlanSite(helper, node, ref context);
             if (OperandsInterfere(node, ref context))
             {
                 TranspileSequencedCall(node, helper, site, ref context);
@@ -108,7 +108,7 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
 
         if (narrowEnumType != null)
         {
-            ArithmeticConversions.AppendConversion(narrowEnumType, ref context);
+            ArithmeticConversionsEmitter.AppendConversion(narrowEnumType, ref context);
             using (context.Emitter.Writer.Parentheses())
             {
                 context.Visitor.Visit(node.Left);
@@ -122,10 +122,10 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         if (promotion is var (promoted, type))
         {
             // A converted operand begins with '(': the operator needs no space before it
-            ArithmeticConversions.AppendOperand(promoted.LeftOperand, node.Left, type, ref context);
+            ArithmeticConversionsEmitter.AppendOperand(promoted.LeftOperand, node.Left, type, ref context);
             AppendOperator(node, ArithmeticConversions.IsConverted(promoted.RightOperand, type) ? null : node.Right,
                 ref context);
-            ArithmeticConversions.AppendOperand(promoted.RightOperand, node.Right, type, ref context);
+            ArithmeticConversionsEmitter.AppendOperand(promoted.RightOperand, node.Right, type, ref context);
             return;
         }
 
@@ -174,7 +174,7 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
             } &&
             Convert.ToDouble(divisor, CultureInfo.InvariantCulture) == 0)
         {
-            ConstantAtUse.Append(node, floatType, folded.Value, ref context);
+            ConstantAtUseEmitter.Append(node, floatType, folded.Value, ref context);
             return true;
         }
 
@@ -184,7 +184,7 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
             return false;
         }
 
-        ConstantAtUse.Append(node, type, value, ref context);
+        ConstantAtUseEmitter.Append(node, type, value, ref context);
         return true;
     }
 
@@ -253,7 +253,7 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         sequence.Return();
         if (narrowEnumType != null)
         {
-            ArithmeticConversions.AppendConversion(narrowEnumType, ref context);
+            ArithmeticConversionsEmitter.AppendConversion(narrowEnumType, ref context);
             using (writer.Parentheses())
             {
                 EvaluationOrder.AppendTempName(writer, left);
@@ -325,10 +325,10 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         writer.Append(remainder);
         using (writer.Parentheses())
         {
-            ArithmeticConversions.AppendOperand(operation.LeftOperand, node.Left.UnwrapParentheses(),
+            ArithmeticConversionsEmitter.AppendOperand(operation.LeftOperand, node.Left.UnwrapParentheses(),
                 type, ref context);
             writer.Append(',');
-            ArithmeticConversions.AppendOperand(operation.RightOperand,
+            ArithmeticConversionsEmitter.AppendOperand(operation.RightOperand,
                 node.Right.UnwrapParentheses(), type, ref context);
         }
     }
@@ -338,7 +338,7 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
     {
         if (ArithmeticConversions.IsConverted(operand, type))
         {
-            ArithmeticConversions.AppendConversion(type, ref context);
+            ArithmeticConversionsEmitter.AppendConversion(type, ref context);
         }
 
         EvaluationOrder.AppendTempName(context.Emitter.Writer, temp);

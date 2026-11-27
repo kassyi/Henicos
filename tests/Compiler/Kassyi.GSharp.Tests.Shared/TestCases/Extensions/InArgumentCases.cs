@@ -41,6 +41,8 @@ public static unsafe class Shapes
 
     public static int[] GetArray() => new int[1];
 
+    public static Span<int> GetSpan() => default;
+
     // --- Variables kept as a location ---
 
     public static int Local(int v) => In(v);
@@ -79,6 +81,8 @@ public static unsafe class Shapes
 
     public static int RefProperty(Cell c) => In(c.Ref);
 
+    public static void KeywordExternalSpanElement() => Add(ref GetSpan()[0]);
+
     // --- Values, which C# copies ---
 
     public static int ElementOfAValue() => In(MakeInline()[0]);
@@ -86,4 +90,8 @@ public static unsafe class Shapes
     public static int Sum(int v) => In(v + 1);
 
     public static int SpanElement(Span<int> s) => In(s[0]);
+
+    public static int ExternalSpanElement() => In(GetSpan()[0]);
+
+    public static void KeywordSpanElement(Span<int> s) => Add(ref s[0]);
 }

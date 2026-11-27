@@ -170,6 +170,9 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         }
     }
 
+    private const string ReselectedReceiverCallContext =
+        "in an argument of a struct call whose receiver is selected by a call, a property or a ref conditional";
+
     // The GSH0062 context of the call where a call that suspends, and where a warp shuffle, cannot stand; null where it
     // may. A split that the CPU paths would hoist out of a creation with a collection initializer, before what C#
     // evaluates first, is such a place for both until #2105
@@ -179,9 +182,58 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         var initializerContext = CollectionInitializerSplitContext.IsReordered(invocation, model)
             ? CollectionInitializerSplitContext.Context
             : null;
+        var reselectedReceiverContext = FindReselectedReceiverCallContext(invocation, model);
         return (
-            SplitPointPlacement.FindUnsupportedContext(invocation, model, isWarpShuffle: false) ?? initializerContext,
-            SplitPointPlacement.FindUnsupportedContext(invocation, model, isWarpShuffle: true) ?? initializerContext);
+            SplitPointPlacement.FindUnsupportedContext(invocation, model, isWarpShuffle: false)
+                ?? initializerContext
+                ?? reselectedReceiverContext,
+            SplitPointPlacement.FindUnsupportedContext(invocation, model, isWarpShuffle: true)
+                ?? initializerContext
+                ?? reselectedReceiverContext);
+    }
+
+    // A struct instance [GpuDeviceFunction] call whose receiver is passed by reference and selected by a call, a
+    // property, a ref conditional, or an unrebuildable Span<T>[i] cannot spill its receiver before a split argument
+    private static string? FindReselectedReceiverCallContext(InvocationExpressionSyntax invocation, SemanticModel model)
+    {
+        SyntaxNode child = invocation;
+        for (var ancestor = invocation.Parent;
+             ancestor is not (null or StatementSyntax or MemberDeclarationSyntax or AnonymousFunctionExpressionSyntax
+                 or LocalFunctionStatementSyntax or SwitchExpressionArmSyntax);
+             child = ancestor, ancestor = ancestor.Parent)
+        {
+            if (ancestor is not ArgumentSyntax
+                {
+                    Parent: ArgumentListSyntax { Parent: InvocationExpressionSyntax outer } argumentList
+                } argument ||
+                child != argument.Expression ||
+                argumentList != outer.ArgumentList)
+            {
+                continue;
+            }
+
+            if (outer.Expression.UnwrapParentheses() is not MemberAccessExpressionSyntax
+                {
+                    RawKind: (int)SyntaxKind.SimpleMemberAccessExpression
+                } access)
+            {
+                continue;
+            }
+
+            if (model.GetSafeOperation(outer) is not IInvocationOperation outerOp ||
+                !SpilledArguments.IsStructInstanceDeviceFunctionCall(outerOp))
+            {
+                continue;
+            }
+
+            if (!SpilledArguments.IsCopiedOrValueReceiver(outerOp) &&
+                SpilledArguments.IsReselectedLocation(access.Expression, model))
+            {
+                return ReselectedReceiverCallContext;
+            }
+        }
+
+        return null;
     }
 
     // [WHY] A shuffle takes its arguments by value, so only where it stands matters. CUDA runs the shuffle where it

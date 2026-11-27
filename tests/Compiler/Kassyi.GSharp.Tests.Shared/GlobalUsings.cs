@@ -14,6 +14,7 @@ global using Kassyi.GSharp.Compiler.Diagnostics.Host;
 global using Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 global using Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 global using Kassyi.GSharp.Compiler.Dialects;
+global using Kassyi.GSharp.Compiler.Semantics;
 global using Kassyi.GSharp.Compiler.Transpiler;
 global using Kassyi.GSharp.Runtime.Aot;
 global using Kassyi.GSharp.Tests.Shared.Helpers;

@@ -309,7 +309,7 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
         writer.Append(' ');
         EvaluationOrder.AppendTempName(writer, temp);
         writer.Append(" = ");
-        StackArrayLocals.AppendView(expression, ref context);
+        StackArrayLocalsEmitter.AppendView(expression, ref context);
         writer.AppendLine(";");
         return temp;
     }
@@ -328,7 +328,7 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
 
         if (operands[index].IsSpanOrArray)
         {
-            StackArrayLocals.AppendView(operands[index].Expression, ref context);
+            StackArrayLocalsEmitter.AppendView(operands[index].Expression, ref context);
         }
         else
         {

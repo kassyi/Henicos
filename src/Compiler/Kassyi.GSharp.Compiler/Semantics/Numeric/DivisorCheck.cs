@@ -1,6 +1,4 @@
-using Kassyi.GSharp.Compiler.Backends.Cpp;
-
-namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>
 /// The place that the divisor check of an integer division or remainder reports (#718): the Prelude functions that
@@ -15,13 +13,4 @@ internal static class DivisorCheck
 
     /// <summary>The trap kind of the site ID, which tells the site apart from another trap at the same place.</summary>
     internal const string TrapKind = "DivideByZero";
-
-    /// <summary>
-    /// The place of the division or compound assignment <paramref name="node"/> when <paramref name="helper"/> takes
-    /// one; <see langword="null"/> for any other helper and for none.
-    /// </summary>
-    public static NullCheckSite? PlanSite(string? helper, ExpressionSyntax node, ref TranspileContext context) =>
-        helper != null && IntegerSemantics.TakesErrorSite(helper)
-            ? ArrayNullCheck.PlanSite(node, null, Message, TrapKind, ref context)
-            : null;
 }

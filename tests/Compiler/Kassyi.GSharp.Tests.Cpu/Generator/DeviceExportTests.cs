@@ -382,6 +382,7 @@ public class DeviceExportTests
             .Select(static f => f.ConstantValue as string ?? throw new InvalidOperationException(f.Name))
             .Concat(GetDialectNames(DeviceExportAttributeNames.Cuda))
             .Concat(GetDialectNames(DeviceExportAttributeNames.Cpp))
+            .Concat(GetDialectNames(DeviceExportAttributeNames.CppStack))
             .Order(StringComparer.Ordinal)
             .ToArray();
         var properties = attrSymbol
@@ -489,6 +490,202 @@ public class DeviceExportTests
         Assert.True(waitGeneric.GetBool("CudaFailed"));
         Assert.True(waitGeneric.GetBool("CppFailed"));
         Assert.False(waitGeneric.GetBool("ManagedStackForm"));
+    }
+
+    // T1: default config emits CppStack* for stack-eligible suspending device functions on both dialects, omits it for
+    // non-suspending and recursive suspending functions, and appends uint32_t __gsharp_warp_frame for warp collectives
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.HappyPath)]
+    public void DeviceExport_DefaultConfig_RecordsCppStackFormForStackEligibleDeviceFunctions(string dialect)
+    {
+        var records = Run(dialect, out var result, out var output, s_stackTraitsTree);
+
+        Assert.Null(result.Exception);
+        Assert.DoesNotContain(result.Diagnostics, static d => d.Severity == DiagnosticSeverity.Error);
+        Assert.Empty(output.GetDiagnostics().Where(static d => d.Severity == DiagnosticSeverity.Error));
+        ExportedRecord Find(string id) => records.Single(r => r.Id == id);
+
+        var waitBlock = Find("M:StackTraitsCase.StackTraitsLib.WaitBlock(System.Int32[],System.Int32)");
+        Assert.True(waitBlock.HasNamedArgument("CppStackSignature"));
+        Assert.False(waitBlock.GetBool("CppStackFailed"));
+        Assert.False(waitBlock.HasNamedArgument("CppStackDispose"));
+        Assert.Equal("", waitBlock.GetString("CppStackDispose"));
+        var waitBlockBody = waitBlock.GetString("CppStackBody");
+        Assert.Contains(GSharpInternalNames.NativeStack.Barrier, waitBlockBody, StringComparison.Ordinal);
+        Assert.DoesNotContain("__gsharp_ctx", waitBlockBody, StringComparison.Ordinal);
+
+        var pureAdd = Find("M:StackTraitsCase.StackTraitsLib.PureAdd(System.Int32)");
+        Assert.False(pureAdd.HasNamedArgument("CppStackSignature"));
+        Assert.False(pureAdd.HasNamedArgument("CppStackBody"));
+        Assert.False(pureAdd.HasNamedArgument("CppStackDispose"));
+        Assert.False(pureAdd.HasNamedArgument("CppStackReferences"));
+        Assert.False(pureAdd.HasNamedArgument("CppStackIncludes"));
+        Assert.False(pureAdd.HasNamedArgument("CppStackFailed"));
+
+        var waitShuffle = Find("M:StackTraitsCase.StackTraitsLib.WaitShuffle(System.Int32)");
+        Assert.True(waitShuffle.HasNamedArgument("CppStackSignature"));
+        Assert.EndsWith(
+            $"uint32_t {GSharpInternalNames.StackWarp.Frame});{Environment.NewLine}",
+            waitShuffle.GetString("CppStackSignature"),
+            StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.Boundary)]
+    public void DeviceExport_RecursiveSuspendingFunction_OmitsCppStackForm(string dialect)
+    {
+        const string Source = """
+            using Kassyi.GSharp.Core;
+
+            namespace RecursiveExportCase
+            {
+                public static partial class LibRecursive
+                {
+                    [GpuDeviceFunction]
+                    public static int WaitRecursive(int[] buffer, int n)
+                    {
+                        Gpu.SyncThreads();
+                        return n > 0 ? WaitRecursive(buffer, n - 1) : buffer[0];
+                    }
+                }
+            }
+            """;
+        var compilation = RoslynTestUtility.CreateCompilation(Source);
+        var driver = CreateDriver(dialect, null).RunGeneratorsAndUpdateCompilation(compilation, out var output, out _);
+        var result = driver.GetRunResult().Results.Single();
+        var records = output.Assembly.GetAttributes()
+            .Where(static a => a.AttributeClass?.Name == "GpuDeviceExportAttribute")
+            .Select(static a => new ExportedRecord(a))
+            .ToList();
+
+        Assert.Null(result.Exception);
+        var recursive = records.Single(static r =>
+            r.Id == "M:RecursiveExportCase.LibRecursive.WaitRecursive(System.Int32[],System.Int32)");
+        Assert.True(recursive.GetBool("Suspends"));
+        Assert.False(recursive.HasNamedArgument("CppStackSignature"));
+        Assert.False(recursive.HasNamedArgument("CppStackBody"));
+        Assert.False(recursive.HasNamedArgument("CppStackFailed"));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void DeviceExportRecord_GetDialectWithStacks_JoinsCppAndCppStackAndOrdersUnions()
+    {
+        var names = new DeviceExportRecord.ExportNames("__gsharp_fn_N__F", "", default, default, default);
+        var cuda = new DeviceExportRecord.DialectText(
+            ImmutableArray.Create("__gsharp_fn_N__CudaOnly").AsEquatableArray(),
+            "/*CUDA_SIG*/",
+            "/*CUDA_BODY*/",
+            "/*CUDA_DISPOSE*/",
+            ImmutableArray.Create("<cuda.h>").AsEquatableArray(),
+            Failed: false);
+        var cpp = new DeviceExportRecord.DialectText(
+            ImmutableArray.Create("__gsharp_fn_N__Z", "__gsharp_fn_N__A").AsEquatableArray(),
+            "/*CPP_SIG*/",
+            "/*CPP_BODY*/",
+            "/*CPP_DISPOSE*/",
+            ImmutableArray.Create("<z.h>", "<a.h>").AsEquatableArray(),
+            Failed: false);
+        var cppStack = new DeviceExportRecord.DialectText(
+            ImmutableArray.Create("__gsharp_fn_N__M", "__gsharp_fn_N__A").AsEquatableArray(),
+            "/*STACK_SIG*/",
+            "/*STACK_BODY*/",
+            "",
+            ImmutableArray.Create("<m.h>", "<a.h>").AsEquatableArray(),
+            Failed: false);
+
+        var omittedCppStack = new DeviceExportRecord(
+            DeviceExportRecord.FunctionKind, "M:N.F", names, cuda, cpp, DeviceExportRecord.FunctionTraits.None, "");
+        Assert.False(omittedCppStack.HasCppStack);
+        Assert.Equal("", omittedCppStack.CppStack.Signature);
+        Assert.Equal("", omittedCppStack.CppStack.Body);
+        Assert.Equal("", omittedCppStack.CppStack.Dispose);
+        Assert.Equal(cpp, omittedCppStack.GetDialect(isCuda: false, onStacks: true));
+
+        var failedCppStack = omittedCppStack with { CppStack = cppStack with { Failed = true } };
+        Assert.False(failedCppStack.HasCppStack);
+        Assert.Equal(cpp, failedCppStack.GetDialect(isCuda: false, onStacks: true));
+
+        var withCppStack = omittedCppStack with { CppStack = cppStack };
+        Assert.True(withCppStack.HasCppStack);
+        Assert.Equal(cuda, withCppStack.GetDialect(isCuda: true, onStacks: true));
+        Assert.Equal(cpp, withCppStack.GetDialect(isCuda: false, onStacks: false));
+
+        var joined = withCppStack.GetDialect(isCuda: false, onStacks: true);
+        Assert.Equal("/*CPP_SIG*/\n/*STACK_SIG*/", joined.Signature);
+        Assert.Equal("/*CPP_BODY*/\n/*STACK_BODY*/", joined.Body);
+        Assert.Equal("/*CPP_DISPOSE*/", joined.Dispose);
+        Assert.False(joined.Failed);
+        Assert.Equal(
+            ["__gsharp_fn_N__A", "__gsharp_fn_N__M", "__gsharp_fn_N__Z"],
+            joined.References.AsImmutableArray().ToArray());
+        Assert.Equal(
+            ["<a.h>", "<m.h>", "<z.h>"],
+            joined.Includes.AsImmutableArray().ToArray());
+    }
+
+    // T-refs: in both DeviceLibrary and Stdlib.GpuMath (default config), CppStack.References is a subset of
+    // Cpp.References plus the record's own names so ImportedDeviceCodeRule does not miss any stack-form dependency
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void DeviceExport_CompiledLibraries_CppStackReferencesAreSubsetOfCppAndOwnNames()
+    {
+        var assemblies = new[]
+        {
+            typeof(Kassyi.GSharp.Tests.DeviceLibrary.LibMath).Assembly,
+            typeof(Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntKernels).Assembly
+        };
+        var references = assemblies
+            .Select(static a => MetadataReference.CreateFromFile(a.Location))
+            .ToArray();
+        var compilation = CSharpCompilation.Create("RefsInspection")
+            .AddReferences(RoslynTestUtility.BaseReferences)
+            .AddReferences(references);
+
+        foreach (var reference in references)
+        {
+            var assembly = compilation.GetAssemblyOrModuleSymbol(reference) as IAssemblySymbol
+                ?? throw new InvalidOperationException($"Assembly symbol missing for {reference.Display}");
+            var table = Kassyi.GSharp.Compiler.Transpiler.DeviceExportTable.ForAssembly(assembly);
+            var functionRecords = table.Records
+                .Where(static r => r.Record.Kind == DeviceExportRecord.FunctionKind)
+                .ToArray();
+            Assert.Contains(functionRecords, static r => r.Record.HasCppStack);
+
+            foreach (var imported in functionRecords)
+            {
+                var record = imported.Record;
+                if (!record.HasCppStack)
+                {
+                    continue;
+                }
+
+                var allowed = new HashSet<string>(StringComparer.Ordinal)
+                {
+                    record.Names.CppName
+                };
+                foreach (var cppRef in record.Cpp.References)
+                {
+                    allowed.Add(cppRef);
+                }
+
+                foreach (var defined in record.Names.DefinedNames)
+                {
+                    allowed.Add(defined);
+                }
+
+                foreach (var stackRef in record.CppStack.References)
+                {
+                    Assert.True(
+                        allowed.Contains(stackRef),
+                        $"{assembly.Name} {record.Id}: CppStack reference '{stackRef}' is not in CppReferences or own names");
+                }
+            }
+        }
     }
 
     [Fact]

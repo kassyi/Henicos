@@ -306,7 +306,7 @@ internal static class ObjectCreationHelper
                     if (constructor != null && i < constructor.Parameters.Length &&
                         constructor.Parameters[i].RefKind == RefKind.None)
                     {
-                        ArithmeticConversions.AppendArgument(argument, constructor.Parameters[i].Type, ref context);
+                        ArithmeticConversionsEmitter.AppendArgument(argument, constructor.Parameters[i].Type, ref context);
                     }
                     else
                     {

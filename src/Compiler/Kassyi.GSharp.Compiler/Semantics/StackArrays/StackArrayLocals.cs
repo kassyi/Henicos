@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.StackArrays;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>
 /// The locals that the transpiler declares as a C++ stack array (<c>VariableDeclarationTranspilerRule</c>): a local
@@ -62,26 +62,6 @@ internal static class StackArrayLocals
     }
 
     /// <summary>
-    /// Writes <paramref name="expression"/> as a span: a stack array local becomes
-    /// <c>__gsharp_stackalloc_span(name)</c>, a <c>GSharpArray&lt;T&gt;</c> over it, for the receiver of a span member and
-    /// for a template parameter that deduces <c>GSharpArray&lt;T&gt;</c> (StackLinq), which a C++ array does not convert to.
-    /// </summary>
-    public static void AppendView(ExpressionSyntax expression, ref TranspileContext context)
-    {
-        if (!NeedsView(expression, context.Query.SemanticModel))
-        {
-            context.Visitor.Visit(expression);
-            return;
-        }
-
-        context.Emitter.Writer.Append(GSharpInternalNames.Prelude.StackAllocSpan);
-        using (context.Emitter.Writer.Parentheses())
-        {
-            context.Visitor.Visit(expression);
-        }
-    }
-
-    /// <summary>
     /// Whether <paramref name="local"/> is a stack array local that is a C++ array, which a span needs a view for.
     /// An empty span local is already a <c>GSharpArray&lt;T&gt;</c>.
     /// </summary>
@@ -91,7 +71,7 @@ internal static class StackArrayLocals
 
     /// <summary>
     /// Whether <paramref name="expression"/> names a stack array local that is a C++ array, which a span needs
-    /// <see cref="AppendView"/> for. An empty span local is already a <c>GSharpArray&lt;T&gt;</c>
+    /// <see cref="StackArrayLocalsEmitter.AppendView"/> for. An empty span local is already a <c>GSharpArray&lt;T&gt;</c>
     /// (<c>VariableDeclarationTranspilerRule</c>), so it is written as it is.
     /// </summary>
     public static bool NeedsView(ExpressionSyntax expression, SemanticModel semanticModel) =>

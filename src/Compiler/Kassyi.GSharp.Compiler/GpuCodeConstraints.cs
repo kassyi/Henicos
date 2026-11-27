@@ -42,9 +42,55 @@ internal static class GpuCodeConstraints
         method.ReturnType.ToDisplayString();
 #pragma warning restore RS0030
 
-    /// <summary>Whether <paramref name="method"/> is a <c>[GpuDeviceFunction]</c> that is not static (GSH0066).</summary>
-    public static bool IsInstanceDeviceFunction(IMethodSymbol method) =>
-        !method.IsStatic && method.HasAttribute(KnownAttributes.GpuDeviceFunction);
+    /// <summary>The GSH0066 reason for an instance device function declared on a class or other reference type.</summary>
+    public const string InstanceOnReferenceTypeReason =
+        "is declared on a reference type (device code has no class instances; mark the method as 'static')";
+
+    /// <summary>The GSH0066 reason for an instance device function that is not an ordinary method.</summary>
+    public const string InstanceNotOrdinaryReason =
+        "is not an ordinary method (mark an ordinary static [GpuDeviceFunction] instead)";
+
+    /// <summary>The GSH0066 reason for an instance device function declared on a generic struct.</summary>
+    public const string InstanceOnGenericStructReason =
+        "is declared on a generic struct (generic struct instance device functions are not supported yet)";
+
+    /// <summary>The GSH0066 reason for an instance device function that reaches a barrier or warp collective.</summary>
+    public const string InstanceSuspendingReason =
+        "reaches a barrier or warp collective, and the CPU state machine cannot keep the receiver across a barrier (mark the method as 'static')";
+
+    /// <summary>
+    /// Why <paramref name="method"/>, an instance <c>[GpuDeviceFunction]</c> method, is not supported in this form, or
+    /// <see langword="null"/> when it is a supported non-suspending ordinary method of a non-generic struct (GSH0066).
+    /// </summary>
+    public static string? GetInstanceDeviceFunctionProblem(IMethodSymbol method, Compilation? compilation)
+    {
+        if (method.IsStatic || !method.HasAttribute(KnownAttributes.GpuDeviceFunction))
+        {
+            return null;
+        }
+
+        if (method.ContainingType is not { IsValueType: true })
+        {
+            return InstanceOnReferenceTypeReason;
+        }
+
+        if (method.MethodKind != MethodKind.Ordinary)
+        {
+            return InstanceNotOrdinaryReason;
+        }
+
+        if (method.ContainingType.IsGenericType)
+        {
+            return InstanceOnGenericStructReason;
+        }
+
+        if (compilation != null && SuspensionAnalysis.IsSuspendingFunction(method, compilation))
+        {
+            return InstanceSuspendingReason;
+        }
+
+        return null;
+    }
 
     /// <summary>
     /// Whether device code cannot hold a value of <paramref name="type"/> because it is a function pointer, which points into

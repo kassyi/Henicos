@@ -179,9 +179,11 @@ internal sealed class IrSpillEquivalence
                 planned[key] = entry;
             }
 
+            var receivers = IrSpillTrace.CollectStructDeviceReceivers(statementPlan.Statement);
             entry.Full.AddRange(IrSpillTrace.Of(statementPlan.Steps, method.Text));
-            entry.Reduced.AddRange(IrSpillTrace.AsSyntaxPassesDo(statementPlan.Steps, method.Text));
+            entry.Reduced.AddRange(IrSpillTrace.AsSyntaxPassesDo(statementPlan.Steps, method.Text, receivers));
             entry.Steps.AddRange(statementPlan.Steps);
+            entry.Receivers.UnionWith(receivers);
         }
 
         Interlocked.Add(ref _loopConditions, loopConditions.Count);
@@ -202,7 +204,7 @@ internal sealed class IrSpillEquivalence
         }
         else if (full != syntax)
         {
-            if (Reason(statement.Steps, statement.Full, syntaxTokens) is { } reason)
+            if (Reason(statement.Steps, statement.Full, syntaxTokens, statement.Receivers) is { } reason)
             {
                 _known.Add(reason + "\n  " + line);
             }
@@ -231,10 +233,10 @@ internal sealed class IrSpillEquivalence
 
     // The rules of the plan that the syntax passes lack; without one, only the position of a conditional may differ
     private static string? Reason(List<IrSpillStep> steps, List<IrSpillTrace.Token> full,
-        List<IrSpillTrace.Token> syntax)
+        List<IrSpillTrace.Token> syntax, HashSet<IrExpression> receivers)
     {
         var reasons = new SortedSet<string>(StringComparer.Ordinal);
-        CollectReasons(steps, reasons);
+        CollectReasons(steps, reasons, receivers);
         if (reasons.Count > 0)
         {
             return string.Join(" + ", reasons);
@@ -255,7 +257,8 @@ internal sealed class IrSpillEquivalence
             .Where(token => token.Text.StartsWith("cond{", StringComparison.Ordinal) == conditionals)
             .Select(static token => token.Text);
 
-    private static void CollectReasons(IEnumerable<IrSpillStep> steps, SortedSet<string> reasons)
+    private static void CollectReasons(IEnumerable<IrSpillStep> steps, SortedSet<string> reasons,
+        HashSet<IrExpression> receivers)
     {
         foreach (var step in steps)
         {
@@ -264,7 +267,7 @@ internal sealed class IrSpillEquivalence
                 case IrSpillConditional conditional:
                     foreach (var branch in conditional.Branches)
                     {
-                        CollectReasons(branch, reasons);
+                        CollectReasons(branch, reasons, receivers);
                     }
 
                     if (conditional.Node is IrCoalesce)
@@ -273,7 +276,7 @@ internal sealed class IrSpillEquivalence
                     }
 
                     break;
-                case IrSpillValue spill when !IrSpillTrace.IsMadeBySyntaxPasses(spill):
+                case IrSpillValue spill when !IrSpillTrace.IsMadeBySyntaxPasses(spill, receivers):
                     reasons.Add(ReasonOf(spill));
                     break;
                 case IrSpillCheck:
@@ -338,5 +341,7 @@ internal sealed class IrSpillEquivalence
         public List<IrSpillTrace.Token> Reduced { get; } = [];
 
         public List<IrSpillStep> Steps { get; } = [];
+
+        public HashSet<IrExpression> Receivers { get; } = [];
     }
 }

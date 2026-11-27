@@ -151,6 +151,34 @@ public class DeviceImportAssemblerTests
         Assert.DoesNotContain(records.AsImmutableArray(), static r => r.Record.Id == "T:H.Box{System.Int32}");
     }
 
+    // T2: Resolve(..., onStacks: true) places the stack forms of Relay and what it reaches (Wait);
+    // onStacks: false matches the 3-argument overload and places no stack markers
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void DeviceImportAssembler_NativeStacks_PlacesStackFormsOnlyWhenOnStacksEnabled()
+    {
+        var records = DeviceImportAssembler.Collect(CreateConsumer(s_library.Value));
+
+        var onStacks = DeviceImportAssembler.Resolve(records, isCuda: false, onStacks: true, ["__gsharp_fn_H__Lib__Relay(1)"]);
+        Assert.Contains("/*RELAY_STACK_SIGNATURE*/", onStacks.Source, StringComparison.Ordinal);
+        Assert.Contains("/*WAIT_STACK_SIGNATURE*/", onStacks.Source, StringComparison.Ordinal);
+        Assert.Contains("/*RELAY_STACK_BODY*/", onStacks.Source, StringComparison.Ordinal);
+        Assert.Contains("/*WAIT_STACK_BODY*/", onStacks.Source, StringComparison.Ordinal);
+        Assert.Contains("/*RELAY_BODY*/", onStacks.Source, StringComparison.Ordinal);
+        Assert.Contains("/*WAIT_BODY*/", onStacks.Source, StringComparison.Ordinal);
+        Assert.Contains("<relay_stack.h>", onStacks.Includes.AsImmutableArray());
+        Assert.Contains("<wait_stack.h>", onStacks.Includes.AsImmutableArray());
+
+        var offStacks = DeviceImportAssembler.Resolve(records, isCuda: false, onStacks: false, ["__gsharp_fn_H__Lib__Relay(1)"]);
+        var legacy = DeviceImportAssembler.Resolve(records, isCuda: false, ["__gsharp_fn_H__Lib__Relay(1)"]);
+        Assert.Equal(legacy.Source, offStacks.Source);
+        Assert.Equal(legacy.Includes, offStacks.Includes);
+        Assert.Equal(legacy.ErrorSites, offStacks.ErrorSites);
+        Assert.Equal(legacy.Calls, offStacks.Calls);
+        Assert.DoesNotContain("/*RELAY_STACK_SIGNATURE*/", offStacks.Source, StringComparison.Ordinal);
+        Assert.DoesNotContain("/*WAIT_STACK_BODY*/", offStacks.Source, StringComparison.Ordinal);
+    }
+
     private static ImportedDeviceCode Resolve(bool isCuda, string ownText, params MetadataReference[] libraries) =>
         DeviceImportAssembler.Resolve(DeviceImportAssembler.Collect(CreateConsumer(libraries)), isCuda, [ownText]);
 

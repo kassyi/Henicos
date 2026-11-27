@@ -177,7 +177,7 @@ examples:
 | [**GSH0063**](../03_bcl_api/diagnostics/GSH0063.md) | Warning | Shared memory declarations on one line share a buffer in managed execution | Triggered when multi-variable shared memory declarations share a buffer. |
 | [**GSH0064**](../03_bcl_api/diagnostics/GSH0064.md) | Error | Kernel parameters exceed the parameter space limit | Triggered when a kernel's parameters, with the ones G# adds, take more than the 32,764 bytes of the CUDA parameter space; nvcc would reject the kernel. |
 | [**GSH0065**](../03_bcl_api/diagnostics/GSH0065.md) | Error | Non-const static fields and properties are not supported in GPU code | Triggered when non-const static state is referenced in device code. |
-| [**GSH0066**](../03_bcl_api/diagnostics/GSH0066.md) | Error | Instance [GpuDeviceFunction] methods are not supported | Triggered when `[GpuDeviceFunction]` is declared on an instance method. |
+| [**GSH0066**](../03_bcl_api/diagnostics/GSH0066.md) | Error | Instance [GpuDeviceFunction] method is not supported in this form | Triggered when an instance `[GpuDeviceFunction]` method is declared on a class or generic struct, is not an ordinary method, or reaches a barrier or warp collective. |
 | [**GSH0067**](../03_bcl_api/diagnostics/GSH0067.md) | Error | Disposable resource is created and discarded | Triggered when a disposable resource is allocated without being assigned or returned. |
 | [**GSH0068**](../03_bcl_api/diagnostics/GSH0068.md) | Error | Disposable local is never disposed | Triggered when a disposable local variable is not disposed on all exit paths. |
 | [**GSH0069**](../03_bcl_api/diagnostics/GSH0069.md) | Error | SharedMemory element type must not be disposable | Triggered when `SharedMemory<T>` uses an `IDisposable` element type. |

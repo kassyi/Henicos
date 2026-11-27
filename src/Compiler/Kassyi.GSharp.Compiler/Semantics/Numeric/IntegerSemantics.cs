@@ -3,7 +3,7 @@ using Kassyi.GSharp.Compiler.Analysis.Checks;
 using Microsoft.CodeAnalysis.Operations;
 using Names = Kassyi.GSharp.Compiler.GSharpInternalNames.IntegerSemantics;
 
-namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.Numeric;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>
 /// Where the C++ of an integer operator or a float-to-integer conversion would leave undefined what C# defines, and the
@@ -223,35 +223,6 @@ internal static class IntegerSemantics
 
         var add = facts.IsIncrement != undo;
         return Lookup(add ? BinaryOperatorKind.Add : BinaryOperatorKind.Subtract, Promote(facts.Type)).Helper;
-    }
-
-    /// <summary>
-    /// The Prelude function of the step of the increment or decrement <paramref name="operation"/> of an integer type
-    /// that promotes to <see langword="int"/> or is <see langword="int"/> or <see langword="long"/>
-    /// (<paramref name="node"/>): <c>__gsharp_add_i32</c> for <c>++</c>, <c>__gsharp_sub_i32</c> for <c>--</c> (#722,
-    /// #1079); null when the C++ operator cannot overflow there (<see cref="IntegerSemanticsEmitter.AppendStep"/> writes
-    /// the step).
-    /// </summary>
-    /// <remarks>
-    /// The analysis of a for loop step runs once per step: its result is kept in
-    /// <see cref="Emitter.BoundedLoopSteps"/>.
-    /// </remarks>
-    public static string? GetIncrementHelper(IIncrementOrDecrementOperation operation, ExpressionSyntax node,
-        ref TranspileContext context)
-    {
-        if (GetStepHelper(IntegerStepFacts.Of(operation), undo: false) is not { } helper)
-        {
-            return null;
-        }
-
-        var steps = context.Emitter.BoundedLoopSteps;
-        if (!steps.TryGetValue(node, out var bounded))
-        {
-            bounded = BoundedLoopStep.IsBounded(operation, node, context.Query.SemanticModel);
-            steps[node] = bounded;
-        }
-
-        return bounded ? null : helper;
     }
 
     /// <summary>

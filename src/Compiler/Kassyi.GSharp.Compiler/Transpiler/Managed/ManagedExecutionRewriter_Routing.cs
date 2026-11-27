@@ -35,28 +35,44 @@ internal sealed partial class ManagedExecutionRewriter
     private string? GetTargetPrefix(IMethodSymbol method) =>
         ManagedRouting.GetTargetPrefix(method, semanticModel.Compilation, bodyKind);
 
-    // global::<containing type>.<prefix><function path>[<type arguments>] when prefixed, otherwise
-    // global::<containing type>.<name>[<type arguments>]
-    private static ExpressionSyntax SpellCallee(IMethodSymbol callee, TypeArgumentListSyntax? typeArguments,
-        string? prefix)
+    // global::<containing type>.<member>[<type arguments>] for a static callee;
+    // <receiver>.<member>[<type arguments>] or <receiver>-><member>[<type arguments>] for an instance callee with an
+    // explicit receiver; <member>[<type arguments>] for an implicit 'this' instance callee
+    internal static ExpressionSyntax SpellCallee(
+        IMethodSymbol callee,
+        TypeArgumentListSyntax? typeArguments,
+        string? prefix,
+        ExpressionSyntax? receiver = null,
+        SyntaxKind memberAccessKind = SyntaxKind.SimpleMemberAccessExpression)
     {
         var identifier = SyntaxFactory.Identifier(ManagedRouting.GetMemberName(callee, prefix));
         SimpleNameSyntax name = typeArguments is null
             ? SyntaxFactory.IdentifierName(identifier)
             : SyntaxFactory.GenericName(identifier, typeArguments);
-        return SyntaxFactory.MemberAccessExpression(
-            SyntaxKind.SimpleMemberAccessExpression,
-            SyntaxFactory.ParseExpression(callee.ContainingType.GetFullyQualifiedCsharpName()),
-            name
-        );
+        if (callee.IsStatic)
+        {
+            return SyntaxFactory.MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                SyntaxFactory.ParseExpression(callee.ContainingType.GetFullyQualifiedCsharpName()),
+                name
+            );
+        }
+
+        if (receiver is null)
+        {
+            return name;
+        }
+
+        return SyntaxFactory.MemberAccessExpression(memberAccessKind, receiver.WithoutTrivia(), name);
     }
 
     // A simple name (F, F<int>) that calls or names a routed device function becomes its target form; any other name
-    // is qualified (ManagedNameQualifier). The name of a member access is routed with the member access
+    // is qualified (ManagedNameQualifier). The name of a member access or member binding is routed with its access
     // (TryRouteMemberAccess)
     private SyntaxNode? RouteOrQualify(SimpleNameSyntax node, SyntaxNode? visited)
     {
-        if (node.Parent is not MemberAccessExpressionSyntax { Name: var memberName } || memberName != node)
+        if (node.Parent is not MemberBindingExpressionSyntax &&
+            (node.Parent is not MemberAccessExpressionSyntax { Name: var memberName } || memberName != node))
         {
             if (TryGetRoutedMethod(node, out var method, out var prefix))
             {
@@ -68,12 +84,12 @@ internal sealed partial class ManagedExecutionRewriter
         return ManagedNameQualifier.QualifyName(node, visited, semanticModel);
     }
 
-    // T.F or T.F<int> that calls or names a routed device function; a reduced extension method group x.F or x.F<int>
-    // that names one (__gsharp_bind(x, global::T.<prefix>F), #940); null otherwise. A reduced extension call x.F(a) is
-    // routed with the static call it becomes (RouteExtensionCall)
+    // T.F or T.F<int> (static) or r.F / p->F (instance call) that calls a routed device function; a reduced extension
+    // method group x.F or x.F<int> that names one (__gsharp_bind(x, global::T.<prefix>F), #940); null otherwise. A
+    // reduced extension call x.F(a) is routed with the static call it becomes (RouteExtensionCall)
     private ExpressionSyntax? TryRouteMemberAccess(MemberAccessExpressionSyntax node, SyntaxNode? visited)
     {
-        if (!node.IsKind(SyntaxKind.SimpleMemberAccessExpression))
+        if (node.Kind() is not (SyntaxKind.SimpleMemberAccessExpression or SyntaxKind.PointerMemberAccessExpression))
         {
             return null;
         }
@@ -82,10 +98,12 @@ internal sealed partial class ManagedExecutionRewriter
         var typeArguments = (name as GenericNameSyntax)?.TypeArgumentList;
         if (TryGetRoutedMethod(node, out var method, out var prefix))
         {
-            return SpellCallee(method, typeArguments, prefix).WithTriviaFrom(node);
+            var receiver = (visited as MemberAccessExpressionSyntax)?.Expression ?? node.Expression;
+            return SpellCallee(method, typeArguments, prefix, receiver, node.Kind()).WithTriviaFrom(node);
         }
 
-        if ((node.Parent is not InvocationExpressionSyntax parentInvocation || parentInvocation.Expression != node) &&
+        if (node.IsKind(SyntaxKind.SimpleMemberAccessExpression) &&
+            (node.Parent is not InvocationExpressionSyntax parentInvocation || parentInvocation.Expression != node) &&
             semanticModel.GetSymbol(node) is IMethodSymbol symbol &&
             ManagedRouting.GetBoundExtension(symbol, semanticModel.Compilation, bodyKind) is var (extension, extPrefix))
         {
@@ -146,7 +164,8 @@ internal sealed partial class ManagedExecutionRewriter
         return call.WithExpression(SpellCallee(extension, typeArguments, prefix));
     }
 
-    // A reduced extension method is routed with its call only (RouteExtensionCall)
+    // A reduced extension method is routed with its call only (RouteExtensionCall).
+    // An instance method is routed only when invoked; instance method groups are rejected (GSH0003).
     private bool TryGetRoutedMethod(ExpressionSyntax node, [NotNullWhen(true)] out IMethodSymbol? method,
         [NotNullWhen(true)] out string? prefix)
     {
@@ -159,10 +178,26 @@ internal sealed partial class ManagedExecutionRewriter
             return false;
         }
 
+        if (!symbol.IsStatic && !IsInvokedTarget(node))
+        {
+            return false;
+        }
+
         ThrowIfStackWarpGroup(node, symbol);
         method = symbol;
         prefix = targetPrefix;
         return true;
+    }
+
+    private static bool IsInvokedTarget(ExpressionSyntax node)
+    {
+        SyntaxNode current = node;
+        while (current.Parent is ParenthesizedExpressionSyntax parenthesized)
+        {
+            current = parenthesized;
+        }
+
+        return current.Parent is InvocationExpressionSyntax invocation && invocation.Expression == current;
     }
 
     // [WHY] The stack form of a device function that reaches a warp collective takes the offset of its frame first,

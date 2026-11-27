@@ -264,9 +264,10 @@ internal static class ManagedCSharpTranspiler
             ? GetStackBody(in plan, methodSymbol)
             : null;
 
-        // <modifiers> static <return type> <prefix><path><type parameters>(<parameters>) <constraints> <body>
-        // The signature is the user's, with every name written in full (the generated file has none of the user's using
-        // directives), without attributes (the version is not a device function) and without 'this'
+        // <modifiers> [static|readonly] <return type> <prefix><path><type parameters>(<parameters>) <constraints> <body>
+        // The signature is the user's ('static' when static, 'readonly' when present), with every name written in full
+        // (the generated file has none of the user's using directives), without attributes (the version is not a device
+        // function) and without 'this'
         var method = declaration
             .WithAttributeLists(default)
             .WithModifiers(GetManagedVersionModifiers(declaration, methodSymbol))
@@ -343,15 +344,15 @@ internal static class ManagedCSharpTranspiler
             ?? throw new InvalidOperationException("Managed execution rewriting removed the device function body.");
     }
 
-    // The user's accessibility, static, and unsafe when the version needs it (the partial declaration that holds it is
-    // not inside the user's unsafe type); nothing else (partial, extern, new)
+    // The user's accessibility, static, readonly, and unsafe when the version needs it (the partial declaration that
+    // holds it is not inside the user's unsafe type); nothing else (partial, extern, new)
     private static SyntaxTokenList GetManagedVersionModifiers(MethodDeclarationSyntax declaration, IMethodSymbol method)
     {
         var modifiers = SyntaxFactory.TokenList();
         foreach (var modifier in declaration.Modifiers)
         {
             if (modifier.Kind() is SyntaxKind.PublicKeyword or SyntaxKind.InternalKeyword or SyntaxKind.PrivateKeyword
-                or SyntaxKind.ProtectedKeyword or SyntaxKind.StaticKeyword)
+                or SyntaxKind.ProtectedKeyword or SyntaxKind.StaticKeyword or SyntaxKind.ReadOnlyKeyword)
             {
                 modifiers = modifiers.Add(modifier.WithoutTrivia());
             }

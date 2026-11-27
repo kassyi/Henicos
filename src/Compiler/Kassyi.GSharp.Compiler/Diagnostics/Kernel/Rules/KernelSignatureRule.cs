@@ -47,13 +47,15 @@ internal sealed class KernelSignatureRule : ISyntaxValidationRule<MethodDeclarat
                 GpuCodeConstraints.FormatReturnType(method));
         }
 
-        if (!isDeviceIteratorCandidate && GpuCodeConstraints.IsInstanceDeviceFunction(method))
+        if (!isDeviceIteratorCandidate &&
+            GpuCodeConstraints.GetInstanceDeviceFunctionProblem(method, context.SemanticModel.Compilation) is { } reason)
         {
             context.ReportDiagnostic(
                 GSharpDiagnostics.InstanceDeviceFunctionNotSupported,
                 node.Identifier.GetLocation(),
                 method.ContainingType.Name,
-                method.Name);
+                method.Name,
+                reason);
         }
 
         var isKernel = method.HasAttribute(KnownAttributes.GpuKernel);

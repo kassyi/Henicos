@@ -10,9 +10,9 @@
 #   occurrences:  every node the C++ writer cannot spell, most first
 #   eligible:     the methods of the population with an IR body
 kinds:
-  Kernel: 4358
-  DeviceFunction: 1223
-  SuspendingDeviceFunction: 452
+  Kernel: 4362
+  DeviceFunction: 1234
+  SuspendingDeviceFunction: 454
   Iterator: 120
 reasons:
   None: 98
@@ -23,7 +23,7 @@ reasons:
   RemovedCall: 3
   Macro: 6
   SharedMemoryLocal: 26
-  UnsupportedForm: 903
+  UnsupportedForm: 914
 opaque:
   - {key: "UnsupportedOperation/ForStatement", count: 18}
   - {key: "UnsupportedOperation/SimpleLambdaExpression", count: 17}
@@ -61,12 +61,12 @@ split:
   - {key: "WarpShuffle", count: 1}
 firstHit:
   - {key: "NativePlain:IrBinary/-", count: 321}
-  - {key: "NativePlain:IrAssignment/-", count: 181}
-  - {key: "NativePlain:IrCompoundAssignment/-", count: 96}
-  - {key: "NativePlain:IrCall/DeviceFunction", count: 38}
+  - {key: "NativePlain:IrAssignment/-", count: 185}
+  - {key: "NativePlain:IrCompoundAssignment/-", count: 99}
+  - {key: "NativePlain:IrCall/DeviceFunction", count: 39}
   - {key: "NativePlain:IrIncrement/-", count: 36}
   - {key: "NativePlain:IrStructCreation/-", count: 32}
-  - {key: "NativePlain:IrConversion/Transparent", count: 27}
+  - {key: "NativePlain:IrConversion/Transparent", count: 29}
   - {key: "NativePlain:IrConditional/-", count: 21}
   - {key: "NativePlain:IrFieldReference/-", count: 16}
   - {key: "NativePlain:IrPropertyReference/DialectIntrinsic", count: 16}
@@ -76,9 +76,9 @@ firstHit:
   - {key: "NativePlain:IrElementReference/None", count: 13}
   - {key: "NativePlain:IrPropertyReference/ArrayMember", count: 10}
   - {key: "NativePlain:IrCall/DialectIntrinsic", count: 9}
+  - {key: "NativePlain:IrSequence/-", count: 9}
   - {key: "NativePlain:IrConversion/Cast", count: 8}
   - {key: "NativePlain:IrPropertyReference/Other", count: 8}
-  - {key: "NativePlain:IrSequence/-", count: 8}
   - {key: "NativePlain:IrCall/UnsupportedIntrinsic", count: 4}
   - {key: "NativePlain:IrArrayCreation/-", count: 3}
   - {key: "NativePlain:IrConversion/Unsupported", count: 3}
@@ -91,31 +91,31 @@ firstHit:
   - {key: "NativePlain:IrUnary/-", count: 1}
   - {key: "NativePlain:IrVariableReference/Type:Pointer", count: 1}
 occurrences:
-  - {key: "NativePlain:IrBinary/-", count: 1164}
-  - {key: "NativePlain:IrAssignment/-", count: 514}
-  - {key: "NativePlain:IrFieldReference/-", count: 514}
-  - {key: "NativePlain:IrVariableReference/Ref", count: 446}
+  - {key: "NativePlain:IrBinary/-", count: 1176}
+  - {key: "NativePlain:IrFieldReference/-", count: 535}
+  - {key: "NativePlain:IrAssignment/-", count: 523}
+  - {key: "NativePlain:IrVariableReference/Ref", count: 454}
   - {key: "NativePlain:IrElementReference/NullChecked", count: 365}
-  - {key: "NativePlain:IrConversion/Transparent", count: 317}
-  - {key: "NativePlain:IrCall/DeviceFunction", count: 173}
-  - {key: "NativePlain:IrCompoundAssignment/-", count: 121}
-  - {key: "NativePlain:IrStructCreation/-", count: 98}
+  - {key: "NativePlain:IrConversion/Transparent", count: 320}
+  - {key: "NativePlain:IrCall/DeviceFunction", count: 176}
+  - {key: "NativePlain:IrCompoundAssignment/-", count: 124}
+  - {key: "NativePlain:IrStructCreation/-", count: 99}
   - {key: "NativePlain:IrConditional/-", count: 88}
   - {key: "NativePlain:IrPropertyReference/DialectIntrinsic", count: 79}
   - {key: "NativePlain:IrElementReference/None", count: 58}
   - {key: "NativePlain:IrIncrement/-", count: 56}
   - {key: "NativePlain:IrPropertyReference/Other", count: 55}
+  - {key: "NativePlain:IrVariableReference/This", count: 50}
   - {key: "NativePlain:IrConversion/Cast", count: 48}
-  - {key: "NativePlain:IrVariableReference/This", count: 39}
+  - {key: "NativePlain:IrInitializedObject/-", count: 36}
   - {key: "NativePlain:IrCall/TargetNull", count: 35}
-  - {key: "NativePlain:IrInitializedObject/-", count: 35}
   - {key: "NativePlain:IrPropertyReference/ArrayMember", count: 26}
+  - {key: "NativePlain:IrDefaultValue/Default", count: 23}
   - {key: "NativePlain:IrUnary/-", count: 23}
   - {key: "NativePlain:IrConversion/FloatToInteger", count: 22}
   - {key: "NativePlain:IrPropertyReference/Getter", count: 21}
-  - {key: "NativePlain:IrDefaultValue/Default", count: 20}
   - {key: "NativePlain:IrConversion/Unsupported", count: 18}
-  - {key: "NativePlain:IrSequence/-", count: 16}
+  - {key: "NativePlain:IrSequence/-", count: 17}
   - {key: "NativePlain:IrCall/DialectIntrinsic", count: 13}
   - {key: "NativePlain:IrConstant/NonDeviceValue", count: 9}
   - {key: "NativePlain:IrLogical/-", count: 7}
