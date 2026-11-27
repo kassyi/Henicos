@@ -425,6 +425,73 @@ handle.Free();
 }
 }
 }
+public static unsafe void UnmarshalArrays_MixedSignDivRemOperands(in global::Kassyi.GSharp.Tests.Shared.Differential.MixedSignDivRemOperands host, ref AotContexts.MixedSignDivRemOperands native, global::System.IntPtr hStream = default)
+{
+if (native.Signed64Values.Data != global::System.IntPtr.Zero && host.Signed64Values != null)
+{
+int size = checked(host.Signed64Values.Length * sizeof(global::System.Int64));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Signed64Values, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Signed64Values.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.NonZeroSigned32Divisors.Data != global::System.IntPtr.Zero && host.NonZeroSigned32Divisors != null)
+{
+int size = checked(host.NonZeroSigned32Divisors.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.NonZeroSigned32Divisors, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.NonZeroSigned32Divisors.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.NonZeroUnsigned32Divisors.Data != global::System.IntPtr.Zero && host.NonZeroUnsigned32Divisors != null)
+{
+int size = checked(host.NonZeroUnsigned32Divisors.Length * sizeof(global::System.UInt32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.NonZeroUnsigned32Divisors, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.NonZeroUnsigned32Divisors.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.NonZeroSigned64Divisors.Data != global::System.IntPtr.Zero && host.NonZeroSigned64Divisors != null)
+{
+int size = checked(host.NonZeroSigned64Divisors.Length * sizeof(global::System.Int64));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.NonZeroSigned64Divisors, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.NonZeroSigned64Divisors.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
 public static void AliasHeldArrays_MixedSignDivRemOperands(ref global::Kassyi.GSharp.Tests.Shared.Differential.MixedSignDivRemOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Signed64Values != null)

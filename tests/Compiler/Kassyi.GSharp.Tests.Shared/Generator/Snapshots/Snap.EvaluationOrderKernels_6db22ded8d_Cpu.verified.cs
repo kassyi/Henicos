@@ -468,6 +468,9 @@ if (native.RightAddends.Data == global::System.IntPtr.Zero)
 host.RightAddends = default;
 }
 }
+public static unsafe void UnmarshalArrays_NoSpillBinaryInputs(in global::Kassyi.GSharp.Tests.Shared.Syntax.NoSpillBinaryInputs host, ref AotContexts.NoSpillBinaryInputs native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_NoSpillBinaryInputs(ref global::Kassyi.GSharp.Tests.Shared.Syntax.NoSpillBinaryInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.RotateValues != null)
@@ -556,6 +559,9 @@ if (native.Sums.Data == global::System.IntPtr.Zero)
 {
 host.Sums = default;
 }
+}
+public static unsafe void UnmarshalArrays_NoSpillBinaryResults(in global::Kassyi.GSharp.Tests.Shared.Syntax.NoSpillBinaryResults host, ref AotContexts.NoSpillBinaryResults native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_NoSpillBinaryResults(ref global::Kassyi.GSharp.Tests.Shared.Syntax.NoSpillBinaryResults host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

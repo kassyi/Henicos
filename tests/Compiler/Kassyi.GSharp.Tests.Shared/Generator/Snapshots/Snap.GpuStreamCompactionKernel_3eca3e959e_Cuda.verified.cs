@@ -226,6 +226,25 @@ handle.Free();
 host.Skip = native.Skip;
 host.Limit = native.Limit;
 }
+public static unsafe void UnmarshalArrays_GpuBigIntVectorKernels_ElementCountContext(in global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext host, ref AotContexts.ElementCount native, global::System.IntPtr hStream = default)
+{
+if (native.Base.Data != global::System.IntPtr.Zero && host.Base != null)
+{
+int size = checked(host.Base.Length * sizeof(global::System.UInt32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Base, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Base.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
 public static void AliasHeldArrays_GpuBigIntVectorKernels_ElementCountContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Base != null)

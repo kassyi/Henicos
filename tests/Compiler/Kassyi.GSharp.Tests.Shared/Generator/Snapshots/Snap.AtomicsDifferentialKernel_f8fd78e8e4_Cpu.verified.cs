@@ -302,6 +302,9 @@ if (native.UInt64States.Data == global::System.IntPtr.Zero)
 host.UInt64States = default;
 }
 }
+public static unsafe void UnmarshalArrays_SameStepAtomicStates(in global::Kassyi.GSharp.Tests.Shared.Differential.SameStepAtomicStates host, ref AotContexts.SameStepAtomicStates native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_SameStepAtomicStates(ref global::Kassyi.GSharp.Tests.Shared.Differential.SameStepAtomicStates host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Int32States != null)
@@ -390,6 +393,9 @@ if (native.UInt64OldValues.Data == global::System.IntPtr.Zero)
 {
 host.UInt64OldValues = default;
 }
+}
+public static unsafe void UnmarshalArrays_SameStepAtomicOldValues(in global::Kassyi.GSharp.Tests.Shared.Differential.SameStepAtomicOldValues host, ref AotContexts.SameStepAtomicOldValues native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_SameStepAtomicOldValues(ref global::Kassyi.GSharp.Tests.Shared.Differential.SameStepAtomicOldValues host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -485,6 +491,9 @@ if (native.Packets.Data == global::System.IntPtr.Zero)
 {
 host.Packets = default;
 }
+}
+public static unsafe void UnmarshalArrays_FloatAtomicTargets(in global::Kassyi.GSharp.Tests.Shared.Differential.FloatAtomicTargets host, ref AotContexts.FloatAtomicTargets native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_FloatAtomicTargets(ref global::Kassyi.GSharp.Tests.Shared.Differential.FloatAtomicTargets host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -595,6 +604,9 @@ if (native.ExchangeOldValues.Data == global::System.IntPtr.Zero)
 {
 host.ExchangeOldValues = default;
 }
+}
+public static unsafe void UnmarshalArrays_FloatAtomicOldValues(in global::Kassyi.GSharp.Tests.Shared.Differential.FloatAtomicOldValues host, ref AotContexts.FloatAtomicOldValues native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_FloatAtomicOldValues(ref global::Kassyi.GSharp.Tests.Shared.Differential.FloatAtomicOldValues host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

@@ -314,6 +314,9 @@ if (native.DoubleDivisors.Data == global::System.IntPtr.Zero)
 host.DoubleDivisors = default;
 }
 }
+public static unsafe void UnmarshalArrays_FloatRemainderOperands(in global::Kassyi.GSharp.Tests.Shared.Differential.FloatRemainderOperands host, ref AotContexts.FloatRemainderOperands native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_FloatRemainderOperands(ref global::Kassyi.GSharp.Tests.Shared.Differential.FloatRemainderOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.SingleDividends != null)
@@ -412,6 +415,9 @@ if (native.DoubleRemainders.Data == global::System.IntPtr.Zero)
 host.DoubleRemainders = default;
 }
 }
+public static unsafe void UnmarshalArrays_FloatRemainderResults(in global::Kassyi.GSharp.Tests.Shared.Differential.FloatRemainderResults host, ref AotContexts.FloatRemainderResults native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_FloatRemainderResults(ref global::Kassyi.GSharp.Tests.Shared.Differential.FloatRemainderResults host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.SingleRemainders != null)
@@ -507,6 +513,9 @@ if (native.SingleValues.Data == global::System.IntPtr.Zero)
 host.SingleValues = default;
 }
 }
+public static unsafe void UnmarshalArrays_ComputedPropertyOperands(in global::Kassyi.GSharp.Tests.Shared.Differential.ComputedPropertyOperands host, ref AotContexts.ComputedPropertyOperands native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_ComputedPropertyOperands(ref global::Kassyi.GSharp.Tests.Shared.Differential.ComputedPropertyOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.FirstInt32Values != null)
@@ -595,6 +604,9 @@ if (native.SingleResults.Data == global::System.IntPtr.Zero)
 {
 host.SingleResults = default;
 }
+}
+public static unsafe void UnmarshalArrays_ComputedPropertyResults(in global::Kassyi.GSharp.Tests.Shared.Differential.ComputedPropertyResults host, ref AotContexts.ComputedPropertyResults native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_ComputedPropertyResults(ref global::Kassyi.GSharp.Tests.Shared.Differential.ComputedPropertyResults host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

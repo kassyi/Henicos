@@ -108,6 +108,9 @@ host.Singles = default;
 }
 Unmarshal_Tier1CustomStruct(ref host.Config, ref native.Config, hStream);
 }
+public static unsafe void UnmarshalArrays_Tier1IntegrationInputs(in global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationInputs host, ref AotContexts.Tier1IntegrationInputs native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_Tier1IntegrationInputs(ref global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Integers != null)
@@ -208,6 +211,9 @@ if (native.GlobalCounter.Data == global::System.IntPtr.Zero)
 {
 host.GlobalCounter = default;
 }
+}
+public static unsafe void UnmarshalArrays_Tier1IntegrationOutputs(in global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationOutputs host, ref AotContexts.Tier1IntegrationOutputs native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_Tier1IntegrationOutputs(ref global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationOutputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

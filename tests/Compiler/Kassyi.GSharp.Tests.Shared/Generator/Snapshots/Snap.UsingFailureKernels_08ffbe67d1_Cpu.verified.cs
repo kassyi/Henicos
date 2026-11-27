@@ -359,6 +359,9 @@ if (native.Results.Data == global::System.IntPtr.Zero)
 host.Results = default;
 }
 }
+public static unsafe void UnmarshalArrays_UsingFailureBuffers(in global::Kassyi.GSharp.Tests.Shared.Core.UsingFailureBuffers host, ref AotContexts.UsingFailureBuffers native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_UsingFailureBuffers(ref global::Kassyi.GSharp.Tests.Shared.Core.UsingFailureBuffers host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Log != null)

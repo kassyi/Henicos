@@ -193,6 +193,9 @@ if (native.Output.Data == global::System.IntPtr.Zero)
 host.Output = default;
 }
 }
+public static unsafe void UnmarshalArrays_ReadOnlySuspensionContext(in global::Kassyi.GSharp.Tests.Shared.Core.ReadOnlySuspensionContext host, ref AotContexts.ReadOnlySuspension native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_ReadOnlySuspensionContext(ref global::Kassyi.GSharp.Tests.Shared.Core.ReadOnlySuspensionContext host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Source != null)

@@ -102,6 +102,9 @@ host.Data = default;
 }
 host.Offset = native.Offset;
 }
+public static unsafe void UnmarshalArrays_NotNullHolder(in global::Kassyi.GSharp.Tests.Shared.Core.NotNullHolder host, ref AotContexts.NotNullHolder native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_NotNullHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.NotNullHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Data != null)

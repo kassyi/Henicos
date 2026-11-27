@@ -441,6 +441,25 @@ handle.Free();
 }
 }
 }
+public static unsafe void UnmarshalArrays_LayoutReproBag(in global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag host, ref AotContexts.LayoutReproBag native, global::System.IntPtr hStream = default)
+{
+if (native.Data.Data != global::System.IntPtr.Zero && host.Data != null)
+{
+int size = checked(host.Data.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Data, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Data.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
 public static void AliasHeldArrays_LayoutReproBag(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Data != null)
@@ -527,6 +546,30 @@ Unmarshal_LayoutReproInnerBag(ref host.Elems[i], ref tempArray[i], hStream);
 }
 }
 }
+public static unsafe void UnmarshalArrays_LayoutReproElemHolder(in global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElemHolder host, ref AotContexts.LayoutReproElemHolder native, global::System.IntPtr hStream = default)
+{
+if (native.Elems.Data != global::System.IntPtr.Zero && host.Elems != null)
+{
+int size = checked(host.Elems.Length * sizeof(AotContexts.LayoutReproInnerBag));
+if (size > 0)
+{
+AotContexts.LayoutReproInnerBag[] tempArray = new AotContexts.LayoutReproInnerBag[host.Elems.Length];
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(tempArray, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Elems.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+for (int i = 0; i < host.Elems.Length; i++)
+{
+Unmarshal_LayoutReproInnerBag(ref host.Elems[i], ref tempArray[i], hStream);
+}
+}
+}
+}
 public static void AliasHeldArrays_LayoutReproElemHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElemHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Elems != null)
@@ -591,6 +634,25 @@ if (native.Items.Data == global::System.IntPtr.Zero)
 host.Items = default;
 }
 else if (host.Items != null)
+{
+int size = checked(host.Items.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Items, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Items.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
+public static unsafe void UnmarshalArrays_LayoutReproInnerBag(in global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInnerBag host, ref AotContexts.LayoutReproInnerBag native, global::System.IntPtr hStream = default)
+{
+if (native.Items.Data != global::System.IntPtr.Zero && host.Items != null)
 {
 int size = checked(host.Items.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -715,6 +777,41 @@ if (native.B.Data == global::System.IntPtr.Zero)
 host.B = default;
 }
 else if (host.B != null)
+{
+int size = checked(host.B.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.B, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.B.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
+public static unsafe void UnmarshalArrays_LayoutReproPair(in global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproPair host, ref AotContexts.LayoutReproPair native, global::System.IntPtr hStream = default)
+{
+if (native.A.Data != global::System.IntPtr.Zero && host.A != null)
+{
+int size = checked(host.A.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.A, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.A.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.B.Data != global::System.IntPtr.Zero && host.B != null)
 {
 int size = checked(host.B.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -919,6 +1016,10 @@ public static unsafe void Unmarshal_LayoutReproArrOuter(ref global::Kassyi.GShar
 {
 Unmarshal_LayoutReproArrPair(ref host.P, ref native.P, hStream);
 }
+public static unsafe void UnmarshalArrays_LayoutReproArrOuter(in global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter host, ref AotContexts.LayoutReproArrOuter native, global::System.IntPtr hStream = default)
+{
+UnmarshalArrays_LayoutReproArrPair(in host.P, ref native.P, hStream);
+}
 public static void AliasHeldArrays_LayoutReproArrOuter(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 AliasHeldArrays_LayoutReproArrPair(ref host.P, held);
@@ -948,6 +1049,16 @@ fixed (byte* pField = native._element0)
 for (int k = 0; k < 2; k++)
 {
 Unmarshal_LayoutReproWithArr(ref host[k], ref ((AotContexts.LayoutReproWithArr*)pField)[k], hStream);
+}
+}
+}
+public static unsafe void UnmarshalArrays_LayoutReproArrPair(in global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrPair host, ref AotContexts.LayoutReproArrPair native, global::System.IntPtr hStream = default)
+{
+fixed (byte* pField = native._element0)
+{
+for (int k = 0; k < 2; k++)
+{
+UnmarshalArrays_LayoutReproWithArr(in host[k], ref ((AotContexts.LayoutReproWithArr*)pField)[k], hStream);
 }
 }
 }
@@ -1006,6 +1117,25 @@ if (native.Data.Data == global::System.IntPtr.Zero)
 host.Data = default;
 }
 else if (host.Data != null)
+{
+int size = checked(host.Data.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Data, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Data.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
+public static unsafe void UnmarshalArrays_LayoutReproWithArr(in global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproWithArr host, ref AotContexts.LayoutReproWithArr native, global::System.IntPtr hStream = default)
+{
+if (native.Data.Data != global::System.IntPtr.Zero && host.Data != null)
 {
 int size = checked(host.Data.Length * sizeof(global::System.Int32));
 if (size > 0)

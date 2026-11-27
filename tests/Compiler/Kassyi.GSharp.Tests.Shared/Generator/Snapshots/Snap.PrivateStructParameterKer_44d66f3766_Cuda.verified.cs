@@ -157,6 +157,25 @@ handle.Free();
 }
 host.Scale = native.Scale;
 }
+public static unsafe void UnmarshalArrays_PrivateStructParameterKernels_Bag(in global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateStructParameterKernels.Bag host, ref AotContexts.Bag native, global::System.IntPtr hStream = default)
+{
+if (native.Values.Data != global::System.IntPtr.Zero && host.Values != null)
+{
+int size = checked(host.Values.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Values, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Values.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
 public static void AliasHeldArrays_PrivateStructParameterKernels_Bag(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateStructParameterKernels.Bag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Values != null)

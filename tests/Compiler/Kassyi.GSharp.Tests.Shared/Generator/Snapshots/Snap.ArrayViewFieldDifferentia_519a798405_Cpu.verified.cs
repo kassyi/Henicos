@@ -137,6 +137,11 @@ host.Tag = native.Tag;
 Unmarshal___gsharp_nullable_of_Memory_Int32(ref host.Optional, ref native.Optional, hStream);
 Unmarshal___gsharp_nullable_of_ArraySegment_Int32(ref host.OptionalSegment, ref native.OptionalSegment, hStream);
 }
+public static unsafe void UnmarshalArrays_ArrayViewFields(in global::Kassyi.GSharp.Tests.Shared.Differential.ArrayViewFields host, ref AotContexts.ArrayViewFields native, global::System.IntPtr hStream = default)
+{
+UnmarshalArrays___gsharp_nullable_of_Memory_Int32(in host.Optional, ref native.Optional, hStream);
+UnmarshalArrays___gsharp_nullable_of_ArraySegment_Int32(in host.OptionalSegment, ref native.OptionalSegment, hStream);
+}
 public static void AliasHeldArrays_ArrayViewFields(ref global::Kassyi.GSharp.Tests.Shared.Differential.ArrayViewFields host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 held.AddView<global::System.Int32>(host.Memory, true, 4, 0, false);
@@ -202,6 +207,14 @@ return;
 global::System.Memory<global::System.Int32> value = host.GetValueOrDefault();
 host = value;
 }
+public static unsafe void UnmarshalArrays___gsharp_nullable_of_Memory_Int32(in global::System.Nullable<global::System.Memory<global::System.Int32>> host, ref AotContexts.__gsharp_nullable_of_Memory_Int32 native, global::System.IntPtr hStream = default)
+{
+if (!host.HasValue || native.HasValue == 0)
+{
+return;
+}
+global::System.Memory<global::System.Int32> value = host.GetValueOrDefault();
+}
 public static void AliasHeldArrays___gsharp_nullable_of_Memory_Int32(ref global::System.Nullable<global::System.Memory<global::System.Int32>> host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.HasValue)
@@ -251,6 +264,14 @@ return;
 global::System.ArraySegment<global::System.Int32> value = host.GetValueOrDefault();
 host = value;
 }
+public static unsafe void UnmarshalArrays___gsharp_nullable_of_ArraySegment_Int32(in global::System.Nullable<global::System.ArraySegment<global::System.Int32>> host, ref AotContexts.__gsharp_nullable_of_ArraySegment_Int32 native, global::System.IntPtr hStream = default)
+{
+if (!host.HasValue || native.HasValue == 0)
+{
+return;
+}
+global::System.ArraySegment<global::System.Int32> value = host.GetValueOrDefault();
+}
 public static void AliasHeldArrays___gsharp_nullable_of_ArraySegment_Int32(ref global::System.Nullable<global::System.ArraySegment<global::System.Int32>> host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.HasValue)
@@ -288,6 +309,10 @@ public static unsafe void Unmarshal_OuterViewFields(ref global::Kassyi.GSharp.Te
 {
 host.Tag = native.Tag;
 Unmarshal_NestedViewFields(ref host.Inner, ref native.Inner, hStream);
+}
+public static unsafe void UnmarshalArrays_OuterViewFields(in global::Kassyi.GSharp.Tests.Shared.Differential.OuterViewFields host, ref AotContexts.OuterViewFields native, global::System.IntPtr hStream = default)
+{
+UnmarshalArrays_NestedViewFields(in host.Inner, ref native.Inner, hStream);
 }
 public static void AliasHeldArrays_OuterViewFields(ref global::Kassyi.GSharp.Tests.Shared.Differential.OuterViewFields host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -348,6 +373,9 @@ public static unsafe void Unmarshal_NestedViewFields(ref global::Kassyi.GSharp.T
 {
 host.Tag = native.Tag;
 }
+public static unsafe void UnmarshalArrays_NestedViewFields(in global::Kassyi.GSharp.Tests.Shared.Differential.NestedViewFields host, ref AotContexts.NestedViewFields native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_NestedViewFields(ref global::Kassyi.GSharp.Tests.Shared.Differential.NestedViewFields host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 held.AddView<global::System.Int32>(host.Memory, true, 4, 0, false);
@@ -406,6 +434,9 @@ native.Managed.Length = host.Managed.Length;
 }
 }
 public static unsafe void Unmarshal_ArrayViewElementFields(ref global::Kassyi.GSharp.Tests.Shared.Differential.ArrayViewElementFields host, ref AotContexts.ArrayViewElementFields native, global::System.IntPtr hStream = default)
+{
+}
+public static unsafe void UnmarshalArrays_ArrayViewElementFields(in global::Kassyi.GSharp.Tests.Shared.Differential.ArrayViewElementFields host, ref AotContexts.ArrayViewElementFields native, global::System.IntPtr hStream = default)
 {
 }
 public static void AliasHeldArrays_ArrayViewElementFields(ref global::Kassyi.GSharp.Tests.Shared.Differential.ArrayViewElementFields host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)

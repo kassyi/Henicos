@@ -167,6 +167,9 @@ host.PutResult = default;
 }
 host.N = native.N;
 }
+public static unsafe void UnmarshalArrays_BlackScholesKernels_BlackScholesContext(in global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, ref AotContexts.BlackScholes native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.S != null)

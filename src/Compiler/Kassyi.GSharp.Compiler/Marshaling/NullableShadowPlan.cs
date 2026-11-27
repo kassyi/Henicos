@@ -49,6 +49,12 @@ internal enum NullableValueForm
 /// <param name="ValueUnmarshalMethodName">
 /// The value's <c>Unmarshal_</c> for <see cref="NullableValueForm.Shadow"/>.
 /// </param>
+/// <param name="UnmarshalArraysMethodName">
+/// The <c>UnmarshalArrays_</c> method of the shadow, or <see langword="null"/> when the value holds no arrays or views.
+/// </param>
+/// <param name="ValueUnmarshalArraysMethodName">
+/// The value's <c>UnmarshalArrays_</c> for <see cref="NullableValueForm.Shadow"/> when the value holds arrays or views.
+/// </param>
 /// <param name="ArraysParameter">The parameter of <c>Marshal_</c> that records the arrays of a launch.</param>
 /// <param name="ArraysParameterType">The type of <paramref name="ArraysParameter"/>.</param>
 /// <param name="ArrayValue">
@@ -75,6 +81,8 @@ internal sealed record NullableShadowPlan(
     string? ValueShadowPath,
     string? ValueMarshalMethodName,
     string? ValueUnmarshalMethodName,
+    string? UnmarshalArraysMethodName,
+    string? ValueUnmarshalArraysMethodName,
     string ArraysParameter,
     string ArraysParameterType,
     ArrayFieldView? ArrayValue,
@@ -104,6 +112,7 @@ internal sealed record NullableShadowPlan(
             _ => NullableValueForm.Bytes,
         };
         var isShadow = form == NullableValueForm.Shadow;
+        var heldArrays = PlanHeldArrays(nullableType, value, dialect);
         return new NullableShadowPlan(
             nullableType.GetFullyQualifiedCsharpName(),
             value.GetFullyQualifiedCsharpName(),
@@ -118,11 +127,13 @@ internal sealed record NullableShadowPlan(
             isShadow ? AotHostNames.GetAotStructPath(value) : null,
             isShadow ? AotHostNames.GetMarshalMethodName(value) : null,
             isShadow ? AotHostNames.GetUnmarshalMethodName(value) : null,
+            heldArrays is not null ? AotHostNames.GetUnmarshalArraysMethodName(nullableType) : null,
+            isShadow && heldArrays is not null ? AotHostNames.GetUnmarshalArraysMethodName(value) : null,
             StructArrayHelperEmitter.ArraysParameter(dialect),
             dialect.IsCuda ? $"{StructMarshalingEmitter.DeviceArrayRegionsType}?" : $"{HostTypeNames.PointerList}?",
             isArray ? ArrayFieldView.Create(value, dialect) : null,
             PlanArrayHelpers(nullableType, value, isArray, dialect),
-            PlanHeldArrays(nullableType, value, dialect));
+            heldArrays);
     }
 
     private static NullableHeldArrays? PlanHeldArrays(INamedTypeSymbol nullableType, ITypeSymbol value,

@@ -220,6 +220,9 @@ if (native.NonZeroSigned64Divisors.Data == global::System.IntPtr.Zero)
 host.NonZeroSigned64Divisors = default;
 }
 }
+public static unsafe void UnmarshalArrays_MixedSignDivRemOperands(in global::Kassyi.GSharp.Tests.Shared.Differential.MixedSignDivRemOperands host, ref AotContexts.MixedSignDivRemOperands native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_MixedSignDivRemOperands(ref global::Kassyi.GSharp.Tests.Shared.Differential.MixedSignDivRemOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Signed64Values != null)

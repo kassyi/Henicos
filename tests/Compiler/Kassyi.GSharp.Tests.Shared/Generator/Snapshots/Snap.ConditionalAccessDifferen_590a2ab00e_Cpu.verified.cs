@@ -608,6 +608,9 @@ if (native.Data.Data == global::System.IntPtr.Zero)
 host.Data = default;
 }
 }
+public static unsafe void UnmarshalArrays_ConditionalHolder(in global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalHolder host, ref AotContexts.ConditionalHolder native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_ConditionalHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Data != null)
@@ -693,6 +696,9 @@ if (native.UnrollPoints.Data == global::System.IntPtr.Zero)
 {
 host.UnrollPoints = default;
 }
+}
+public static unsafe void UnmarshalArrays_VoidExtensionStatementTargets(in global::Kassyi.GSharp.Tests.Shared.Differential.VoidExtensionStatementTargets host, ref AotContexts.VoidExtensionStatementTargets native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_VoidExtensionStatementTargets(ref global::Kassyi.GSharp.Tests.Shared.Differential.VoidExtensionStatementTargets host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -830,6 +836,9 @@ if (native.SingleThreadLambdaPoints.Data == global::System.IntPtr.Zero)
 {
 host.SingleThreadLambdaPoints = default;
 }
+}
+public static unsafe void UnmarshalArrays_VoidExtensionBodyTargets(in global::Kassyi.GSharp.Tests.Shared.Differential.VoidExtensionBodyTargets host, ref AotContexts.VoidExtensionBodyTargets native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_VoidExtensionBodyTargets(ref global::Kassyi.GSharp.Tests.Shared.Differential.VoidExtensionBodyTargets host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

@@ -288,6 +288,10 @@ public static unsafe void Unmarshal_GpuBigIntContext(ref global::Kassyi.GSharp.S
 Unmarshal_OperandContext(ref host.Operands, ref native.Operands, hStream);
 host.NumberOfWords = native.NumberOfWords;
 }
+public static unsafe void UnmarshalArrays_GpuBigIntContext(in global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext host, ref AotContexts.GpuBigInt native, global::System.IntPtr hStream = default)
+{
+UnmarshalArrays_OperandContext(in host.Operands, ref native.Operands, hStream);
+}
 public static void AliasHeldArrays_GpuBigIntContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 AliasHeldArrays_OperandContext(ref host.Operands, held);
@@ -430,6 +434,9 @@ if (native.CarryBuffer.Data == global::System.IntPtr.Zero)
 {
 host.CarryBuffer = default;
 }
+}
+public static unsafe void UnmarshalArrays_OperandContext(in global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host, ref AotContexts.Operand native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_OperandContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

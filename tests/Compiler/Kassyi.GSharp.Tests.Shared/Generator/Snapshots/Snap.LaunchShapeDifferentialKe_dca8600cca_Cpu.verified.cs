@@ -113,6 +113,9 @@ host.MultiPassCount = native.MultiPassCount;
 host.ShortPassCount = native.ShortPassCount;
 host.Bias = native.Bias;
 }
+public static unsafe void UnmarshalArrays_GridStrideLoopInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.GridStrideLoopInputs host, ref AotContexts.GridStrideLoopInputs native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_GridStrideLoopInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.GridStrideLoopInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Source != null)
@@ -198,6 +201,9 @@ if (native.ZeroGuardCounters.Data == global::System.IntPtr.Zero)
 {
 host.ZeroGuardCounters = default;
 }
+}
+public static unsafe void UnmarshalArrays_GridStrideLoopResults(in global::Kassyi.GSharp.Tests.Shared.Differential.GridStrideLoopResults host, ref AotContexts.GridStrideLoopResults native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_GridStrideLoopResults(ref global::Kassyi.GSharp.Tests.Shared.Differential.GridStrideLoopResults host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -302,6 +308,9 @@ if (native.UInt32Values.Data == global::System.IntPtr.Zero)
 {
 host.UInt32Values = default;
 }
+}
+public static unsafe void UnmarshalArrays_CrossAxisShuffleInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.CrossAxisShuffleInputs host, ref AotContexts.CrossAxisShuffleInputs native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_CrossAxisShuffleInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.CrossAxisShuffleInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -421,6 +430,9 @@ if (native.ShuffledUInt32Values.Data == global::System.IntPtr.Zero)
 {
 host.ShuffledUInt32Values = default;
 }
+}
+public static unsafe void UnmarshalArrays_CrossAxisShuffleResults(in global::Kassyi.GSharp.Tests.Shared.Differential.CrossAxisShuffleResults host, ref AotContexts.CrossAxisShuffleResults native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_CrossAxisShuffleResults(ref global::Kassyi.GSharp.Tests.Shared.Differential.CrossAxisShuffleResults host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

@@ -274,6 +274,9 @@ if (native.ShiftCounts.Data == global::System.IntPtr.Zero)
 host.ShiftCounts = default;
 }
 }
+public static unsafe void UnmarshalArrays_ShiftBoundaryOperands(in global::Kassyi.GSharp.Tests.Shared.Differential.ShiftBoundaryOperands host, ref AotContexts.ShiftBoundaryOperands native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_ShiftBoundaryOperands(ref global::Kassyi.GSharp.Tests.Shared.Differential.ShiftBoundaryOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Int32Values != null)
@@ -399,6 +402,9 @@ if (native.DoubleValues.Data == global::System.IntPtr.Zero)
 host.DoubleValues = default;
 }
 }
+public static unsafe void UnmarshalArrays_FloatDivisionOperands(in global::Kassyi.GSharp.Tests.Shared.Differential.FloatDivisionOperands host, ref AotContexts.FloatDivisionOperands native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_FloatDivisionOperands(ref global::Kassyi.GSharp.Tests.Shared.Differential.FloatDivisionOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.SingleValues != null)
@@ -478,6 +484,9 @@ if (native.DoubleResults.Data == global::System.IntPtr.Zero)
 {
 host.DoubleResults = default;
 }
+}
+public static unsafe void UnmarshalArrays_FloatDivisionResults(in global::Kassyi.GSharp.Tests.Shared.Differential.FloatDivisionResults host, ref AotContexts.FloatDivisionResults native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_FloatDivisionResults(ref global::Kassyi.GSharp.Tests.Shared.Differential.FloatDivisionResults host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

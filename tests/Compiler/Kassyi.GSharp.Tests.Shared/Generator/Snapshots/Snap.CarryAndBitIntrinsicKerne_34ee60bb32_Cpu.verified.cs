@@ -92,6 +92,9 @@ if (native.Right.Data == global::System.IntPtr.Zero)
 host.Right = default;
 }
 }
+public static unsafe void UnmarshalArrays_CarryChainOperands(in global::Kassyi.GSharp.Tests.Shared.Syntax.CarryChainOperands host, ref AotContexts.CarryChainOperands native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_CarryChainOperands(ref global::Kassyi.GSharp.Tests.Shared.Syntax.CarryChainOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Left != null)
@@ -201,6 +204,9 @@ if (native.BorrowOut.Data == global::System.IntPtr.Zero)
 {
 host.BorrowOut = default;
 }
+}
+public static unsafe void UnmarshalArrays_CarryChainResults(in global::Kassyi.GSharp.Tests.Shared.Syntax.CarryChainResults host, ref AotContexts.CarryChainResults native, global::System.IntPtr hStream = default)
+{
 }
 public static void AliasHeldArrays_CarryChainResults(ref global::Kassyi.GSharp.Tests.Shared.Syntax.CarryChainResults host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {

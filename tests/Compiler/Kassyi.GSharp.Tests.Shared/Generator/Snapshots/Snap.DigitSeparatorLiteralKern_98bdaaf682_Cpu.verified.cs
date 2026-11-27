@@ -144,6 +144,9 @@ if (native.DoubleValues.Data == global::System.IntPtr.Zero)
 host.DoubleValues = default;
 }
 }
+public static unsafe void UnmarshalArrays_DigitSeparatorLiteralResults(in global::Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralResults host, ref AotContexts.DigitSeparatorLiteralResults native, global::System.IntPtr hStream = default)
+{
+}
 public static void AliasHeldArrays_DigitSeparatorLiteralResults(ref global::Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralResults host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Int32Values != null)

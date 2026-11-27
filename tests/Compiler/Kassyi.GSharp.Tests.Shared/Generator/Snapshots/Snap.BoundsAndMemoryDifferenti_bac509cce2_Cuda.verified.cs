@@ -397,6 +397,57 @@ handle.Free();
 }
 }
 }
+public static unsafe void UnmarshalArrays_ArrayIndexBoundsInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.ArrayIndexBoundsInputs host, ref AotContexts.ArrayIndexBoundsInputs native, global::System.IntPtr hStream = default)
+{
+if (native.Source.Data != global::System.IntPtr.Zero && host.Source != null)
+{
+int size = checked(host.Source.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Source, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Source.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.ReadIndices.Data != global::System.IntPtr.Zero && host.ReadIndices != null)
+{
+int size = checked(host.ReadIndices.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.ReadIndices, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.ReadIndices.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.WriteIndices.Data != global::System.IntPtr.Zero && host.WriteIndices != null)
+{
+int size = checked(host.WriteIndices.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.WriteIndices, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.WriteIndices.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
 public static void AliasHeldArrays_ArrayIndexBoundsInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.ArrayIndexBoundsInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Source != null)
@@ -539,6 +590,41 @@ handle.Free();
 host.SliceStart = native.SliceStart;
 host.SliceLength = native.SliceLength;
 }
+public static unsafe void UnmarshalArrays_SpanSliceIndexInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.SpanSliceIndexInputs host, ref AotContexts.SpanSliceIndexInputs native, global::System.IntPtr hStream = default)
+{
+if (native.Backing.Data != global::System.IntPtr.Zero && host.Backing != null)
+{
+int size = checked(host.Backing.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Backing, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Backing.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.Indices.Data != global::System.IntPtr.Zero && host.Indices != null)
+{
+int size = checked(host.Indices.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Indices, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Indices.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
 public static void AliasHeldArrays_SpanSliceIndexInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.SpanSliceIndexInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Backing != null)
@@ -676,6 +762,41 @@ handle.Free();
 }
 host.SliceStart = native.SliceStart;
 host.SliceLength = native.SliceLength;
+}
+public static unsafe void UnmarshalArrays_SpanSliceStartInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.SpanSliceStartInputs host, ref AotContexts.SpanSliceStartInputs native, global::System.IntPtr hStream = default)
+{
+if (native.Backing.Data != global::System.IntPtr.Zero && host.Backing != null)
+{
+int size = checked(host.Backing.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Backing, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Backing.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.Starts.Data != global::System.IntPtr.Zero && host.Starts != null)
+{
+int size = checked(host.Starts.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Starts, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Starts.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
 }
 public static void AliasHeldArrays_SpanSliceStartInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.SpanSliceStartInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -868,6 +989,57 @@ handle.Free();
 host.SliceStart = native.SliceStart;
 host.SliceLength = native.SliceLength;
 }
+public static unsafe void UnmarshalArrays_SpanSliceRangeInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.SpanSliceRangeInputs host, ref AotContexts.SpanSliceRangeInputs native, global::System.IntPtr hStream = default)
+{
+if (native.Backing.Data != global::System.IntPtr.Zero && host.Backing != null)
+{
+int size = checked(host.Backing.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Backing, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Backing.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.Starts.Data != global::System.IntPtr.Zero && host.Starts != null)
+{
+int size = checked(host.Starts.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Starts, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Starts.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.Counts.Data != global::System.IntPtr.Zero && host.Counts != null)
+{
+int size = checked(host.Counts.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Counts, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Counts.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
 public static void AliasHeldArrays_SpanSliceRangeInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.SpanSliceRangeInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Backing != null)
@@ -951,6 +1123,25 @@ handle.Free();
 }
 }
 host.Rows = native.Rows;
+}
+public static unsafe void UnmarshalArrays_MemoryBoundsIndexInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.MemoryBoundsIndexInputs host, ref AotContexts.MemoryBoundsIndexInputs native, global::System.IntPtr hStream = default)
+{
+if (native.Indices.Data != global::System.IntPtr.Zero && host.Indices != null)
+{
+int size = checked(host.Indices.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Indices, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Indices.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
 }
 public static void AliasHeldArrays_MemoryBoundsIndexInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.MemoryBoundsIndexInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
@@ -1144,6 +1335,57 @@ host.SliceStart = native.SliceStart;
 host.SliceLength = native.SliceLength;
 host.OtherLength = native.OtherLength;
 }
+public static unsafe void UnmarshalArrays_WrongSpanBoundsCheckInputs(in global::Kassyi.GSharp.Tests.Shared.Differential.WrongSpanBoundsCheckInputs host, ref AotContexts.WrongSpanBoundsCheckInputs native, global::System.IntPtr hStream = default)
+{
+if (native.Backing.Data != global::System.IntPtr.Zero && host.Backing != null)
+{
+int size = checked(host.Backing.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Backing, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Backing.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.OtherBacking.Data != global::System.IntPtr.Zero && host.OtherBacking != null)
+{
+int size = checked(host.OtherBacking.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.OtherBacking, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.OtherBacking.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (native.Indices.Data != global::System.IntPtr.Zero && host.Indices != null)
+{
+int size = checked(host.Indices.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Indices, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Indices.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
 public static void AliasHeldArrays_WrongSpanBoundsCheckInputs(ref global::Kassyi.GSharp.Tests.Shared.Differential.WrongSpanBoundsCheckInputs host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 if (host.Backing != null)
@@ -1227,6 +1469,25 @@ handle.Free();
 }
 }
 host.Offset = native.Offset;
+}
+public static unsafe void UnmarshalArrays_DiffNonNullableHolder(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffNonNullableHolder host, ref AotContexts.DiffNonNullableHolder native, global::System.IntPtr hStream = default)
+{
+if (native.Data.Data != global::System.IntPtr.Zero && host.Data != null)
+{
+int size = checked(host.Data.Length * sizeof(global::System.Int32));
+if (size > 0)
+{
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Data, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Data.Data, (global::System.IntPtr)size, hStream));
+}
+finally
+{
+handle.Free();
+}
+}
+}
 }
 public static void AliasHeldArrays_DiffNonNullableHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNonNullableHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
