@@ -30,7 +30,9 @@ public class SqrtKarpMarksteinReferenceTests
         SqrtKarpMarksteinReference.AssertTraceEquals(golden.Trace, actual, $"{label} n={rootWords}");
     }
 
-    /// <summary>Operand word count <c>w</c> and case index (0..22) for the first-stage initial-guess identity.</summary>
+    /// <summary>
+    /// Operand word count <c>w</c> and case index (0..22) for the first-stage initial-guess identity.
+    /// </summary>
     public static TheoryData<int, int> FirstYInputs()
     {
         var data = new TheoryData<int, int>();
