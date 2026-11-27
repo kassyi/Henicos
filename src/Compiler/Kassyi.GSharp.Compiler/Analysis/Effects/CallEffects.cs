@@ -28,22 +28,43 @@ internal static class CallEffects
     }
 
     // The receiver of an instance call is evaluated first (C# spec §12.6.6); a struct member reads and may write the
-    // struct it is called on, which is returned as the receiver the call may write
+    // struct it is called on, which is returned as the receiver the call may write (including implicit 'this').
     private static EffectRoot? AddReceiver(
         ref EffectWalker walker,
         InvocationExpressionSyntax invocation,
         IMethodSymbol method
     )
     {
-        if (method.IsStatic || invocation.Expression is not MemberAccessExpressionSyntax access)
+        if (method.IsStatic)
         {
             return null;
         }
 
-        if (!method.ContainingType.IsValueType && method.ReducedFrom == null)
+        if (invocation.Expression.UnwrapParentheses() is not MemberAccessExpressionSyntax access)
+        {
+            if (!method.ContainingType.IsValueType)
+            {
+                return null;
+            }
+
+            var self = new EffectRoot(null);
+            walker.AddRead(self);
+            return self;
+        }
+
+        if ((!method.ContainingType.IsValueType && method.ReducedFrom == null) ||
+            method.ReducedFrom is { Parameters: [{ RefKind: RefKind.In or RefKind.RefReadOnlyParameter }, ..] })
         {
             walker.AddValue(access.Expression);
             return null;
+        }
+
+        if (access.IsKind(SyntaxKind.PointerMemberAccessExpression))
+        {
+            walker.AddValue(access.Expression);
+            var pointee = new EffectRoot(null);
+            walker.AddRead(pointee);
+            return pointee;
         }
 
         var receiver = walker.AddReceiver(access.Expression);

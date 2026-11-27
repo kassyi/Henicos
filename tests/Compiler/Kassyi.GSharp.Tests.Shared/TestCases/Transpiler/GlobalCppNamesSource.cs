@@ -27,4 +27,10 @@ namespace Functions
     }
     public static class Entry_Host { public static void RunKernel(int[] a) { } }
     public static class Entry { public static void Host_RunKernel(int[] a) { } }
+    public struct StaticAndInstanceOverload
+    {
+        public int X;
+        public static int M(ref StaticAndInstanceOverload s, int x) => s.X + x;
+        public int M(int x) => X + x;
+    }
 }

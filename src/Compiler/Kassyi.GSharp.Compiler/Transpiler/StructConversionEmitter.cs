@@ -244,9 +244,9 @@ internal static class StructConversionEmitter
         ref TranspileContext context)
     {
         var saved = SemanticModelSwitch.Enter(ref context, declaration.SyntaxTree);
-        var previousCtorType = context.Emitter.StructConstructorType;
+        var previousSelf = context.Emitter.StructSelf;
         var previousCallableDepth = context.Emitter.CallableDepth;
-        context.Emitter.StructConstructorType = null;
+        context.Emitter.StructSelf = default;
         context.Emitter.CallableDepth = 0;
 
         try
@@ -265,7 +265,7 @@ internal static class StructConversionEmitter
         }
         finally
         {
-            context.Emitter.StructConstructorType = previousCtorType;
+            context.Emitter.StructSelf = previousSelf;
             context.Emitter.CallableDepth = previousCallableDepth;
             saved.Restore(ref context);
         }
