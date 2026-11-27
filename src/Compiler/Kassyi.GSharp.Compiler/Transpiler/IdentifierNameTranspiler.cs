@@ -92,13 +92,21 @@ internal static class IdentifierNameTranspiler
         if (symbol is IParameterSymbol parameter &&
             CppNameResolver.IsCapturedParameterReference(parameter, ref context))
         {
+            if (context.Emitter.StructSelf.Form == SelfForm.ReceiverParameter)
+            {
+                ThisExpressionTranspilerRule.AppendSelf(ref context);
+                context.Emitter.Writer.Append('.');
+            }
+
             context.Emitter.Writer.AppendCppName(CppName.Member(parameter.Name));
             return;
         }
 
-        if (IsConstructorSelfMember(node, symbol, ref context))
+        var copyType = PropertyAccessorCall.PlanCopyType(node, symbol, ref context);
+        if (copyType == null && IsSelfMember(node, symbol, ref context))
         {
-            context.Emitter.Writer.Append(GSharpInternalNames.Lowering.ConstructorSelf).Append('.');
+            ThisExpressionTranspilerRule.AppendSelf(ref context);
+            context.Emitter.Writer.Append('.');
         }
 
         var name = CppNameResolver.ResolveReference(
@@ -114,12 +122,17 @@ internal static class IdentifierNameTranspiler
             return;
         }
 
-        // <struct type>((*this)).<getter>(): a readonly member calls a getter that may change the struct on a copy
+        // <struct type>(<self>).<getter>(): a readonly member calls a getter that may change the struct on a copy
         // (#610)
-        if (PropertyAccessorCall.PlanCopyType(node, symbol, ref context) is { } copyType)
+        if (copyType != null)
         {
             context.Emitter.Dialect.AppendType(ref context, copyType);
-            context.Emitter.Writer.Append("((*this)).");
+            using (context.Emitter.Writer.Parentheses())
+            {
+                ThisExpressionTranspilerRule.AppendSelf(ref context);
+            }
+
+            context.Emitter.Writer.Append('.');
         }
 
         context.Emitter.Writer.AppendCppName(name);
@@ -167,12 +180,18 @@ internal static class IdentifierNameTranspiler
         }
     }
 
-    // In a lowered struct constructor function, unqualified instance members belong to __gsharp_self
-    private static bool IsConstructorSelfMember(IdentifierNameSyntax node, ISymbol? symbol,
+    // In a lowered struct constructor or explicit-receiver instance device function, unqualified instance members belong
+    // to <self>
+    private static bool IsSelfMember(IdentifierNameSyntax node, ISymbol? symbol,
         ref TranspileContext context) =>
-        context.Emitter.StructConstructorType is { } ctorType &&
+        context.Emitter.StructSelf is
+        {
+            Form: SelfForm.ConstructorSelf or SelfForm.ReceiverParameter,
+            Type: { } selfType
+        } &&
         symbol is IFieldSymbol { IsStatic: false, IsConst: false } or IPropertySymbol { IsStatic: false } &&
         symbol.ContainingType != null &&
-        symbol.ContainingType.OriginalDefinition.IsEqualTo(ctorType.OriginalDefinition) &&
-        node.Parent is not AssignmentExpressionSyntax { Parent: InitializerExpressionSyntax };
+        symbol.ContainingType.OriginalDefinition.IsEqualTo(selfType.OriginalDefinition) &&
+        !(node.Parent is AssignmentExpressionSyntax { Parent: InitializerExpressionSyntax } assignment &&
+          assignment.Left == node);
 }

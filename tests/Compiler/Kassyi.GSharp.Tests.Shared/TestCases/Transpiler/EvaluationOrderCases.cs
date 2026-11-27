@@ -24,7 +24,7 @@ public struct OrderInner
     public readonly int Get() => V;
 }
 
-public struct OrderStructWithGetters
+public partial struct OrderStructWithGetters
 {
     public int Value;
     public int ComputedDoubled => Value * 2;
@@ -38,6 +38,26 @@ public struct OrderStructWithGetters
     public void ImplicitThisMutatingGetterRead() { var result = Value + MutatingNext; }
     public void ImplicitThisReceiverGetterRead() { var result = Value + MutatingInner.V; }
     public void ImplicitThisPureGetterRead() { var result = Value + ComputedDoubled; }
+
+    [GpuDeviceFunction]
+    public int MutatingAdd(int step)
+    {
+        Value += step;
+        return Value;
+    }
+
+    public void ImplicitThisMutatingMethodCall() { var result = Value + MutatingAdd(1); }
+    public void ImplicitThisParenthesizedMutatingMethodCall() { var result = Value + ((MutatingAdd))(1); }
+}
+
+public static class OrderStructExtensions
+{
+    [GpuDeviceFunction]
+    public static int ExtMutatingAdd(this ref OrderStructWithGetters s, int step)
+    {
+        s.Value += step;
+        return s.Value;
+    }
 }
 
 public struct OrderView
@@ -474,7 +494,10 @@ public static class Order
     }
 
     public static void CollectionBuilderWritingMemory(int[] d) { var result = d[0] + OrderBagBuilder.Weigh([1, 2]); }
-public static void LocalFunctionCall()
+    public static void ParenthesizedMemberMutatingMethodCall(OrderStructWithGetters s) { var result = s.Value + ((s.MutatingAdd))(1); }
+    public static void ParenthesizedMemberMutatingMethodCallFirst(OrderStructWithGetters s) { var result = ((s.MutatingAdd))(1) + s.Value; }
+    public static void ParenthesizedExtensionMutatingMethodCall(OrderStructWithGetters s) { var result = s.Value + ((s.ExtMutatingAdd))(1); }
+    public static void LocalFunctionCall()
     {
         int i = 0;
         int Bump() => i++;

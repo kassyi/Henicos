@@ -100,6 +100,10 @@ public sealed class GccClangToolchain : INativeToolchain
                 "CPATH", "CPLUS_INCLUDE_PATH", "CCC_OVERRIDE_OPTIONS", "GCC_EXEC_PREFIX", "COMPILER_PATH"));
     }
 
+    // [WHY] -fno-strict-aliasing: C# reads one memory through views of different element types (MemoryMarshal.Cast,
+    // an [In] Memory<short> and ArraySegment<int> of one array), and the generated code reaches it through pointers of
+    // those types; -O2 would let gcc and clang assume they never overlap and read a value from before a write. MSVC
+    // never makes that assumption
     /// <inheritdoc />
     public string BuildCompileObjectArguments(
         string sourcePath,
@@ -107,7 +111,8 @@ public sealed class GccClangToolchain : INativeToolchain
         string architecture,
         NativeSanitizers sanitizers = NativeSanitizers.None,
         string? pdbPath = null) =>
-        $"-c -O2 -fPIC -std=c++17 -fopenmp -Wno-unused-label{BuildSanitizerFlags(sanitizers)} " +
+        "-c -O2 -fno-strict-aliasing -fPIC -std=c++17 -fopenmp -Wno-unused-label" +
+        $"{BuildSanitizerFlags(sanitizers)} " +
         $"\"{sourcePath}\" -o \"{objPath}\"";
 
     /// <inheritdoc />

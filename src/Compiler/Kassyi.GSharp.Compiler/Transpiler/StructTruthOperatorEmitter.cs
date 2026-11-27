@@ -33,7 +33,7 @@ internal static class StructTruthOperatorEmitter
     public static bool IsEmittedTruthOperator(IMethodSymbol? method, Compilation compilation) =>
         IsTruthOperator(method) &&
         method is { ContainingType: { } containingType } &&
-        GlobalCppNames.IsEmittedUserType(containingType) &&
+        EmittedUserTypes.IsEmittedUserType(containingType) &&
         MapsConditionalOperator(containingType, method.Name) &&
         (TryGetDeclaration(method, out _) ||
          (DeviceExportTable.IsOutside(method, compilation) && DeviceExportTable.TryFind(method, out _)));

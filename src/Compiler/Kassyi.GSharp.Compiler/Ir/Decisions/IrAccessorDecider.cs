@@ -19,7 +19,7 @@ internal static class IrAccessorDecider
     public static IrMemberDecision DecideMember(IrPropertyReference member, bool isTarget, IrDecisionContext context)
     {
         var property = member.Property;
-        if (member.Receiver is not { } receiver || !PropertyAccessorCall.IsGetter(property, context.NativeDialect))
+        if (member.Receiver is not { } receiver || !PropertyAccessorCall.IsGetter(property, context.Dialect))
         {
             return new IrMemberDecision(IrMemberForm.Other, null, -1, null);
         }
@@ -27,7 +27,7 @@ internal static class IrAccessorDecider
         // [WHY] The syntax path decides the copy on the original operation, so a temporary that a spill put in place of
         // the receiver is read as its initializer
         var copyType = !isTarget &&
-                       PropertyAccessorCall.NeedsCopy(property, context.NativeDialect, context.Compilation) &&
+                       PropertyAccessorCall.NeedsCopy(property, context.Dialect, context.Compilation) &&
                        IrReadOnlyReceivers.IsReadOnlyVariable(context.TemporaryInitializers.Resolve(receiver), context.Method)
             ? PropertyAccessorCall.CopyTypeOf(property, null, context.Compilation)
             : null;

@@ -277,9 +277,15 @@ public class GpuKernelGenerator : IIncrementalGenerator
             static (spc, input) => EmitModuleContext(spc, input.Left.Left, input.Left.Right, input.Right));
         // A library without kernels exports its device functions as well. The records are gathered first, so an edit
         // that changes no record (a kernel body) leaves the output cached
-        var deviceExports = allDevices.Combine(allKernels).Combine(standaloneStructs).Combine(configProvider)
-            .Select(static (input, _) => CollectDeviceExports(input.Left.Left.Left, input.Left.Left.Right,
-                input.Left.Right, input.Right.ExportDeviceCode));
+        var deviceExports = allDevices.Combine(allKernels).Combine(standaloneStructs)
+            .Combine(stackForms.Select(static (forms, _) => forms.Devices))
+            .Combine(configProvider.Select(static (config, _) => config.ExportDeviceCode))
+            .Select(static (input, _) => CollectDeviceExports(
+                input.Left.Left.Left.Left,
+                input.Left.Left.Left.Right,
+                input.Left.Left.Right,
+                input.Left.Right,
+                input.Right));
         context.RegisterSourceOutput(
             deviceExports.Combine(configProvider).WithTrackingName(DeviceExportsTrackingName),
             static (spc, input) => EmitDeviceExports(spc, input.Left, input.Right));
@@ -565,13 +571,20 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
     // The records of the device functions, of the structs that the kernels and device functions use, and of the structs
     // exported on their own; none when the project exports nothing
-    private static DeviceExportSet CollectDeviceExports(ImmutableArray<TranspiledDeviceMethodResult> deviceMethods,
+    internal static DeviceExportSet CollectDeviceExports(ImmutableArray<TranspiledDeviceMethodResult> deviceMethods,
         ImmutableArray<TranspiledKernelResult> kernelMethods,
-        ImmutableArray<EquatableArray<DeviceExportRecord>> standaloneStructs, bool exportDeviceCode)
+        ImmutableArray<EquatableArray<DeviceExportRecord>> standaloneStructs,
+        EquatableArray<ManagedStackDeviceForm> stackForms, bool exportDeviceCode)
     {
         if (!exportDeviceCode)
         {
             return default;
+        }
+
+        var stackFormIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var form in stackForms)
+        {
+            stackFormIds.Add(form.Id);
         }
 
         var functions = ImmutableArray.CreateBuilder<DeviceExportRecord>();
@@ -585,7 +598,19 @@ public class GpuKernelGenerator : IIncrementalGenerator
         {
             if (method.Export.IsValid)
             {
-                functions.Add(method.Export);
+                var export = stackFormIds.Contains(method.Export.Id)
+                    ? method.Export with
+                    {
+                        Traits = method.Export.Traits with
+                        {
+                            ManagedStackForm = true,
+                            StackOnly = method.Export.Traits is { Suspends: true, ManagedStateMachine: false } &&
+                                        method.Export.Traits.FrameName.Length == 0 &&
+                                        !method.Export.Cpp.Failed
+                        }
+                    }
+                    : method.Export;
+                functions.Add(export);
             }
 
             method.StructExports
@@ -787,8 +812,9 @@ public class GpuKernelGenerator : IIncrementalGenerator
         NativeModuleAssembler.GetDistinctDeviceMethods(deviceMethods);
 
     // GSH0003 at the ref locals that the CPU state machines would keep in their frames (HeldRefLocalSite), GSH0039 and
-    // GSH0121; a device function's sites once, however many results it has. A CUDA build emits managed state machines
-    // only for the device functions it exports, so it reports only their GSH0121 (ChainedLabelJumpChecks)
+    // GSH0121 (which only the generator reports); a device function's sites once, however many results it has. A CUDA
+    // build emits managed state machines only for the device functions it exports, so it reports only their GSH0121
+    // (ChainedLabelJumpChecks.FindReported)
     private static void ReportHeldRefLocals(SourceProductionContext context,
         ImmutableArray<EquatableArray<HeldRefLocalSite>> kernels,
         ImmutableArray<EquatableArray<HeldRefLocalSite>> devices,

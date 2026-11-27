@@ -26,7 +26,7 @@ internal static class AliasGroupEmitter
     /// <summary>Declares the groups of the launch, before the launcher's <c>try</c> block.</summary>
     public static void WriteDeclaration(SourceWriter writer, in LaunchAliasPlan plan)
     {
-        writer.AppendLineIf(plan.IsActive, $"{GroupsType}? {Aliases} = null;");
+        writer.AppendLineIf(plan.IsActive && !plan.ChecksAlignmentOnly, $"{GroupsType}? {Aliases} = null;");
         writer.AppendLineIf(plan.HasHeldArrays, $"{StructArrayHelperEmitter.HeldArraysType}? {Held} = null;");
     }
 
@@ -129,6 +129,18 @@ internal static class AliasGroupEmitter
         }
 
         writer.AppendLine($"{Held} = new();");
+        // [WHY] On CPU, struct field Marshal_ allocates a fresh shadow without HostAliasStaging lookup and
+        // WriteCpuHeldRelease frees Held before WriteCpuConversions, so CPU keeps HeldConversionKey to reject
+        // overlapping CPU-converted held elements explicitly rather than staging them with candidates
+        if (isCuda)
+        {
+            foreach (var conversion in plan.Conversions)
+            {
+                writer.AppendLine(
+                    $"{Held}.MapConversion(typeof({conversion.HostType}), {conversion.Key}, sizeof({conversion.ShadowType}));");
+            }
+        }
+
         foreach (var index in plan.HeldSources)
         {
             WriteHeldArraysOf(writer, sharing, index, isCuda);
@@ -277,6 +289,26 @@ internal static class AliasGroupEmitter
     public static string DevicePointer(in LaunchAliasPlan plan, int parameterIndex) =>
         $"{Aliases}.GetDevicePointer({plan.MemberIndexOf(parameterIndex)})";
 
+    // <declarations> [try {]   (CPU, around WriteCpuGroups and the copies)
+    // [WHY] The held arrays stay pinned until the arguments took their copies; a launch that throws on the way (an
+    // overlap that no address aligns, a view that cannot share its group's copy) unpins them in the finally block
+    // (WriteCpuHeldRelease) instead of leaving them to the finalizer
+    /// <summary>
+    /// CPU: declares the groups of the launch and, when struct arguments hold arrays, opens the <c>try</c> block that
+    /// <see cref="WriteCpuHeldRelease"/> closes.
+    /// </summary>
+    public static SourceWriterScope WriteCpuHeldTry(SourceWriter writer, in LaunchAliasPlan plan)
+    {
+        WriteDeclaration(writer, plan);
+        if (!plan.HasHeldArrays)
+        {
+            return default;
+        }
+
+        writer.AppendLine("try");
+        return writer.Scope();
+    }
+
     // <pins> { __gsharp_aliases = HostAliasGroups.Find(...); <copies> }
     /// <summary>
     /// CPU: finds the groups and opens the scope that keeps the arguments pinned while the launcher makes its copies
@@ -290,13 +322,54 @@ internal static class AliasGroupEmitter
             return default;
         }
 
-        writer.AppendLine("// Find the arguments that overlap: the [In] members of a group share one copy");
-        WriteDeclaration(writer, plan);
+        writer.AppendLine(plan.ChecksAlignmentOnly
+            ? "// Throw for overlapping arguments that no CUDA address aligns, as the CUDA launcher does"
+            : "// Find the arguments that overlap: the [In] members of a group share one copy");
         WriteHeldArrays(writer, sharing, isCuda: false);
         var scope = AliasRangeEmitter.WritePinnedRanges(writer, plan.Ranges);
-        AliasRangeEmitter.WriteFind(writer, plan.Ranges, plan.HasHeldArrays);
+        WriteCpuFind(writer, plan);
         WriteClearedOutArguments(writer, sharing);
         return scope;
+    }
+
+    // __gsharp_aliases = HostAliasGroups.Find(<ranges>, <traits>, <names>, <CUDA alignments>);
+    // HostAliasGroups.ThrowIfNoDeviceAlignment(<the same arguments>);   when the launcher keeps no group
+    // [WHY] The CUDA alignments make an overlap that CUDA rejects throw on the CPU paths too (#1858); the held arrays
+    // add theirs at run time, as they add their ranges
+    private static void WriteCpuFind(SourceWriter writer, in LaunchAliasPlan plan)
+    {
+        writer.Append(plan.ChecksAlignmentOnly
+            ? $"{GroupsType}.ThrowIfNoDeviceAlignment"
+            : $"{Aliases} = {GroupsType}.Find");
+        using (writer.Parentheses())
+        {
+            writer.Append($"{AliasRangeEmitter.RangesSpan(plan.Ranges, plan.HasHeldArrays)}, ");
+            AliasRangeEmitter.WriteTraitsArgument(writer, plan.Ranges, plan.HasHeldArrays);
+            writer.Append(", ");
+            AliasRangeEmitter.WriteNamesArgument(writer, plan.Ranges, plan.HasHeldArrays);
+            writer.Append(", ");
+            writer.AppendIf(plan.HasHeldArrays, $"{Held}.CombineDeviceAlignments(");
+            if (plan.Ranges.Length == 0)
+            {
+                writer.Append("global::System.ReadOnlySpan<int>.Empty");
+            }
+            else
+            {
+                writer.Append("stackalloc int[] ");
+                using (writer.Braces())
+                {
+                    for (var k = 0; k < plan.Ranges.Length; k++)
+                    {
+                        writer.AppendIf(k > 0, ", ");
+                        writer.Append($"{plan.Ranges[k].DeviceAlignment}");
+                    }
+                }
+            }
+
+            writer.AppendIf(plan.HasHeldArrays, ")");
+        }
+
+        writer.AppendLine(";");
     }
 
     // if (__gsharp_aliases != null)
@@ -322,9 +395,21 @@ internal static class AliasGroupEmitter
         }
     }
 
-    /// <summary>CPU: unpins the held arrays, after the arguments took their copies.</summary>
-    public static void WriteCpuHeldRelease(SourceWriter writer, in LaunchAliasPlan plan) =>
-        writer.AppendLineIf(plan.HasHeldArrays, $"{Held}?.Free();");
+    // finally { __gsharp_alias_held?.Free(); }   closing WriteCpuHeldTry
+    /// <summary>CPU: unpins the held arrays, after the arguments took their copies or when the launch threw.</summary>
+    public static void WriteCpuHeldRelease(SourceWriter writer, in LaunchAliasPlan plan)
+    {
+        if (!plan.HasHeldArrays)
+        {
+            return;
+        }
+
+        writer.AppendLine("finally");
+        using (writer.Scope())
+        {
+            writer.AppendLine($"{Held}?.Free();");
+        }
+    }
 
     // if (!(__gsharp_aliases?.IsMember(<k>) == true)) <out name> = default;   for each out struct that holds arrays
     // [WHY] An out argument that no other argument refers to is cleared, as it always was; one that does keeps the
@@ -380,18 +465,30 @@ internal static class AliasGroupEmitter
         }
     }
 
+    /// <summary>
+    /// CPU: whether any held source in <paramref name="sharing"/> holds non-array view fields, whose <c>Memory</c>
+    /// views must let top-level typed array candidates create the group's host copy first.
+    /// </summary>
+    public static bool HasHeldViewSources(in ArraySharingPlan sharing) =>
+        sharing.Aliases.HasHeldArrays &&
+        sharing.Aliases.HeldSources
+            .AsStackEnumerable()
+            .Any(sharing.Parameters, static (index, ps) => ps[index].HoldsViewFields);
+
     // if (__gsharp_aliases != null)
     // { HostAliasCopies.TryGetHostCopy<T>(__gsharp_aliases, <k>, <ranges>, out _, out _); ... }
     // with one call per member that needs a typed array (T[], ArraySegment, ImmutableArray)
     // [WHY] The copy of a group takes the element type of its first request; the members that need a typed array ask
     // first, so that a span or Memory member of another element type views their copy instead of typing it
     /// <summary>CPU: makes the typed copies of the groups before the members take them.</summary>
-    public static void WriteCpuTypedCopiesFirst(SourceWriter writer, in ArraySharingPlan sharing)
+    public static void WriteCpuTypedCopiesFirst(SourceWriter writer, in ArraySharingPlan sharing,
+        bool? withCopyArrays = null)
     {
         var plan = sharing.Aliases;
         if (!plan.IsActive || !plan.Candidates
                 .AsStackEnumerable()
-                .Any(sharing, static (parameterIndex, state) => NeedsTypedCopy(state, parameterIndex)))
+                .Any((sharing, withCopyArrays), static (parameterIndex, state) =>
+                    NeedsTypedCopy(state.sharing, parameterIndex, state.withCopyArrays)))
         {
             return;
         }
@@ -401,7 +498,7 @@ internal static class AliasGroupEmitter
         {
             foreach (var parameterIndex in plan.Candidates)
             {
-                if (NeedsTypedCopy(sharing, parameterIndex))
+                if (NeedsTypedCopy(sharing, parameterIndex, withCopyArrays))
                 {
                     var shape = sharing.Parameters[parameterIndex];
                     var call = CopyCall(sharing, parameterIndex, "TryGetHostCopy",
@@ -414,11 +511,14 @@ internal static class AliasGroupEmitter
     }
 
     // A member that may take its group's copy and needs a typed array for it
-    private static bool NeedsTypedCopy(in ArraySharingPlan sharing, int parameterIndex) =>
+    private static bool NeedsTypedCopy(in ArraySharingPlan sharing, int parameterIndex,
+        bool? withCopyArrays = null) =>
         sharing.Parameters[parameterIndex] is { IsArray: true } shape &&
         sharing.Aliases.MayTakeGroupCopy(parameterIndex) &&
         shape.Container is ArrayContainerKind.Array or ArrayContainerKind.ArraySegment
-            or ArrayContainerKind.ImmutableArray;
+            or ArrayContainerKind.ImmutableArray &&
+        (withCopyArrays is null ||
+            (shape.Cpu.ConvertedElementCopyArraysMethodName is not null) == withCopyArrays.Value);
 
     // if (HostAliasCopies.TryGetHostCopy<T>(..., out T[]? copy, out int start[, ...]))
     // { <name> = <container over copy>; }

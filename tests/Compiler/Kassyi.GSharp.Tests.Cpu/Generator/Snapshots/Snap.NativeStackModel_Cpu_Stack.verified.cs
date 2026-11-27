@@ -379,7 +379,7 @@ return false;
 #undef __gsharp_yielded_for_grid_sync
 #undef __gsharp_yielded_for_block_barrier
 }
-", ManagedStateMachine = true)]
+", ManagedStateMachine = true, ManagedStackForm = true)]
 [assembly: global::Kassyi.GSharp.Core.GpuDeviceExportAttribute({FormatVersion}, @"{PreludeHash}", @"Function", @"M:Kassyi.GSharp.Tests.Cpu.Core.NativeStackKernels.OuterExchangeAndBias(System.Int32[],System.Int32,System.Int32)", CppName = @"__gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__OuterExchangeAndBias", CudaReferences = new string[] {@"__gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ExchangeWithNeighbour"}, CppReferences = new string[] {@"__gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ExchangeWithNeighbour"}, FrameName = @"__gsharp_frame_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__OuterExchangeAndBias", FrameDependencies = new string[] {@"__gsharp_frame_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ExchangeWithNeighbour"}, Suspends = true, ReachesBlockBarrier = true, IsParallelDependent = true, Effect = @"Memory", CudaSignature = @"inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__OuterExchangeAndBias(GSharpArray<int> __gsharp_id_0_scratch, int __gsharp_id_1_value, int __gsharp_id_2_bias);
 ", CudaBody = @"inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__OuterExchangeAndBias(GSharpArray<int> __gsharp_id_0_scratch, int __gsharp_id_1_value, int __gsharp_id_2_bias){
 int __gsharp_id_3_neighbour = __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ExchangeWithNeighbour(__gsharp_id_0_scratch,__gsharp_id_1_value);
@@ -449,7 +449,7 @@ return false;
 #undef __gsharp_yielded_for_grid_sync
 #undef __gsharp_yielded_for_block_barrier
 }
-", ManagedStateMachine = true)]
+", ManagedStateMachine = true, ManagedStackForm = true)]
 [assembly: global::Kassyi.GSharp.Core.GpuDeviceExportAttribute({FormatVersion}, @"{PreludeHash}", @"Function", @"M:Kassyi.GSharp.Tests.Cpu.Core.NativeStackKernels.ReadElement(System.Int32[],System.Int32)", CppName = @"__gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ReadElement", Effect = @"None", CudaSignature = @"inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ReadElement(GSharpArray<int> __gsharp_id_0_source, int __gsharp_id_1_index);
 ", CudaBody = @"inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ReadElement(GSharpArray<int> __gsharp_id_0_source, int __gsharp_id_1_index){
 return __gsharp_array_at(__gsharp_id_0_source, (long long)__gsharp_id_1_index, ""G#: a null array is read at NativeStackKernels.cu.cs(28,63)"");
@@ -509,7 +509,7 @@ return false;
 #undef __gsharp_yielded_for_grid_sync
 #undef __gsharp_yielded_for_block_barrier
 }
-", ManagedStateMachine = true)]
+", ManagedStateMachine = true, ReachesWarpShuffle = true, ManagedStackForm = true)]
 [assembly: global::Kassyi.GSharp.Core.GpuDeviceExportAttribute({FormatVersion}, @"{PreludeHash}", @"Function", @"M:Kassyi.GSharp.Tests.Cpu.Core.NativeStackKernels.SuspendingWithUsingAfterBarrier(System.Int32[],System.Int32)", CppName = @"__gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__SuspendingWithUsingAfterBarrier", CudaReferences = new string[] {@"__gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__NativeStackRecorder"}, CppReferences = new string[] {@"__gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__NativeStackRecorder"}, FrameName = @"__gsharp_frame_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__SuspendingWithUsingAfterBarrier", Suspends = true, ReachesBlockBarrier = true, IsParallelDependent = true, Effect = @"Memory", CudaSignature = @"inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__SuspendingWithUsingAfterBarrier(GSharpArray<int> __gsharp_id_0_log, int __gsharp_id_1_marker);
 ", CudaBody = @"inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__SuspendingWithUsingAfterBarrier(GSharpArray<int> __gsharp_id_0_log, int __gsharp_id_1_marker){
 int __gsharp_id_2_tid = (int)threadIdx.x;
@@ -591,7 +591,7 @@ return false;
 #undef __gsharp_yielded_for_grid_sync
 #undef __gsharp_yielded_for_block_barrier
 }
-", ManagedStateMachine = true)]
+", ManagedStateMachine = true, ManagedStackForm = true)]
 [assembly: global::Kassyi.GSharp.Core.GpuDeviceExportAttribute({FormatVersion}, @"{PreludeHash}", @"Struct", @"T:Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers", CppName = @"__gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers", Effect = @"Memory", CudaBody = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers__
 struct __gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers
@@ -889,6 +889,53 @@ return true;
 }
 }
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ExchangeWithNeighbour(int[] scratch, int value)
+{
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+scratch[tid] = value;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return scratch[(tid + 1) % global::Kassyi.GSharp.Core.BlockDimension.X];
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__OuterExchangeAndBias(int[] scratch, int value, int bias)
+{
+int neighbour = global::Kassyi.GSharp.Tests.Cpu.Core.NativeStackKernels.__gsharp_stackmodel_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ExchangeWithNeighbour(scratch, value);
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+scratch[global::Kassyi.GSharp.Core.ThreadIndex.X] = neighbour + bias;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return scratch[(global::Kassyi.GSharp.Core.ThreadIndex.X + 2) % global::Kassyi.GSharp.Core.BlockDimension.X];
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleDeviceHelper(int __gsharp_warp_frame, int x)
+{
+return global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_shuffle_xor_sync<int>(__gsharp_warp_frame, 0, "NativeStackKernels.cu.cs(55,16)", 0xFFFFFFFFu, x, 1);
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__SuspendingWithUsingAfterBarrier(int[] log, int marker)
+{
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+log[tid] = 1;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+if (tid == 1)
+{
+using (var recorder = new global::Kassyi.GSharp.Tests.Cpu.Core.NativeStackRecorder
+{
+Log = log,
+Slot = 4,
+Marker = marker
+}
+
+)
+{
+log[5] = marker + 1;
+}
+}
 }
 
 }

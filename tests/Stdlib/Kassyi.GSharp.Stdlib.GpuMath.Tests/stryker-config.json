@@ -7,7 +7,7 @@
     ],
     "mutate": ["!**/*.cu.cs", "!**/*.g.cs"],
     "coverage-analysis": "perTest",
-    "test-case-filter": "FullyQualifiedName~Stdlib",
+    "test-case-filter": "FullyQualifiedName~Stdlib&Category!=Stress&Category!=Benchmark&Category!=GpuTrap",
     "concurrency": 4,
     "reporters": ["json", "html", "cleartext"],
     "verbosity": "info"

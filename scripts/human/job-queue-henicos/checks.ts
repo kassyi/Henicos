@@ -3,6 +3,7 @@
 // QueuedRun wire memoryMb (request, adopt, gpuTurn omission, JOB_QUEUE_PLUGINS=0, defaultTestMemoryMb),
 // and shortCommand prefix removal.
 
+import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -17,6 +18,7 @@ import { removeDirectory } from "../job-queue/self-test-support.ts";
 import { shortCommand } from "../job-queue/view.ts";
 import { selectsCategory } from "../job-queue/plugins/dotnet/plugin.ts";
 import { cpuOnlyTestProjects, parseBudgets, testMemoryMb } from "./budgets.ts";
+import { checkCommandLanguage } from "./command-language-checks.ts";
 import { checkNameFilter } from "./name-filter-checks.ts";
 import { checkHenicosOffloadSources } from "./offload-source-checks.ts";
 import {
@@ -297,6 +299,27 @@ function checkGpuCheckHook(assert: AssertModule, host: PluginHost): void {
     assert.strictEqual(cudaCheck.refuse, undefined);
     assert.strictEqual(cudaCheck.hints, undefined);
 
+    // §9.3: --gpu outside the command language is refused with 3 lines (where, accepted form, --gpu-exclusive hint)
+    const outsideGpu = host.check("dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --filter Name~Foo", gpu, ctx);
+    assert.ok(outsideGpu.refuse !== undefined, "unquoted filter under --gpu must be refused");
+    assert.strictEqual(outsideGpu.refuse.split("\n").length, 3, "refusal must be 3 lines");
+    assert.ok(outsideGpu.refuse.includes("Accepted form:"), "refusal shows accepted form");
+    assert.ok(outsideGpu.refuse.includes("--gpu-exclusive"), "refusal mentions --gpu-exclusive");
+    // Same command with --gpu-exclusive is allowed
+    const gpuExcl = { name: "gpu", forcedExclusive: true };
+    assert.strictEqual(
+      host.check("dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --filter Name~Foo", gpuExcl, ctx).refuse,
+      undefined,
+      "--gpu-exclusive accepts commands outside the language",
+    );
+    // Build-split chain whose post-split test step is in the language is allowed under --gpu
+    const buildSplitCmd =
+      "dotnet build tests/Compiler/Kassyi.GSharp.Tests.Cuda && " +
+      `dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --no-build --filter "${Kept}"`;
+    assert.strictEqual(host.check(buildSplitCmd, gpu, ctx).refuse, undefined, "build-split into language passes");
+    // Non-shared recipe under --gpu is refused
+    assert.ok(host.check("just test-coverage", gpu, ctx).refuse !== undefined, "non-shared recipe refused under --gpu");
+
     // Without --gpu (resource = null): long-checks still refuses double-queueing; plain CPU tests pass cleanly
     const longChecksCpu = host.check("just long-checks", null, ctx);
     assert.strictEqual(longChecksCpu.refuse, expectedLongChecksRefusal);
@@ -321,96 +344,63 @@ const Kept = "Category!=Stress&Category!=Benchmark&Category!=GpuTrap";
  */
 const ShareTable: readonly [string, "shared" | "exclusive"][] = [
   ["just test", "shared"],
-  ["just test-coverage", "shared"],
+  ["just test-coverage", "exclusive"],
   ["just test-differential-cuda", "shared"],
   ['just test-differential-cuda --filter "Category=Differential"', "exclusive"],
   ["just test-gpu-trap", "exclusive"],
   ["just test-stability", "exclusive"],
   ["just -f justfile test", "exclusive"],
   ['just test --filter "FullyQualifiedName~Foo"', "exclusive"],
-  [`just test --filter "${Kept}&Name~Foo"`, "shared"],
-  [`dotnet test X --filter "${Kept}"`, "shared"],
+  [`just test --filter "${Kept}&Name~Foo"`, "exclusive"],
+  [`dotnet test tests/X --filter "${Kept}"`, "shared"],
   [
-    'dotnet test X --filter "category != gputrap & Category!=STRESS&FullyQualifiedName~Foo&category!=benchmark"',
+    'dotnet test tests/X --filter "Category!=gputrap&Category!=STRESS&FullyQualifiedName~Foo&Category!=benchmark"',
     "shared",
   ],
-  [`dotnet test X --filter "${Kept}&Category=Stress"`, "exclusive"],
-  [`dotnet test X --filter "${Kept}&category=stress"`, "exclusive"],
-  [`dotnet test X --filter "${Kept}" --filter:"Name~Foo"`, "exclusive"],
-  ['dotnet test X --filter "Category = GpuTrap"', "exclusive"],
-  ['dotnet test X --filter "Category=GpuTrap"', "exclusive"],
-  ['dotnet test X --filter "Category=Stress"', "exclusive"],
-  ['dotnet test X --filter "Category=Benchmark"', "exclusive"],
-  [`dotnet test X --filter "${Kept}" -e GSHARP_CUDA_TRAP_TESTS=1`, "exclusive"],
-  [`GSHARP_CUDA_TRAP_TESTS=1 dotnet test X --filter "${Kept}"`, "exclusive"],
-  ["dotnet run --project X", "exclusive"],
+  [`dotnet test tests/X --filter "${Kept}&Category=Stress"`, "exclusive"],
+  [`dotnet test tests/X --filter "${Kept}&Category=stress"`, "exclusive"],
+  [`dotnet test tests/X --filter "${Kept}" --filter:"Name~Foo"`, "exclusive"],
+  ['dotnet test tests/X --filter "Category=GpuTrap"', "exclusive"],
+  ['dotnet test tests/X --filter "Category=Stress"', "exclusive"],
+  ['dotnet test tests/X --filter "Category=Benchmark"', "exclusive"],
+  [`dotnet test tests/X --filter "${Kept}" -e GSHARP_CUDA_TRAP_TESTS=1`, "exclusive"],
+  [`GSHARP_CUDA_TRAP_TESTS=1 dotnet test tests/X --filter "${Kept}"`, "exclusive"],
+  ["dotnet run --project tests/X", "exclusive"],
   [`dotnet test $(cat projects.txt) --filter "${Kept}"`, "exclusive"],
-  [`dotnet test X --filter "${Kept}`, "exclusive"],
-  [`dotnet test X --no-build --filter "${Kept}"`, "shared"],
-  [`dotnet build X && dotnet test X --no-build --filter "${Kept}"`, "exclusive"],
-  [`cd tests && dotnet test X --filter "${Kept}"; echo done`, "shared"],
-  [`Set-Location tests; dotnet test X --filter "${Kept}"; Pop-Location`, "shared"],
-  [`$env:DiffEngine_Disabled='true'; dotnet test X --filter "${Kept}"`, "shared"],
-  [`dotnet.exe test X --filter "${Kept}"`, "shared"],
-  [`dotnet test bin/Tests.dll --filter "${Kept}"`, "exclusive"],
-  [`dotnet test X --filter="${Kept}"`, "shared"],
-  [`dotnet test X --filter:"${Kept}"`, "exclusive"],
-  ['dotnet test X --filter ""', "exclusive"],
-  ['dotnet test X --filter " "', "exclusive"],
+  [`dotnet test tests/X --filter "${Kept}`, "exclusive"],
+  [`dotnet test tests/X --no-build --filter "${Kept}"`, "shared"],
+  [`dotnet build tests/X && dotnet test tests/X --no-build --filter "${Kept}"`, "exclusive"],
+  [`cd tests && dotnet test tests/X --filter "${Kept}"; echo done`, "exclusive"],
+  [`Set-Location tests; dotnet test tests/X --filter "${Kept}"; Pop-Location`, "exclusive"],
+  [`$env:DiffEngine_Disabled='true'; dotnet test tests/X --filter "${Kept}"`, "exclusive"],
+  [`DiffEngine_Disabled=true dotnet test tests/X --filter "${Kept}"`, "shared"],
+  [`DOTNET_CLI_UI_LANGUAGE=en dotnet test tests/X --filter "${Kept}"`, "shared"],
+  [`dotnet.exe test tests/X --filter "${Kept}"`, "exclusive"],
+  [`dotnet test tests/bin/Tests.dll --filter "${Kept}"`, "exclusive"],
+  [`dotnet test tests/X --filter="${Kept}"`, "exclusive"],
+  [`dotnet test tests/X --filter:"${Kept}"`, "exclusive"],
+  ['dotnet test tests/X --filter ""', "exclusive"],
+  ['dotnet test tests/X --filter " "', "exclusive"],
   ["echo hello", "exclusive"],
-  [`node scripts/human/coverage-diff.js --run && dotnet test X --filter "${Kept}"`, "exclusive"],
-  // Q2: without a filter a test run also runs Stress and Benchmark
-  ["dotnet test X", "exclusive"],
-  ["dotnet test X --no-build", "exclusive"],
-  // A filter that names tests alone, or negates only some categories, may still pick Stress or Benchmark tests
-  ['DiffEngine_Disabled=true dotnet test X --filter "FullyQualifiedName~Foo"', "exclusive"],
-  ['dotnet test X --filter "FullyQualifiedName~PoolStressTests"', "exclusive"],
-  ['dotnet test X --filter "Name~PoolStressTests"', "exclusive"],
-  ['dotnet test X --filter "Category!=Slow"', "exclusive"],
-  ['dotnet test X --filter "Category!=Stress"', "exclusive"],
-  ['dotnet test X --filter "Category!=Stress&Category!=Benchmark"', "exclusive"],
-  ['dotnet test X --filter "Category~Stres"', "exclusive"],
-  ['dotnet test X --filter "category=stress"', "exclusive"],
-  [`dotnet test X --filter "${Kept}" --filter "Name~Foo"`, "exclusive"],
-  // A pipe hides its later stages from readCommand; a | inside the quoted filter is no pipe, but an or term
-  [`dotnet test X --filter "${Kept}" | tee log`, "exclusive"],
-  [`dotnet test X --filter "${Kept}" || echo failed`, "exclusive"],
-  [`dotnet test X --filter "${Kept}&(Name~A|Name~B)"`, "exclusive"],
-  // A variable the shell expands: the words are not what runs
-  ['dotnet test X --filter "$FILTER"', "exclusive"],
-  ["dotnet test X --filter $FILTER", "exclusive"],
-  ['export F=Category=Stres; dotnet test X --filter "${F}s"', "exclusive"],
-  ["$f = Get-Content f.txt; dotnet test X --filter $f", "exclusive"],
-  [`dotnet test X --filter "${Kept}" $EXTRA`, "exclusive"],
-  [`dotnet test $P --filter "${Kept}"`, "exclusive"],
-  [`dotnet test X --filter "${Kept}" -e $V=1`, "exclusive"],
-  [`$DOTNET test X --filter "${Kept}"`, "exclusive"],
-  [`$out = dotnet test X --filter "${Kept}"`, "exclusive"],
-  [`$DOTNET test X; dotnet test X --filter "${Kept}"`, "exclusive"],
-  [`$out = dotnet test Y; dotnet test X --filter "${Kept}"`, "exclusive"],
-  [`dotnet test X --filter "${Kept}" -e "V=$V"`, "exclusive"],
-  [`dotnet test X --filter "${Kept}" -e 'A=$B'`, "shared"],
-  ['dotnet test X --filter "Name~Foo" -e $V=1', "exclusive"],
-  ['dotnet test $P --filter "Name~Foo" $EXTRA', "exclusive"],
-  // The trap variable in any case, also split by quotes
-  [`gsharp_cuda_trap_tests=1 dotnet test X --filter "${Kept}"`, "exclusive"],
-  [`dotnet test X --filter "${Kept}" -e gsharp_cuda_trap_tests=1`, "exclusive"],
-  [`dotnet test X --filter "${Kept}" -e "GSHARP_CUDA_""TRAP_TESTS=1"`, "exclusive"],
-  ['gsharp_cuda_trap_tests=1 dotnet test X --filter "Name~Foo"', "exclusive"],
-  ['dotnet test X --filter "Name~Foo" -e gsharp_cuda_trap_tests=1', "exclusive"],
-  ['dotnet test X --filter "Name~Foo" -e "GSHARP_CUDA_""TRAP_TESTS=1"', "exclusive"],
-  [`dotnet test X --filter "${Kept}" -e GSHARP_CUDA_\\TRAP_TESTS=1`, "exclusive"],
-  // A variable set under a name a variable makes
-  [`export $V=1; dotnet test X --filter "${Kept}"`, "exclusive"],
-  [`export \${P}TRAP_TESTS=1; dotnet test X --filter "${Kept}"`, "exclusive"],
-  [`export A=1; dotnet test X --filter "${Kept}"`, "shared"],
-  // A test case filter spelled another way: it may pick the tests the --filter keeps out
-  [`dotnet test X --filter "${Kept}" -p:VSTestTestCaseFilter=FullyQualifiedName~PoolStressTests`, "exclusive"],
-  [
-    `dotnet test X --filter "${Kept}" -- RunConfiguration.TestCaseFilter=FullyQualifiedName~PoolStressTests`,
-    "exclusive",
-  ],
-  ["just test -- RunConfiguration.TestCaseFilter=FullyQualifiedName~PoolStressTests", "exclusive"],
+  [`node scripts/human/coverage-diff.js --run && dotnet test tests/X --filter "${Kept}"`, "exclusive"],
+  ["dotnet test tests/X", "exclusive"],
+  ["dotnet test tests/X --no-build", "exclusive"],
+  ['DiffEngine_Disabled=true dotnet test tests/X --filter "FullyQualifiedName~Foo"', "exclusive"],
+  ['dotnet test tests/X --filter "FullyQualifiedName~PoolStressTests"', "exclusive"],
+  ['dotnet test tests/X --filter "Name~PoolStressTests"', "exclusive"],
+  ['dotnet test tests/X --filter "Category!=Slow"', "exclusive"],
+  ['dotnet test tests/X --filter "Category!=Stress"', "exclusive"],
+  ['dotnet test tests/X --filter "Category!=Stress&Category!=Benchmark"', "exclusive"],
+  ['dotnet test tests/X --filter "Category~Stres"', "exclusive"],
+  ['dotnet test tests/X --filter "Category=stress"', "exclusive"],
+  [`dotnet test tests/X --filter "${Kept}" --filter "Name~Foo"`, "exclusive"],
+  [`dotnet test tests/X --filter "${Kept}" | tee log`, "exclusive"],
+  [`dotnet test tests/X --filter "${Kept}" || echo failed`, "exclusive"],
+  [`dotnet test tests/X --filter "${Kept}&(Name~A|Name~B)"`, "exclusive"],
+  ['dotnet test tests/X --filter "$FILTER"', "exclusive"],
+  ["dotnet test tests/X --filter $FILTER", "exclusive"],
+  [`dotnet test tests/X --filter "${Kept}" -p:Configuration=Release`, "exclusive"],
+  [`dotnet test tests/X --filter "${Kept}" -p:VSTestTestCaseFilter=FullyQualifiedName~PoolStressTests`, "exclusive"],
 ];
 
 /** Checks 3 to 7 of the share rules: the table, the environment, the plugin options. */
@@ -438,32 +428,29 @@ function checkShareRules(assert: AssertModule, host: PluginHost): void {
     const repoOptions = {
       exclusiveCategories: ["Stress", "Benchmark", "GpuTrap"],
       exclusiveEnv: ["GSHARP_CUDA_TRAP_TESTS"],
-      sharedRecipes: ["test", "test-coverage", "test-differential-cuda"],
+      sharedRecipes: ["test", "test-differential-cuda"],
     };
     const reasonCtx = { ...ctx, options: repoOptions };
     const reasonCases: readonly [string, string][] = [
-      [`dotnet test X --filter "${Kept}"`, "categories"],
+      [`dotnet test tests/X --filter "${Kept}"`, "categories"],
       ["just test", "shared-recipe"],
-      ['just test --filter "FullyQualifiedName~Foo"', "filter-categories"],
-      ["just test -- RunConfiguration.TestCaseFilter=Name~Foo", "filter-unreadable"],
       ["just test-stability", "exclusive-recipe"],
-      ["dotnet test X --no-build", "no-filter"],
-      [`dotnet test bin/Tests.dll --filter "${Kept}"`, "binary-test"],
-      [`dotnet test X --filter "${Kept}" --filter:"Name~Foo"`, "filter-unreadable"],
-      [`dotnet test X --filter:"${Kept}"`, "filter-unreadable"],
-      ['dotnet test X --filter:v "Name~Foo"', "filter-unreadable"],
-      ["dotnet test X -p:VSTestTestCaseFilter=Name~Foo", "filter-unreadable"],
-      ["dotnet test X -- RunConfiguration.TestCaseFilter=Name~Foo", "filter-unreadable"],
-      ['dotnet test X --filter "Category!=Stress"', "filter-categories"],
-      ["$env:DiffEngine_Disabled='true'; dotnet test X --no-build --filter \"Name~Foo\"", "env-prefix"],
-      ['ROWBATCH_ROOTS=1 dotnet test X --no-build --filter "Name~Foo"', "env-prefix"],
-      [`dotnet test X --filter "${Kept}&Category=Stress"`, "exclusive-category"],
-      [`dotnet test X --filter "${Kept}" -e GSHARP_CUDA_TRAP_TESTS=1`, "exclusive-env"],
-      [`dotnet test X --filter "${Kept}" | tee log`, "piped"],
-      [`dotnet test X --filter "${Kept}`, "unreadable"],
-      ["echo hello", "no-work"],
-      ['dotnet test X --filter "$FILTER"', "hidden"],
-      ["dotnet build X", "not-test-command"],
+      ["dotnet test tests/X --no-build", "no-filter"],
+      [`dotnet test tests/bin/Tests.dll --filter "${Kept}"`, "binary-test"],
+      ['dotnet test tests/X --filter "Category!=Stress"', "filter-categories"],
+      [`dotnet test tests/X --filter "${Kept}&Category=Stress"`, "exclusive-category"],
+      ['dotnet test tests/X --filter "Category=stress"', "exclusive-category"],
+      // Commands outside the allow-listed language all report "not-language"
+      ['just test --filter "FullyQualifiedName~Foo"', "not-language"],
+      [`dotnet test tests/X --filter "${Kept}" -p:Configuration=Release`, "not-language"],
+      [`dotnet test tests/X --filter "${Kept}" --filter:"Name~Foo"`, "not-language"],
+      ["$env:DiffEngine_Disabled='true'; dotnet test tests/X --no-build --filter \"Name~Foo\"", "not-language"],
+      ['ROWBATCH_ROOTS=1 dotnet test tests/X --no-build --filter "Name~Foo"', "not-language"],
+      [`dotnet test tests/X --filter "${Kept}" | tee log`, "not-language"],
+      [`dotnet test tests/X --filter "${Kept}`, "not-language"],
+      ["echo hello", "not-language"],
+      ['dotnet test tests/X --filter "$FILTER"', "not-language"],
+      ["dotnet build tests/X", "not-language"],
     ];
     for (const [command, expectedReason] of reasonCases) {
       assert.strictEqual(
@@ -476,6 +463,27 @@ function checkShareRules(assert: AssertModule, host: PluginHost): void {
         expectedReason,
         `shareDecision reason for: ${command}`,
       );
+    }
+    // PowerShell env prefixes are accepted when shell is pwsh or powershell
+    for (const psShell of ["pwsh", "powershell"] as const) {
+      const psCtx = { ...ctx, shell: psShell };
+      const psShared = host.classify(
+        `$env:DiffEngine_Disabled='true'; dotnet test tests/X --filter "${Kept}"`,
+        Gpu,
+        psCtx,
+      );
+      assert.deepStrictEqual([psShared.share, psShared.shareReason], ["shared", "categories"]);
+      const psNamedCmd =
+        `$env:DiffEngine_Disabled="true"; $env:DOTNET_CLI_UI_LANGUAGE='en'; ` +
+        'dotnet test tests/X/X.csproj --no-build --filter "FullyQualifiedName~Foo"';
+      const psNamed = host.classify(psNamedCmd, Gpu, psCtx);
+      assert.deepStrictEqual([psNamed.share, psNamed.shareReason], [undefined, undefined]);
+      const psBare = host.classify(
+        `$env:DiffEngine_Disabled= hostname; dotnet test tests/X --filter "${Kept}"`,
+        Gpu,
+        psCtx,
+      );
+      assert.deepStrictEqual([psBare.share, psBare.shareReason], ["exclusive", "not-language"]);
     }
     // A command that nameFilterCheck reads has no opinion (checkShare judges it by the test list); a veto stays one
     const named = 'dotnet test tests/X/X.csproj --no-build --filter "FullyQualifiedName~Foo"';
@@ -496,7 +504,7 @@ function checkShareRules(assert: AssertModule, host: PluginHost): void {
       ],
       ["exclusive", "forced-exclusive"],
     );
-    const filtered = `dotnet test X --filter "${Kept}"`;
+    const filtered = `dotnet test tests/X --filter "${Kept}"`;
     assert.deepStrictEqual(
       [host.classify(filtered, null, ctx).share, host.classify(filtered, null, ctx).shareReason],
       [undefined, undefined],
@@ -599,7 +607,7 @@ function checkSharedRecipeFilters(assert: AssertModule, host: PluginHost, config
   for (const recipe of recipes as string[]) {
     const [body] = justfileReader.recipeBodies(justfile, recipe);
     assert.ok(body !== undefined, `the justfile has the shared recipe ${recipe}`);
-    const queued = /--gpu -- ([\s\S]*)$/.exec(body ?? "");
+    const queued = /--gpu(?:" \} else \{ "--gpu-exclusive" \}\})? -- ([\s\S]*)$/.exec(body ?? "");
     assert.ok(queued !== null, `${recipe} queues its command with --gpu`);
     const parameters = new Set(justfileReader.recipeParameters(justfile, recipe));
     const command = (queued?.[1] ?? "")
@@ -614,6 +622,202 @@ function checkSharedRecipeFilters(assert: AssertModule, host: PluginHost, config
       "shared",
       `the justfile command of ${recipe}: ${command}`,
     );
+  }
+}
+
+/** Checks GPU share classification for `just mutate <phase>` and inner `node scripts/human/mutate.js --phase <phase> --`. */
+function checkMutateShare(assert: AssertModule, host: PluginHost, repoRoot: string): void {
+  const repoCtx = contextFor(repoRoot, repoRoot);
+  // Real repository configs: gpumath shares via both outer `just mutate` and inner `node scripts/human/mutate.js`
+  for (const cmd of ["just mutate gpumath", "node scripts/human/mutate.js --phase gpumath --"]) {
+    const res = host.classify(cmd, Gpu, repoCtx);
+    assert.deepStrictEqual([res.share, res.shareReason], ["shared", "mutate-config"], `shared mutate: ${cmd}`);
+    assert.strictEqual(host.check(cmd, Gpu, repoCtx).refuse, undefined, `--gpu check accepts: ${cmd}`);
+  }
+  assert.deepStrictEqual(
+    [
+      host.classify("just mutate compiler", Gpu, repoCtx).share,
+      host.classify("just mutate compiler", Gpu, repoCtx).shareReason,
+    ],
+    ["exclusive", "mutate-config-unreadable"],
+    "compiler stryker-config uses parentheses outside FILTER",
+  );
+  assert.deepStrictEqual(
+    [
+      host.classify("just mutate compiler-cuda", Gpu, repoCtx).share,
+      host.classify("just mutate compiler-cuda", Gpu, repoCtx).shareReason,
+    ],
+    ["exclusive", "mutate-filter-categories"],
+  );
+  assert.deepStrictEqual(
+    [
+      host.classify("just test-stability", Gpu, repoCtx).share,
+      host.classify("just test-stability", Gpu, repoCtx).shareReason,
+    ],
+    ["exclusive", "exclusive-recipe"],
+  );
+  for (const cmd of [
+    "just mutate",
+    "just mutate gpumath main",
+    "just mutate gpumath -- -m Foo",
+    "node scripts/human/mutate.js --phase gpumath -- --since main",
+  ]) {
+    const res = host.classify(cmd, Gpu, repoCtx);
+    assert.deepStrictEqual([res.share, res.shareReason], ["exclusive", "not-language"], `non-language: ${cmd}`);
+  }
+  const trapRes = host.classify("just mutate gpumath", Gpu, { ...repoCtx, env: { GSHARP_CUDA_TRAP_TESTS: "1" } });
+  assert.deepStrictEqual([trapRes.share, trapRes.shareReason], ["exclusive", "exclusive-env"]);
+
+  // Synthetic worktree checks: malformed, empty filter, unknown key, lowercase category=stress, cwd != worktree, junction
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-henicos-mutate-"));
+  try {
+    const base = fs.realpathSync.native(dir);
+    const wt = path.join(base, "wt");
+    const otherCwd = path.join(base, "other-cwd");
+    const outsideDir = path.join(base, "outside");
+    const cfgDir = path.join(wt, "tests", "Stdlib", "Kassyi.GSharp.Stdlib.GpuMath.Tests");
+    fs.mkdirSync(cfgDir, { recursive: true });
+    fs.mkdirSync(otherCwd, { recursive: true });
+    fs.mkdirSync(outsideDir, { recursive: true });
+    const cfgFile = path.join(cfgDir, "stryker-config.json");
+    const wtCtx = contextFor(wt, repoRoot);
+
+    assert.deepStrictEqual(
+      [
+        host.classify("just mutate gpumath", Gpu, wtCtx).share,
+        host.classify("just mutate gpumath", Gpu, wtCtx).shareReason,
+      ],
+      ["exclusive", "mutate-config-unreadable"],
+      "missing stryker-config.json",
+    );
+    fs.writeFileSync(cfgFile, "{not json");
+    assert.deepStrictEqual(
+      [
+        host.classify("just mutate gpumath", Gpu, wtCtx).share,
+        host.classify("just mutate gpumath", Gpu, wtCtx).shareReason,
+      ],
+      ["exclusive", "mutate-config-unreadable"],
+      "malformed JSON",
+    );
+    fs.writeFileSync(cfgFile, JSON.stringify({ "stryker-config": { "test-case-filter": "" } }));
+    assert.deepStrictEqual(
+      [
+        host.classify("just mutate gpumath", Gpu, wtCtx).share,
+        host.classify("just mutate gpumath", Gpu, wtCtx).shareReason,
+      ],
+      ["exclusive", "mutate-config-unreadable"],
+      "empty test-case-filter",
+    );
+    fs.writeFileSync(
+      cfgFile,
+      JSON.stringify({
+        "stryker-config": { "test-case-filter": `FullyQualifiedName~Stdlib&${Kept}`, "test-runner": "mtp" },
+      }),
+    );
+    assert.deepStrictEqual(
+      [
+        host.classify("just mutate gpumath", Gpu, wtCtx).share,
+        host.classify("just mutate gpumath", Gpu, wtCtx).shareReason,
+      ],
+      ["exclusive", "mutate-config-unreadable"],
+      "unknown stryker-config key (test-runner) fails closed",
+    );
+    fs.writeFileSync(
+      cfgFile,
+      JSON.stringify({ "stryker-config": { "test-case-filter": `(${Kept})&FullyQualifiedName~Stdlib` } }),
+    );
+    assert.deepStrictEqual(
+      [
+        host.classify("just mutate gpumath", Gpu, wtCtx).share,
+        host.classify("just mutate gpumath", Gpu, wtCtx).shareReason,
+      ],
+      ["exclusive", "mutate-config-unreadable"],
+      "filter outside closed FILTER type (parentheses)",
+    );
+    fs.writeFileSync(
+      cfgFile,
+      JSON.stringify({ "stryker-config": { "test-case-filter": "Category!=Stress&Category!=Benchmark" } }),
+    );
+    assert.deepStrictEqual(
+      [
+        host.classify("just mutate gpumath", Gpu, wtCtx).share,
+        host.classify("just mutate gpumath", Gpu, wtCtx).shareReason,
+      ],
+      ["exclusive", "mutate-filter-categories"],
+      "missing GpuTrap exclusion",
+    );
+    fs.writeFileSync(cfgFile, JSON.stringify({ "stryker-config": { "test-case-filter": `${Kept}&category=stress` } }));
+    assert.deepStrictEqual(
+      [
+        host.classify("just mutate gpumath", Gpu, wtCtx).share,
+        host.classify("just mutate gpumath", Gpu, wtCtx).shareReason,
+      ],
+      ["exclusive", "exclusive-category"],
+      "lowercase category=stress reports exclusive-category",
+    );
+    fs.writeFileSync(
+      cfgFile,
+      JSON.stringify({ "stryker-config": { "test-case-filter": `FullyQualifiedName~Stdlib&${Kept}` } }),
+    );
+    assert.deepStrictEqual(
+      [
+        host.classify("just mutate gpumath", Gpu, wtCtx).share,
+        host.classify("just mutate gpumath", Gpu, wtCtx).shareReason,
+      ],
+      ["shared", "mutate-config"],
+      "all 3 exclusions present",
+    );
+    // When cwd differs from worktree, read stryker-config.json from worktree (not cwd)
+    const diffCwdCtx = { ...wtCtx, cwd: otherCwd };
+    assert.deepStrictEqual(
+      [
+        host.classify("just mutate gpumath", Gpu, diffCwdCtx).share,
+        host.classify("just mutate gpumath", Gpu, diffCwdCtx).shareReason,
+      ],
+      ["shared", "mutate-config"],
+      "cwd != worktree reads stryker-config from worktree",
+    );
+    // Junction/symlink pointing outside the worktree must fail closed as mutate-config-unreadable
+    fs.writeFileSync(
+      path.join(outsideDir, "stryker-config.json"),
+      JSON.stringify({ "stryker-config": { "test-case-filter": `FullyQualifiedName~Stdlib&${Kept}` } }),
+    );
+    const wtLink = path.join(base, "wt-link");
+    const linkParent = path.join(wtLink, "tests", "Stdlib");
+    fs.mkdirSync(linkParent, { recursive: true });
+    fs.symlinkSync(
+      outsideDir,
+      path.join(linkParent, "Kassyi.GSharp.Stdlib.GpuMath.Tests"),
+      process.platform === "win32" ? "junction" : "dir",
+    );
+    const linkCtx = contextFor(wtLink, repoRoot);
+    assert.deepStrictEqual(
+      [
+        host.classify("just mutate gpumath", Gpu, linkCtx).share,
+        host.classify("just mutate gpumath", Gpu, linkCtx).shareReason,
+      ],
+      ["exclusive", "mutate-config-unreadable"],
+      "junction/symlink outside worktree fails closed",
+    );
+  } finally {
+    removeDirectory(dir);
+  }
+
+  // Verify `just --dry-run mutate <phase>`: --gpu only on gpumath, absent on compiler and compiler-cuda
+  const justCheck = spawnSync("just", ["--version"], { windowsHide: true });
+  if (!justCheck.error && justCheck.status === 0) {
+    const dryRun = (phase: string): string => {
+      const r = spawnSync("just", ["--dry-run", "mutate", phase], {
+        cwd: repoRoot,
+        encoding: "utf8",
+        windowsHide: true,
+      });
+      assert.strictEqual(r.status, 0, `just --dry-run mutate ${phase} succeeded`);
+      return `${r.stdout ?? ""}\n${r.stderr ?? ""}`;
+    };
+    assert.ok(dryRun("gpumath").includes("--gpu"), "just mutate gpumath passes --gpu");
+    assert.strictEqual(dryRun("compiler").includes("--gpu"), false, "just mutate compiler omits --gpu");
+    assert.strictEqual(dryRun("compiler-cuda").includes("--gpu"), false, "just mutate compiler-cuda omits --gpu");
   }
 }
 
@@ -640,6 +844,7 @@ export async function checks(assert: AssertModule): Promise<void> {
   checkCharacterizationAndBudgets(assert, host);
   checkGpuCheckHook(assert, host);
   checkShareRules(assert, host);
+  checkMutateShare(assert, host, loaded.configRoot);
   const henicosOptions = loaded.config.plugins?.find((p) => p.name === "./scripts/human/job-queue-henicos")?.options;
   checkSharedRecipeFilters(assert, host, loaded.configRoot, henicosOptions?.sharedRecipes);
   await quietly(() => checkQueuedRunMemoryMb(assert, host, FixedBudgetsYaml));
@@ -649,4 +854,5 @@ export async function checks(assert: AssertModule): Promise<void> {
   await checkHenicosOffloadProbe(assert, loaded.configRoot);
   await checkHenicosOffloadSources(assert, loaded.configRoot);
   await checkNameFilter(assert);
+  await checkCommandLanguage(assert);
 }

@@ -16,7 +16,7 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 /// (<see cref="KernelConstructChecks"/>), where a barrier stands (<see cref="BarrierDivergenceChecks"/>), what must not
 /// cross a barrier (<see cref="CrossBarrierChecks"/>), the shape of a device iterator
 /// (<see cref="DeviceIteratorChecks"/>) and the jumps that the CPU state machine cannot lower
-/// (<see cref="ReconvergenceJumpChecks"/>, <see cref="ChainedLabelJumpChecks"/>).
+/// (<see cref="ReconvergenceJumpChecks"/>); GSH0121 is the generator's alone (<see cref="ChainedLabelJumpChecks"/>).
 /// The <c>ISyntaxValidationRule&lt;T&gt;</c> registry is not used for the prohibitions: it runs on kernels only, while
 /// this validator also runs on device functions that suspend.
 /// </para>
@@ -51,18 +51,14 @@ internal readonly ref struct KernelBarrierValidator(
         // _scan.Barriers
         ReconvergenceJumpChecks.Validate(_scan);
 
-        // 5. Gotos to the inner label of chained labels from another state of the CPU state machine (GSH0121), from the
-        // lowering's own list; before the barrier early return for the same reason as step 4
-        ChainedLabelJumpChecks.Validate(_scan);
-
-        // 6. Barriers that only some of the threads reach (GSH0037), on the control flow graph
+        // 5. Barriers that only some of the threads reach (GSH0037), on the control flow graph
         BarrierDivergenceChecks.ValidateDivergentBarriers(_scan);
         if (_scan.Barriers.Count == 0)
         {
             return;
         }
 
-        // 7. The rules about barriers in local functions (GSH0045) and jumps across them (GSH0040)
+        // 6. The rules about barriers in local functions (GSH0045) and jumps across them (GSH0040)
         CrossBarrierChecks.ValidateRecursiveLocalFunctions(_scan);
         CrossBarrierChecks.ValidateCrossBarrierGotos(_scan);
     }
@@ -95,5 +91,70 @@ internal readonly ref struct KernelBarrierValidator(
                 case InvocationExpressionSyntax invocation: KernelConstructChecks.InspectInvocation(_scan, invocation); break;
             }
         }
+
+        var body = (SyntaxNode?)methodDecl.Body ?? methodDecl.ExpressionBody;
+        if (body != null)
+        {
+            InspectDirectCallees(body);
+        }
+    }
+
+    private void InspectDirectCallees(SyntaxNode body)
+    {
+        var compilation = semanticModel.Compilation;
+        foreach (var (callee, site) in DirectCallees.Of([body], TypeArgumentMap.None, compilation))
+        {
+            if (DirectCallees.IsMethodGroupSite(site, callee, semanticModel))
+            {
+                continue;
+            }
+
+            if (site is InvocationExpressionSyntax invocation &&
+                semanticModel.GetSymbol(invocation) is IMethodSymbol invoked &&
+                callee.IsEqualTo(invoked.GetConstructedReducedFrom() ?? invoked))
+            {
+                continue;
+            }
+
+            if (!SuspensionAnalysis.IsSuspendingFunction(callee, compilation))
+            {
+                continue;
+            }
+
+            _scan.HasSplitPoint = true;
+            if (!SuspensionAnalysis.ReachesBlockBarrier(callee, compilation))
+            {
+                continue;
+            }
+
+            var scope = SuspensionAnalysis.GetBarrierScope(callee, compilation);
+            var existingIndex = FindSyncPointIndex(site);
+            if (existingIndex >= 0)
+            {
+                if (_scan.SyncPoints[existingIndex].Scope != SyncScope.Grid && scope == SyncScope.Grid)
+                {
+                    _scan.SyncPoints[existingIndex] = (site, SyncScope.Grid, IsCall: true);
+                }
+
+                continue;
+            }
+
+            _scan.SyncPoints.Add((site, scope, IsCall: true));
+            _scan.RecordSyncPointName(site, callee);
+            BarrierDivergenceChecks.InspectBarrierAncestors(_scan, site);
+        }
+    }
+
+    private int FindSyncPointIndex(SyntaxNode site)
+    {
+        for (var i = 0; i < _scan.SyncPoints.Count; i++)
+        {
+            if (_scan.SyncPoints[i].Barrier == site)
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 }

@@ -33,7 +33,7 @@ public static class StructLayoutValidator
             return HasDeviceRepresentation(named.TypeArguments[0], dialect);
         }
 
-        return GlobalCppNames.IsEmittedUserType(named) || named.IsSharedMemoryType() || named.IsWmmaFragmentType() ||
+        return EmittedUserTypes.IsEmittedUserType(named) || named.IsSharedMemoryType() || named.IsWmmaFragmentType() ||
                named.IsWmmaMarkerType();
     }
 

@@ -62,39 +62,6 @@ internal static class UsingTranspiler
         return statement;
     }
 
-    /// <summary>
-    /// The method that a <c>using</c> of <paramref name="type"/> calls: the implementation of
-    /// <see cref="IDisposable.Dispose"/>, or for a <c>ref struct</c> a public parameterless <c>void Dispose()</c>.
-    /// </summary>
-    public static IMethodSymbol? FindDisposeMethod(INamedTypeSymbol type, Compilation compilation)
-    {
-        var interfaceMethod = compilation.GetSpecialType(SpecialType.System_IDisposable)
-            .GetMembers(nameof(IDisposable.Dispose))
-            .AsStackEnumerable()
-            .OfType<IMethodSymbol>()
-            .FirstOrDefault(static method => method.Parameters.Length == 0);
-        if (interfaceMethod != null && type.FindImplementationForInterfaceMember(interfaceMethod) is IMethodSymbol implementation)
-        {
-            return implementation;
-        }
-
-        if (!type.IsRefLikeType)
-        {
-            return null;
-        }
-
-        return type.GetMembers(nameof(IDisposable.Dispose))
-            .AsStackEnumerable()
-            .OfType<IMethodSymbol>()
-            .FirstOrDefault(static method => method is
-            {
-                IsStatic: false,
-                ReturnsVoid: true,
-                Parameters.Length: 0,
-                DeclaredAccessibility: Accessibility.Public
-            });
-    }
-
     // {
     // <declaration or T __gsharp_using_resource_<n> = <expression>;>
     // __gsharp_using_scope<T> __gsharp_using_guard_<n>{<resource>};
@@ -254,7 +221,7 @@ internal static class UsingTranspiler
         }
 
         if (type is not INamedTypeSymbol named || !GlobalCppNames.IsEncodedUserType(named, context.Emitter.Dialect) ||
-            FindDisposeMethod(named, compilation) is not { } dispose)
+            UsingDisposeLookup.Find(named, compilation) is not { } dispose)
         {
             context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, ResourceNotStruct);
             return false;
@@ -333,7 +300,7 @@ internal static class UsingTranspiler
         for (var i = 0; i < context.Emitter.DisposedStructs.Count; i++)
         {
             var type = context.Emitter.DisposedStructs[i];
-            if (FindDisposeMethod(type, compilation) is not { } dispose ||
+            if (UsingDisposeLookup.Find(type, compilation) is not { } dispose ||
                 !TryGetDisposeBody(dispose, compilation, out var declaration, out var block, out var expression))
             {
                 continue;

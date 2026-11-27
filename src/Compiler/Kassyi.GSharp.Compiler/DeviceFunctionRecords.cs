@@ -135,7 +135,10 @@ internal static class DeviceFunctionRecords
             ReachesArrivalBarrier: SuspensionAnalysis.ReachesArrivalBarrier(method, compilation),
             ReachesSharedMemory: CSharpExecutionAnalysis.ReachesSharedMemory(method, compilation),
             ReachesGeneratedMeaning: CSharpExecutionAnalysis.ReachesGeneratedMeaning(method, compilation),
-            PrivateManagedFrame: forms.Managed.PrivateFrame);
+            PrivateManagedFrame: forms.Managed.PrivateFrame,
+            ReachesWarpShuffle: SuspensionAnalysis.ReachesWarpShuffleOnStack(method, compilation),
+            ReachesActiveMask: SuspensionAnalysis.ReachesActiveMaskOnStack(method, compilation),
+            ReachesGridBarrier: SuspensionAnalysis.ReachesGridBarrierOnStack(method, compilation));
 
         return new DeviceExportRecord(
             DeviceExportRecord.FunctionKind,

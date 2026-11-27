@@ -91,6 +91,21 @@ internal static class SplicedOperationWalker
             case IObjectCreationOperation creation:
                 WalkObjectCreation(context, creation, graph);
                 return;
+            case IPropertyReferenceOperation property:
+                WalkPropertyReference(context, property, graph);
+                return;
+            case IConversionOperation conversion:
+                WalkConversion(context, conversion, graph);
+                return;
+            case ICollectionExpressionOperation collection:
+                WalkCollectionExpression(context, collection, graph);
+                return;
+            case IBinaryOperation binary:
+                WalkBinary(context, binary, graph);
+                return;
+            case IUnaryOperation unary:
+                WalkUnary(context, unary, graph);
+                return;
         }
 
         WalkChildren(context, operation, graph);
@@ -132,6 +147,7 @@ internal static class SplicedOperationWalker
         ControlFlowGraph graph)
     {
         Walk(context, increment.Target, graph);
+        SplicedCallWalker.RecordMethodSplitIfSuspending(context, increment.OperatorMethod, increment, graph);
         foreach (var recorder in context.Recorders)
         {
             recorder.OnIncrement(increment, graph, context.Current.Index);
@@ -141,6 +157,11 @@ internal static class SplicedOperationWalker
     private static void WalkFlowCapture(SplicedFlowContext context, IFlowCaptureOperation capture,
         ControlFlowGraph graph)
     {
+        if (capture.Value is IPropertyReferenceOperation property)
+        {
+            context.RecordCapturedProperty(graph, capture.Id, property);
+        }
+
         Walk(context, capture.Value, graph);
         foreach (var recorder in context.Recorders)
         {
@@ -151,11 +172,137 @@ internal static class SplicedOperationWalker
     private static void WalkObjectCreation(SplicedFlowContext context, IObjectCreationOperation creation,
         ControlFlowGraph graph)
     {
+        foreach (var argument in creation.Arguments)
+        {
+            if (!SplicedCallWalker.IsWrittenByCallee(argument))
+            {
+                Walk(context, argument.Value, graph);
+            }
+        }
+
         foreach (var recorder in context.Recorders)
         {
             recorder.OnObjectCreation(creation, context.Current.Index);
         }
 
-        WalkChildren(context, creation, graph);
+        if (creation.Constructor is { } constructor &&
+            SplicedCallWalker.GetMemberSplit(context.Model.Compilation, constructor, creation.Arguments, creation,
+                graph) is { } split)
+        {
+            context.Record((recorder, node) => recorder.OnSplit(split, node), context.Current.Index);
+        }
+
+        foreach (var recorder in context.Recorders)
+        {
+            recorder.OnObjectCreationReturned(creation, graph, context.Current.Index);
+        }
+
+        if (creation.Initializer is { } initializer)
+        {
+            Walk(context, initializer, graph);
+        }
+    }
+
+    private static void WalkPropertyReference(SplicedFlowContext context, IPropertyReferenceOperation property,
+        ControlFlowGraph graph)
+    {
+        if (property.Instance is { } instance)
+        {
+            Walk(context, instance, graph);
+        }
+
+        foreach (var argument in property.Arguments)
+        {
+            Walk(context, argument.Value, graph);
+        }
+
+        var (reads, writes) = OperationCalls.GetAccessorUsage(property);
+        var compilation = context.Model.Compilation;
+        if (reads && property.Property.GetMethod is { } getter &&
+            SplicedCallWalker.GetMemberSplit(compilation, getter, property.Arguments, property, graph) is
+                { } readSplit)
+        {
+            context.Record((recorder, node) => recorder.OnSplit(readSplit, node), context.Current.Index);
+        }
+
+        if (writes && property.Property.SetMethod is { } setter &&
+            SplicedCallWalker.GetMemberSplit(compilation, setter, property.Arguments, property, graph) is
+                { } writeSplit)
+        {
+            context.Record((recorder, node) => recorder.OnSplit(writeSplit, node), context.Current.Index);
+        }
+    }
+
+    private static void WalkConversion(SplicedFlowContext context, IConversionOperation conversion,
+        ControlFlowGraph graph)
+    {
+        Walk(context, conversion.Operand, graph);
+        if (conversion.OperatorMethod is { } operatorMethod &&
+            SplicedCallWalker.GetMemberSplit(context.Model.Compilation, operatorMethod,
+                ImmutableArray<IArgumentOperation>.Empty, conversion, graph) is { } split)
+        {
+            context.Record((recorder, node) => recorder.OnSplit(split, node), context.Current.Index);
+        }
+    }
+
+    private static void WalkCollectionExpression(SplicedFlowContext context, ICollectionExpressionOperation collection,
+        ControlFlowGraph graph)
+    {
+        WalkChildren(context, collection, graph);
+        if (collection.ConstructMethod is { } constructMethod &&
+            SplicedCallWalker.GetMemberSplit(context.Model.Compilation, constructMethod,
+                ImmutableArray<IArgumentOperation>.Empty, collection, graph) is { } split)
+        {
+            context.Record((recorder, node) => recorder.OnSplit(split, node), context.Current.Index);
+        }
+    }
+
+    private static void WalkBinary(SplicedFlowContext context, IBinaryOperation binary, ControlFlowGraph graph)
+    {
+        Walk(context, binary.LeftOperand, graph);
+        Walk(context, binary.RightOperand, graph);
+        if (binary.OperatorMethod is { } operatorMethod)
+        {
+            SplicedCallWalker.RecordMethodSplitIfSuspending(context, operatorMethod, binary, graph);
+            if (OperatorMacroResolver.TryGetTarget(operatorMethod, context.Model.Compilation, out var target))
+            {
+                SplicedCallWalker.RecordMethodSplitIfSuspending(context, target, binary, graph);
+            }
+        }
+    }
+
+    private static void WalkUnary(SplicedFlowContext context, IUnaryOperation unary, ControlFlowGraph graph)
+    {
+        Walk(context, unary.Operand, graph);
+        if (unary.OperatorMethod is { } operatorMethod)
+        {
+            var siteSyntax = GetUnarySiteSyntax(unary);
+            SplicedCallWalker.RecordMethodSplitIfSuspending(context, operatorMethod, unary, graph, siteSyntax);
+            if (OperatorMacroResolver.TryGetTarget(operatorMethod, context.Model.Compilation, out var target))
+            {
+                SplicedCallWalker.RecordMethodSplitIfSuspending(context, target, unary, graph, siteSyntax);
+            }
+        }
+    }
+
+    private static SyntaxNode GetUnarySiteSyntax(IUnaryOperation unary)
+    {
+        if (unary.OperatorMethod is { MethodKind: MethodKind.UserDefinedOperator, Name: "op_True" or "op_False" })
+        {
+            var current = unary.Syntax;
+            while (current.Parent is ParenthesizedExpressionSyntax parenthesized)
+            {
+                current = parenthesized;
+            }
+
+            if (current.Parent is BinaryExpressionSyntax binary &&
+                binary.IsKind(SyntaxKind.LogicalAndExpression, SyntaxKind.LogicalOrExpression) &&
+                binary.Left == current)
+            {
+                return binary;
+            }
+        }
+
+        return unary.Syntax;
     }
 }

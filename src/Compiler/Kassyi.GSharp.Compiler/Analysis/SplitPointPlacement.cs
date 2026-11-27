@@ -101,13 +101,14 @@ internal static class SplitPointPlacement
     /// the block: one declared before it, or any one when the block is a nested block, whose statements the lowering
     /// moves into the enclosing block (<c>BranchRewriter</c>, <c>LoopRewriter</c>) so that its scope would end there.
     /// </summary>
-    public static bool IsInUsingDeclarationScope(BlockSyntax block, InvocationExpressionSyntax barrier)
+    public static bool IsInUsingDeclarationScope(BlockSyntax block, SyntaxNode barrier)
     {
         var isNested = block.Parent is BlockSyntax;
         return block.Statements
             .AsStackEnumerable()
-            .Any((barrier.SpanStart, isNested), static (statement, state) =>
+            .Any((barrier, isNested), static (statement, state) =>
                 UsingTranspiler.IsUsingDeclaration(statement) &&
-                (state.isNested || statement.SpanStart < state.SpanStart));
+                !statement.Span.Contains(state.barrier.Span) &&
+                (state.isNested || statement.SpanStart < state.barrier.SpanStart));
     }
 }

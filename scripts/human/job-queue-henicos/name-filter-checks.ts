@@ -26,24 +26,22 @@ function contextWith(env: NodeJS.ProcessEnv = {}, log: (text: string) => void = 
 
 const Plain = "dotnet test tests/X --no-build --filter";
 
-/** [command, project, filter] of every command that is read; the rest of the table is read as null. */
+/** [command, project, filter] of every command that is read on bash; the rest of the table is read as null. */
 const Read: readonly [string, string, string][] = [
   [`${Plain} "FullyQualifiedName~Foo"`, "tests/X", "FullyQualifiedName~Foo"],
   [`${Plain} "Name~A|Name~B"`, "tests/X", "Name~A|Name~B"],
-  [
-    `${Plain} "Name~A | FullyQualifiedName=N.C.M | DisplayName~d"`,
-    "tests/X",
-    "Name~A|FullyQualifiedName=N.C.M|DisplayName~d",
-  ],
+  [`${Plain} "Name~A|FullyQualifiedName=N.C.M|ClassName~d"`, "tests/X", "Name~A|FullyQualifiedName=N.C.M|ClassName~d"],
   [`${Plain} "FullyQualifiedName=N.C.M"`, "tests/X", "FullyQualifiedName=N.C.M"],
-  [`${Plain}="Name~Foo"`, "tests/X", "Name~Foo"],
+  [`${Plain} 'Name~Foo'`, "tests/X", "Name~Foo"],
   ['dotnet test tests/X/X.csproj --no-build --filter "Name~Foo"', "tests/X/X.csproj", "Name~Foo"],
   ['DiffEngine_Disabled=true dotnet test tests/X --no-build --filter "Name~Foo" -v n --nologo', "tests/X", "Name~Foo"],
-  ['dotnet.exe test tests/X --no-build --filter "Name~Foo" -nodeReuse:false', "tests/X", "Name~Foo"],
-  [`${Plain} "Name~Foo"; echo done`, "tests/X", "Name~Foo"],
-  ['C:/PROGRA~1/dotnet/dotnet.exe test tests/X --no-build --filter "Name~Foo"', "tests/X", "Name~Foo"],
-  ['/usr/share/dotnet/dotnet test tests/X --no-build --filter "Name~Foo"', "tests/X", "Name~Foo"],
-  [`${Plain} "Name~Foo" # rerun`, "tests/X", "Name~Foo"],
+  [
+    "DiffEngine_Disabled=true DOTNET_CLI_UI_LANGUAGE=en dotnet test tests/X --no-build " +
+      '--disable-build-servers --filter "Name~Foo" --logger "console;verbosity=detailed" > tmp/out.log 2>&1',
+    "tests/X",
+    "Name~Foo",
+  ],
+  ['dotnet test tests/X --no-build --filter "Name~Foo" -nodeReuse:false', "tests/X", "Name~Foo"],
 ];
 
 /** The directories the checks know: one project, a solution beside it, two projects, no project (others: missing). */
@@ -161,14 +159,53 @@ export async function checkNameFilter(assert: AssertModule): Promise<void> {
   for (const [command, project, filter] of Read) {
     assert.deepStrictEqual(nameFilterCheck(command, context, Entries), { project, filter }, `read: ${command}`);
   }
+  // PowerShell env prefixes are read when shell is pwsh / powershell
+  for (const psShell of ["pwsh", "powershell"] as const) {
+    const psContext = { ...context, shell: psShell };
+    assert.deepStrictEqual(
+      nameFilterCheck(
+        `$env:DiffEngine_Disabled='true'; dotnet test tests/X --no-build --filter "Name~Foo"`,
+        psContext,
+        Entries,
+      ),
+      { project: "tests/X", filter: "Name~Foo" },
+      `read (${psShell} single-quoted prefix)`,
+    );
+    const psTwoPrefix =
+      `$env:DiffEngine_Disabled="true"; $env:DOTNET_CLI_UI_LANGUAGE='en'; ` +
+      "dotnet test tests/X --no-build --filter 'Name~Foo'";
+    assert.deepStrictEqual(
+      nameFilterCheck(psTwoPrefix, psContext, Entries),
+      { project: "tests/X", filter: "Name~Foo" },
+      `read (${psShell} two prefixes)`,
+    );
+    assert.strictEqual(
+      nameFilterCheck(
+        `$env:DiffEngine_Disabled= hostname; dotnet test tests/X --no-build --filter "Name~Foo"`,
+        psContext,
+        Entries,
+      ),
+      null,
+      `not read (${psShell} bare value)`,
+    );
+    assert.strictEqual(
+      nameFilterCheck(
+        `$env:ROWBATCH_ROOTS='1'; dotnet test tests/X --no-build --filter "Name~Foo"`,
+        psContext,
+        Entries,
+      ),
+      null,
+      `not read (${psShell} disallowed prefix)`,
+    );
+  }
   for (const command of NotRead) {
     assert.strictEqual(nameFilterCheck(command, context, Entries), null, `not read: ${command}`);
   }
-  const carried = nameFilterCheck(`${Plain} "Name~Foo" -c Release -f net10.0`, context, Entries);
+  const carried = nameFilterCheck(`${Plain} "Name~Foo" -c Release`, context, Entries);
   assert.deepStrictEqual(
     carried,
-    { project: "tests/X", filter: "Name~Foo", configuration: "Release", framework: "net10.0" },
-    "-c and -f are carried to the list",
+    { project: "tests/X", filter: "Name~Foo", configuration: "Release" },
+    "-c is carried to the list",
   );
   assert.strictEqual(
     nameFilterCheck(`${Plain} "Name~Foo"`, contextWith({ GSHARP_CUDA_TRAP_TESTS: "1" }), Entries),

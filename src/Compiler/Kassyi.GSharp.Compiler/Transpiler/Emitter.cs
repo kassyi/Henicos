@@ -175,9 +175,10 @@ public struct Emitter(
     public INamedTypeSymbol? CurrentStructType;
 
     /// <summary>
-    /// The struct whose user-defined constructor body is currently being emitted, or <see langword="null"/>.
+    /// The struct whose constructor or instance device function body is currently being emitted and how
+    /// <see langword="this"/> is spelled there, or default (<see cref="SelfForm.MemberFunction"/>).
     /// </summary>
-    public INamedTypeSymbol? StructConstructorType;
+    internal StructSelfReference StructSelf;
 
     /// <summary>
     /// The syntax node or member type syntax currently being emitted, used when reporting diagnostics from type emission.

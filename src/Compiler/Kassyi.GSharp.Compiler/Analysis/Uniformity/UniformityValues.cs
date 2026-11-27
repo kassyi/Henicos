@@ -23,6 +23,10 @@ internal sealed class UniformityValues(UniformityRecorder recorder)
     // The same, by the reference of a write that names a member of the capture
     private readonly Dictionary<IFlowCaptureReferenceOperation, ImmutableArray<ISymbol>.Builder> _rootAliases = new();
 
+    // Property or indexer targets captured before a conditional assignment (such as `??=`)
+    private readonly Dictionary<(ControlFlowGraph Graph, CaptureId Id), IPropertyReferenceOperation>
+        _capturedProperties = new();
+
     // The result of each local function call whose body is spliced where it is called
     private readonly Dictionary<SyntaxNode, int> _results = new();
 
@@ -96,6 +100,15 @@ internal sealed class UniformityValues(UniformityRecorder recorder)
     /// <summary>The value index that <see cref="CaptureRootOf"/> kept for <paramref name="reference"/>.</summary>
     public bool TryGetCaptureRoot(IFlowCaptureReferenceOperation reference, out int index) =>
         _captureRoots.TryGetValue(reference, out index);
+
+    /// <summary>Records a captured property or indexer reference for <paramref name="id"/> in <paramref name="graph"/>.</summary>
+    public void RecordCapturedProperty(ControlFlowGraph graph, CaptureId id, IPropertyReferenceOperation property) =>
+        _capturedProperties[(graph, id)] = property;
+
+    /// <summary>Gets the captured property or indexer reference for <paramref name="id"/> in <paramref name="graph"/>, if any.</summary>
+    public bool TryGetCapturedProperty(ControlFlowGraph graph, CaptureId id,
+        [NotNullWhen(true)] out IPropertyReferenceOperation? property) =>
+        _capturedProperties.TryGetValue((graph, id), out property);
 
     /// <summary>The value index of a local or parameter, given one on first use.</summary>
     public int ValueOf(ISymbol symbol)

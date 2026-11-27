@@ -1,6 +1,7 @@
 using Kassyi.GSharp.Compiler.Ir.Classifying;
 using Kassyi.GSharp.Compiler.Ir.Decisions;
 using Kassyi.GSharp.Compiler.Ir.Expressions;
+using Kassyi.GSharp.Compiler.Ir.Splitting;
 
 namespace Kassyi.GSharp.Compiler.Ir.Sequencing;
 
@@ -39,19 +40,26 @@ internal static class IrArgumentSequencing
     /// <param name="isCall">Whether the arguments are those of a call rather than of a brace initialization.</param>
     /// <param name="context">The context of the pass.</param>
     public static IrSequencePlan Plan(ImmutableArray<IrArgument> arguments, int[] operands, bool hasExtensionReceiver,
-        IrExpression? instanceReceiver, bool spillAll, bool isCall, IrSequenceContext context)
+        IrExpression? instanceReceiver, bool spillAll, bool isCall, IrSequenceContext context,
+        IrExpression? callReceiver = null, IMethodSymbol? callMethod = null)
     {
-        var total = operands.Length;
+        var receiverOffset = callReceiver is not null ? 1 : 0;
+        var total = receiverOffset + operands.Length;
         if (total < 2 && !spillAll)
         {
             return IrSequencePlan.None;
         }
 
         var effects = new ExpressionEffects[total];
-        for (var index = 0; index < total; index++)
+        if (callReceiver is not null)
+        {
+            effects[0] = EffectsOfCallReceiver(callReceiver, callMethod, context);
+        }
+
+        for (var index = 0; index < operands.Length; index++)
         {
             var argument = arguments[operands[index]];
-            effects[index] = hasExtensionReceiver && index == 0
+            effects[index + receiverOffset] = hasExtensionReceiver && index == 0
                 ? EffectsOfReceiver(argument, context)
                 : EffectsOfArgument(argument, context);
         }
@@ -66,10 +74,21 @@ internal static class IrArgumentSequencing
         var temps = ImmutableArray.CreateBuilder<IrSequenceTempPlan>();
         for (var index = 0; index <= last; index++)
         {
-            var receiver = hasExtensionReceiver && index == 0;
+            if (callReceiver is not null && index == 0)
+            {
+                if (!effects[0].IsEmpty)
+                {
+                    temps.Add(new IrSequenceTempPlan(0, KindOfCallReceiver(callReceiver, callMethod, context)));
+                }
+
+                continue;
+            }
+
+            var argOperandIndex = index - receiverOffset;
+            var receiver = hasExtensionReceiver && argOperandIndex == 0;
             if ((spillAll && !receiver) || !effects[index].IsEmpty)
             {
-                var argument = arguments[operands[index]];
+                var argument = arguments[operands[argOperandIndex]];
                 temps.Add(new IrSequenceTempPlan(index,
                     receiver ? KindOfReceiver(argument) : KindOfArgument(argument, isCall)));
             }
@@ -83,12 +102,37 @@ internal static class IrArgumentSequencing
     /// reads of temporaries that <paramref name="builder"/> declares in the C# order of evaluation.
     /// </summary>
     public static ImmutableArray<IrArgument> Apply(ImmutableArray<IrArgument> rewritten, int[] operands,
-        IrSequencePlan plan, IrSequenceBuilder builder)
+        IrSequencePlan plan, IrSequenceBuilder builder) =>
+        Apply(null, rewritten, operands, plan, builder, hasCallReceiver: false).Arguments;
+
+    /// <summary>
+    /// <paramref name="rewrittenReceiver"/> and <paramref name="rewritten"/> with the planned operands replaced by
+    /// reads of temporaries that <paramref name="builder"/> declares in the C# order of evaluation.
+    /// </summary>
+    public static (IrExpression? Receiver, ImmutableArray<IrArgument> Arguments) Apply(
+        IrExpression? rewrittenReceiver,
+        ImmutableArray<IrArgument> rewritten,
+        int[] operands,
+        IrSequencePlan plan,
+        IrSequenceBuilder builder,
+        bool hasCallReceiver)
     {
+        var receiver = rewrittenReceiver;
         var result = rewritten.ToBuilder();
+        var receiverOffset = hasCallReceiver ? 1 : 0;
         foreach (var temp in plan.Temps)
         {
-            var position = operands[temp.OperandIndex];
+            if (hasCallReceiver && temp.OperandIndex == 0)
+            {
+                if (receiver is not null)
+                {
+                    receiver = SpillCallReceiver(receiver, temp.Kind, builder);
+                }
+
+                continue;
+            }
+
+            var position = operands[temp.OperandIndex - receiverOffset];
             var argument = rewritten[position];
             var value = argument.Value;
             IrExpression read = temp.Kind switch
@@ -102,7 +146,7 @@ internal static class IrArgumentSequencing
             result[position] = new IrArgument(argument.Parameter, read, argument.Kind, argument.EvaluationIndex);
         }
 
-        return result.MoveToImmutable();
+        return (receiver, result.MoveToImmutable());
     }
 
     /// <summary>
@@ -193,6 +237,39 @@ internal static class IrArgumentSequencing
         receiver.Parameter.RefKind != RefKind.None && IsLocation(receiver.Value)
             ? IrEffects.OfLocation(receiver.Value, context.Compilation, false, IrTrapReading.Decided)
             : IrEffects.Of(receiver.Value, context.Compilation, IrTrapReading.Decided);
+
+    // The receiver of an emitted struct instance device function: a value when copied or a temporary, otherwise its
+    // location.
+    private static ExpressionEffects EffectsOfCallReceiver(IrExpression receiver, IMethodSymbol? method,
+        IrSequenceContext context) =>
+        IsLocation(receiver) && !IrReadOnlyReceivers.IsCopiedBeforeTheCall(receiver, method, context.Decisions.Method)
+            ? IrEffects.OfLocation(receiver, context.Compilation, false, IrTrapReading.Decided)
+            : IrEffects.Of(receiver, context.Compilation, IrTrapReading.Decided);
+
+    private static IrSequenceTempKind KindOfCallReceiver(IrExpression receiver, IMethodSymbol? method,
+        IrSequenceContext context)
+    {
+        if (!IsLocation(receiver) ||
+            IrReadOnlyReceivers.IsCopiedBeforeTheCall(receiver, method, context.Decisions.Method))
+        {
+            return IrSequenceTempKind.ConvertedValue;
+        }
+
+        return receiver.Category == IrCategory.ReadOnlyLocation
+            ? IrSequenceTempKind.ReadOnlyReference
+            : IrSequenceTempKind.Reference;
+    }
+
+    private static IrExpression SpillCallReceiver(IrExpression receiver, IrSequenceTempKind kind,
+        IrSequenceBuilder builder) =>
+        kind switch
+        {
+            IrSequenceTempKind.Reference => builder.SpillReference(receiver),
+            IrSequenceTempKind.ReadOnlyReference => builder.SpillReference(receiver, RefKind.In),
+            IrSequenceTempKind.ConvertedValue => builder.Spill(receiver, receiver.Type, RefKind.None,
+                IrDeclaredTypeForm.Deduced, receiver.Category),
+            _ => throw new InvalidOperationException($"A receiver has no temporary of kind {kind}.")
+        };
 
     // An argument, which may throw for the null check of its parameter
     private static ExpressionEffects EffectsOfArgument(IrArgument argument, IrSequenceContext context)

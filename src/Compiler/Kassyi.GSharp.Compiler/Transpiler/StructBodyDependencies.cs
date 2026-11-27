@@ -149,7 +149,7 @@ internal static class StructBodyDependencies
         var element = type.TryGetArrayLikeElementType(out var elementType) ? elementType : type;
         if (type != null &&
             (element is ITypeParameterSymbol ||
-             (element is INamedTypeSymbol named && GlobalCppNames.IsEmittedUserType(named))))
+             (element is INamedTypeSymbol named && EmittedUserTypes.IsEmittedUserType(named))))
         {
             types.Add(type);
         }

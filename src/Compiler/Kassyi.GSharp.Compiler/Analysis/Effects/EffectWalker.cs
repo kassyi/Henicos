@@ -197,7 +197,8 @@ internal struct EffectWalker(SemanticModel model)
     {
         ParenthesizedExpressionSyntax parenthesized => AddLocation(parenthesized.Expression),
         RefExpressionSyntax refExpression => AddLocation(refExpression.Expression),
-        ConditionalExpressionSyntax conditional => LocationEffects.AddConditional(ref this, conditional),
+        ConditionalExpressionSyntax conditional when IsRefConditional(conditional) =>
+            LocationEffects.AddConditional(ref this, conditional),
         // A local of the state machine that lives in its frame: the local itself
         MemberAccessExpressionSyntax frame when MemberEffects.IsFrameAccess(frame) => AddLocation(frame.Name),
         DeclarationExpressionSyntax { Designation: SingleVariableDesignationSyntax designation } =>
@@ -212,4 +213,8 @@ internal struct EffectWalker(SemanticModel model)
             LocationEffects.RootOfSymbol(ref this, backingField),
         _ => LocationEffects.AddValue(ref this, expression)
     };
+
+    private static bool IsRefConditional(ConditionalExpressionSyntax conditional) =>
+        conditional.WhenTrue.UnwrapParentheses() is RefExpressionSyntax ||
+        conditional.WhenFalse.UnwrapParentheses() is RefExpressionSyntax;
 }
