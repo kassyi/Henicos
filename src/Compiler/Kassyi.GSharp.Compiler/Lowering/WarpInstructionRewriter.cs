@@ -281,7 +281,8 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null, Loweri
             if (SpilledArguments.IsPassedByReference(argument, model))
             {
                 // The reference itself must stay a variable, so only what selects it is evaluated once
-                return argument.WithExpression(SpillLocation(argument.Expression, arguments, index));
+                return argument.WithExpression(
+                    LocationPartSpiller.SpillLocation(argument.Expression, arguments, index, model, Spill));
             }
 
             // [WHY] A constant expression stays in place like a literal: it keeps its implicit constant conversion
@@ -290,73 +291,6 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null, Loweri
                 ? argument
                 : argument.WithExpression(Spill(argument.Expression));
         }
-
-        // [WHY] A ref, out or in argument names a storage location, and C# fixes which one when it evaluates the
-        // argument: the array or pointer of an element and its indices are evaluated once (in the order written: the
-        // array, then each index, outer accesses first), so are the pointer of *p and p->F, and a member access selects
-        // within its receiver. The location itself is not copied, so that the callee writes and reads the variable
-        // (#788); a pointer that a later argument moves keeps the element C# selected (#1173). index is the position of
-        // the argument.
-        private ExpressionSyntax SpillLocation(ExpressionSyntax location, SeparatedSyntaxList<ArgumentSyntax> arguments,
-            int index)
-        {
-            switch (location)
-            {
-                case ParenthesizedExpressionSyntax parenthesized:
-                    return parenthesized.WithExpression(SpillLocation(parenthesized.Expression, arguments, index));
-                case MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } member:
-                    return member.WithExpression(SpillLocation(member.Expression, arguments, index));
-                case MemberAccessExpressionSyntax
-                {
-                    RawKind: (int)SyntaxKind.PointerMemberAccessExpression
-                } pointerMember:
-                    return pointerMember.WithExpression(SpillPointer(pointerMember.Expression, arguments, index));
-                case PrefixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.PointerIndirectionExpression } indirection:
-                    return indirection.WithOperand(SpillPointer(indirection.Operand, arguments, index));
-                case ElementAccessExpressionSyntax elementAccess:
-                    var receiver = SpillReceiver(elementAccess.Expression, arguments, index);
-                    var indices = elementAccess.ArgumentList.Arguments;
-                    var spilledIndices = ImmutableArray.CreateBuilder<ArgumentSyntax>(indices.Count);
-                    foreach (var elementIndex in indices)
-                    {
-                        spilledIndices.Add(
-                            SpilledArguments.CanStayInPlace(elementIndex.Expression, arguments, index,
-                                parent._semanticModel)
-                            ? elementIndex
-                            : elementIndex.WithExpression(Spill(elementIndex.Expression)));
-                    }
-
-                    return elementAccess
-                        .WithExpression(receiver)
-                        .WithArgumentList(elementAccess.ArgumentList.WithArguments(
-                            SyntaxFactory.SeparatedList(spilledIndices, indices.GetSeparators())));
-                default:
-                    return location;
-            }
-        }
-
-        // The receiver of an element access in a location: an array or pointer that cannot stay in place is evaluated
-        // once (SpilledArguments.IsSpilledReceiver); any other receiver is a location of its own
-        private ExpressionSyntax SpillReceiver(ExpressionSyntax receiver, SeparatedSyntaxList<ArgumentSyntax> arguments,
-            int index)
-        {
-            var model = parent._semanticModel;
-            if (SpilledArguments.IsSpilledReceiver(receiver, arguments, index, model))
-            {
-                return Spill(receiver);
-            }
-
-            return model != null && SpilledArguments.IsValueReceiver(receiver, model)
-                ? receiver
-                : SpillLocation(receiver, arguments, index);
-        }
-
-        // The pointer of *p or p->F: a value, evaluated once unless it can stay in place
-        private ExpressionSyntax SpillPointer(ExpressionSyntax pointer, SeparatedSyntaxList<ArgumentSyntax> arguments,
-            int index) =>
-            SpilledArguments.CanStayInPlace(pointer, arguments, index, parent._semanticModel)
-                ? pointer
-                : Spill(pointer);
 
         private IdentifierNameSyntax Spill(ExpressionSyntax expression)
         {

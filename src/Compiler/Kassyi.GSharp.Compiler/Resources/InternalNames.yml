@@ -125,6 +125,8 @@ Lowering:
     # the C# order of evaluation, so they share the group
     SequenceTempPrefix: __gsharp_seq_
     ConditionTempPrefix: __gsharp_cond_temp_
+    # Marks the operator false or true test of a lowered user-defined && or ||: __gsharp_truth_test(<left temporary>).
+    TruthTest: __gsharp_truth_test
     # The receiver of a null-conditional access that the managed copy writes as a pattern variable, so that an extension
     # method called on one of its bindings is the static call the semantic model chose:
     # r is { } <name> ? M(<name>[i]) : ...
