@@ -454,6 +454,7 @@ internal static class DeviceExportEmitter
             AppendArrayProperty(writer, AttributeNames.Names.DefinedFullNames, names.DefinedFullNames);
             AppendArrayProperty(writer, AttributeNames.Cuda.References, record.Cuda.References);
             AppendArrayProperty(writer, AttributeNames.Cpp.References, record.Cpp.References);
+            AppendArrayProperty(writer, AttributeNames.CppStack.References, record.CppStack.References);
             AppendStringProperty(writer, AttributeNames.Traits.FrameName, traits.FrameName);
             AppendArrayProperty(writer, AttributeNames.Traits.FrameDependencies, traits.FrameDependencies);
             AppendBoolProperty(writer, AttributeNames.Traits.Suspends, traits.Suspends);
@@ -470,10 +471,15 @@ internal static class DeviceExportEmitter
             AppendStringProperty(writer, AttributeNames.Cpp.Signature, record.Cpp.Signature);
             AppendStringProperty(writer, AttributeNames.Cpp.Body, record.Cpp.Body);
             AppendStringProperty(writer, AttributeNames.Cpp.Dispose, record.Cpp.Dispose);
+            AppendStringProperty(writer, AttributeNames.CppStack.Signature, record.CppStack.Signature);
+            AppendStringProperty(writer, AttributeNames.CppStack.Body, record.CppStack.Body);
+            AppendStringProperty(writer, AttributeNames.CppStack.Dispose, record.CppStack.Dispose);
             AppendArrayProperty(writer, AttributeNames.Cuda.Includes, record.Cuda.Includes);
             AppendArrayProperty(writer, AttributeNames.Cpp.Includes, record.Cpp.Includes);
+            AppendArrayProperty(writer, AttributeNames.CppStack.Includes, record.CppStack.Includes);
             AppendBoolProperty(writer, AttributeNames.Cuda.Failed, record.Cuda.Failed);
             AppendBoolProperty(writer, AttributeNames.Cpp.Failed, record.Cpp.Failed);
+            AppendBoolProperty(writer, AttributeNames.CppStack.Failed, record.CppStack.Failed);
             AppendBoolProperty(writer, AttributeNames.Traits.ManagedStateMachine, traits.ManagedStateMachine);
             AppendBoolProperty(writer, AttributeNames.Traits.PrivateManagedFrame, traits.PrivateManagedFrame);
             AppendBoolProperty(writer, AttributeNames.Traits.ManagedVersion, traits.ManagedVersion);

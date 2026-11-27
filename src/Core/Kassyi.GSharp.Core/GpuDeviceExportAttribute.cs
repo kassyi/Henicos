@@ -74,6 +74,11 @@ public sealed class GpuDeviceExportAttribute : Attribute
     public string[] CppReferences { get; set; } = [];
 
     /// <summary>
+    /// Gets or sets the global C++ names that the native stack C++ text refers to and does not define itself.
+    /// </summary>
+    public string[] CppStackReferences { get; set; } = [];
+
+    /// <summary>
     /// Gets or sets the names of <see cref="DefinedNames"/> before shortening, in the same order; an empty string for a
     /// name that was not shortened.
     /// </summary>
@@ -125,17 +130,35 @@ public sealed class GpuDeviceExportAttribute : Attribute
     /// <summary>Gets or sets the C++ <c>Dispose</c> definition of a struct.</summary>
     public string CppDispose { get; set; } = "";
 
+    /// <summary>Gets or sets the native stack C++ forward declaration of a suspending device function.</summary>
+    public string CppStackSignature { get; set; } = "";
+
+    /// <summary>Gets or sets the native stack C++ definition of a suspending device function.</summary>
+    public string CppStackBody { get; set; } = "";
+
+    /// <summary>
+    /// Gets or sets the native stack C++ <c>Dispose</c> text; always empty and kept so the dialect name table covers all
+    /// six fields.
+    /// </summary>
+    public string CppStackDispose { get; set; } = "";
+
     /// <summary>Gets or sets the <c>#include</c> targets of the CUDA text.</summary>
     public string[] CudaIncludes { get; set; } = [];
 
     /// <summary>Gets or sets the <c>#include</c> targets of the C++ text.</summary>
     public string[] CppIncludes { get; set; } = [];
 
+    /// <summary>Gets or sets the <c>#include</c> targets of the native stack C++ text.</summary>
+    public string[] CppStackIncludes { get; set; } = [];
+
     /// <summary>Gets or sets whether the CUDA text could not be transpiled (it holds <c>#error</c> lines).</summary>
     public bool CudaFailed { get; set; }
 
     /// <summary>Gets or sets whether the C++ text could not be transpiled (it holds <c>#error</c> lines).</summary>
     public bool CppFailed { get; set; }
+
+    /// <summary>Gets or sets whether the native stack C++ text could not be transpiled.</summary>
+    public bool CppStackFailed { get; set; }
 
     /// <summary>
     /// Gets or sets the message of the exception that stopped the generator from writing the text of a failed record,
