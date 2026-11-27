@@ -66,7 +66,7 @@ internal static class DeviceFunctionBodyWrites
         var type = declaration != null
             ? model.GetTypeSymbol(declaration.Type)
             : node is UsingStatementSyntax { Expression: { } resource } ? model.GetTypeSymbol(resource) : null;
-        if (type is not INamedTypeSymbol named || UsingTranspiler.FindDisposeMethod(named, compilation) is not { } dispose)
+        if (type is not INamedTypeSymbol named || UsingDisposeLookup.Find(named, compilation) is not { } dispose)
         {
             return DeviceFunctionEffect.None;
         }

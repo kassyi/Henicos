@@ -54,6 +54,9 @@ internal interface IFlowRecorder
     /// <summary>A call has returned: it writes its <c>ref</c> and <c>out</c> arguments now.</summary>
     void OnCallReturned(IInvocationOperation invocation, ControlFlowGraph graph, int node);
 
+    /// <summary>An object creation has returned: it writes its <c>ref</c> and <c>out</c> arguments before its initializer.</summary>
+    void OnObjectCreationReturned(IObjectCreationOperation creation, ControlFlowGraph graph, int node);
+
     /// <summary>A body is about to be spliced in after node.</summary>
     void OnBodyEntered(SplicedBody body, int node);
 

@@ -61,15 +61,7 @@ internal static class OperationCalls
         ImmutableArray<IMethodSymbol>.Builder methods)
     {
         var property = reference.Property;
-        var (reads, writes) = reference.Parent switch
-        {
-            ISimpleAssignmentOperation assignment when assignment.Target == reference => (false, true),
-            ICompoundAssignmentOperation compound when compound.Target == reference => (true, true),
-            ICoalesceAssignmentOperation coalesce when coalesce.Target == reference => (true, true),
-            IIncrementOrDecrementOperation => (true, true),
-            ITupleOperation { Parent: IDeconstructionAssignmentOperation } => (false, true),
-            _ => (true, false)
-        };
+        var (reads, writes) = GetAccessorUsage(reference);
 
         if (reads)
         {
@@ -80,6 +72,27 @@ internal static class OperationCalls
         {
             AddNonNull(property.SetMethod, typeArguments, methods);
         }
+    }
+
+    /// <summary>
+    /// Whether <paramref name="reference"/> reads and/or writes its property or indexer according to its parent operation.
+    /// </summary>
+    public static (bool Reads, bool Writes) GetAccessorUsage(IPropertyReferenceOperation reference)
+    {
+        if (reference.Property.RefKind != RefKind.None)
+        {
+            return (true, false);
+        }
+
+        return reference.Parent switch
+        {
+            ISimpleAssignmentOperation assignment when assignment.Target == reference => (false, true),
+            ICompoundAssignmentOperation compound when compound.Target == reference => (true, true),
+            ICoalesceAssignmentOperation coalesce when coalesce.Target == reference => (true, true),
+            IIncrementOrDecrementOperation => (true, true),
+            ITupleOperation tuple when ParameterChanges.IsDeconstructionTarget(tuple) => (false, true),
+            _ => (true, false)
+        };
     }
 
     private static void AddNonNull(IMethodSymbol? method, TypeArgumentMap typeArguments,

@@ -210,7 +210,7 @@ internal sealed class ImportedDeviceCodeRule : ISyntaxValidationRule<InvocationE
 
     // A struct of another G# assembly (not of Kassyi.GSharp.Core or the BCL, whose types the dialects map)
     private static bool IsImportedStruct(INamedTypeSymbol type, Compilation compilation) =>
-        GlobalCppNames.IsEmittedUserType(type) &&
+        EmittedUserTypes.IsEmittedUserType(type) &&
         !type.ContainingNamespace.IsCoreNamespace() &&
         type.ContainingAssembly is { } assembly &&
         !string.Equals(assembly.Name, TypeConstants.CoreNamespace, StringComparison.Ordinal) &&

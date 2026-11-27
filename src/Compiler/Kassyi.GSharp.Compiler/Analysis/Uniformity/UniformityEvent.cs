@@ -17,10 +17,12 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// <param name="Variance">
 /// The variance it defines it with; for <see cref="UniformityEventKind.MemorySync"/>, the variance the barrier leaves.
 /// </param>
+/// <param name="Site">The barrier site syntax when <paramref name="Kind"/> is <see cref="UniformityEventKind.Site"/>.</param>
 internal readonly record struct UniformityEvent(
     UniformityEventKind Kind,
     IOperation? Operation,
     ControlFlowGraph? Graph,
     SyntaxNode? Opaque,
     int Value = -1,
-    ThreadVariance Variance = ThreadVariance.Uniform);
+    ThreadVariance Variance = ThreadVariance.Uniform,
+    SyntaxNode? Site = null);

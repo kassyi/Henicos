@@ -190,7 +190,7 @@ internal static class StructOrdering
         var structType = unwrapped.TryGetArrayLikeElementType(out var elementType)
             ? elementType.UnwrapNullable()
             : unwrapped;
-        if (structType is INamedTypeSymbol candidate && GlobalCppNames.IsEmittedUserType(candidate) &&
+        if (structType is INamedTypeSymbol candidate && EmittedUserTypes.IsEmittedUserType(candidate) &&
             !StackLinqHelper.IsStackLinqType(candidate))
         {
             namedStruct = candidate;

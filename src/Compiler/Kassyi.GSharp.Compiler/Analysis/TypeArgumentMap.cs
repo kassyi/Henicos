@@ -23,6 +23,18 @@ internal readonly struct TypeArgumentMap
     {
         Dictionary<ITypeParameterSymbol, ITypeSymbol>? map = null;
         Add(ref map, method.TypeParameters, method.TypeArguments);
+        // [WHY] A constructed partial method symbol in Roslyn has PartialImplementationPart == null, so its body's
+        // syntax binds its own type parameters to OriginalDefinition.PartialImplementationPart.TypeParameters.
+        if (method.OriginalDefinition.PartialImplementationPart is { } implementation)
+        {
+            Add(ref map, implementation.TypeParameters, method.TypeArguments);
+        }
+
+        if (method.OriginalDefinition.PartialDefinitionPart is { } definition)
+        {
+            Add(ref map, definition.TypeParameters, method.TypeArguments);
+        }
+
         for (var type = method.ContainingType; type != null; type = type.ContainingType)
         {
             Add(ref map, type.TypeParameters, type.TypeArguments);
@@ -48,7 +60,7 @@ internal readonly struct TypeArgumentMap
     }
 
     /// <summary><paramref name="type"/> with the mapped type parameters replaced; itself when none is mapped.</summary>
-    /// <remarks>A generic type nested in a generic type keeps its type arguments (not followed).</remarks>
+    /// <remarks>Generic types nested in generic types also replace enclosing and own type arguments.</remarks>
     public ITypeSymbol Substitute(ITypeSymbol type)
     {
         if (_map == null)
@@ -60,13 +72,37 @@ internal readonly struct TypeArgumentMap
         {
             case ITypeParameterSymbol parameter:
                 return _map.TryGetValue(parameter.OriginalDefinition, out var argument) ? argument : type;
-            case INamedTypeSymbol { IsGenericType: true, ContainingType: not { IsGenericType: true } } named:
-                return Substitute(named.TypeArguments) is { } arguments
-                    ? named.ConstructedFrom.Construct(arguments)
-                    : type;
+            case INamedTypeSymbol { IsGenericType: true, IsUnboundGenericType: false } named:
+                return SubstituteNamed(named);
             default:
                 return type;
         }
+    }
+
+    private INamedTypeSymbol SubstituteNamed(INamedTypeSymbol named)
+    {
+        var containing = named.ContainingType is { IsGenericType: true } outer
+            ? Substitute(outer) as INamedTypeSymbol
+            : null;
+        var containingChanged = containing != null && !containing.IsEqualTo(named.ContainingType);
+        var arguments = Substitute(named.TypeArguments);
+        if (!containingChanged && arguments == null)
+        {
+            return named;
+        }
+
+        var definition = named.ConstructedFrom;
+        if (containing != null && containingChanged)
+        {
+            definition = containing.GetTypeMembers(named.Name, named.Arity)
+                .AsStackEnumerable()
+                .FirstOrDefault(named.OriginalDefinition,
+                    static (t, d) => t.OriginalDefinition.IsEqualTo(d)) ?? definition;
+        }
+
+        return named.Arity == 0
+            ? definition
+            : definition.Construct(arguments ?? Copy(named.TypeArguments));
     }
 
     /// <summary>
@@ -106,11 +142,14 @@ internal readonly struct TypeArgumentMap
     }
 
     // The member of constructed that method, a member of another construction of the same type, stands for
-    private static IMethodSymbol? FindConstructedMember(INamedTypeSymbol constructed, IMethodSymbol method) =>
-        constructed.GetMembers(method.Name)
+    private static IMethodSymbol? FindConstructedMember(INamedTypeSymbol constructed, IMethodSymbol method)
+    {
+        var definition = method.OriginalDefinition.PartialDefinitionPart ?? method.OriginalDefinition;
+        return constructed.GetMembers(definition.Name)
             .AsStackEnumerable()
             .OfType<IMethodSymbol>()
-            .FirstOrDefault(method.OriginalDefinition, static (m, d) => m.OriginalDefinition.IsEqualTo(d));
+            .FirstOrDefault(definition, static (m, d) => m.OriginalDefinition.IsEqualTo(d));
+    }
 
     private static ITypeSymbol[] Copy(ImmutableArray<ITypeSymbol> types)
     {
