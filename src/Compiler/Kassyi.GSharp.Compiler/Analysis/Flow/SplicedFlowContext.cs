@@ -1,3 +1,6 @@
+using Microsoft.CodeAnalysis.FlowAnalysis;
+using Microsoft.CodeAnalysis.Operations;
+
 namespace Kassyi.GSharp.Compiler.Analysis;
 
 /// <summary>
@@ -7,6 +10,8 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 internal sealed class SplicedFlowContext
 {
     private readonly ImmutableArray<SplicedFlowNode>.Builder _nodes = ImmutableArray.CreateBuilder<SplicedFlowNode>();
+    private readonly Dictionary<(ControlFlowGraph Graph, CaptureId Id), IPropertyReferenceOperation> _capturedProperties =
+        new();
 
     /// <summary>Starts the graph with its start node, node 0.</summary>
     public SplicedFlowContext(SemanticModel model, ImmutableArray<IFlowRecorder> recorders)
@@ -17,7 +22,7 @@ internal sealed class SplicedFlowContext
     }
 
     /// <summary>The model of the body.</summary>
-    public SemanticModel Model { get; }
+    public SemanticModel Model { get; internal set; }
 
     /// <summary>The recorders, one per analysis, in the order they hear of each operation.</summary>
     public ImmutableArray<IFlowRecorder> Recorders { get; }
@@ -36,6 +41,15 @@ internal sealed class SplicedFlowContext
 
     /// <summary>The element range of the top-level operation being walked.</summary>
     public SyncGridElementRange? TopRange { get; set; }
+
+    /// <summary>Records a property or indexer reference captured by <paramref name="id"/> in <paramref name="graph"/>.</summary>
+    public void RecordCapturedProperty(ControlFlowGraph graph, CaptureId id, IPropertyReferenceOperation property) =>
+        _capturedProperties[(graph, id)] = property;
+
+    /// <summary>Gets the property or indexer reference captured by <paramref name="id"/> in <paramref name="graph"/>, if any.</summary>
+    public bool TryGetCapturedProperty(ControlFlowGraph graph, CaptureId id,
+        [NotNullWhen(true)] out IPropertyReferenceOperation? property) =>
+        _capturedProperties.TryGetValue((graph, id), out property);
 
     /// <summary>The nodes made so far.</summary>
     public ImmutableArray<SplicedFlowNode> ToNodes() => _nodes.ToImmutable();

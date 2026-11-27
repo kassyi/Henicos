@@ -15,6 +15,9 @@ internal static class ManagedStackEligibility
 
     private const string NoBarrierSentence = "it does not reach a barrier or warp collective";
 
+    private const string StructMemberSplitSentence =
+        "it reaches a barrier or warp collective through a struct member";
+
     private static readonly PerCompilationSymbolCache<IMethodSymbol, StateMachineReason?> s_functions = new();
 
     /// <summary>Whether the managed path can run <paramref name="function"/> on the stack of its GPU thread.</summary>
@@ -96,12 +99,12 @@ internal static class ManagedStackEligibility
         }
 
         var semanticModel = compilation.GetCachedSemanticModel(declaration.SyntaxTree);
-        return FindBodyReason(body, compilation, semanticModel) ??
+        return FindBodyReason(body, kernel, compilation, semanticModel) ??
                FindCalleeReason(body, compilation, semanticModel, null);
     }
 
-    // A body in which no thread ever waits
-    private static StateMachineReason? FindBodyReason(SyntaxNode body, Compilation compilation,
+    // A body in which no thread ever waits, or a struct member reaching a split
+    private static StateMachineReason? FindBodyReason(SyntaxNode body, IMethodSymbol kernel, Compilation compilation,
         SemanticModel semanticModel)
     {
         var waits = false;
@@ -121,6 +124,11 @@ internal static class ManagedStackEligibility
             {
                 waits = true;
             }
+        }
+
+        if (SuspensionAnalysis.HasStructMemberSplit(body, TypeArgumentMap.Of(kernel), compilation))
+        {
+            return Managed(nameof(NativeStackObstacle.StructMemberSplit), StructMemberSplitSentence);
         }
 
         return waits ? null : Managed(nameof(NativeStackObstacle.NoBlockBarrier), NoBarrierSentence);
@@ -216,6 +224,11 @@ internal static class ManagedStackEligibility
         if (FindFunctionShapeReason(function, compilation) is { } shapeReason)
         {
             return shapeReason;
+        }
+
+        if (SuspensionAnalysis.HasStructMemberSplit(body, TypeArgumentMap.Of(function), compilation))
+        {
+            return Managed(nameof(NativeStackObstacle.StructMemberSplit), StructMemberSplitSentence);
         }
 
         var semanticModel = compilation.GetCachedSemanticModel(declaration.SyntaxTree);

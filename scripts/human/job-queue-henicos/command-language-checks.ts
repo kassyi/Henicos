@@ -338,6 +338,18 @@ function checkFixedNegatives(assert: AssertModule): void {
     ["just with flag", "just -f justfile test"],
     ["just with bash prefix", "DiffEngine_Disabled=true just test"],
     ["just with pwsh prefix", "$env:DiffEngine_Disabled='true'; just test"],
+    // Mutate grammar restrictions (only bare `just mutate <phase>` and `node scripts/human/mutate.js --phase <phase> --`)
+    ["mutate without phase", "just mutate"],
+    ["mutate unknown phase", "just mutate other"],
+    ["mutate with since arg", "just mutate gpumath main"],
+    ["mutate with stryker args", "just mutate gpumath -- -m Foo"],
+    ["mutate with redirect", "just mutate gpumath > tmp/out.log"],
+    ["mutate with bash prefix", "DiffEngine_Disabled=true just mutate gpumath"],
+    ["mutate with pwsh prefix", "$env:DiffEngine_Disabled='true'; just mutate gpumath"],
+    ["node mutate extra arg", "node scripts/human/mutate.js --phase gpumath -- --since main"],
+    ["node mutate missing --", "node scripts/human/mutate.js --phase gpumath"],
+    ["node mutate unknown phase", "node scripts/human/mutate.js --phase other --"],
+    ["node mutate with prefix", "DiffEngine_Disabled=true node scripts/human/mutate.js --phase gpumath --"],
   ];
 
   for (const [label, command] of rejectedEverywhere) {
@@ -346,6 +358,22 @@ function checkFixedNegatives(assert: AssertModule): void {
         parseSharedCommand(command, shell),
         null,
         `must reject (${label}) on ${shell}: ${JSON.stringify(command.slice(0, 120))}`,
+      );
+    }
+  }
+
+  // Accepted bare `just mutate <phase>` and inner `node scripts/human/mutate.js --phase <phase> --` across all shells
+  for (const phase of ["gpumath", "compiler", "compiler-cuda"] as const) {
+    for (const shell of allShells) {
+      assert.deepStrictEqual(
+        parseSharedCommand(`just mutate ${phase}`, shell),
+        { kind: "mutate", phase },
+        `must accept just mutate ${phase} on ${shell}`,
+      );
+      assert.deepStrictEqual(
+        parseSharedCommand(`node scripts/human/mutate.js --phase ${phase} --`, shell),
+        { kind: "mutate", phase },
+        `must accept inner node mutate.js --phase ${phase} -- on ${shell}`,
       );
     }
   }

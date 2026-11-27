@@ -129,8 +129,8 @@ doctest file_path assemblies="":
 # The test host heap is capped at 8 GB (GSharpTestHeapHardLimit in bytes; set it to override), so a mutant that
 # allocates without bound fails instead of exhausting memory.
 mutate phase="gpumath" since="" *args="":
-    {{queue}} {{ if phase == "compiler" { "" } else { "--gpu" } }} -- node scripts/human/mutate.js --phase "{{phase}}" \
-        {{ if since != "" { "--since " + since } else { "" } }} -- {{args}}
+    {{queue}} {{ if phase != "gpumath" { "" } else if since + args == "" { "--gpu" } else { "--gpu-exclusive" } }} -- node scripts/human/mutate.js --phase "{{phase}}" \
+        {{ if since != "" { '--since "' + since + '"' } else { "" } }} -- {{args}}
 
 # Demangle C++ / G# identifiers in a build/runtime log (pass file path, "-" for stdin, or "help" / "-- --help" for usage)
 gsharp-demangle log_path="-" symbols_path="":

@@ -10,20 +10,20 @@
 #   occurrences:  every node the C++ writer cannot spell, most first
 #   eligible:     the methods of the population with an IR body
 kinds:
-  Kernel: 4271
-  DeviceFunction: 1202
-  SuspendingDeviceFunction: 438
+  Kernel: 4358
+  DeviceFunction: 1223
+  SuspendingDeviceFunction: 452
   Iterator: 120
 reasons:
-  None: 96
+  None: 98
   IrNotBuilt: 0
   StrykerMutant: 1
-  SplitCall: 7
+  SplitCall: 10
   OpaqueNode: 130
   RemovedCall: 3
   Macro: 6
   SharedMemoryLocal: 26
-  UnsupportedForm: 902
+  UnsupportedForm: 903
 opaque:
   - {key: "UnsupportedOperation/ForStatement", count: 18}
   - {key: "UnsupportedOperation/SimpleLambdaExpression", count: 17}
@@ -56,12 +56,12 @@ opaque:
   - {key: "UnsupportedOperation/TupleExpression", count: 1}
   - {key: "UnsupportedShape/ObjectCreationExpression", count: 1}
 split:
-  - {key: "BlockBarrier", count: 4}
-  - {key: "SuspendingCall", count: 2}
+  - {key: "BlockBarrier", count: 6}
+  - {key: "SuspendingCall", count: 3}
   - {key: "WarpShuffle", count: 1}
 firstHit:
   - {key: "NativePlain:IrBinary/-", count: 321}
-  - {key: "NativePlain:IrAssignment/-", count: 180}
+  - {key: "NativePlain:IrAssignment/-", count: 181}
   - {key: "NativePlain:IrCompoundAssignment/-", count: 96}
   - {key: "NativePlain:IrCall/DeviceFunction", count: 38}
   - {key: "NativePlain:IrIncrement/-", count: 36}
@@ -91,10 +91,10 @@ firstHit:
   - {key: "NativePlain:IrUnary/-", count: 1}
   - {key: "NativePlain:IrVariableReference/Type:Pointer", count: 1}
 occurrences:
-  - {key: "NativePlain:IrBinary/-", count: 1163}
-  - {key: "NativePlain:IrAssignment/-", count: 513}
-  - {key: "NativePlain:IrFieldReference/-", count: 511}
-  - {key: "NativePlain:IrVariableReference/Ref", count: 445}
+  - {key: "NativePlain:IrBinary/-", count: 1164}
+  - {key: "NativePlain:IrAssignment/-", count: 514}
+  - {key: "NativePlain:IrFieldReference/-", count: 514}
+  - {key: "NativePlain:IrVariableReference/Ref", count: 446}
   - {key: "NativePlain:IrElementReference/NullChecked", count: 365}
   - {key: "NativePlain:IrConversion/Transparent", count: 317}
   - {key: "NativePlain:IrCall/DeviceFunction", count: 173}
@@ -129,4 +129,4 @@ occurrences:
   - {key: "NativePlain:IrLocalDeclaration/Type:String", count: 1}
   - {key: "NativePlain:IrVariableReference/Declaration", count: 1}
   - {key: "NativePlain:IrVariableReference/Type:Pointer", count: 1}
-eligible: 96
+eligible: 98

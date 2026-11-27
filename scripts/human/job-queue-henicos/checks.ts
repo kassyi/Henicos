@@ -3,6 +3,7 @@
 // QueuedRun wire memoryMb (request, adopt, gpuTurn omission, JOB_QUEUE_PLUGINS=0, defaultTestMemoryMb),
 // and shortCommand prefix removal.
 
+import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -624,6 +625,202 @@ function checkSharedRecipeFilters(assert: AssertModule, host: PluginHost, config
   }
 }
 
+/** Checks GPU share classification for `just mutate <phase>` and inner `node scripts/human/mutate.js --phase <phase> --`. */
+function checkMutateShare(assert: AssertModule, host: PluginHost, repoRoot: string): void {
+  const repoCtx = contextFor(repoRoot, repoRoot);
+  // Real repository configs: gpumath shares via both outer `just mutate` and inner `node scripts/human/mutate.js`
+  for (const cmd of ["just mutate gpumath", "node scripts/human/mutate.js --phase gpumath --"]) {
+    const res = host.classify(cmd, Gpu, repoCtx);
+    assert.deepStrictEqual([res.share, res.shareReason], ["shared", "mutate-config"], `shared mutate: ${cmd}`);
+    assert.strictEqual(host.check(cmd, Gpu, repoCtx).refuse, undefined, `--gpu check accepts: ${cmd}`);
+  }
+  assert.deepStrictEqual(
+    [
+      host.classify("just mutate compiler", Gpu, repoCtx).share,
+      host.classify("just mutate compiler", Gpu, repoCtx).shareReason,
+    ],
+    ["exclusive", "mutate-config-unreadable"],
+    "compiler stryker-config uses parentheses outside FILTER",
+  );
+  assert.deepStrictEqual(
+    [
+      host.classify("just mutate compiler-cuda", Gpu, repoCtx).share,
+      host.classify("just mutate compiler-cuda", Gpu, repoCtx).shareReason,
+    ],
+    ["exclusive", "mutate-filter-categories"],
+  );
+  assert.deepStrictEqual(
+    [
+      host.classify("just test-stability", Gpu, repoCtx).share,
+      host.classify("just test-stability", Gpu, repoCtx).shareReason,
+    ],
+    ["exclusive", "exclusive-recipe"],
+  );
+  for (const cmd of [
+    "just mutate",
+    "just mutate gpumath main",
+    "just mutate gpumath -- -m Foo",
+    "node scripts/human/mutate.js --phase gpumath -- --since main",
+  ]) {
+    const res = host.classify(cmd, Gpu, repoCtx);
+    assert.deepStrictEqual([res.share, res.shareReason], ["exclusive", "not-language"], `non-language: ${cmd}`);
+  }
+  const trapRes = host.classify("just mutate gpumath", Gpu, { ...repoCtx, env: { GSHARP_CUDA_TRAP_TESTS: "1" } });
+  assert.deepStrictEqual([trapRes.share, trapRes.shareReason], ["exclusive", "exclusive-env"]);
+
+  // Synthetic worktree checks: malformed, empty filter, unknown key, lowercase category=stress, cwd != worktree, junction
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-henicos-mutate-"));
+  try {
+    const base = fs.realpathSync.native(dir);
+    const wt = path.join(base, "wt");
+    const otherCwd = path.join(base, "other-cwd");
+    const outsideDir = path.join(base, "outside");
+    const cfgDir = path.join(wt, "tests", "Stdlib", "Kassyi.GSharp.Stdlib.GpuMath.Tests");
+    fs.mkdirSync(cfgDir, { recursive: true });
+    fs.mkdirSync(otherCwd, { recursive: true });
+    fs.mkdirSync(outsideDir, { recursive: true });
+    const cfgFile = path.join(cfgDir, "stryker-config.json");
+    const wtCtx = contextFor(wt, repoRoot);
+
+    assert.deepStrictEqual(
+      [
+        host.classify("just mutate gpumath", Gpu, wtCtx).share,
+        host.classify("just mutate gpumath", Gpu, wtCtx).shareReason,
+      ],
+      ["exclusive", "mutate-config-unreadable"],
+      "missing stryker-config.json",
+    );
+    fs.writeFileSync(cfgFile, "{not json");
+    assert.deepStrictEqual(
+      [
+        host.classify("just mutate gpumath", Gpu, wtCtx).share,
+        host.classify("just mutate gpumath", Gpu, wtCtx).shareReason,
+      ],
+      ["exclusive", "mutate-config-unreadable"],
+      "malformed JSON",
+    );
+    fs.writeFileSync(cfgFile, JSON.stringify({ "stryker-config": { "test-case-filter": "" } }));
+    assert.deepStrictEqual(
+      [
+        host.classify("just mutate gpumath", Gpu, wtCtx).share,
+        host.classify("just mutate gpumath", Gpu, wtCtx).shareReason,
+      ],
+      ["exclusive", "mutate-config-unreadable"],
+      "empty test-case-filter",
+    );
+    fs.writeFileSync(
+      cfgFile,
+      JSON.stringify({
+        "stryker-config": { "test-case-filter": `FullyQualifiedName~Stdlib&${Kept}`, "test-runner": "mtp" },
+      }),
+    );
+    assert.deepStrictEqual(
+      [
+        host.classify("just mutate gpumath", Gpu, wtCtx).share,
+        host.classify("just mutate gpumath", Gpu, wtCtx).shareReason,
+      ],
+      ["exclusive", "mutate-config-unreadable"],
+      "unknown stryker-config key (test-runner) fails closed",
+    );
+    fs.writeFileSync(
+      cfgFile,
+      JSON.stringify({ "stryker-config": { "test-case-filter": `(${Kept})&FullyQualifiedName~Stdlib` } }),
+    );
+    assert.deepStrictEqual(
+      [
+        host.classify("just mutate gpumath", Gpu, wtCtx).share,
+        host.classify("just mutate gpumath", Gpu, wtCtx).shareReason,
+      ],
+      ["exclusive", "mutate-config-unreadable"],
+      "filter outside closed FILTER type (parentheses)",
+    );
+    fs.writeFileSync(
+      cfgFile,
+      JSON.stringify({ "stryker-config": { "test-case-filter": "Category!=Stress&Category!=Benchmark" } }),
+    );
+    assert.deepStrictEqual(
+      [
+        host.classify("just mutate gpumath", Gpu, wtCtx).share,
+        host.classify("just mutate gpumath", Gpu, wtCtx).shareReason,
+      ],
+      ["exclusive", "mutate-filter-categories"],
+      "missing GpuTrap exclusion",
+    );
+    fs.writeFileSync(cfgFile, JSON.stringify({ "stryker-config": { "test-case-filter": `${Kept}&category=stress` } }));
+    assert.deepStrictEqual(
+      [
+        host.classify("just mutate gpumath", Gpu, wtCtx).share,
+        host.classify("just mutate gpumath", Gpu, wtCtx).shareReason,
+      ],
+      ["exclusive", "exclusive-category"],
+      "lowercase category=stress reports exclusive-category",
+    );
+    fs.writeFileSync(
+      cfgFile,
+      JSON.stringify({ "stryker-config": { "test-case-filter": `FullyQualifiedName~Stdlib&${Kept}` } }),
+    );
+    assert.deepStrictEqual(
+      [
+        host.classify("just mutate gpumath", Gpu, wtCtx).share,
+        host.classify("just mutate gpumath", Gpu, wtCtx).shareReason,
+      ],
+      ["shared", "mutate-config"],
+      "all 3 exclusions present",
+    );
+    // When cwd differs from worktree, read stryker-config.json from worktree (not cwd)
+    const diffCwdCtx = { ...wtCtx, cwd: otherCwd };
+    assert.deepStrictEqual(
+      [
+        host.classify("just mutate gpumath", Gpu, diffCwdCtx).share,
+        host.classify("just mutate gpumath", Gpu, diffCwdCtx).shareReason,
+      ],
+      ["shared", "mutate-config"],
+      "cwd != worktree reads stryker-config from worktree",
+    );
+    // Junction/symlink pointing outside the worktree must fail closed as mutate-config-unreadable
+    fs.writeFileSync(
+      path.join(outsideDir, "stryker-config.json"),
+      JSON.stringify({ "stryker-config": { "test-case-filter": `FullyQualifiedName~Stdlib&${Kept}` } }),
+    );
+    const wtLink = path.join(base, "wt-link");
+    const linkParent = path.join(wtLink, "tests", "Stdlib");
+    fs.mkdirSync(linkParent, { recursive: true });
+    fs.symlinkSync(
+      outsideDir,
+      path.join(linkParent, "Kassyi.GSharp.Stdlib.GpuMath.Tests"),
+      process.platform === "win32" ? "junction" : "dir",
+    );
+    const linkCtx = contextFor(wtLink, repoRoot);
+    assert.deepStrictEqual(
+      [
+        host.classify("just mutate gpumath", Gpu, linkCtx).share,
+        host.classify("just mutate gpumath", Gpu, linkCtx).shareReason,
+      ],
+      ["exclusive", "mutate-config-unreadable"],
+      "junction/symlink outside worktree fails closed",
+    );
+  } finally {
+    removeDirectory(dir);
+  }
+
+  // Verify `just --dry-run mutate <phase>`: --gpu only on gpumath, absent on compiler and compiler-cuda
+  const justCheck = spawnSync("just", ["--version"], { windowsHide: true });
+  if (!justCheck.error && justCheck.status === 0) {
+    const dryRun = (phase: string): string => {
+      const r = spawnSync("just", ["--dry-run", "mutate", phase], {
+        cwd: repoRoot,
+        encoding: "utf8",
+        windowsHide: true,
+      });
+      assert.strictEqual(r.status, 0, `just --dry-run mutate ${phase} succeeded`);
+      return `${r.stdout ?? ""}\n${r.stderr ?? ""}`;
+    };
+    assert.ok(dryRun("gpumath").includes("--gpu"), "just mutate gpumath passes --gpu");
+    assert.strictEqual(dryRun("compiler").includes("--gpu"), false, "just mutate compiler omits --gpu");
+    assert.strictEqual(dryRun("compiler-cuda").includes("--gpu"), false, "just mutate compiler-cuda omits --gpu");
+  }
+}
+
 export async function checks(assert: AssertModule): Promise<void> {
   await checkRepoBaselineConfig(assert);
   checkDialectOf(assert);
@@ -647,6 +844,7 @@ export async function checks(assert: AssertModule): Promise<void> {
   checkCharacterizationAndBudgets(assert, host);
   checkGpuCheckHook(assert, host);
   checkShareRules(assert, host);
+  checkMutateShare(assert, host, loaded.configRoot);
   const henicosOptions = loaded.config.plugins?.find((p) => p.name === "./scripts/human/job-queue-henicos")?.options;
   checkSharedRecipeFilters(assert, host, loaded.configRoot, henicosOptions?.sharedRecipes);
   await quietly(() => checkQueuedRunMemoryMb(assert, host, FixedBudgetsYaml));

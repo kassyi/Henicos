@@ -2,6 +2,7 @@
 using Kassyi.GSharp.Compiler.Extensions;
 using Kassyi.GSharp.Compiler.Ir;
 using Kassyi.GSharp.Compiler.Ir.Building;
+using Kassyi.GSharp.Compiler.Semantics;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 
@@ -108,7 +109,7 @@ internal static class IrCoverageInputs
             foreach (var node in tree.GetRoot().DescendantNodes())
             {
                 if (StructMemberBody(node, model) is not ({ } body, { } symbol) ||
-                    symbol.ContainingType is not { } type || !GlobalCppNames.IsEmittedUserType(type) ||
+                    symbol.ContainingType is not { } type || !EmittedUserTypes.IsEmittedUserType(type) ||
                     IrBuilder.TryBuild(symbol, compilation, CancellationToken.None) is not { } method)
                 {
                     continue;
