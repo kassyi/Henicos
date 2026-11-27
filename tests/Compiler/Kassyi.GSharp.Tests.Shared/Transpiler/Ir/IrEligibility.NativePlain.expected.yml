@@ -10,20 +10,20 @@
 #   occurrences:  every node the C++ writer cannot spell, most first
 #   eligible:     the methods of the population with an IR body
 kinds:
-  Kernel: 4258
-  DeviceFunction: 1200
-  SuspendingDeviceFunction: 430
+  Kernel: 4265
+  DeviceFunction: 1202
+  SuspendingDeviceFunction: 438
   Iterator: 120
 reasons:
   None: 96
   IrNotBuilt: 0
   StrykerMutant: 1
   SplitCall: 7
-  OpaqueNode: 129
+  OpaqueNode: 130
   RemovedCall: 3
   Macro: 6
   SharedMemoryLocal: 26
-  UnsupportedForm: 901
+  UnsupportedForm: 902
 opaque:
   - {key: "UnsupportedOperation/ForStatement", count: 18}
   - {key: "UnsupportedOperation/SimpleLambdaExpression", count: 17}
@@ -34,9 +34,9 @@ opaque:
   - {key: "UnsupportedOperation/ParenthesizedLambdaExpression", count: 6}
   - {key: "UnsupportedOperation/ThrowStatement", count: 6}
   - {key: "UnsupportedOperation/YieldReturnStatement", count: 5}
+  - {key: "Invalid/InvocationExpression", count: 4}
   - {key: "UnsupportedOperation/PointerIndirectionExpression", count: 4}
   - {key: "UnsupportedShape/InvocationExpression", count: 4}
-  - {key: "Invalid/InvocationExpression", count: 3}
   - {key: "UnsupportedOperation/ConditionalAccessExpression", count: 3}
   - {key: "UnsupportedOperation/SwitchExpression", count: 3}
   - {key: "UnsupportedOperation/SwitchStatement", count: 3}
@@ -60,7 +60,7 @@ split:
   - {key: "SuspendingCall", count: 2}
   - {key: "WarpShuffle", count: 1}
 firstHit:
-  - {key: "NativePlain:IrBinary/-", count: 320}
+  - {key: "NativePlain:IrBinary/-", count: 321}
   - {key: "NativePlain:IrAssignment/-", count: 180}
   - {key: "NativePlain:IrCompoundAssignment/-", count: 96}
   - {key: "NativePlain:IrCall/DeviceFunction", count: 38}
@@ -91,7 +91,7 @@ firstHit:
   - {key: "NativePlain:IrUnary/-", count: 1}
   - {key: "NativePlain:IrVariableReference/Type:Pointer", count: 1}
 occurrences:
-  - {key: "NativePlain:IrBinary/-", count: 1162}
+  - {key: "NativePlain:IrBinary/-", count: 1163}
   - {key: "NativePlain:IrAssignment/-", count: 513}
   - {key: "NativePlain:IrFieldReference/-", count: 511}
   - {key: "NativePlain:IrVariableReference/Ref", count: 445}
