@@ -20,6 +20,11 @@
     <RootNamespace>Kassyi.GSharp.Tests</RootNamespace>
   </PropertyGroup>
 
+  <!-- Both CPU paths on stacks: the tests of the locals that only the stacks keep across a barrier -->
+  <PropertyGroup Condition="'$(GSharpNativeBarrierModel)' == 'Stack' and '$(GSharpManagedBarrierModel)' == 'Stack'">
+    <DefineConstants>$(DefineConstants);GSHARP_BOTH_STACKS</DefineConstants>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(GSharpManagedBarrierModel)' == 'Stack'">
     <DefineConstants>$(DefineConstants);GSHARP_MANAGED_STACK</DefineConstants>
   </PropertyGroup>
