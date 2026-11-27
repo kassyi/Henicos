@@ -111,7 +111,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
         Assert.Equal(0, allocated);
     }
 
-    // mutant: CapturedStreamGraph.cs:231 `_manager.ReturnDeferred(_captured.Buffers);`
+    // mutant: CapturedStreamGraph.cs:277 `_manager.ReturnDeferred(_captured.Buffers);`
     // -> omitted (DeferredBuffers stays high)
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
@@ -155,7 +155,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
         Assert.Throws<ObjectDisposedException>(graph.Launch);
     }
 
-    // mutant: CapturedStreamGraph.cs:265
+    // mutant: CapturedStreamGraph.cs:311
     // `RunCleanupStep((manager, captured), static s => s.manager.ReturnDeferred(s.captured.Buffers),` -> omitted
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
@@ -184,7 +184,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
         Assert.Equal(new BigInteger(42), _result.ToBigInteger());
     }
 
-    // mutant: CapturedStreamGraph.cs:267
+    // mutant: CapturedStreamGraph.cs:313
     // `ThrowIfCleanupFailed("CUDA graph capture failed, and so did its cleanup.", original, cleanupErrors);`
     // -> omitted
     [SkippableFact]
@@ -262,7 +262,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
         Assert.Equal((start.DeferredBuffers, start.LiveBuffers), (end.DeferredBuffers, end.LiveBuffers));
     }
 
-    // mutant: CapturedStreamGraph.cs:223 `using (Workspace.ActivateContext())`
+    // mutant: CapturedStreamGraph.cs:269 `using (Workspace.ActivateContext())`
     // -> omitted (pool thread lacks isolated context)
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
@@ -336,10 +336,10 @@ public sealed class CapturedStreamGraphTests : IDisposable
     }
 
     // ReleaseAfterFailure must destroy the partial graph and return deferred buffers when InstantiateGraph throws.
-    // mutant: CapturedStreamGraph.cs:279
+    // mutant: CapturedStreamGraph.cs:325
     // `RunCleanupStep((graphProvider, graph), static s => s.graphProvider.DestroyGraph(s.graph, IntPtr.Zero),`
     // -> omitted (DestroyCallCount stays 0)
-    // mutant: CapturedStreamGraph.cs:283
+    // mutant: CapturedStreamGraph.cs:329
     // `RunCleanupStep((manager, captured), static s => s.manager.ReturnDeferred(s.captured.Buffers),`
     // -> omitted (DeferredBuffers stays high)
     [SkippableFact]
@@ -368,7 +368,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
 
     // When both InstantiateGraph and DestroyGraph throw, ReleaseAfterFailure must still return deferred buffers and
     // combine both exceptions into an AggregateException with the original first.
-    // mutant: CapturedStreamGraph.cs:285
+    // mutant: CapturedStreamGraph.cs:331
     // `ThrowIfCleanupFailed("Creating the CUDA graph failed, and so did its cleanup.", original, cleanupErrors);`
     // -> omitted (only original InvalidOperationException is thrown)
     [SkippableFact]
@@ -400,7 +400,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
     }
 
     // When EndCapture throws, RecordStream must release deferred buffers via ReleaseAfterFailure without leaking.
-    // mutant: CapturedStreamGraph.cs:167
+    // mutant: CapturedStreamGraph.cs:213
     // `ReleaseAfterFailure(manager, graphProvider, manager.EndDeferral(deferral), graph, original);`
     // -> omitted (deferral stays active and DeferredBuffers leaks)
     [SkippableFact]
@@ -496,7 +496,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
             // Coverage witness: the legacy copy ran while CompileToGraph's capture was active.
             Assert.True(observer.Fired, "The memory observer never observed an active graph capture.");
             // CompileToGraph records on a dedicated non-blocking stream so concurrent legacy copies succeed.
-            // mutant: CapturedStreamGraph.cs:141 `graphProvider.BeginCapture(captureStream);` -> `graphProvider.BeginCapture(workspace.BaseStream);`
+            // mutant: CapturedStreamGraph.cs:173 `graphProvider.BeginCapture(captureStream);` -> `graphProvider.BeginCapture(workspace.BaseStream);`
             // mutant: CapturedStreamGraph.cs:11 `private const uint NonBlockingStreamFlag = 1;` -> `private const uint NonBlockingStreamFlag = 0;`
             // mutant: GpuWorkspace.cs:53 `public IntPtr Stream => _manager?.CurrentStream ?? _stream;` -> `public IntPtr Stream => _stream;`
             Assert.Null(otherThreadError);
@@ -590,7 +590,7 @@ public sealed class CapturedStreamGraphTests : IDisposable
 
         // AbortCapture must end capture on deferral.Stream (not the workspace base stream), so no cleanup error is
         // added and the original exception propagates intact before the next capture runs.
-        // mutant: CapturedStreamGraph.cs:251 `graph = graphProvider.EndCapture(deferral.Stream);` -> `graph = graphProvider.EndCapture(workspace.BaseStream);`
+        // mutant: CapturedStreamGraph.cs:297 `graph = graphProvider.EndCapture(deferral.Stream);` -> `graph = graphProvider.EndCapture(workspace.BaseStream);`
         var actual = Assert.Throws<InvalidOperationException>(() =>
             CapturedStreamGraph.Capture(Workspace, () =>
             {
@@ -744,7 +744,7 @@ public sealed class CapturedStreamGraphCpuFallbackTests
 
     // When original is already an AggregateException, ThrowIfCleanupFailed must preserve it intact at
     // InnerExceptions[0] rather than flattening its inner exceptions.
-    // mutant: CapturedStreamGraph.cs:311 `errors.Insert(0, original);`
+    // mutant: CapturedStreamGraph.cs:357 `errors.Insert(0, original);`
     // -> flattened into aggregate.InnerExceptions (InnerExceptions[0] is no longer original)
     [Fact]
     [Scenario(TestScenario.Boundary)]

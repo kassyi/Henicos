@@ -86,7 +86,7 @@ public sealed class ModPowZeroSyncGraphTests
         Assert.Equal(88L, workspace.ModPowGraphLaunches - launchesBefore);
 
         // Neither the concurrent legacy-stream copy nor ModPow may fail, and the result must match BigInteger.ModPow.
-        // mutant: CapturedStreamGraph.cs:141 `graphProvider.BeginCapture(captureStream);` -> `graphProvider.BeginCapture(workspace.BaseStream);`
+        // mutant: CapturedStreamGraph.cs:173 `graphProvider.BeginCapture(captureStream);` -> `graphProvider.BeginCapture(workspace.BaseStream);`
         // mutant: CapturedStreamGraph.cs:11 `private const uint NonBlockingStreamFlag = 1;` -> `private const uint NonBlockingStreamFlag = 0;`
         // mutant: GpuWorkspace.cs:53 `public IntPtr Stream => _manager?.CurrentStream ?? _stream;` -> `public IntPtr Stream => _stream;`
         Assert.Null(otherThreadError);
@@ -171,6 +171,81 @@ public sealed class ModPowZeroSyncGraphTests
         Assert.Null(firstLegacyError);
         Assert.True(copiesCompleted > 0, "Background thread completed zero legacy copies.");
         Assert.Equal(Iterations * 88L, workspace.ModPowGraphLaunches - launchesBefore);
+        workspace.ThrowIfDeviceErrors();
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0x89ABCDEFu, 0x01234567u)] // odd low bit: eager first step is Multiply
+    [InlineData(0x89ABCDEEu, 0x01234567u)] // even low bit: eager first step is Square
+    public void ModPow_WhileAnotherThreadHoldsTheWorkspaceCapture_RunsThePlainLoop(uint expWord0, uint expWord1)
+    {
+        CudaCapability.EnsureGpuAvailable();
+        const int NumWords = 64;
+        var seed = 2393 + (int)(expWord0 & 1u);
+        using var workspace = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
+
+        var random = new Random(seed);
+        var modValue = GenerateFullWidthBigInteger(random, NumWords * 32) | BigInteger.One;
+        var baseValue = GenerateFullWidthBigInteger(random, NumWords * 32) % modValue;
+        uint[] expWords = [expWord0, expWord1];
+        var expected = BigInteger.ModPow(baseValue, FromWords(expWords), modValue);
+
+        using var gpuBase = GpuBigUInt.FromBigInteger(workspace, baseValue, NumWords);
+        using var gpuExp = new GpuBigUInt(workspace, expWords);
+        using var gpuMod = GpuBigUInt.FromBigInteger(workspace, modValue, NumWords);
+        using var gpuResult = new GpuBigUInt(workspace, NumWords);
+
+        var manager = (DefaultGpuMemoryManager)workspace.MemoryManager;
+        using var deferralHeld = new ManualResetEventSlim(false);
+        using var releaseDeferral = new ManualResetEventSlim(false);
+        Exception? holderError = null;
+
+        var holder = new Thread(() =>
+        {
+            CaptureDeferral? deferral = null;
+            try
+            {
+                using var scope = workspace.ActivateContext();
+                deferral = manager.BeginDeferral();
+                deferralHeld.Set();
+                releaseDeferral.Wait();
+            }
+            catch (Exception ex)
+            {
+                holderError = ex;
+                deferralHeld.Set();
+            }
+            finally
+            {
+                if (deferral is not null)
+                {
+                    using var scope = workspace.ActivateContext();
+                    manager.ReturnDeferred(manager.EndDeferral(deferral).Buffers);
+                }
+            }
+        });
+        holder.Start();
+        Assert.True(deferralHeld.Wait(TimeSpan.FromSeconds(10)), "Timed out waiting for holder thread deferral.");
+
+        var launchesBefore = workspace.ModPowGraphLaunches;
+        try
+        {
+            // When another thread holds the workspace capture session, ExecuteLadder must fall back to the plain
+            // loop (skipping the eager first step) instead of throwing InvalidOperationException.
+            // mutant: ModPowZeroSyncController.cs:102 `if (!TryCaptureStepGraphs(buffers, out var multiplyGraph, out var squareGraph))`
+            // -> throw InvalidOperationException instead of running the plain-loop fallback
+            GpuBigIntDivRem.ModPow(gpuBase, gpuExp, gpuMod, gpuResult);
+        }
+        finally
+        {
+            releaseDeferral.Set();
+            holder.Join();
+        }
+
+        Assert.Null(holderError);
+        Assert.Equal(0L, workspace.ModPowGraphLaunches - launchesBefore);
+        Assert.True(expected == gpuResult.ToBigInteger(), $"seed {seed} mismatch");
         workspace.ThrowIfDeviceErrors();
     }
 

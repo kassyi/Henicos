@@ -46,7 +46,28 @@ internal sealed class CapturedStreamGraph : IDisposable
         return Capture(workspace, body, workspace.Provider);
     }
 
-    internal static CapturedStreamGraph Capture(GpuWorkspace workspace, Action body, IGpuGraphProvider graphProvider)
+    internal static CapturedStreamGraph Capture(GpuWorkspace workspace, Action body, IGpuGraphProvider graphProvider) =>
+        TryCapture(workspace, body, graphProvider, out var graph)
+            ? graph
+            : throw new InvalidOperationException("A CUDA graph capture is already running on this workspace.");
+
+    /// <summary>
+    /// Tries to capture <paramref name="body"/> on a dedicated non-blocking CUDA stream and instantiate a graph that
+    /// replays on the stream of <paramref name="workspace"/>. Returns <see langword="false"/> without throwing when
+    /// another capture is already running on <paramref name="workspace"/>.
+    /// </summary>
+    /// <param name="workspace">The workspace whose memory manager hosts the capture and whose stream replays the graph.</param>
+    /// <param name="body">The zero-sync operations to record into the graph.</param>
+    /// <param name="graph">When this method returns <see langword="true"/>, the instantiated graph; otherwise <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> if the graph was captured; <see langword="false"/> if another capture is already active.</returns>
+    public static bool TryCapture(GpuWorkspace workspace, Action body, [NotNullWhen(true)] out CapturedStreamGraph? graph)
+    {
+        ArgumentNullException.ThrowIfNull(workspace);
+        return TryCapture(workspace, body, workspace.Provider, out graph);
+    }
+
+    internal static bool TryCapture(GpuWorkspace workspace, Action body, IGpuGraphProvider graphProvider,
+        [NotNullWhen(true)] out CapturedStreamGraph? graph)
     {
         ArgumentNullException.ThrowIfNull(workspace);
         ArgumentNullException.ThrowIfNull(body);
@@ -60,9 +81,16 @@ internal sealed class CapturedStreamGraph : IDisposable
             Exception? original = null;
             try
             {
-                var (graph, captured) = RecordStream(workspace, manager, graphProvider, captureStream, body);
-                result = InstantiateCapturedGraph(workspace, manager, graphProvider, graph, captured);
-                return result;
+                if (!TryRecordStream(workspace, manager, graphProvider, captureStream, body, out var rawGraph,
+                    out var captured))
+                {
+                    graph = null;
+                    return false;
+                }
+
+                result = InstantiateCapturedGraph(workspace, manager, graphProvider, rawGraph, captured);
+                graph = result;
+                return true;
             }
             catch (Exception ex)
             {
@@ -131,19 +159,36 @@ internal sealed class CapturedStreamGraph : IDisposable
         }
     }
 
-    private static (IntPtr Graph, CapturedResources Captured) RecordStream(
-        GpuWorkspace workspace, DefaultGpuMemoryManager manager, IGpuGraphProvider graphProvider, IntPtr captureStream,
-        Action body)
+    private static bool TryBeginRecording(
+        DefaultGpuMemoryManager manager, IGpuGraphProvider graphProvider, IntPtr captureStream,
+        [NotNullWhen(true)] out CaptureDeferral? deferral)
     {
-        var deferral = manager.BeginDeferral(captureStream);
+        if (!manager.TryBeginDeferral(captureStream, out deferral))
+        {
+            return false;
+        }
+
         try
         {
             graphProvider.BeginCapture(captureStream);
+            return true;
         }
         catch
         {
             manager.EndDeferral(deferral);
             throw;
+        }
+    }
+
+    private static bool TryRecordStream(
+        GpuWorkspace workspace, DefaultGpuMemoryManager manager, IGpuGraphProvider graphProvider, IntPtr captureStream,
+        Action body, out IntPtr graph, out CapturedResources captured)
+    {
+        if (!TryBeginRecording(manager, graphProvider, captureStream, out var deferral))
+        {
+            graph = IntPtr.Zero;
+            captured = default;
+            return false;
         }
 
         try
@@ -156,11 +201,12 @@ internal sealed class CapturedStreamGraph : IDisposable
             throw;
         }
 
-        var graph = IntPtr.Zero;
+        graph = IntPtr.Zero;
         try
         {
             graph = graphProvider.EndCapture(captureStream);
-            return (graph, manager.EndDeferral(deferral));
+            captured = manager.EndDeferral(deferral);
+            return true;
         }
         catch (Exception original)
         {

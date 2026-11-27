@@ -252,22 +252,36 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
     /// <param name="captureStream">The stream that receives the calling thread's work during the capture.</param>
     /// <returns>The deferral to pass to <see cref="EndDeferral"/>.</returns>
     /// <exception cref="InvalidOperationException">Another capture is already running on this workspace.</exception>
-    internal CaptureDeferral BeginDeferral(IntPtr captureStream)
+    internal CaptureDeferral BeginDeferral(IntPtr captureStream) =>
+        TryBeginDeferral(captureStream, out var deferral)
+            ? deferral
+            : throw new InvalidOperationException("A CUDA graph capture is already running on this workspace.");
+
+    /// <summary>
+    /// Tries to start deferring the frees of a capture that records on <paramref name="captureStream"/>.
+    /// Returns <see langword="false"/> without throwing if another capture is already running on this workspace.
+    /// </summary>
+    /// <param name="captureStream">The stream that receives the calling thread's work during the capture.</param>
+    /// <param name="deferral">When this method returns <see langword="true"/>, the deferral to pass to <see cref="EndDeferral"/>.</param>
+    /// <returns><see langword="true"/> if the deferral started; <see langword="false"/> if another capture is already active.</returns>
+    internal bool TryBeginDeferral(IntPtr captureStream, [NotNullWhen(true)] out CaptureDeferral? deferral)
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) == 1, this);
-        var deferral = new CaptureDeferral(Environment.CurrentManagedThreadId, captureStream);
-        if (Interlocked.CompareExchange(ref _activeDeferral, deferral, null) is not null)
+        var candidate = new CaptureDeferral(Environment.CurrentManagedThreadId, captureStream);
+        if (Interlocked.CompareExchange(ref _activeDeferral, candidate, null) is not null)
         {
-            throw new InvalidOperationException("A CUDA graph capture is already running on this workspace.");
+            deferral = null;
+            return false;
         }
 
-        return deferral;
+        deferral = candidate;
+        return true;
     }
 
     /// <summary>
     /// Ends <paramref name="deferral"/> (after the capture ended, also when it failed).
     /// </summary>
-    /// <param name="deferral">The deferral returned by <see cref="BeginDeferral"/>.</param>
+    /// <param name="deferral">The deferral returned by <see cref="BeginDeferral(IntPtr)"/> or <see cref="TryBeginDeferral"/>.</param>
     /// <returns>
     /// The buffers freed during the capture and not taken again, which now belong to the graph, and the handles the
     /// capture read that the graph does not own (operands and target), whose liveness the graph checks before a launch.
