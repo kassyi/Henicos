@@ -470,7 +470,7 @@ internal static class ManagedCSharpTranspiler
         SemanticModel semanticModel, string methodName, bool zeroFill, ManagedExecutionRewriter rewriter)
     {
         // [WHY] Such a goto would stay a C# goto into another case block (CS0159). The generator reports
-        // it as an error (GSH0121, or GSH0040 across a barrier; ChainedLabelJumpChecks.FindReported), so the build
+        // it as an error (GSH0121; across a barrier the analyzer reports GSH0040, ChainedLabelJumpChecks.FindReported), so the build
         // never runs this method: the declarations stay for the launcher and the callers, and the
         // body that the managed path cannot express is left out (no throw in place of the jump)
         if (!lowered.GotosToChainedLabelsAcrossStates.IsEmpty)

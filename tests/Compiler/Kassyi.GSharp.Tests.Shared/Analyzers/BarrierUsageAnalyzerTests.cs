@@ -630,7 +630,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task ChainedLabelJump_GotoAcrossBarrier_ReportsGSH0040AloneAndGSH0121FromTheGeneratorOnly()
+    public async Task ChainedLabelJump_GotoAcrossBarrier_ReportsGSH0040FromTheAnalyzerOnlyAndGSH0121FromTheGeneratorOnly()
     {
         var compilation = RoslynTestUtility.CreateCompilation(
             RoslynTestUtility.ReadTestCase("Analyzers/BarrierUsage/ChainedLabelGotoBarrierKernels.cu.cs"));
@@ -638,12 +638,13 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
         var run = await KernelDiagnostics.RunCompilationAsync(compilation, "Cpu");
 
         // A goto across a barrier or a call that suspends gets GSH0040 only; one across a shuffle alone keeps GSH0121,
-        // though the method has a barrier before the chain. The generator reports both, so a build without the
-        // analyzers stops at the same places; GSH0121 comes from the generator alone
+        // though the method has a barrier before the chain. GSH0040 comes from the analyzer alone and GSH0121 from the
+        // generator alone: an IDE merges none, so a goto reported from both places is seen twice (#2390)
+        // mutant: FindReported returning the gotos across a barrier, HeldRefLocalSite.Report giving them GSH0040 -> the
+        // generator reports GSH0040 at lines 31 and 50 too
         // mutant: FindReported without the IsCrossBarrierGoto check -> GSH0121 at lines 31 and 50 too
         // mutant: IsCrossBarrierGoto given the goto of the lowered body -> GSH0121 at lines 31 and 50 too
         // mutant: HeldRefLocalSite.Collect skipping a method that has a barrier -> no GSH0121 at line 70
-        // mutant: HeldRefLocalSite.Report without the CrossesBarrier branch -> the generator reports GSH0121 at 31 and 50
         var gsh0040 = GSharpDiagnostics.CrossBarrierGotoProhibited.Id;
         var gsh0121 = GSharpDiagnostics.GotoToChainedLabelAcrossStates.Id;
         var analyzer = run.Analyzer
@@ -654,11 +655,8 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
             analyzer.Ranges(gsh0040).OrderBy(static r => r.StartLine).ToList());
         Assert.Empty(analyzer.Ranges(gsh0121));
         Assert.Equal([(DiagnosticOrigin.Generator, 70, 13, 70, 25)], GeneratorRanges(run, gsh0121));
-        Assert.Equal(3, run.Generator.Length);
-        Assert.True(run.Analyzer
-            .Where(d => d.Id == gsh0040)
-            .ToHashSet()
-            .SetEquals(run.Generator.Where(d => d.Id == gsh0040)));
+        Assert.DoesNotContain(run.Generator, d => d.Id == gsh0040);
+        Assert.Single(run.Generator);
     }
 
     [Fact]

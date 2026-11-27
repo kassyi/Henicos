@@ -19,34 +19,33 @@ internal static class ChainedLabelJumpChecks
 {
     /// <summary>
     /// The gotos of <paramref name="lowered"/> that cannot be lowered
-    /// (<see cref="LoweredStateMachine.GotosToChainedLabelsAcrossStates"/>), each with its place in the user's source and
-    /// whether it crosses a barrier or a call that suspends: such a goto is GSH0040's
-    /// (<see cref="CrossBarrierChecks.IsCrossBarrierGoto"/>), every other one GSH0121's.
+    /// (<see cref="LoweredStateMachine.GotosToChainedLabelsAcrossStates"/>), each with its place in the user's source,
+    /// without the ones that cross a barrier or a call that suspends: such a goto is GSH0040's
+    /// (<see cref="CrossBarrierChecks.IsCrossBarrierGoto"/>), which the analyzer reports alone, every other one GSH0121's.
     /// </summary>
     /// <remarks>
-    /// The one definition of the gotos the generator reports; it reports GSH0040 too for the gotos across a barrier, as
-    /// the analyzer does (<see cref="CrossBarrierChecks"/>), since a build without the analyzers would otherwise pass
-    /// with the managed body left out. The goto of the
+    /// The one definition of the gotos the generator reports as GSH0121. A goto across a barrier is left out, as the
+    /// analyzer reports it (<see cref="CrossBarrierChecks"/>) and an IDE would show it twice if the generator did too;
+    /// the managed body that the rejected jump leaves out is not written either way. The goto of the
     /// lowered body is found again in the user's source by its reported place, and its label as GSH0040 finds it
     /// (<see cref="CrossBarrierChecks.FindTargetLabel"/>). The barriers are the calls that run (<see cref="RemovedCalls"/>) and
     /// <see cref="KernelConstructChecks.IsBarrierCall"/> accepts; in a device iterator, where the scan collects none
     /// and reports each split point as GSH0072, a goto across one is left to that error.
     /// </remarks>
-    internal static ImmutableArray<(Location Location, ChainedLabelGoto Jump, bool CrossesBarrier)> FindReported(
+    internal static ImmutableArray<(Location Location, ChainedLabelGoto Jump)> FindReported(
         MethodDeclarationSyntax method, SemanticModel semanticModel, LoweredStateMachine lowered)
     {
         if (lowered.GotosToChainedLabelsAcrossStates.IsEmpty)
         {
-            return ImmutableArray<(Location, ChainedLabelGoto, bool)>.Empty;
+            return ImmutableArray<(Location, ChainedLabelGoto)>.Empty;
         }
 
         ImmutableArray<InvocationExpressionSyntax>.Builder? barriers = null;
         ImmutableArray<LabeledStatementSyntax>.Builder? labels = null;
-        var reported = ImmutableArray.CreateBuilder<(Location, ChainedLabelGoto, bool)>();
+        var reported = ImmutableArray.CreateBuilder<(Location, ChainedLabelGoto)>();
         foreach (var jump in lowered.GotosToChainedLabelsAcrossStates)
         {
             var location = semanticModel.GetReportLocation(jump.Goto);
-            var crossesBarrier = false;
             // The goto of the compilation, beside the barriers and labels of <method>: for a closed copy of a generic
             // declaration the report location is in the user's tree, not the copy's
             if (semanticModel.GetCompilationNode(jump.Goto)?.FirstAncestorOrSelf<GotoStatementSyntax>() is
@@ -57,12 +56,14 @@ internal static class ChainedLabelJumpChecks
                     (barriers, labels) = CollectBarriersAndLabels(method, semanticModel);
                 }
 
-                crossesBarrier =
-                    CrossBarrierChecks.FindTargetLabel(labels, sourceGoto, semanticModel) is { } target &&
-                    CrossBarrierChecks.IsCrossBarrierGoto(barriers, sourceGoto, target);
+                if (CrossBarrierChecks.FindTargetLabel(labels, sourceGoto, semanticModel) is { } target &&
+                    CrossBarrierChecks.IsCrossBarrierGoto(barriers, sourceGoto, target))
+                {
+                    continue;
+                }
             }
 
-            reported.Add((location, jump, crossesBarrier));
+            reported.Add((location, jump));
         }
 
         return reported.ToImmutable();
