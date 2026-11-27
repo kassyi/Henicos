@@ -1,12 +1,5 @@
 # Expected kernels and suspending device functions on the state machine under stack switches
 # Columns: <native|managed>	<Type.Method>	<reason>	#<issue>
-managed	CrossAssemblyDifferentialKernels.CrossAssemblyBarrierExchangeKernel	WarpLayout	#2105
-managed	CrossAssemblyKernels.ExchangeKernel	WarpLayout	#2105
-managed	CrossAssemblyPrivateFrameKernels.AddHundred	WarpLayout	#2105
-managed	CrossAssemblyPrivateFrameKernels.PrivateFrameKernel	WarpLayout	#2105
-managed	CrossAssemblyPrivateFrameKernels.PrivateFrameRelayKernel	WarpLayout	#2105
-managed	CrossAssemblyPrivateFrameKernels.PrivateFrameThroughFunctionKernel	WarpLayout	#2105
-managed	CrossAssemblyProtectedFrameKernels.ProtectedFrameKernel	WarpLayout	#2105
 managed	CrossAssemblyStdlibKernels.WarpScanKernel	WarpLayout	#2105
 native	AtomicsDifferentialKernels.CooperativeCasLockFreeStackKernel	Cooperative	#2105
 native	BlockBarrierStepKernels.ShuffleBarrierAndGridSyncKernel	Cooperative	#2105

@@ -931,6 +931,75 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncThen(int v)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return v;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncSum(int a, int b)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return a + b;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncThenBump(int[] data, int i)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+data[i] += 7;
+return data[i];
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncRead(int[] data, int i)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return data[i];
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__BumpPlusSync(int[] data, int i) => global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.Bump(data, i) + global::Kassyi.GSharp.Tests.Shared.Differential.SplitOperandOrderDifferentialKernels.__gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncThen(data[i]);
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static long __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncThenLong(long v)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return v;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static float __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncThenFloat(float v)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return v;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static bool __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncThenBool(bool v)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return v;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncThenCount(int[] counts)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+counts[0]++;
+return 1;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncThenDivide(int[] counts, int zero)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+counts[0]++;
+return 1 / zero;
+}
+
 }
 }
 

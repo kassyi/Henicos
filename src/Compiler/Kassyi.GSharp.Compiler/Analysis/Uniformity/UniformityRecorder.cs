@@ -45,6 +45,9 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
     /// <summary>The barriers and barrier-reaching calls of the graph.</summary>
     public Dictionary<SyntaxNode, BarrierSite> Sites { get; } = new();
 
+    /// <summary>Additional barrier-reaching calls when multiple calls share a single <see cref="SyntaxNode"/>.</summary>
+    public Dictionary<SyntaxNode, ImmutableArray<RecordedBarrierCall>.Builder>? ExtraSiteCalls { get; private set; }
+
     /// <summary>
     /// The memory that the threads share, whose values follow the locals, parameters and flow captures.
     /// </summary>
@@ -81,6 +84,11 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
     public ImmutableArray<ISymbol> GetCaptureRootAliases(IFlowCaptureReferenceOperation reference) =>
         Values.GetRootAliases(reference);
 
+    /// <summary>Gets the captured property or indexer reference for <paramref name="id"/> in <paramref name="graph"/>, if any.</summary>
+    public bool TryGetCapturedProperty(ControlFlowGraph graph, CaptureId id,
+        [NotNullWhen(true)] out IPropertyReferenceOperation? property) =>
+        Values.TryGetCapturedProperty(graph, id, out property);
+
     /// <summary>The value index of a flow capture, given one on first use.</summary>
     public int ValueOf(ControlFlowGraph graph, CaptureId id) => Values.ValueOf(graph, id);
 
@@ -100,6 +108,37 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
             var variance = (masks.Block & bit) != 0 ? ThreadVariance.Block :
                 (masks.Grid & bit) != 0 ? ThreadVariance.Grid : ThreadVariance.Uniform;
             Define(parameter, variance, node);
+        }
+
+        if (method.IsPrimaryConstructor())
+        {
+            var captured = ThreadVariance.Uniform;
+            var hasCaptured = false;
+            foreach (var member in StructAbiMembers.Get(method.ContainingType))
+            {
+                if (member.Kind == StructAbiMemberKind.CapturedParameter ||
+                    (member is { Kind: StructAbiMemberKind.AutoProperty, Symbol: IPropertySymbol prop } &&
+                     prop.TryGetDeclaringSyntax<ParameterSyntax>(out _)))
+                {
+                    hasCaptured = true;
+                    var parameter = method.Parameters
+                        .AsStackEnumerable()
+                        .FirstOrDefault(member.Name, static (p, name) => p.Name == name);
+                    if (parameter != null)
+                    {
+                        var bit = ArgumentMasks.Bit(parameter.Ordinal);
+                        captured |= (masks.Block & bit) != 0 ? ThreadVariance.Block :
+                            (masks.Grid & bit) != 0 ? ThreadVariance.Grid : ThreadVariance.Uniform;
+                    }
+                }
+            }
+
+            if (hasCaptured)
+            {
+                var thisIndex = Values.ValueOf(method.ContainingType);
+                Nodes[node].Events.Add(
+                    new UniformityEvent(UniformityEventKind.Define, null, null, null, thisIndex, captured));
+            }
         }
     }
 
@@ -133,6 +172,11 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
 
     public void OnFlowCapture(IFlowCaptureOperation capture, ControlFlowGraph graph, int node)
     {
+        if (capture.Value is IPropertyReferenceOperation property)
+        {
+            Values.RecordCapturedProperty(graph, capture.Id, property);
+        }
+
         UniformityWrites.AddWritten(Nodes[node], ValueOf(graph, capture.Id));
         AddWrite(capture, graph, node);
         Memory.AddCapture(capture);
@@ -167,11 +211,12 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
         }
 
         Nodes[node].HasSplit = true;
+        var splitIndex = Nodes[node].Splits.Count;
         Nodes[node].Splits.Add(call);
         RecordNode(SplitsAt, call, node);
         if (split.BarrierScope is { } scope)
         {
-            RecordBarrierSite(split, call, scope, graph, node);
+            RecordBarrierSite(split, call, scope, graph, node, splitIndex);
         }
     }
 
@@ -187,12 +232,47 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
 
     // A barrier or barrier-reaching call: a site of GSH0083 / GSH0084; a barrier itself syncs the memory, the callee
     // of a barrier-reaching call lowers it through its summary (AddCall)
-    private void RecordBarrierSite(SplitPoint split, SyntaxNode call, SyncScope scope, ControlFlowGraph graph, int node)
+    private void RecordBarrierSite(SplitPoint split, SyntaxNode call, SyncScope scope, ControlFlowGraph graph,
+        int node, int splitIndex)
     {
-        Sites[call] = new BarrierSite(scope, split.BarrierCall, graph);
-        if (split.BarrierCall is { } invocation)
+        if (Sites.TryGetValue(call, out var existing))
         {
-            Nodes[node].Events.Add(new UniformityEvent(UniformityEventKind.Site, invocation, graph, _bodies.Opaque));
+            var mergedScope = existing.Scope == SyncScope.Grid || scope == SyncScope.Grid
+                ? SyncScope.Grid
+                : scope;
+            if (existing.Call is null && split.BarrierCall is { } newCall)
+            {
+                Sites[call] = new BarrierSite(mergedScope, newCall, graph, node, splitIndex);
+            }
+            else
+            {
+                if (mergedScope != existing.Scope)
+                {
+                    Sites[call] = existing with { Scope = mergedScope };
+                }
+
+                if (split.BarrierCall is { } extraCall)
+                {
+                    ExtraSiteCalls ??= new Dictionary<SyntaxNode, ImmutableArray<RecordedBarrierCall>.Builder>();
+                    if (!ExtraSiteCalls.TryGetValue(call, out var extras))
+                    {
+                        extras = ImmutableArray.CreateBuilder<RecordedBarrierCall>();
+                        ExtraSiteCalls.Add(call, extras);
+                    }
+
+                    extras.Add(new RecordedBarrierCall(extraCall, node, splitIndex));
+                }
+            }
+        }
+        else
+        {
+            Sites[call] = new BarrierSite(scope, split.BarrierCall, graph, node, splitIndex);
+        }
+
+        if (split.BarrierCall is { } callSite)
+        {
+            Nodes[node].Events.Add(new UniformityEvent(UniformityEventKind.Site, callSite.Operation, graph,
+                _bodies.Opaque, Site: call));
         }
         else if (split.Kind == SplitKind.Call)
         {
@@ -214,6 +294,18 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
             if (argument.Parameter?.RefKind is RefKind.Ref or RefKind.Out)
             {
                 AddWrite(invocation, graph, node);
+                return;
+            }
+        }
+    }
+
+    public void OnObjectCreationReturned(IObjectCreationOperation creation, ControlFlowGraph graph, int node)
+    {
+        foreach (var argument in creation.Arguments)
+        {
+            if (argument.Parameter?.RefKind is RefKind.Ref or RefKind.Out)
+            {
+                AddWrite(creation, graph, node);
                 return;
             }
         }

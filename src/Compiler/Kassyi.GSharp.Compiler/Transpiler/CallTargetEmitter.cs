@@ -67,17 +67,38 @@ internal static class CallTargetEmitter
 
     /// <summary>
     /// Reports and writes the placeholder when <paramref name="node"/> names a method without calling it (a method
-    /// group passed to a StackLinq stage or converted to a delegate) whose target cannot be emitted.
+    /// group passed to a StackLinq stage or converted to a delegate) whose target cannot be emitted, or is an instance
+    /// device function (which cannot form a delegate without boxing a receiver copy).
     /// </summary>
     /// <returns>Whether it reported and wrote the placeholder.</returns>
-    public static bool TryFailMethodGroup(SyntaxNode node, ISymbol? symbol, ref TranspileContext context) =>
-        symbol is IMethodSymbol method &&
-        MethodGroupReference.Is(node, context.Query.SemanticModel) &&
-        TryFail(
-            node,
-            CallTargetClassifier.Classify(method, node, context.Query.SemanticModel, context.Emitter.Dialect),
-            ref context
-        );
+    public static bool TryFailMethodGroup(SyntaxNode node, ISymbol? symbol, ref TranspileContext context)
+    {
+        if (symbol is not IMethodSymbol method || !MethodGroupReference.Is(node, context.Query.SemanticModel))
+        {
+            return false;
+        }
+
+        if (TryFail(
+                node,
+                CallTargetClassifier.Classify(method, node, context.Query.SemanticModel, context.Emitter.Dialect),
+                ref context))
+        {
+            return true;
+        }
+
+        if (method is { IsStatic: false, ReducedFrom: null } &&
+            CppNameResolver.IsEmittedDeviceFunction(method, context.Emitter.Dialect))
+        {
+            context.Reporter.Fail(
+                GSharpDiagnostics.UnsupportedSyntax,
+                node,
+                "instance device function used as a method group");
+            context.Visitor.AppendUnsupportedPlaceholder(node);
+            return true;
+        }
+
+        return false;
+    }
 
     /// <summary>
     /// Reports GSH0060 at the operator and writes the placeholder when <paramref name="node"/>, a binary, unary,

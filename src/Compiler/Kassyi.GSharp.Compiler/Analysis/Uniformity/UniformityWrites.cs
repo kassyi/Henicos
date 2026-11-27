@@ -20,6 +20,14 @@ internal static class UniformityWrites
             case IDeconstructionAssignmentOperation deconstruction:
                 AllocateTargets(values, node, deconstruction.Target, graph);
                 break;
+            case ISimpleAssignmentOperation
+            {
+                Target: IFlowCaptureReferenceOperation captureRef,
+                Syntax: var syntax
+            } when syntax.IsKind(SyntaxKind.CoalesceAssignmentExpression) &&
+                   values.TryGetCapturedProperty(graph, captureRef.Id, out var capturedProperty):
+                AllocateTargets(values, node, capturedProperty, graph);
+                break;
             case IAssignmentOperation assignment:
                 AllocateTargets(values, node, assignment.Target, graph);
                 break;
@@ -28,6 +36,9 @@ internal static class UniformityWrites
                 break;
             case IInvocationOperation invocation:
                 AllocateArguments(values, node, invocation, graph);
+                break;
+            case IObjectCreationOperation creation:
+                AllocateCreationArguments(values, node, creation, graph);
                 break;
             case IDeclarationExpressionOperation declaration:
                 AllocateTargets(values, node, declaration.Expression, graph);
@@ -96,7 +107,7 @@ internal static class UniformityWrites
             TargetMethod: { IsStatic: false, IsReadOnly: false, ContainingType: { IsReadOnly: false } type },
             Instance: not null
         } &&
-        GlobalCppNames.IsEmittedUserType(type);
+        EmittedUserTypes.IsEmittedUserType(type);
 
     private static void AllocateArguments(UniformityValues values, UniformityNode node, IInvocationOperation invocation,
         ControlFlowGraph graph)
@@ -106,7 +117,17 @@ internal static class UniformityWrites
             AllocateTargets(values, node, receiver, graph);
         }
 
-        foreach (var argument in invocation.Arguments)
+        AllocateByRefArguments(values, node, invocation.Arguments, graph);
+    }
+
+    private static void AllocateCreationArguments(UniformityValues values, UniformityNode node,
+        IObjectCreationOperation creation, ControlFlowGraph graph) =>
+        AllocateByRefArguments(values, node, creation.Arguments, graph);
+
+    private static void AllocateByRefArguments(UniformityValues values, UniformityNode node,
+        ImmutableArray<IArgumentOperation> arguments, ControlFlowGraph graph)
+    {
+        foreach (var argument in arguments)
         {
             if (argument.Parameter?.RefKind is RefKind.Ref or RefKind.Out)
             {

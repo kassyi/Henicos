@@ -65,6 +65,58 @@ public class NullableShadowPlanTests
         Assert.Equal(4, plan.ValueOffset);
     }
 
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Create_NullableNestedViews_PlansInnerElementWalk()
+    {
+        var nullableType = s_compilation.GetSpecialType(SpecialType.System_Nullable_T);
+        var intType = s_compilation.GetSpecialType(SpecialType.System_Int32);
+        var memoryDef = s_compilation.GetTypeByMetadataName("System.Memory`1");
+        Assert.NotNull(memoryDef);
+
+        var memInt = memoryDef.Construct(intType);
+        var intArray = s_compilation.CreateArrayTypeSymbol(intType);
+        var nullableMemInt = nullableType.Construct(memInt);
+
+        var memOfMemPlan = NullableShadowPlan.Create(nullableType.Construct(memoryDef.Construct(memInt)), HostDialects.Cuda);
+        var memOfArrPlan = NullableShadowPlan.Create(nullableType.Construct(memoryDef.Construct(intArray)), HostDialects.Cuda);
+        var memOfOptPlan = NullableShadowPlan.Create(nullableType.Construct(memoryDef.Construct(nullableMemInt)), HostDialects.Cuda);
+
+        var outerMemOfMem = Assert.IsType<NullableHeldView>(memOfMemPlan.HeldArrays?.Value);
+        Assert.IsType<NullableHeldView>(outerMemOfMem.Element);
+        Assert.Equal("__gsharp_nullable_of_Memory_Memory_Int32", memOfMemPlan.ShadowName);
+
+        var longType = s_compilation.GetSpecialType(SpecialType.System_Int64);
+        var memOfMemLongPlan = NullableShadowPlan.Create(
+            nullableType.Construct(memoryDef.Construct(memoryDef.Construct(longType))),
+            HostDialects.Cuda);
+        Assert.Equal("__gsharp_nullable_of_Memory_Memory_Int64", memOfMemLongPlan.ShadowName);
+
+        var outerMemOfArr = Assert.IsType<NullableHeldView>(memOfArrPlan.HeldArrays?.Value);
+        Assert.IsType<NullableHeldArray>(outerMemOfArr.Element);
+
+        var outerMemOfOpt = Assert.IsType<NullableHeldView>(memOfOptPlan.HeldArrays?.Value);
+        Assert.IsType<NullableHeldMethod>(outerMemOfOpt.Element);
+
+        var deepOptPlan = NullableShadowPlan.Create(
+            nullableType.Construct(memoryDef.Construct(memoryDef.Construct(nullableMemInt))),
+            HostDialects.Cuda);
+        var outerDeepOpt = Assert.IsType<NullableHeldView>(deepOptPlan.HeldArrays?.Value);
+        var midDeepOpt = Assert.IsType<NullableHeldView>(outerDeepOpt.Element);
+        var leafDeepOpt = Assert.IsType<NullableHeldMethod>(midDeepOpt.Element);
+        Assert.Equal("AliasHeldArrays___gsharp_nullable_of_Memory_Int32", leafDeepOpt.MethodName);
+
+        var holder = s_compilation.GetTypeByMetadataName("Native.Holder");
+        Assert.NotNull(holder);
+        var deepHolderPlan = NullableShadowPlan.Create(
+            nullableType.Construct(memoryDef.Construct(memoryDef.Construct(holder))),
+            HostDialects.Cuda);
+        var outerDeepHolder = Assert.IsType<NullableHeldView>(deepHolderPlan.HeldArrays?.Value);
+        var midDeepHolder = Assert.IsType<NullableHeldView>(outerDeepHolder.Element);
+        var leafDeepHolder = Assert.IsType<NullableHeldMethod>(midDeepHolder.Element);
+        Assert.Equal("AliasHeldArrays_Holder", leafDeepHolder.MethodName);
+    }
+
     private static ITranspilerDialect Dialect(bool cuda) => cuda ? HostDialects.Cuda : HostDialects.Cpu;
 
     private static INamedTypeSymbol MakeNullable(string valueMetadataName)

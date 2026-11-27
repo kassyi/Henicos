@@ -47,7 +47,7 @@ export function quoteArgument(shell: ShellName, word: string): string {
   return `'${word.replace(/'/g, "'\\''")}'`;
 }
 
-interface Invocation {
+export interface ShellInvocation {
   file: string;
   args: string[];
   verbatim: boolean;
@@ -86,8 +86,12 @@ export class CommandShell {
     return new CommandShell(process.env.MSYSTEM || process.env.SHELL ? "bash" : "pwsh");
   }
 
+  static isPowerShell(shell: ShellName): boolean {
+    return shell === "pwsh" || shell === "powershell";
+  }
+
   get isPowerShell(): boolean {
-    return this.name === "pwsh" || this.name === "powershell";
+    return CommandShell.isPowerShell(this.name);
   }
 
   /**
@@ -100,14 +104,18 @@ export class CommandShell {
   }
 
   /** The program and arguments that run `command` in `shell`, keeping the command's exit code. */
-  private static invocation(shell: ShellName, command: string): Invocation {
+  static invocation(shell: ShellName, command: string): ShellInvocation {
     switch (shell) {
       case "bash":
         return { file: gitBashPath(), args: ["-c", command], verbatim: false };
       case "sh":
         return { file: "/bin/sh", args: ["-c", command], verbatim: false };
       case "cmd":
-        return { file: process.env.ComSpec || "cmd.exe", args: ["/d", "/s", "/c", `"${command}"`], verbatim: true };
+        return {
+          file: process.env.ComSpec || "cmd.exe",
+          args: ["/d", "/s", "/v:off", "/c", `"${command}"`],
+          verbatim: true,
+        };
       case "pwsh":
       case "powershell": {
         // -Command exits with 0 or 1 only; pass the exit code of the last native program on.

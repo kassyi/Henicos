@@ -593,6 +593,78 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__DoubleThroughSharedMemory(int value)
+{
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+var inner = new global::Kassyi.GSharp.Core.SharedMemory<int>(256, 0xe21d3e68069a8087UL);
+inner[tid] = value * 2;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return inner[tid];
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__SwapThroughDeclaration(int value)
+{
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+var box = new global::Kassyi.GSharp.Core.SharedMemory<int>(256, 0x2733ce77ca756507UL);
+int previous = box[tid];
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+box[tid] = value;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return previous;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__CountedSwapWithNeighbor(int __gsharp_warp_frame, int[] calls, int value)
+{
+calls[global::Kassyi.GSharp.Core.ThreadIndex.X] += 1;
+return global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_shuffle_xor_sync<int>(__gsharp_warp_frame, 0, "DeviceFunctionBarrierEdgeCaseKernels.cs(92,16)", global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, value, 1);
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__BroadcastFromLaneZero(int __gsharp_warp_frame, int value)
+{
+int broadcast = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_shuffle_sync<int>(__gsharp_warp_frame, 0, "DeviceFunctionBarrierEdgeCaseKernels.cs(123,25)", global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, value, 0);
+return broadcast;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__ShiftUpExpressionBody(int __gsharp_warp_frame, int value) => global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_shuffle_up_sync<int>(__gsharp_warp_frame, 0, "DeviceFunctionBarrierEdgeCaseKernels.cs(170,59)", global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, value, 1u);
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__StoreBroadcastExpressionBody(int __gsharp_warp_frame, int[] output, int value) => output[global::Kassyi.GSharp.Core.ThreadIndex.X] = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_shuffle_sync<int>(__gsharp_warp_frame, 0, "DeviceFunctionBarrierEdgeCaseKernels.cs(174,33)", global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, value, 0);
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__IncrementAcrossBarrier(ref int value, int[] published)
+{
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+value += 1;
+global::Kassyi.GSharp.Core.SharedMemory<int> shared = new(256, 0x146231c012de8105UL);
+shared[tid] = value;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+published[tid] = shared[tid];
+value += 10;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__IncrementTwiceAcrossBarriers(ref int value, int[] published)
+{
+global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.__gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__IncrementAcrossBarrier(ref value, published);
+global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.__gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__IncrementAcrossBarrier(ref value, published);
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__SumWithNeighbor(int value, out int sum)
+{
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+global::Kassyi.GSharp.Core.SharedMemory<int> shared = new(256, 0x0e83aabf29deca55UL);
+shared[tid] = value;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+sum = value + shared[tid ^ 1];
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier(); // Every read finishes before the next call overwrites the buffer
+}
+
 }
 }
 

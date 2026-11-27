@@ -211,4 +211,35 @@ public sealed class GpuDeviceExportAttribute : Attribute
     /// <see cref="ManagedVersion"/> in its place.
     /// </summary>
     public bool ReachesGeneratedMeaning { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the device function reaches a warp shuffle or warp match
+    /// (<c>Warp.Shuffle*Sync</c>, <c>Gpu.Match*Sync</c>, <c>Warp.ActiveMask</c>), directly or through device functions
+    /// it calls, as answered for the CPU stack models.
+    /// </summary>
+    public bool ReachesWarpShuffle { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the device function reaches <c>Warp.ActiveMask()</c>, directly or through device functions
+    /// it calls, as answered for the CPU stack models.
+    /// </summary>
+    public bool ReachesActiveMask { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the device function reaches <c>Gpu.SyncGrid()</c>, directly or through device functions it
+    /// calls, as answered for the CPU stack models.
+    /// </summary>
+    public bool ReachesGridBarrier { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the assembly holds the managed stack form (<c>__gsharp_stackmodel_</c>) of a suspending
+    /// device function, which a consumer on the managed stack model calls instead of its state machine.
+    /// </summary>
+    public bool ManagedStackForm { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the suspending device function has a stack form only and no state-machine form; a consumer
+    /// that does not run both CPU paths on the stack models reports GSH0089 at the call.
+    /// </summary>
+    public bool StackOnly { get; set; }
 }

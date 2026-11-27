@@ -44,6 +44,11 @@ internal static class GpuOperatorMacroTranspiler
             return false;
         }
 
+        if (FailIfSuspendingTarget(macro, ref context))
+        {
+            return false;
+        }
+
         var model = context.Query.SemanticModel;
         var effects = GetOperandEffects(call, macro, assignment, model);
         var last = EvaluationOrder.LastSpilledOperand(effects);
@@ -86,6 +91,11 @@ internal static class GpuOperatorMacroTranspiler
             return false;
         }
 
+        if (FailIfSuspendingTarget(macro, ref context))
+        {
+            return false;
+        }
+
         var model = context.Query.SemanticModel;
         var effects = GetOperandEffects(call, macro, site, model);
         var arguments = PlanArguments(call, macro, effects, EvaluationOrder.LastSpilledOperand(effects), model);
@@ -109,6 +119,11 @@ internal static class GpuOperatorMacroTranspiler
         SyntaxNode site, ref TranspileContext context)
     {
         if (!TryPrepareCall(result, macro, site, ref context, out var call))
+        {
+            return false;
+        }
+
+        if (FailIfSuspendingTarget(macro, ref context))
         {
             return false;
         }
@@ -245,6 +260,31 @@ internal static class GpuOperatorMacroTranspiler
         }
 
         context.Visitor.Visit(result);
+    }
+
+    // The expansion calls the target of <macro> without the barrier frame it needs to suspend (on any dialect, or
+    // inside a struct member); report GSH0062 at macro.OperatorCall before any of the call is written
+    private static bool FailIfSuspendingTarget(in OperatorMacro macro, ref TranspileContext context)
+    {
+        if (macro.TargetMethod is not { } target ||
+            !SuspensionAnalysis.IsSuspendingFunction(target, context.Query.SemanticModel.Compilation))
+        {
+            return false;
+        }
+
+        // [WHY] Report on every dialect (StackCppDialect included, so NativeStackTranslator.ForKernel keeps #error
+        // instead of replacing it with unguarded stack C++). Narrow this once the CPU stack models give operator
+        // macros a barrier frame (#2105).
+        var locationContext = context.Emitter.CurrentStructType != null
+            ? StructMemberSuspendingCall.DescribeMember(macro.OperatorCall, context.Query.SemanticModel)
+            : "through an operator macro";
+        context.Reporter.Fail(
+            GSharpDiagnostics.SuspendingCallInUnsupportedContext,
+            macro.OperatorCall,
+            target.Name,
+            locationContext,
+            SplitPointPlacement.SuspendingDeviceFunctionCallee);
+        return true;
     }
 
     // The call of <macro> (OperatorMacroCallPlanner.TryPrepareCall); a context variable that cannot be found fails the

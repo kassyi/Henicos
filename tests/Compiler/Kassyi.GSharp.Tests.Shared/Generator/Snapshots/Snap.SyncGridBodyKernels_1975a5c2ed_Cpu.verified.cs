@@ -455,6 +455,44 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__Step(int[] a, int[] b, int[] c, int tid, int n)
+{
+{
+a[tid] = tid + 1;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_grid_barrier();
+global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.__gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock(c, tid);
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_grid_barrier();
+b[tid] = a[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((tid + 1), n)];
+}
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__ShiftInBlock(int[] c, int tid)
+{
+c[tid] = tid;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+int lane = tid % global::Kassyi.GSharp.Core.BlockDimension.X;
+int next = tid - lane + (lane + 1) % global::Kassyi.GSharp.Core.BlockDimension.X;
+int value = c[next];
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+c[tid] = value;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead(int[] a, int[] b, int tid, int n)
+{
+a[tid] = tid + 1;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_grid_barrier();
+b[tid] = a[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((tid + 1), n)];
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__CallWriteSyncRead(int[] a, int[] b, int tid, int n)
+{
+global::Kassyi.GSharp.Tests.Shared.Transpiler.SyncGridBodyKernels.__gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__WriteSyncRead(a, b, tid, n);
+}
+
 }
 }
 

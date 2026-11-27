@@ -55,8 +55,7 @@ internal enum NullableValueForm
 /// The view of an array-like value for <see cref="NullableValueForm.ArrayView"/>, otherwise <see langword="null"/>.
 /// </param>
 /// <param name="HeldArrays">
-/// The methods that collect the held arrays, or <see langword="null"/> when the value is not a struct that holds
-/// arrays.
+/// The methods that collect the held arrays and views, or <see langword="null"/> when the value holds none.
 /// </param>
 /// <param name="ArrayHelpers">
 /// The CPU methods that copy and find the arrays the value holds, or <see langword="null"/> when it holds none or on
@@ -123,11 +122,52 @@ internal sealed record NullableShadowPlan(
             dialect.IsCuda ? $"{StructMarshalingEmitter.DeviceArrayRegionsType}?" : $"{HostTypeNames.PointerList}?",
             isArray ? ArrayFieldView.Create(value, dialect) : null,
             PlanArrayHelpers(nullableType, value, isArray, dialect),
-            !isArray && HostShadowStructs.HoldsArrayFields(value)
-                ? new NullableHeldArrays(
-                    AotHostNames.GetAliasHeldArraysMethodName(nullableType),
-                    AotHostNames.GetAliasHeldArraysMethodName(value))
-                : null);
+            PlanHeldArrays(nullableType, value, dialect));
+    }
+
+    private static NullableHeldArrays? PlanHeldArrays(INamedTypeSymbol nullableType, ITypeSymbol value,
+        ITranspilerDialect dialect) =>
+        PlanHeldValue(value, dialect) is { } heldValue
+            ? new NullableHeldArrays(AotHostNames.GetAliasHeldArraysMethodName(nullableType), heldValue)
+            : null;
+
+    private static NullableHeldValue? PlanHeldValue(ITypeSymbol type, ITranspilerDialect dialect)
+    {
+        if (type is IArrayTypeSymbol arrayType)
+        {
+            var element = arrayType.ElementType;
+            var alignment = element.IsReferenceType
+                ? 0
+                : TypeLayoutCalculator.GetDeviceLayout(element, dialect).Alignment;
+            var converted = KernelParameterShape.IsConverted(element, dialect);
+            var cuda = StructArrayHelperEmitter.HeldCudaAlignment(element, dialect);
+            var child = StructArrayHelperEmitter.HoldsArrays(element) ? PlanHeldValue(element, dialect) : null;
+            return new NullableHeldArray(alignment, cuda, converted, child);
+        }
+
+        if (type.IsArrayLikeType())
+        {
+            if (!type.TryGetArrayLikeElementType(out var element))
+            {
+                return null;
+            }
+
+            var view = ArrayFieldView.Create(type, dialect);
+            var alignment = element.IsReferenceType
+                ? 0
+                : TypeLayoutCalculator.GetDeviceLayout(element, dialect).Alignment;
+            var converted = KernelParameterShape.IsConverted(element, dialect);
+            var cuda = StructArrayHelperEmitter.HeldCudaAlignment(element, dialect);
+            var child = StructArrayHelperEmitter.HoldsArrays(element) ? PlanHeldValue(element, dialect) : null;
+            return new NullableHeldView(view, alignment, cuda, converted, child);
+        }
+
+        if (HostShadowStructs.HoldsArrayFields(type) || type.IsNullableArrayLike())
+        {
+            return new NullableHeldMethod(AotHostNames.GetAliasHeldArraysMethodName(type));
+        }
+
+        return null;
     }
 
     // CopyArrays_ for a value that holds arrays or is one (the [In] copy of the view), HoldsArray_ for a value whose
@@ -149,12 +189,47 @@ internal sealed record NullableShadowPlan(
 }
 
 /// <summary>
-/// The <c>AliasHeldArrays_</c> methods of a <c>Nullable&lt;T&gt;</c> whose value is a struct that holds arrays, and of
-/// that value, for the comparison of the held arrays with the slices of a launch.
+/// The <c>AliasHeldArrays_</c> plan of a <c>Nullable&lt;T&gt;</c> whose value is an array-like view or a struct that
+/// holds arrays or views, for the comparison of held arrays and views with the slices of a launch.
 /// </summary>
 /// <param name="MethodName">The method of the <c>Nullable&lt;T&gt;</c>.</param>
-/// <param name="ValueMethodName">The method of the value.</param>
-internal sealed record NullableHeldArrays(string MethodName, string ValueMethodName);
+/// <param name="Value">The planned walk for the unwrapped value.</param>
+internal sealed record NullableHeldArrays(string MethodName, NullableHeldValue Value);
+
+/// <summary>A planned node in an <c>AliasHeldArrays_</c> walk of a <c>Nullable&lt;T&gt;</c> value.</summary>
+internal abstract record NullableHeldValue;
+
+/// <summary>An array (<c>T[]</c>) element inside a <c>Nullable&lt;T&gt;</c> view.</summary>
+/// <param name="ElementAlignment">The device alignment of the element.</param>
+/// <param name="ElementCudaAlignment">
+/// The CUDA alignment of the element on a CPU launcher (<see cref="StructArrayHelperEmitter.HeldCudaAlignment"/>).
+/// </param>
+/// <param name="ElementIsConverted">Whether the element is converted on the dialect's device.</param>
+/// <param name="Element">The walk for each element when it holds arrays or views, otherwise <see langword="null"/>.</param>
+internal sealed record NullableHeldArray(
+    int ElementAlignment,
+    int ElementCudaAlignment,
+    bool ElementIsConverted,
+    NullableHeldValue? Element) : NullableHeldValue;
+
+/// <summary>A non-array view (<c>Memory&lt;T&gt;</c>, etc.) inside a <c>Nullable&lt;T&gt;</c>.</summary>
+/// <param name="View">The view access plan.</param>
+/// <param name="ElementAlignment">The device alignment of the element.</param>
+/// <param name="ElementCudaAlignment">
+/// The CUDA alignment of the element on a CPU launcher (<see cref="StructArrayHelperEmitter.HeldCudaAlignment"/>).
+/// </param>
+/// <param name="ElementIsConverted">Whether the element is converted on the dialect's device.</param>
+/// <param name="Element">The walk for each element when it holds arrays or views, otherwise <see langword="null"/>.</param>
+internal sealed record NullableHeldView(
+    ArrayFieldView View,
+    int ElementAlignment,
+    int ElementCudaAlignment,
+    bool ElementIsConverted,
+    NullableHeldValue? Element) : NullableHeldValue;
+
+/// <summary>A struct or <c>Nullable&lt;T&gt;</c> whose own <c>AliasHeldArrays_</c> method collects its arrays/views.</summary>
+/// <param name="MethodName">The <c>AliasHeldArrays_</c> method to call.</param>
+internal sealed record NullableHeldMethod(string MethodName) : NullableHeldValue;
 
 /// <summary>
 /// The CPU array helpers of a <c>Nullable&lt;T&gt;</c> whose value holds arrays (<see cref="NullableShadowPlan"/>).

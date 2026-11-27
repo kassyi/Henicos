@@ -103,10 +103,21 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         IMethodSymbol symbol,
         ref TranspileContext context)
     {
-        if (symbol.ReducedFrom is { } extension && node.Expression is MemberAccessExpressionSyntax access &&
+        if (symbol.ReducedFrom is { } extension &&
+            node.Expression.UnwrapParentheses() is MemberAccessExpressionSyntax access &&
             CppNameResolver.IsEmittedDeviceFunction(extension, context.Emitter.Dialect))
         {
-            TranspileExtensionCall(node, access.Expression, symbol, extension, ref context);
+            var receiverPlan = ReceiverPlanner.PlanExtensionCall(access.Expression, extension,
+                context.Query.SemanticModel);
+            TranspileReceiverCall(node, symbol, extension, in receiverPlan, ref context);
+            return;
+        }
+
+        if (!symbol.IsStatic && symbol.ReducedFrom == null &&
+            CppNameResolver.IsEmittedDeviceFunction(symbol, context.Emitter.Dialect))
+        {
+            var receiverPlan = ReceiverPlanner.PlanInstanceCall(node, symbol, ref context);
+            TranspileReceiverCall(node, symbol, symbol, in receiverPlan, ref context);
             return;
         }
 
@@ -116,7 +127,8 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
 
         // A method with no device definition (of the project, #891, or one the dialect does not map) would be
         // called by a name nothing defines
-        // [WHY] Unsupported targets are all static, so there is no receiver expression.
+        // [WHY] Unsupported targets are either static or not emitted as instance device functions (those route to
+        // TranspileReceiverCall above), so there is no receiver pointer expression to transform.
         if (stackWarp.Kind != StackWarpCallKind.Collective &&
             CallTargetEmitter.TryReplaceCall(node, symbol, ref context))
         {
@@ -176,41 +188,42 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         return checks.MoveToImmutable();
     }
 
-    // <function>(<receiver>, <arguments>): the reduced call x.M(a) of a [GpuDeviceFunction] extension method is the
-    // static call M(x, a). When the receiver and arguments interfere, BeginExtensionCall sequences them in C# order.
-    private static void TranspileExtensionCall(InvocationExpressionSyntax node, ExpressionSyntax receiver,
-        IMethodSymbol symbol, IMethodSymbol extension, ref TranspileContext context)
+    // <function>(<receiver>, <arguments>): the call x.M(a) (or implicit M(a)) of an emitted struct instance
+    // [GpuDeviceFunction] or reduced [GpuDeviceFunction] extension method is emitted as a free C++ function whose first
+    // parameter is the receiver. When the receiver and arguments interfere, BeginReceiverCall sequences them in C# order.
+    private static void TranspileReceiverCall(
+        InvocationExpressionSyntax node,
+        IMethodSymbol symbol,
+        IMethodSymbol callee,
+        in ReceiverPlan receiver,
+        ref TranspileContext context)
     {
-        if (FailIfSuspendingExtension(node, extension, ref context))
+        if (symbol.ReducedFrom != null && FailIfSuspendingExtension(node, callee, ref context))
         {
             return;
         }
 
-        var model = context.Query.SemanticModel;
-        var byReference = extension.Parameters[0].RefKind != RefKind.None;
-
+        var checks = PlanArgumentChecks(callee, node.ArgumentList.Arguments, ref context);
         StructOrdering.RegisterUsedStructIfApplicable(symbol.ReturnType, ref context);
-        using var sequence = EvaluationOrder.BeginExtensionCall(ref context, receiver, extension.Parameters[0],
-            node.ArgumentList.Arguments, symbol);
-        CppNameResolver.AppendSymbolName(extension, ref context);
+        using var sequence = EvaluationOrder.BeginReceiverCall(ref context, in receiver, node.ArgumentList.Arguments,
+            symbol);
+        CppNameResolver.AppendSymbolName(callee, ref context);
         using (context.Emitter.Writer.Parentheses())
         {
-            sequence.AppendReceiver(receiver, byReference, ref context);
+            sequence.AppendReceiver(in receiver, ref context);
 
             context.Emitter.Writer.AppendIf(symbol.Parameters.Length > 0, ",");
-            TranspileArguments(symbol, node, in sequence, ref context);
-            DynamicSharedMemoryEmitter.AppendTableArgument(node, extension, ref context);
+            TranspileArguments(symbol, node, in sequence, ref context, checks: checks);
+            DynamicSharedMemoryEmitter.AppendTableArgument(node, callee, ref context);
         }
     }
 
-    // The receiver of an instance (or reduced extension) call, which C# and C++ evaluate before the arguments.
-    // [WHY] G# emits neither the instance methods of a struct nor reduced extension calls of other methods today (those of
-    // a [GpuDeviceFunction] go through TranspileExtensionCall), so the receiver path (and its ReducedFrom branch) is not
-    // reached by valid output; when the receiver interferes with an argument,
-    // BeginCall leaves the whole call as written, which also leaves the arguments in C++ order (to be fixed with the
-    // instance methods).
+    // The receiver of an instance (or non-emitted reduced extension) call that stays on the standard invocation path.
+    // [WHY] Emitted struct instance device functions and emitted [GpuDeviceFunction] extension methods route to
+    // TranspileReceiverCall above; only un-emitted or intrinsic instance calls reach BeginCall here.
     private static ExpressionSyntax? GetReceiver(InvocationExpressionSyntax node, IMethodSymbol symbol) =>
-        node.Expression is MemberAccessExpressionSyntax access && (!symbol.IsStatic || symbol.ReducedFrom != null)
+        node.Expression.UnwrapParentheses() is MemberAccessExpressionSyntax access &&
+        (!symbol.IsStatic || symbol.ReducedFrom != null)
             ? access.Expression
             : null;
 
@@ -226,8 +239,9 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
             throw new InvalidOperationException("A lowered resume call does not wrap a call to a device function.");
         }
 
-        // The frame and the resume protocol follow the static call; the reduced form has its receiver out of the arguments
-        if (callee.ReducedFrom != null)
+        // The frame and the resume protocol follow the static call; the reduced and instance forms have their receiver
+        // out of the arguments
+        if (callee.ReducedFrom != null || !callee.IsStatic)
         {
             context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, call, SuspendingExtensionCall);
             return;

@@ -47,6 +47,9 @@ __device__ inline void __gsharp_unwind() { resource.__gsharp_dispose(); }
 };
 
 template <class T> __device__ __host__ inline const T* __gsharp_temp_address(const T& v) { return &v; }
+// Only prvalues reach this helper (planned by ReceiverPlanner); the temporary lives until the end of the full
+// expression, unlike __gsharp_temp_address which binds a const reference that must not be written.
+template <class T> __device__ __host__ inline T* __gsharp_temp_mutable_address(T&& v) { return &v; }
 
 // T as a single name, so that __gsharp_type<unsigned char>() and __gsharp_type<int*>() are valid functional casts
 template <class T> using __gsharp_type = T;
