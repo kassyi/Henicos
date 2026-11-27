@@ -249,12 +249,13 @@ the build step, with the resource `{ name: "gpu", forcedExclusive }` (`--gpu-exc
 decides, `"timeout"`, `"error"`, `"invalid"`, or `"stale"` after `stillValid` fails; sanitized to
 `/^[a-z0-9:_-]{1,64}$/`, with `"shared"` banned on exclusive reasons) with `request` and `adopt`. The scheduler sets
 two reasons of its own: `"downgrade"` for a `downgrade` that carries none, and `"rebind"` for a shared turn that
-registers again as exclusive without a reason. The repository's plugin gives, among others, `not-language` (outside the allow-listed command language in
-`../job-queue-henicos/command-language.ts`), `categories`, `shared-recipe`, `exclusive-recipe`, `binary-test`,
-`msbuild-property`, `no-filter`, `filter-unreadable`, `filter-categories`, `exclusive-category`, `exclusive-env`,
-`list:<n>` (the exclusive tests the name-filter list found), `list-timeout` (the list job was stopped on its time
-limit), `list-spawn-error` (it could not be started), `list-failed` (it exited non-zero) and `list-no-marker` (its
-output did not say that no test matches). Without plugins it sends no `share` or `shareReason`; the GPU
+registers again as exclusive without a reason. The repository's plugin gives, among others, `not-language` (used on `--gpu-exclusive` turns outside the allow-listed
+command language in `../job-queue-henicos/command-language.ts`; plain `--gpu` refuses outside-language commands before
+queueing), `categories`, `shared-recipe`, `exclusive-recipe`, `binary-test`, `no-filter`, `filter-categories`,
+`exclusive-category`, `exclusive-env`, `list:<n>` (the exclusive tests the name-filter list found), `list-timeout`
+(the list job was stopped on its time limit), `list-spawn-error` (it could not be started), `list-failed` (it exited
+non-zero) and `list-no-marker` (its output did not say that no test matches). Without plugins it sends no `share` or
+`shareReason`; the GPU
 holder and a job without a turn send neither. The scheduler logs `share=shared(<reason>)` or `share=exclusive(<reason>)`
 (or `share=shared` / `share=exclusive` when no reason was sent) on the `grant` line of `server.log`, and includes
 `shareReason` in `status --json` and `jobs-<port>.json`. The repository's rules are in

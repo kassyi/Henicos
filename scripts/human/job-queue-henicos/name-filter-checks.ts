@@ -30,17 +30,14 @@ const Plain = "dotnet test tests/X --no-build --filter";
 const Read: readonly [string, string, string][] = [
   [`${Plain} "FullyQualifiedName~Foo"`, "tests/X", "FullyQualifiedName~Foo"],
   [`${Plain} "Name~A|Name~B"`, "tests/X", "Name~A|Name~B"],
-  [
-    `${Plain} "Name~A | FullyQualifiedName=N.C.M | DisplayName~d"`,
-    "tests/X",
-    "Name~A|FullyQualifiedName=N.C.M|DisplayName~d",
-  ],
+  [`${Plain} "Name~A|FullyQualifiedName=N.C.M|ClassName~d"`, "tests/X", "Name~A|FullyQualifiedName=N.C.M|ClassName~d"],
   [`${Plain} "FullyQualifiedName=N.C.M"`, "tests/X", "FullyQualifiedName=N.C.M"],
   [`${Plain} 'Name~Foo'`, "tests/X", "Name~Foo"],
   ['dotnet test tests/X/X.csproj --no-build --filter "Name~Foo"', "tests/X/X.csproj", "Name~Foo"],
   ['DiffEngine_Disabled=true dotnet test tests/X --no-build --filter "Name~Foo" -v n --nologo', "tests/X", "Name~Foo"],
   [
-    'DiffEngine_Disabled=true DOTNET_CLI_UI_LANGUAGE=en dotnet test tests/X --no-build --disable-build-servers --filter "Name~Foo" --logger "console;verbosity=detailed" > tmp/out.log 2>&1',
+    "DiffEngine_Disabled=true DOTNET_CLI_UI_LANGUAGE=en dotnet test tests/X --no-build " +
+      '--disable-build-servers --filter "Name~Foo" --logger "console;verbosity=detailed" > tmp/out.log 2>&1',
     "tests/X",
     "Name~Foo",
   ],
@@ -174,12 +171,11 @@ export async function checkNameFilter(assert: AssertModule): Promise<void> {
       { project: "tests/X", filter: "Name~Foo" },
       `read (${psShell} single-quoted prefix)`,
     );
+    const psTwoPrefix =
+      `$env:DiffEngine_Disabled="true"; $env:DOTNET_CLI_UI_LANGUAGE='en'; ` +
+      "dotnet test tests/X --no-build --filter 'Name~Foo'";
     assert.deepStrictEqual(
-      nameFilterCheck(
-        `$env:DiffEngine_Disabled="true"; $env:DOTNET_CLI_UI_LANGUAGE='en'; dotnet test tests/X --no-build --filter 'Name~Foo'`,
-        psContext,
-        Entries,
-      ),
+      nameFilterCheck(psTwoPrefix, psContext, Entries),
       { project: "tests/X", filter: "Name~Foo" },
       `read (${psShell} two prefixes)`,
     );
@@ -205,11 +201,11 @@ export async function checkNameFilter(assert: AssertModule): Promise<void> {
   for (const command of NotRead) {
     assert.strictEqual(nameFilterCheck(command, context, Entries), null, `not read: ${command}`);
   }
-  const carried = nameFilterCheck(`${Plain} "Name~Foo" -c Release -f net10.0`, context, Entries);
+  const carried = nameFilterCheck(`${Plain} "Name~Foo" -c Release`, context, Entries);
   assert.deepStrictEqual(
     carried,
-    { project: "tests/X", filter: "Name~Foo", configuration: "Release", framework: "net10.0" },
-    "-c and -f are carried to the list",
+    { project: "tests/X", filter: "Name~Foo", configuration: "Release" },
+    "-c is carried to the list",
   );
   assert.strictEqual(
     nameFilterCheck(`${Plain} "Name~Foo"`, contextWith({ GSHARP_CUDA_TRAP_TESTS: "1" }), Entries),

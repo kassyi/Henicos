@@ -1,12 +1,10 @@
 // Whether a --gpu run of this repository may share the GPU with another shared run: only a command in the allow-listed
 // command language (command-language.ts) whose filter keeps out every category that needs the GPU alone (Stress,
-// Benchmark, the real GPU faults of GpuTrap) and that does not turn the trap tests on. Anything outside the language is
-// exclusive ("not-language").
+// Benchmark, the real GPU faults of GpuTrap) and that does not turn the trap tests on.
 
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { type ClientContext, type ShareMode } from "../job-queue/plugin-api.ts";
-import { selectsCategory } from "../job-queue/plugins/dotnet/plugin.ts";
 import { parseSharedCommand, type SharedCommand } from "./command-language.ts";
 
 /** The options of the henicos plugin entry that the share rules read (job-queue.config.json). */
@@ -35,18 +33,51 @@ export function shareOptions(options: Readonly<Record<string, unknown>>): ShareO
     : { exclusiveCategories, exclusiveEnv, sharedRecipes };
 }
 
+/** Parses `FILTER` (already validated by `isValidFilter`) into `{ key, op, word }` terms. */
+function filterTerms(filter: string): { key: string; op: string; word: string }[] {
+  const result: { key: string; op: string; word: string }[] = [];
+  for (const raw of filter.split(/[&|]/)) {
+    const m = /^([A-Za-z]+)(!=|!~|=|~)([A-Za-z0-9_.]+)$/.exec(raw);
+    if (m !== null) {
+      result.push({ key: m[1] as string, op: m[2] as string, word: m[3] as string });
+    }
+  }
+  return result;
+}
+
+/** True when any term selects an exclusive category (`Category=<cat>` or `Category~<cat>`, case-insensitive). */
+export function selectsExclusiveCategory(filter: string, categories: readonly string[]): boolean {
+  const lowerCats = categories.map((name) => name.toLowerCase());
+  for (const term of filterTerms(filter)) {
+    if (term.key.toLowerCase() !== "category") {
+      continue;
+    }
+    const lowerWord = term.word.toLowerCase();
+    if (term.op === "=" && lowerCats.some((cat) => lowerWord === cat || lowerWord.startsWith(`${cat}.`))) {
+      return true;
+    }
+    if (term.op === "~" && lowerCats.some((cat) => lowerWord.includes(cat) || cat.includes(lowerWord))) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /**
- * A filter that keeps every exclusive category out: read in lower case and without blanks, it has no `|` (an or term
- * could bring a category back) and, among its `&` terms, `category!=<name>` for each exclusive category. A filter that
- * names tests alone (`FullyQualifiedName~Foo`) may still pick Stress or Benchmark tests, so it does not share.
+ * A filter that keeps every exclusive category out: no `|` (an OR term could bring a category back) and, among its `&`
+ * terms, `Category!=<name>` for each exclusive category (case-insensitive).
  */
-function excludesCategories(filter: string, categories: readonly string[]): boolean {
-  const text = filter.toLowerCase().replace(/\s+/g, "");
-  if (text.includes("|")) {
+export function excludesCategories(filter: string, categories: readonly string[]): boolean {
+  if (filter.includes("|")) {
     return false;
   }
-  const terms = new Set(text.split("&"));
-  return categories.every((name) => terms.has(`category!=${name.toLowerCase()}`));
+  const negated = new Set<string>();
+  for (const term of filterTerms(filter)) {
+    if (term.key.toLowerCase() === "category" && term.op === "!=") {
+      negated.add(term.word.toLowerCase());
+    }
+  }
+  return categories.every((name) => negated.has(name.toLowerCase()));
 }
 
 /** A set variable counts unless it is empty or "0"; names compare in any case, as Windows reads them. */
@@ -57,10 +88,9 @@ function isSet(env: Readonly<NodeJS.ProcessEnv>, name: string): boolean {
   );
 }
 
-/** Whether an exclusive variable is named in the parsed command or set in the environment, in any case. */
-function usesExclusiveEnv(parsed: SharedCommand, options: ShareOptions, context: ClientContext): boolean {
-  const parts = parsed.args.join(" ").toLowerCase();
-  return options.exclusiveEnv.some((name) => parts.includes(name.toLowerCase()) || isSet(context.env, name));
+/** Whether an exclusive variable is set in the environment, in any case. */
+function usesExclusiveEnv(options: ShareOptions, context: ClientContext): boolean {
+  return options.exclusiveEnv.some((name) => isSet(context.env, name));
 }
 
 /** Result of shareDecision: the share mode and a short reason token (exclusive reasons never contain `"shared"`). */
@@ -86,7 +116,6 @@ export function readEntries(directory: string): string[] | null {
   try {
     return fs.readdirSync(directory);
   } catch {
-    // Not a directory (or not readable): not a project the list can name
     return null;
   }
 }
@@ -96,34 +125,15 @@ function isOneProject(project: string, cwd: string, entries: DirectoryEntries): 
   if (/\.csproj$/i.test(project)) {
     return true;
   }
-  const names = entries(path.resolve(cwd, project));
+  const found = entries(path.resolve(cwd, project));
   return (
-    names !== null &&
-    names.filter((name) => /\.csproj$/i.test(name)).length === 1 &&
-    !names.some((name) => /\.(sln|slnx|slnf)$/i.test(name))
+    found !== null &&
+    found.filter((name) => /\.csproj$/i.test(name)).length === 1 &&
+    !found.some((name) => /\.(sln|slnx|slnf)$/i.test(name))
   );
 }
 
-// A word that can be put back into a command between double quotes in every shell
-const SafeWord = /^[\w.+\-/\\:]+$/;
-// Positive name terms only: no parentheses, `&` or `!`, and no character a shell reads inside double quotes
-const NameTerm = /^(?:FullyQualifiedName|Name|DisplayName)[~=][^&|()!"$`%\\\r\n]+$/;
-const FlagOptions =
-  /^(?:--no-build|--no-restore|--nologo|--blame|--blame-crash|--disable-build-servers|-nodeReuse:(?:false|true))$/i;
-const ValueOptions = new Set([
-  "-c",
-  "--configuration",
-  "-f",
-  "--framework",
-  "-v",
-  "--verbosity",
-  "-l",
-  "--logger",
-  "--results-directory",
-  "--blame-hang-timeout",
-  "--blame-crash-dump-type",
-  "--diag",
-]);
+const PositiveNameKeys = new Set(["fullyqualifiedname", "name", "classname"]);
 
 function nameFilterFromParsed(
   parsed: SharedCommand,
@@ -131,63 +141,43 @@ function nameFilterFromParsed(
   context: ClientContext,
   entries: DirectoryEntries,
 ): NameFilterTest | null {
-  if (parsed.kind !== "test" || parsed.filter === null || usesExclusiveEnv(parsed, options, context)) {
-    return null;
-  }
-  const words = parsed.args;
-  let noBuild = false;
-  const positional: string[] = [];
-  let configuration: string | undefined;
-  let framework: string | undefined;
-  for (let i = 0; i < words.length; i++) {
-    const word = words[i] as string;
-    const lower = word.toLowerCase();
-    if (lower === "--filter") {
-      i++;
-    } else if (ValueOptions.has(lower)) {
-      const value = words[++i];
-      if (value === undefined || value.startsWith("-")) {
-        return null;
-      }
-      if (lower === "-c" || lower === "--configuration") {
-        configuration = value;
-      } else if (lower === "-f" || lower === "--framework") {
-        framework = value;
-      }
-    } else if (!FlagOptions.test(word)) {
-      if (word.startsWith("-") || /\.(dll|exe|sln|slnx|slnf)$/i.test(word) || !SafeWord.test(word)) {
-        return null;
-      }
-      positional.push(word);
-    } else if (lower === "--no-build") {
-      noBuild = true;
-    }
-  }
-  const terms = parsed.filter.split("|").map((term) => term.trim());
-  const project = positional[0];
   if (
-    !noBuild ||
-    positional.length !== 1 ||
-    project === undefined ||
-    !isOneProject(project, context.cwd, entries) ||
-    !terms.every((term) => NameTerm.test(term)) ||
-    [configuration, framework].some((value) => value !== undefined && !SafeWord.test(value))
+    parsed.kind !== "test" ||
+    parsed.filter === null ||
+    parsed.project === null ||
+    usesExclusiveEnv(options, context)
   ) {
     return null;
   }
+  const hasNoBuild = parsed.options.some((opt) => opt.kind === "no-build");
+  if (!hasNoBuild || /\.(dll|exe|sln|slnx|slnf)$/i.test(parsed.project)) {
+    return null;
+  }
+  if (!isOneProject(parsed.project, context.cwd, entries)) {
+    return null;
+  }
+  if (parsed.filter.includes("&")) {
+    return null;
+  }
+  const terms = filterTerms(parsed.filter);
+  if (
+    terms.length === 0 ||
+    !terms.every((t) => PositiveNameKeys.has(t.key.toLowerCase()) && (t.op === "~" || t.op === "="))
+  ) {
+    return null;
+  }
+  const cfgOpt = parsed.options.find(
+    (opt): opt is Extract<typeof opt, { kind: "configuration" }> => opt.kind === "configuration",
+  );
   return {
-    project,
-    filter: terms.join("|"),
-    ...(configuration !== undefined ? { configuration } : {}),
-    ...(framework !== undefined ? { framework } : {}),
+    project: parsed.project,
+    filter: parsed.filter,
+    ...(cfgOpt !== undefined ? { configuration: cfgOpt.value } : {}),
   };
 }
 
 /**
  * The `dotnet test` of a command in the allow-listed language that has only positive name terms in its filter, or null.
- * The command must name one project or directory (not a .dll, .exe or a solution), pass `--no-build`, have a
- * `--filter` of `|`-joined `FullyQualifiedName`, `Name` or `DisplayName` terms with `~` or `=`, use only options this
- * knows do not change the selection, and neither name nor set an exclusive variable.
  */
 export function nameFilterCheck(
   command: string,
@@ -210,37 +200,19 @@ export function nameFilterCheck(
  * when it must stay exclusive. Both the share decision and the reason come from the exact same branch.
  */
 function commandShareVeto(parsed: SharedCommand, options: ShareOptions, context: ClientContext): string | null {
-  if (usesExclusiveEnv(parsed, options, context)) {
+  if (usesExclusiveEnv(options, context)) {
     return "exclusive-env";
   }
-  if (parsed.args.some((word) => word.toLowerCase().includes("testcasefilter"))) {
-    return "filter-unreadable";
-  }
-  if (parsed.args.some((word) => /^[-/]{1,2}p(?:roperty)?:/i.test(word))) {
-    return "msbuild-property";
-  }
-  const lowerCategories = options.exclusiveCategories.map((name) => name.toLowerCase());
   if (parsed.kind === "recipe") {
-    if (!options.sharedRecipes.includes(parsed.recipe)) {
-      return "exclusive-recipe";
-    }
-    if (parsed.filter !== null) {
-      if (selectsCategory(parsed.filter.toLowerCase(), lowerCategories)) {
-        return "exclusive-category";
-      }
-      if (!excludesCategories(parsed.filter, options.exclusiveCategories)) {
-        return "filter-categories";
-      }
-    }
-    return null;
+    return options.sharedRecipes.includes(parsed.name) ? null : "exclusive-recipe";
   }
-  if (parsed.args.some((word) => /\.(dll|exe)$/i.test(word))) {
+  if (parsed.project !== null && /\.(dll|exe)$/i.test(parsed.project)) {
     return "binary-test";
   }
   if (parsed.filter === null) {
     return "no-filter";
   }
-  if (selectsCategory(parsed.filter.toLowerCase(), lowerCategories)) {
+  if (selectsExclusiveCategory(parsed.filter, options.exclusiveCategories)) {
     return "exclusive-category";
   }
   if (!excludesCategories(parsed.filter, options.exclusiveCategories)) {

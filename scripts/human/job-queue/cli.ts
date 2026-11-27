@@ -173,7 +173,9 @@ interface Options extends RunOptions {
   remoteTarget: string;
   /** remote-reset --clean: wipe remote bin/, obj/, TestResults/, tmp/. */
   clean: boolean;
-  /** --self-test --language-fuzz <n>: generated commands per shell for command-language property checks (0 = default). */
+  /**
+   * --self-test --language-fuzz <n>: cap/run <n> command-language property cases per shell (0 = full pairwise).
+   */
   languageFuzz: number;
 }
 
