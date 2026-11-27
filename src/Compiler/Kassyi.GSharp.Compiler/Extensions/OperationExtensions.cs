@@ -31,24 +31,55 @@ internal static class OperationExtensions
         IInvocationOperation invocation => invocation.TargetMethod.RefKind != RefKind.None,
         IConditionalOperation { IsRef: true } => true,
         IInlineArrayAccessOperation inlineArray => inlineArray.Instance.IsVariable(),
+        IParenthesizedOperation parenthesized => parenthesized.Operand.IsVariable(),
         IConversionOperation => false,
         _ => IsPointerDereference(operation)
     };
 
-    // [WHY] *p, p[i], the p of p->F and an element of a fixed-size buffer are variables in C# (23.6.4 to 23.6.6,
-    // 23.8.3), whatever operation the Roslyn that runs the generator represents them with (today one of kind None), so
-    // they are recognized by their syntax and the pointer type they read through
+    // [WHY] *p, p[i], the p of p->F / p->M() / p->P and an element of a fixed-size buffer are variables in C#
+    // (23.6.4 to 23.6.6, 23.8.3), whatever operation the Roslyn that runs the generator represents them with (today
+    // one of kind None), so they are recognized by their syntax and the pointer type they read through
     private static bool IsPointerDereference(IOperation operation) => operation.Syntax switch
     {
         PrefixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.PointerIndirectionExpression } => true,
         ElementAccessExpressionSyntax access =>
             operation.SemanticModel?.GetTypeInfo(access.Expression).Type is IPointerTypeSymbol,
-        _ => operation.Parent is IFieldReferenceOperation
-             {
-                 Syntax: MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.PointerMemberAccessExpression }
-             } field &&
-             field.Instance == operation
+        _ => IsPointerMemberAccessReceiver(operation)
     };
+
+    private static bool IsPointerMemberAccessReceiver(IOperation operation)
+    {
+        var current = operation;
+        while (current.Parent is IParenthesizedOperation parenthesized)
+        {
+            current = parenthesized;
+        }
+
+        return current.Parent switch
+        {
+            IFieldReferenceOperation
+            {
+                Syntax: MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.PointerMemberAccessExpression }
+            } field => field.Instance == current,
+            IPropertyReferenceOperation
+            {
+                Syntax: MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.PointerMemberAccessExpression }
+            } property => property.Instance == current,
+            IEventReferenceOperation
+            {
+                Syntax: MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.PointerMemberAccessExpression }
+            } @event => @event.Instance == current,
+            IInvocationOperation
+            {
+                Syntax: InvocationExpressionSyntax invocationSyntax
+            } invocation => invocation.Instance == current &&
+                             invocationSyntax.Expression.UnwrapParentheses() is MemberAccessExpressionSyntax
+                             {
+                                 RawKind: (int)SyntaxKind.PointerMemberAccessExpression
+                             },
+            _ => false
+        };
+    }
 
     /// <summary>
     /// The user-defined operator that <paramref name="operation"/> calls by itself: the method of a unary or binary

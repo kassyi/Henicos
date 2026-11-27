@@ -17,8 +17,8 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// </param>
 /// <param name="ElementMarshalMethodName">The element's <c>Marshal_</c> when it is converted.</param>
 /// <param name="ElementUnmarshalMethodName">The element's <c>Unmarshal_</c> when it is converted.</param>
-/// <param name="ElementCopyArraysMethodName">
-/// The element's <c>CopyArrays_</c> on the CPU when the element holds arrays, otherwise <see langword="null"/>.
+/// <param name="ElementCopy">
+/// The element's CPU <c>CopyArrays_</c> step when the element holds arrays or views, otherwise <see langword="null"/>.
 /// </param>
 internal sealed record ArrayFieldView(
     ArrayContainerKind Container,
@@ -26,12 +26,18 @@ internal sealed record ArrayFieldView(
     string? ElementShadowPath,
     string? ElementMarshalMethodName,
     string? ElementUnmarshalMethodName,
-    string? ElementCopyArraysMethodName)
+    CopyArraysStep? ElementCopy)
 {
     /// <summary>
     /// Whether the kernel cannot write through the view: <c>ReadOnlyMemory</c> or <c>ImmutableArray</c>.
     /// </summary>
     public bool IsReadOnly => Container is ArrayContainerKind.ReadOnlyMemory or ArrayContainerKind.ImmutableArray;
+
+    /// <summary>
+    /// Whether the container requires a CLR array on the CPU (<c>ArraySegment</c> or <c>ImmutableArray</c>).
+    /// </summary>
+    public bool RequiresTypedArray =>
+        Container is ArrayContainerKind.ArraySegment or ArrayContainerKind.ImmutableArray;
 
     /// <summary>Whether each element goes through its shadow struct.</summary>
     public bool IsConverted => ElementShadowPath is not null;
@@ -78,8 +84,49 @@ internal sealed record ArrayFieldView(
             converted ? AotHostNames.GetAotStructPath(element) : null,
             converted ? AotHostNames.GetMarshalMethodName(element) : null,
             converted ? AotHostNames.GetUnmarshalMethodName(element) : null,
-            !dialect.IsCuda && HostShadowStructs.HoldsArrayFields(element)
-                ? AotHostNames.GetCopyArraysMethodName(element)
+            !dialect.IsCuda && StructArrayHelperEmitter.HoldsArrays(element)
+                ? PlanCopyArraysStep(element)
                 : null);
     }
+
+    /// <summary>Plans the CPU <c>CopyArrays_</c> step for a value of <paramref name="type"/>, or <see langword="null"/> when none is needed.</summary>
+    internal static CopyArraysStep? PlanCopyArraysStep(ITypeSymbol type)
+    {
+        if (type is IArrayTypeSymbol arrayType)
+        {
+            var elementStep = StructArrayHelperEmitter.HoldsArrays(arrayType.ElementType)
+                ? PlanCopyArraysStep(arrayType.ElementType)
+                : null;
+            return new CopyArraysArrayStep(elementStep);
+        }
+
+        if (type.IsArrayLikeType() && type.TryGetArrayLikeElementType(out _))
+        {
+            var view = Create(type, HostDialects.Cpu);
+            return new CopyArraysViewStep(view, view.ElementCopy);
+        }
+
+        if (HostShadowStructs.HoldsArrayFields(type) || type.IsNullableArrayLike())
+        {
+            return new CopyArraysMethodStep(AotHostNames.GetCopyArraysMethodName(type));
+        }
+
+        return null;
+    }
 }
+
+/// <summary>A planned CPU <c>CopyArrays_</c> step for a value that holds arrays or views.</summary>
+internal abstract record CopyArraysStep;
+
+/// <summary>Clones a <c>T[]</c> through <c>HostArrayCopies.Copy</c> and walks its elements when needed.</summary>
+/// <param name="Element">The step for each element when it holds arrays or views, otherwise <see langword="null"/>.</param>
+internal sealed record CopyArraysArrayStep(CopyArraysStep? Element) : CopyArraysStep;
+
+/// <summary>Copies a non-array view through <c>HostArrayCopies.CopyView</c> and walks its elements when needed.</summary>
+/// <param name="View">The view access plan.</param>
+/// <param name="Element">The step for each element when it holds arrays or views, otherwise <see langword="null"/>.</param>
+internal sealed record CopyArraysViewStep(ArrayFieldView View, CopyArraysStep? Element) : CopyArraysStep;
+
+/// <summary>Calls the generated <c>CopyArrays_</c> helper of a user struct or <c>Nullable&lt;T&gt;</c>.</summary>
+/// <param name="MethodName">The <c>CopyArrays_</c> method name.</param>
+internal sealed record CopyArraysMethodStep(string MethodName) : CopyArraysStep;

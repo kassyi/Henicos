@@ -1138,4 +1138,114 @@ public sealed class MarshalingOverlapDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void RefOverlap_OutStructThatHoldsArraysBesideARefOfIt_ReadsTheCallersValueFirst() =>
         DifferentialRunner.Run(s_outStructAndRefOfIt);
+
+    // --- Overlapping views/refs that no device address aligns: every path throws NotSupportedException ---
+    internal static readonly DifferentialCase s_twoLongViewsFourBytesApart = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.TwoLongViewsKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Backing(5), OutputPolicy.Ignore)
+            .Out<long>("observed", 1, OutputPolicy.Ignore),
+        ExceptionPolicy = ExceptionPolicy.For<NotSupportedException>(
+            DiffPath.Managed | DiffPath.Native | DiffPath.Cuda,
+            messageContains: "aligned for all of their element types"),
+        Launch = static (b, s) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            MarshalingOverlapDifferentialKernels.LaunchTwoLongViewsKernel(
+                MemoryMarshal.Cast<int, long>(backing.AsSpan(0, 4)),
+                MemoryMarshal.Cast<int, long>(backing.AsSpan(1, 4)),
+                b.Get<long>("observed"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX);
+        },
+    };
+
+    internal static readonly DifferentialCase s_twoRefLongsFourBytesApart = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.TwoRefLongsKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .Out<long>("observed", 1, OutputPolicy.Ignore),
+        ExceptionPolicy = ExceptionPolicy.For<NotSupportedException>(
+            DiffPath.Managed | DiffPath.Native | DiffPath.Cuda,
+            messageContains: "aligned for all of their element types"),
+        Launch = static (b, s) =>
+        {
+            var skewed = new DiffSkewedLongs { A = 1L, B = 2L };
+            MarshalingOverlapDifferentialKernels.LaunchTwoRefLongsKernel(
+                ref skewed.A,
+                ref skewed.B,
+                b.Get<long>("observed"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX);
+        },
+    };
+
+    internal static readonly DifferentialCase s_twoVector2ViewsFourBytesApart = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.TwoVector2ViewsKernel), "FourBytesApart"))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", [1f, 2f, 3f, 4f, 5f], OutputPolicy.Ignore)
+            .Out<float>("observed", 2, OutputPolicy.Ignore),
+        ExceptionPolicy = ExceptionPolicy.For<NotSupportedException>(
+            DiffPath.Managed | DiffPath.Native | DiffPath.Cuda,
+            messageContains: "aligned for all of their element types"),
+        Launch = static (b, s) =>
+        {
+            float[] backing = b.Get<float>("backing");
+            MarshalingOverlapDifferentialKernels.LaunchTwoVector2ViewsKernel(
+                MemoryMarshal.Cast<float, Vector2>(backing.AsSpan(0, 4)),
+                MemoryMarshal.Cast<float, Vector2>(backing.AsSpan(1, 4)),
+                b.Get<float>("observed"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX);
+        },
+    };
+
+    internal static readonly DifferentialCase s_twoVector2ViewsEightBytesApart = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.TwoVector2ViewsKernel), "EightBytesApart"))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", [1f, 2f, 3f, 4f, 5f, 6f], OutputPolicy.Exact)
+            .Out<float>("observed", 2, OutputPolicy.Exact),
+        OracleIsLaunch = true,
+        Launch = static (b, s) =>
+        {
+            float[] backing = b.Get<float>("backing");
+            MarshalingOverlapDifferentialKernels.LaunchTwoVector2ViewsKernel(
+                MemoryMarshal.Cast<float, Vector2>(backing.AsSpan(0, 4)),
+                MemoryMarshal.Cast<float, Vector2>(backing.AsSpan(2, 4)),
+                b.Get<float>("observed"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX);
+        },
+    };
+
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void SpanOverlap_TwoLongViewsFourBytesApart_ThrowsNotSupportedOnEveryPath() =>
+        DifferentialRunner.Run(s_twoLongViewsFourBytesApart);
+
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void RefOverlap_TwoExplicitLayoutLongFieldsFourBytesApart_ThrowsNotSupportedOnEveryPath() =>
+        DifferentialRunner.Run(s_twoRefLongsFourBytesApart);
+
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void SpanOverlap_TwoVector2ViewsFourBytesApart_ThrowsNotSupportedOnEveryPath() =>
+        DifferentialRunner.Run(s_twoVector2ViewsFourBytesApart);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void SpanOverlap_TwoVector2ViewsEightBytesApart_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_twoVector2ViewsEightBytesApart);
 }

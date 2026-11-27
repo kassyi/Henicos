@@ -1324,6 +1324,7 @@ try
 void** __gsharp_kernel_params = stackalloc void*[2];
 // Find the arguments that overlap and give each group one device region
 __gsharp_alias_held = new();
+__gsharp_alias_held.MapConversion(typeof(global::Kassyi.GSharp.Tests.Shared.Core.ConvertBag), 1, sizeof(global::Kassyi.GSharp.Tests.Shared.Runtime.CSharpExecutionKernels.AotContexts.ConvertBag));
 __gsharp_alias_held.CopiesBack = true;
 for (int __gsharp_alias_index = 0; __gsharp_alias_index < bags.Length; __gsharp_alias_index++)
 {

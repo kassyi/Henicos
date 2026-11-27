@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Compiler.Ir.Expressions;
+using Kassyi.GSharp.Compiler.Ir.Splitting;
 
 namespace Kassyi.GSharp.Compiler.Ir.Sequencing;
 
@@ -14,11 +15,11 @@ namespace Kassyi.GSharp.Compiler.Ir.Sequencing;
 /// temporary when they are not written one per parameter in parameter order, and leaves its receiver out.
 /// </para>
 /// <para>
-/// The reduced call <c>x.M(a)</c> of an extension method that G# emits as a device function is the static call
-/// <c>M(x, a)</c>, whose receiver is the first operand; the receiver of any other reduced call, as of an instance call,
-/// stays before the arguments. A call with a <see langword="params"/> array, whose written arguments the IR holds as
-/// one array, and a call that another rule writes are left as they are
-/// (<see cref="IrSequenceSupport.SkipsArgumentsOf"/>).
+/// The reduced call <c>x.M(a)</c> of an extension method, and the instance call <c>s.M(a)</c> of a struct method,
+/// that G# emits as device functions are static C++ calls whose receiver is the first operand (except uncopied
+/// <see langword="this"/>); the receiver of any other reduced or instance call stays before the arguments. A call with
+/// a <see langword="params"/> array, whose written arguments the IR holds as one array, and a call that another rule
+/// writes are left as they are (<see cref="IrSequenceSupport.SkipsArgumentsOf"/>).
 /// </para>
 /// </remarks>
 internal static class IrCallSequencing
@@ -40,7 +41,7 @@ internal static class IrCallSequencing
                            IrArgumentSequencing.ParameterOrdinalsOf(call.Arguments, shape.Operands,
                                shape.FirstParameter));
         return IrArgumentSequencing.Plan(call.Arguments, shape.Operands, shape.ExtensionForm, shape.InstanceReceiver,
-            spillAll, isCall: true, context);
+            spillAll, isCall: true, context, shape.SequencedReceiver, shape.CallMethod);
     }
 
     /// <summary>
@@ -49,10 +50,11 @@ internal static class IrCallSequencing
     /// </summary>
     public static IrSequence Apply(IrCall call, IrSequencePlan plan, IrCall rewritten, IrSequenceContext context)
     {
+        var shape = ShapeOf(call, context);
         var builder = new IrSequenceBuilder();
-        var arguments = IrArgumentSequencing.Apply(rewritten.Arguments, ShapeOf(call, context).Operands, plan,
-            builder);
-        return builder.Build(rewritten.Update(rewritten.Receiver, arguments, rewritten.Classification), call);
+        var (receiver, arguments) = IrArgumentSequencing.Apply(rewritten.Receiver, rewritten.Arguments, shape.Operands,
+            plan, builder, hasCallReceiver: shape.SequencedReceiver != null);
+        return builder.Build(rewritten.Update(receiver, arguments, rewritten.Classification), call);
     }
 
     // A call whose arguments the syntax path orders in BeginCall: one of the three targets, without a params array
@@ -65,19 +67,30 @@ internal static class IrCallSequencing
     {
         var mapped = call.Decided.Target == CallTargetKind.BclIntrinsicMap;
         var reduced = call.Arguments is [{ Kind: IrArgumentKind.ExtensionReceiver } receiver, ..] ? receiver : default;
-        var hasReceiver = reduced.Kind == IrArgumentKind.ExtensionReceiver;
-        var extensionForm = hasReceiver && !mapped &&
-                            CppNameResolver.IsEmittedDeviceFunction(call.Method, context.Decisions.Dialect);
+        var hasExtension = reduced.Kind == IrArgumentKind.ExtensionReceiver;
+        var isEmittedDevice = !mapped &&
+                              CppNameResolver.IsEmittedDeviceFunction(call.Method, context.Decisions.Dialect);
+        var extensionForm = hasExtension && isEmittedDevice;
+        var isThisReceiver = call.Receiver is IrVariableReference { Variable.Kind: IrVariableKind.This };
+        var isCopiedThis = isThisReceiver &&
+                           call.Receiver != null &&
+                           IrReadOnlyReceivers.IsCopiedBeforeTheCall(call.Receiver, call.Method,
+                               context.Decisions.Method);
+        var uncopiedThis = isThisReceiver && !isCopiedThis;
+        var sequencedReceiver = !hasExtension && isEmittedDevice && call.Receiver is { } callReceiver && !uncopiedThis
+            ? callReceiver
+            : null;
         var operands = IrArgumentSequencing.OperandsOf(call.Arguments, extensionForm);
 
-        // The mapped rule passes no receiver; the standard rule passes the receiver of an instance call or of another
-        // reduced call
-        var instanceReceiver = mapped || extensionForm
+        // The mapped rule passes no receiver; emitted device functions pass their receiver as operand 0 (except
+        // uncopied this, which stays in place as __gsharp_this); any other call leaves its receiver before arguments.
+        var instanceReceiver = mapped || extensionForm || sequencedReceiver != null || (isEmittedDevice && uncopiedThis)
             ? null
-            : call.Receiver ?? (hasReceiver ? reduced.Value : null);
-        return new CallShape(operands, extensionForm, instanceReceiver, mapped, hasReceiver ? 1 : 0);
+            : call.Receiver ?? (hasExtension ? reduced.Value : null);
+        return new CallShape(operands, extensionForm, instanceReceiver, sequencedReceiver, call.Method, mapped,
+            hasExtension ? 1 : 0);
     }
 
     private readonly record struct CallShape(int[] Operands, bool ExtensionForm, IrExpression? InstanceReceiver,
-        bool IsMapped, int FirstParameter);
+        IrExpression? SequencedReceiver, IMethodSymbol CallMethod, bool IsMapped, int FirstParameter);
 }
