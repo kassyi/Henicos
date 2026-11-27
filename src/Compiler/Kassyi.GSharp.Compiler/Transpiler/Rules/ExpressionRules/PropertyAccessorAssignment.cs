@@ -22,7 +22,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 /// <para>
 /// The operation is the one an ordinary compound assignment or step writes (<see cref="CompoundOperator"/>). The getter
 /// and setter are the member functions of <c>StructPropertyEmitter</c>, under the one C++ name of the property; the
-/// target is written without the getter call (<see cref="PropertyAccessorCall.AppendCallIfGetter"/>) and the call
+/// target is written without the getter call (<see cref="PropertyAccessorCallEmitter.AppendCallIfGetter"/>) and the call
 /// is added here.
 /// </para>
 /// <para>
@@ -112,7 +112,7 @@ internal static class PropertyAccessorAssignment
         CompoundOperator compoundOperator, ref TranspileContext context)
     {
         var model = context.Query.SemanticModel;
-        var storedProperty = PropertyAccessorCall.WritesBackingField(target, ref context)
+        var storedProperty = PropertyAccessorCallEmitter.WritesBackingField(target, ref context)
             ? PropertyAccessorCall.GetTargetProperty(target, model)
             : null;
         target = target.UnwrapParentheses();

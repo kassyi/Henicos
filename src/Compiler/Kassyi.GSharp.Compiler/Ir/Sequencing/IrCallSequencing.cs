@@ -69,7 +69,7 @@ internal static class IrCallSequencing
         var reduced = call.Arguments is [{ Kind: IrArgumentKind.ExtensionReceiver } receiver, ..] ? receiver : default;
         var hasExtension = reduced.Kind == IrArgumentKind.ExtensionReceiver;
         var isEmittedDevice = !mapped &&
-                              CppNameResolver.IsEmittedDeviceFunction(call.Method, context.Decisions.Dialect);
+                              DeviceFunctionTargets.IsEmittedDeviceFunction(call.Method, context.Decisions.Dialect);
         var extensionForm = hasExtension && isEmittedDevice;
         var isThisReceiver = call.Receiver is IrVariableReference { Variable.Kind: IrVariableKind.This };
         var isCopiedThis = isThisReceiver &&

@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Transpiler;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>
 /// Decides whether a call of a <c>Gpu</c> macro is written by its rule, for <see cref="CallTargetClassifier"/>: a macro

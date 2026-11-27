@@ -37,7 +37,7 @@ internal static class GlobalCppNames
     /// not map to a type of its own.
     /// </summary>
     public static bool IsEncodedUserType(INamedTypeSymbol type, ITranspilerDialect dialect) =>
-        EmittedUserTypes.IsEmittedUserType(type) && !dialect.IsMappedType(type);
+        EmittedUserTypes.IsEncodedUserType(type, dialect);
 
     /// <summary>Returns <c>__gsharp_ty_{path}</c> for <paramref name="type"/>.</summary>
     /// <remarks>

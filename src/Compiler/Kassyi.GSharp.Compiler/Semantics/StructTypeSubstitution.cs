@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Transpiler;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>Replaces the type parameters of a constructed generic struct with its type arguments.</summary>
 internal static class StructTypeSubstitution

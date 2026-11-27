@@ -64,7 +64,7 @@ internal static class IrArgumentSequencing
                 : EffectsOfArgument(argument, context);
         }
 
-        var last = spillAll ? total - 1 : EvaluationOrder.LastSpilledOperand(effects);
+        var last = spillAll ? total - 1 : OperandEvaluationOrder.LastSpilledOperand(effects);
         if (last < 0 || (instanceReceiver is not null && !spillAll &&
                          InterferesWithReceiver(instanceReceiver, effects, last, context)))
         {
@@ -200,7 +200,7 @@ internal static class IrArgumentSequencing
     /// named for a type C++ can spell (an enum included), deduced for a pointer or a type without a direct C++ type.
     /// </summary>
     public static IrDeclaredTypeForm DeclaredFormOf(ITypeSymbol parameterType) =>
-        parameterType is not IPointerTypeSymbol && TypeMapping.HasDirectCppType(parameterType)
+        parameterType is not IPointerTypeSymbol && CppTypeMapping.HasDirectCppType(parameterType)
             ? IrDeclaredTypeForm.Named
             : IrDeclaredTypeForm.Deduced;
 

@@ -2,7 +2,7 @@ using Kassyi.GSharp.Compiler.Analysis.Checks;
 using Microsoft.CodeAnalysis.Operations;
 using Names = Kassyi.GSharp.Compiler.GSharpInternalNames.IntegerSemantics;
 
-namespace Kassyi.GSharp.Compiler.Transpiler;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>
 /// The managed form of an int, long or nint <c>/</c> or <c>%</c> (and <c>/=</c>, <c>%=</c>) that may divide the minimum of

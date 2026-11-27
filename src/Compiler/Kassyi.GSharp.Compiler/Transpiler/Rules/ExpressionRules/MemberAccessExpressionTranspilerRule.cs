@@ -475,7 +475,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         {
             case MemberNameShape.Resolved:
                 context.Emitter.Writer.AppendCppName(member.CppName);
-                PropertyAccessorCall.AppendCallIfGetter(node, member.Symbol, ref context);
+                PropertyAccessorCallEmitter.AppendCallIfGetter(node, member.Symbol, ref context);
                 break;
             case MemberNameShape.ForEachArrayLength:
                 context.Emitter.Writer.Append("length");

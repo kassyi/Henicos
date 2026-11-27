@@ -1,6 +1,4 @@
-using Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules;
-
-namespace Kassyi.GSharp.Compiler.Transpiler;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>
 /// Decides what a call in GPU code, or a method group that device code names, calls (<see cref="CallTargetPlan"/>):
@@ -47,7 +45,7 @@ internal static class CallTargetClassifier
     /// </summary>
     public static bool IsUnsupportedInstanceMethodGroup(IMethodSymbol method, ITranspilerDialect dialect) =>
         method is { IsStatic: false, ReducedFrom: null } &&
-        CppNameResolver.IsEmittedDeviceFunction(method, dialect);
+        DeviceFunctionTargets.IsEmittedDeviceFunction(method, dialect);
 
     /// <summary>
     /// Classifies a call from symbol and tree information alone, returning <see langword="null"/> when syntax-specific
@@ -100,7 +98,7 @@ internal static class CallTargetClassifier
 
     /// <summary>
     /// What <paramref name="call"/> of <paramref name="called"/> calls in <paramref name="dialect"/>: an invocation, or
-    /// a method group that device code names (<see cref="MethodGroupReference"/>), in the tree of
+    /// a method group that device code names (<c>MethodGroupReference</c>), in the tree of
     /// <paramref name="model"/> or a lowered copy of it.
     /// </summary>
     public static CallTargetPlan Classify(IMethodSymbol called, SyntaxNode call, SemanticModel model,
@@ -161,7 +159,7 @@ internal static class CallTargetClassifier
 
         var method = (called.ReducedFrom ?? called).OriginalDefinition;
         if (GpuMacroClassifier.Classify(method).Kind != GpuMacroKind.None ||
-            MathAbsTranspilerRule.Claims(method) ||
+            InvocationRuleClaims.ClaimsMathAbs(method) ||
             IsClaimedBySymbol(called, method, isMemberAccessCall))
         {
             return InvocationRuleClaim.Other;
@@ -265,9 +263,9 @@ internal static class CallTargetClassifier
             call is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax });
 
     private static bool IsClaimedBySymbol(IMethodSymbol called, IMethodSymbol method, bool isMemberAccessCall) =>
-        StackLinqHelper.IsStackLinqMethod(method) ||
+        StackLinqSymbols.IsStackLinqMethod(method) ||
         SpanWriteClassifier.ClassifyMethod(called) != SpanMemberKind.None ||
-        NullableGetValueOrDefaultRule.Claims(method, isMemberAccessCall);
+        InvocationRuleClaims.ClaimsNullableGetValueOrDefault(method, isMemberAccessCall);
 
     private static string GetUnemittedReason(IMethodSymbol method) =>
         method.IsAbstract || method.ContainingType?.TypeKind == TypeKind.Interface
