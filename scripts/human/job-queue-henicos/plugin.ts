@@ -30,8 +30,8 @@ const DefaultTestsDir = "tests";
 // just options and variable assignments may stand between just and the recipe: just -f justfile test, just a=b test
 const HenicosTestPattern = new RegExp(
   [
-    String.raw`\bjust\b[^;&|\n]*?\s(test[\w-]*|coverage-diff|mutate|diff-barrier-models)(\s|$)`,
-    String.raw`\b(test-stability|test-memory|test-sanitized|mutate|coverage-diff|compare-barrier-models)\.js\b`,
+    String.raw`\bjust\b[^;&|\n]*?\s(test[\w-]*|coverage-diff|mutate|diff-barrier-models|time-barrier-models)(\s|$)`,
+    String.raw`\b(test-stability|test-memory|test-sanitized|mutate|coverage-diff|compare-barrier-models|time-barrier-models)\.js\b`,
   ].join("|"),
 );
 
@@ -133,6 +133,19 @@ const LongChecksRecipes = new Set(["long-checks"]);
 const LongChecksScripts = new Set(["long-checks.js"]);
 const FuzzDiffRecipes = new Set(["fuzz-diff"]);
 const FuzzDiffScripts = new Set(["fuzz-differential.js"]);
+const TimeBarrierRecipes = new Set(["time-barrier-models"]);
+const TimeBarrierScripts = new Set(["time-barrier-models.js"]);
+
+function selectsKernelBenchmarks(command: string): boolean {
+  if (!invokesTarget(command, TimeBarrierRecipes, TimeBarrierScripts)) {
+    return false;
+  }
+  const line = readCommandLine(command);
+  if (line === null || line.piped) {
+    return false;
+  }
+  return line.steps.some((step) => !isTrivialStep(step) && step.words.includes("--kernels"));
+}
 
 const LongChecksRefusal =
   "long-checks queues each step through job-queue.js itself: " +
@@ -282,7 +295,7 @@ const plugin = {
       command,
       true,
       budgets,
-      (cmd) => !onlyListsTests(cmd) && selectsCategory(cmd, ["Stress", "Benchmark"]),
+      (cmd) => !onlyListsTests(cmd) && (selectsCategory(cmd, ["Stress", "Benchmark"]) || selectsKernelBenchmarks(cmd)),
     );
     const testsDir = resolveTestsDir(
       context.worktree,

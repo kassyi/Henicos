@@ -58,6 +58,10 @@ diff-barrier-models models="native" *args="":
     {{queue}} -- node scripts/human/compare-barrier-models.js --run --models "{{models}}" \
         {{ if args == "" { "" } else { "-- " + args } }}
 
+# Build and time Tests.Cpu across barrier-model variants (or pass `3 Release --kernels` for BarrierModelBenchmark) into tmp/time-barrier-models/<date>/summary.md
+time-barrier-models runs="3" config="Release" *args="":
+    {{queue}} -- node scripts/human/time-barrier-models.js --runs "{{runs}}" --config "{{config}}" {{args}}
+
 # Differential tests: C# oracle vs CUDA
 test-differential-cuda *args="":
     {{queue}} --gpu -- dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj \
