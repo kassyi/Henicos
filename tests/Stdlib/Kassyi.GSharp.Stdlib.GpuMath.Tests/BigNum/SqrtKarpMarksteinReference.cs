@@ -122,7 +122,8 @@ internal static class SqrtKarpMarksteinReference
         var g = new Widths(rootWords);
         var top = a >> (32 * (rootWords - 1));
 
-        // K-P2: 0 <= floor(2^P / sqrt(A)) - y <= 3 (never above the root).
+        // K-P2: 0 <= floor(2^P / sqrt(A)) - y <= 3 (never above the root); |Y - Y*| <= 5/4 + 2^-21 and y = Y - 2
+        // give floor(Y*) - y in 0..3.
         var yFloor = InverseSqrtDoublingReference.FloorScaledInverseSqrt(top, g.P);
         var yGap = yFloor - trace.Y;
         Assert.True(yGap >= 0 && yGap <= 3, $"{label}: floor(2^P / sqrt(A)) - y = {yGap}");

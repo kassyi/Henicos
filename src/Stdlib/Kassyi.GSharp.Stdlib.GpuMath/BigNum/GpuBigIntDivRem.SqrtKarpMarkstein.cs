@@ -147,7 +147,7 @@ public static partial class GpuBigIntDivRem
             GpuBigIntMath.Mul(halfRoot, halfRoot, halfRootSquared);
             BigIntWideOps.AddSubtract(a, halfRootSquared, residual, subtract: true);
 #if DEBUG
-            // Debug builds check that d' = d_hi >> 31 fits stepWords words, as the derivation proves
+            // Debug builds check that d' = d_hi >> 31 fits stepWords words (d_hi < 2^(16n + 21), d' < 2^(16n - 10)).
             BigIntWideOps.CheckFitsBits(residual, 32L * w.StepWords + 31);
 #endif
         }
@@ -208,10 +208,10 @@ public static partial class GpuBigIntDivRem
         // s0 <= sqrt(A) < 2^(16n + 16)
         public int HalfRootWords => RootWords / 2 + 1;
 
-        // d_hi < 2^(16n + 24)
+        // d_hi < 2^(16n + 21)
         public int ResidualWords => (RootWords + 1) / 2 + 1;
 
-        // d' and delta < 2^(16n - 7)
+        // d' and delta < 2^(16n - 10)
         public int StepWords => (RootWords + 1) / 2;
 
         // P: y ~ 2^P / sqrt(A)
