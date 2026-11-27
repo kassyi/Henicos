@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.NullChecks;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>How a value of a type is null in the emitted C++.</summary>
 internal enum NullForm

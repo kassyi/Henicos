@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.StackArrays;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>
 /// The locals that the transpiler declares as a C++ stack array (<c>VariableDeclarationTranspilerRule</c>): a local

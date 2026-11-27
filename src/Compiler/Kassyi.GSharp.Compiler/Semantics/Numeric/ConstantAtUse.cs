@@ -1,7 +1,7 @@
 using Kassyi.GSharp.Compiler.Backends.Cpp;
 using Microsoft.CodeAnalysis.Operations;
 
-namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.Literals;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>
 /// Writes the value of a constant expression (a <c>const</c> field, a negated literal, a converted operand) as a C++

@@ -1,6 +1,6 @@
 using Kassyi.GSharp.Compiler.Backends.Cpp;
 
-namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.NullChecks;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>
 /// The null check of an argument passed to a non-nullable array parameter of a device function, or to a struct

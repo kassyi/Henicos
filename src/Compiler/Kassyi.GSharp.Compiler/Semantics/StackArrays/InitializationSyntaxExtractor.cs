@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.StackArrays;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 internal static class InitializationSyntaxExtractor
 {

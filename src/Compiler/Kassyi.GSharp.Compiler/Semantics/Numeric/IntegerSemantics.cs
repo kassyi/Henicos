@@ -3,7 +3,7 @@ using Kassyi.GSharp.Compiler.Analysis.Checks;
 using Microsoft.CodeAnalysis.Operations;
 using Names = Kassyi.GSharp.Compiler.GSharpInternalNames.IntegerSemantics;
 
-namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.Numeric;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>
 /// Where the C++ of an integer operator or a float-to-integer conversion would leave undefined what C# defines, and the

@@ -1,6 +1,6 @@
 using Kassyi.GSharp.Compiler.Backends.Cpp;
 
-namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>
 /// The place that the divisor check of an integer division or remainder reports (#718): the Prelude functions that

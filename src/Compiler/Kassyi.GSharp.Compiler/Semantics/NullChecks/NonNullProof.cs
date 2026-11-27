@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.NullChecks;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>
 /// The arrays that device code may read without a null check because a boundary has already checked them (#1409): the

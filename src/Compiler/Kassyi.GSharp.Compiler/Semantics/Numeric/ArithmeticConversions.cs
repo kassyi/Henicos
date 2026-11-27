@@ -1,6 +1,6 @@
 using Microsoft.CodeAnalysis.Operations;
 
-namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.Numeric;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>
 /// The conversions of C# numeric promotion (C# spec §12.4.7) and of the branches of a conditional (§12.18) that the

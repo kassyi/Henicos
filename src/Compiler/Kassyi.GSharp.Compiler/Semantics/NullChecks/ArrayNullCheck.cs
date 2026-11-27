@@ -1,6 +1,6 @@
 using Kassyi.GSharp.Compiler.Backends.Cpp;
 
-namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.NullChecks;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>
 /// The null check of a C# array read (#706): <c>Length</c> and the other <c>System.Array</c> members, an element and
