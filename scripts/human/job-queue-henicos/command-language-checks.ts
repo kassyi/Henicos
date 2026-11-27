@@ -10,11 +10,13 @@ import type { ShellName } from "../job-queue/constants.ts";
 import type { AssertModule } from "../job-queue/plugin-api.ts";
 import { removeDirectory } from "../job-queue/self-test-support.ts";
 import { CommandShell } from "../job-queue/shell.ts";
+import { ProcessTable } from "../job-queue/system.ts";
 import {
   AllowedFilterKeys,
   AllowedPrefixEnvNames,
   AllowedPrefixEnvValues,
   MaxCommandLength,
+  formatOutsideLanguageRefusal,
   parseSharedCommand,
   type AllowedPrefixEnvName,
 } from "./command-language.ts";
@@ -79,12 +81,16 @@ function detectShells(): ShellSpec[] {
   });
 }
 
-function runInShell(
+/** Per-case shell execution timeout in milliseconds (60 seconds). */
+export const ShellCaseTimeoutMs = 60_000;
+
+export function runInShell(
   shell: ShellName,
   command: string,
   cwd: string,
   env: NodeJS.ProcessEnv,
-): Promise<{ status: number | null; stderr: string }> {
+  timeoutMs = ShellCaseTimeoutMs,
+): Promise<{ status: number | null; stderr: string; timedOut: boolean }> {
   return new Promise((resolve) => {
     const inv = CommandShell.invocation(shell, command);
     const child = spawn(inv.file, inv.args, {
@@ -93,11 +99,37 @@ function runInShell(
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
       windowsVerbatimArguments: inv.verbatim,
+      detached: process.platform !== "win32",
     });
     const errChunks: Buffer[] = [];
+    let settled = false;
+    let timedOut = false;
+    const finish = (status: number | null, extraStderr?: string): void => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timer);
+      const stderr = extraStderr ?? Buffer.concat(errChunks).toString("utf8");
+      resolve({ status, stderr, timedOut });
+    };
+    const timer = setTimeout(() => {
+      timedOut = true;
+      ProcessTable.killTree(child.pid);
+      if (process.platform !== "win32" && child.pid !== undefined) {
+        try {
+          process.kill(-child.pid, "SIGKILL");
+        } catch {
+          // Process group already exited after SIGTERM.
+        }
+      }
+      child.stdout?.destroy();
+      child.stderr?.destroy();
+      finish(null);
+    }, timeoutMs);
     child.stderr?.on("data", (chunk: Buffer) => errChunks.push(chunk));
-    child.on("error", (err) => resolve({ status: null, stderr: err.message }));
-    child.on("close", (code) => resolve({ status: code, stderr: Buffer.concat(errChunks).toString("utf8") }));
+    child.on("error", (err) => finish(null, err.message));
+    child.on("close", (code) => finish(code));
   });
 }
 
@@ -120,7 +152,7 @@ function buildStubEnv(baseEnv: NodeJS.ProcessEnv, stubDir: string, logPath: stri
  * Includes every NAME x VALUE, every OPTION, every KEY x OP x boundary WORD, every LOGGER, redirect modes,
  * item orderings, and a near-4000-character boundary command.
  */
-function buildPairwiseCases(shell: ShellName, absRedirectPrefix: string): string[] {
+function buildPairwiseCases(shell: ShellName, absRedirectPrefix: string): { regular: string[]; boundary: string[] } {
   const cases: string[] = [];
   const pwsh = CommandShell.isPowerShell(shell);
   const posix = shell === "bash" || shell === "sh";
@@ -233,9 +265,23 @@ function buildPairwiseCases(shell: ShellName, absRedirectPrefix: string): string
     len += longTerm.length + (terms.length > 1 ? 1 : 0);
   }
   const longCmd = `dotnet test ${longProj} --no-build --filter "${terms.join("|")}"`;
-  cases.push(longCmd);
+  return { regular: cases, boundary: [longCmd] };
+}
 
-  return cases;
+/**
+ * Selects up to `limit` pairwise cases while always keeping the 4,000-char `boundary` case(s) even when
+ * `GSHARP_JOB_QUEUE_LANGUAGE_FUZZ` caps the case count.
+ */
+export function selectPairwiseCases(
+  regular: readonly string[],
+  boundary: readonly string[],
+  limit: number | undefined,
+): string[] {
+  if (limit === undefined || limit >= regular.length + boundary.length) {
+    return [...regular, ...boundary];
+  }
+  const regularCount = Math.max(0, limit - boundary.length);
+  return [...regular.slice(0, regularCount), ...boundary];
 }
 
 /** Fixed negative table: all review counterexamples and banned forms must return null. */
@@ -352,6 +398,22 @@ function checkFixedNegatives(assert: AssertModule): void {
     ["node mutate with prefix", "DiffEngine_Disabled=true node scripts/human/mutate.js --phase gpumath --"],
   ];
 
+  const assertRefusalExampleAccepted = (label: string, command: string, shell: ShellName): void => {
+    const refusal = formatOutsideLanguageRefusal(command, shell);
+    const acceptedLine = refusal.split("\n").find((line) => line.startsWith("Accepted form: "));
+    assert.ok(acceptedLine !== undefined, `refusal must contain Accepted form line (${label}) on ${shell}`);
+    const example = acceptedLine.slice("Accepted form: ".length).replace(/ \(dropped: .*\)$/, "");
+    assert.ok(
+      example.length <= MaxCommandLength,
+      `refusal example must be <= ${MaxCommandLength} chars (${label}) on ${shell}, got ${example.length}`,
+    );
+    assert.notStrictEqual(
+      parseSharedCommand(example, shell),
+      null,
+      `refusal example must be accepted by parseSharedCommand (${label}) on ${shell}: ${JSON.stringify(example.slice(0, 140))}`,
+    );
+  };
+
   for (const [label, command] of rejectedEverywhere) {
     for (const shell of allShells) {
       assert.strictEqual(
@@ -359,6 +421,7 @@ function checkFixedNegatives(assert: AssertModule): void {
         null,
         `must reject (${label}) on ${shell}: ${JSON.stringify(command.slice(0, 120))}`,
       );
+      assertRefusalExampleAccepted(label, command, shell);
     }
   }
 
@@ -379,14 +442,20 @@ function checkFixedNegatives(assert: AssertModule): void {
   }
 
   // Shell-specific rejections
-  assert.strictEqual(parseSharedCommand("dotnet test tests/X --filter 'Name~A'", "cmd"), null, "cmd rejects ' filter");
-  assert.strictEqual(parseSharedCommand("DiffEngine_Disabled=true dotnet test tests/X", "pwsh"), null);
-  assert.strictEqual(parseSharedCommand("DiffEngine_Disabled=true dotnet test tests/X", "cmd"), null);
-  assert.strictEqual(parseSharedCommand("$env:DiffEngine_Disabled='true'; dotnet test tests/X", "bash"), null);
-  assert.strictEqual(parseSharedCommand("$env:DiffEngine_Disabled='true'; dotnet test tests/X", "cmd"), null);
-  // cmd and PowerShell read /c/x as \c\x on the current drive; only bash and sh map it to C:\x.
-  for (const shell of ["cmd", "pwsh", "powershell"] as const) {
-    assert.strictEqual(parseSharedCommand("dotnet test tests/X > /c/x.log", shell), null, `${shell} rejects /c/`);
+  const shellSpecificRejections: readonly [string, string, ShellName][] = [
+    ["cmd rejects ' filter", "dotnet test tests/X --filter 'Name~A'", "cmd"],
+    ["pwsh rejects bash prefix", "DiffEngine_Disabled=true dotnet test tests/X", "pwsh"],
+    ["cmd rejects bash prefix", "DiffEngine_Disabled=true dotnet test tests/X", "cmd"],
+    ["bash rejects pwsh prefix", "$env:DiffEngine_Disabled='true'; dotnet test tests/X", "bash"],
+    ["cmd rejects pwsh prefix", "$env:DiffEngine_Disabled='true'; dotnet test tests/X", "cmd"],
+    // cmd and PowerShell read /c/x as \c\x on the current drive; only bash and sh map it to C:\x.
+    ["cmd rejects /c/", "dotnet test tests/X > /c/x.log", "cmd"],
+    ["pwsh rejects /c/", "dotnet test tests/X > /c/x.log", "pwsh"],
+    ["powershell rejects /c/", "dotnet test tests/X > /c/x.log", "powershell"],
+  ];
+  for (const [label, command, shell] of shellSpecificRejections) {
+    assert.strictEqual(parseSharedCommand(command, shell), null, label);
+    assertRefusalExampleAccepted(label, command, shell);
   }
   for (const shell of ["bash", "sh"] as const) {
     assert.notStrictEqual(parseSharedCommand("dotnet test tests/X > /c/x.log", shell), null, `${shell} takes /c/`);
@@ -460,6 +529,18 @@ export async function checkCommandLanguage(assert: AssertModule, maxPerShell?: n
 
     const concurrency = Math.min(8, Math.max(2, os.cpus().length));
 
+    const firstShell = available[0] as ShellSpec;
+    const nodePath = process.execPath.replace(/\\/g, "/");
+    const sleepCmd = CommandShell.isPowerShell(firstShell.shell)
+      ? `& "${nodePath}" -e "setTimeout(() => {}, 30000)"`
+      : `"${nodePath}" -e "setTimeout(() => {}, 30000)"`;
+    const timeoutRes = await runInShell(firstShell.shell, sleepCmd, root, process.env, 250);
+    assert.strictEqual(
+      timeoutRes.timedOut,
+      true,
+      `runInShell must time out and kill a hung process tree (shell=${firstShell.shell})`,
+    );
+
     for (const spec of available) {
       const absBase = path.join(root, `abs-${spec.shell}`);
       fs.mkdirSync(absBase, { recursive: true });
@@ -469,8 +550,15 @@ export async function checkCommandLanguage(assert: AssertModule, maxPerShell?: n
         absPrefix = spec.shell === "bash" ? `/${normAbs[0]?.toLowerCase()}/${normAbs.slice(3)}` : normAbs;
       }
 
-      const allCases = buildPairwiseCases(spec.shell, absPrefix);
-      const selected = limit !== undefined ? allCases.slice(0, limit) : allCases;
+      const { regular, boundary } = buildPairwiseCases(spec.shell, absPrefix);
+      const smallSample = selectPairwiseCases(regular, boundary, 3);
+      for (const b of boundary) {
+        assert.ok(
+          smallSample.includes(b),
+          `selectPairwiseCases must keep 4000-char boundary case under small limit (shell=${spec.shell})`,
+        );
+      }
+      const selected = selectPairwiseCases(regular, boundary, limit);
 
       let cursor = 0;
       const worker = async (): Promise<void> => {
@@ -496,6 +584,7 @@ export async function checkCommandLanguage(assert: AssertModule, maxPerShell?: n
 
           const res = await runInShell(spec.shell, command, caseDir, env);
           const diag = `shell=${spec.shell} case=${index} cmd=${JSON.stringify(command.slice(0, 140))}`;
+          assert.strictEqual(res.timedOut, false, `shell timed out after ${ShellCaseTimeoutMs}ms (${diag})`);
           // Windows PowerShell 5.1 turns native stderr under `2>&1` into a non-terminating ErrorRecord ($? = $false),
           // causing CommandShell's wrapper to exit 1 even when the native process exited 0.
           if (spec.shell === "powershell" && parsed.redirect.mergeStderr) {
