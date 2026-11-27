@@ -56,13 +56,41 @@ internal static class OperatorMacroSyntax
                 {
                     OperatorKind: BinaryOperatorKind.ConditionalAnd or BinaryOperatorKind.ConditionalOr
                 } binary =>
-                (binary.OperatorMethod, binary.IsLifted, false, FindTest(binary)),
+                (
+                    binary.OperatorMethod,
+                    binary.IsLifted,
+                    false,
+                    // [WHY] ConditionalEvaluationRewriter lowers a user-defined && or || into a synthesized & or |
+                    // carrying the original span of the && or ||; only the unlowered && or || itself expands a
+                    // conditional operator macro and tests its left operand.
+                    operatorCall.IsKind(SyntaxKind.LogicalAndExpression, SyntaxKind.LogicalOrExpression)
+                        ? FindTest(binary)
+                        : null
+                ),
             IBinaryOperation binary => (binary.OperatorMethod, binary.IsLifted, false, null),
             IUnaryOperation unary => (unary.OperatorMethod, unary.IsLifted, false, null),
             IIncrementOrDecrementOperation incrementOrDecrement =>
                 (incrementOrDecrement.OperatorMethod, incrementOrDecrement.IsLifted, true, null),
             _ => default
         };
+    }
+
+    // The operator false or true that the lowering marker __gsharp_truth_test (carrying the original span of the
+    // && or ||) stands for
+    internal static IMethodSymbol? GetTruthTest(SyntaxNode marker, SemanticModel semanticModel)
+    {
+        var operation = semanticModel.GetSafeOperation(marker);
+        while (operation is IConversionOperation { IsImplicit: true } conversion)
+        {
+            operation = conversion.Operand;
+        }
+
+        return operation is IBinaryOperation
+            {
+                OperatorKind: BinaryOperatorKind.ConditionalAnd or BinaryOperatorKind.ConditionalOr
+            } binary
+            ? FindTest(binary)
+            : null;
     }
 
     // T.false of x && y and T.true of x || y, T being the type that declares the & or | (C# spec §12.14.3): the

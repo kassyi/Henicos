@@ -7,6 +7,18 @@ internal sealed partial class ManagedExecutionRewriter
     // resume call of the lowered state machine (RewriteResumeCall)
     public override SyntaxNode? VisitInvocationExpression(InvocationExpressionSyntax node)
     {
+        // The test of a lowered user-defined && or ||: <accessor of operator false or true>([in] <left>)
+        if (node.Expression is IdentifierNameSyntax { Identifier.ValueText: GSharpInternalNames.Lowering.TruthTest })
+        {
+            var test = OperatorMacroSyntax.GetTruthTest(node, semanticModel)
+                       ?? throw new InvalidOperationException(
+                           "G#: internal error: a truth test without its operator (please report this G# bug).");
+            var operand = (Visit(node.ArgumentList.Arguments[0].Expression) as ExpressionSyntax
+                           ?? node.ArgumentList.Arguments[0].Expression).WithoutTrivia();
+            return ManagedOperatorMacroExpander.CreateTruthTestCall(test, operand, accessors)
+                .WithTriviaFrom(node);
+        }
+
         if (TryRewriteStackBarrier(node) is { } stackBarrier)
         {
             return stackBarrier;
