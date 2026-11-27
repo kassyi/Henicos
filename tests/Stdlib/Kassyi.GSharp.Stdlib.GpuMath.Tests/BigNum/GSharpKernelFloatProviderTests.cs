@@ -431,7 +431,7 @@ public class GSharpKernelFloatProviderTests : IDisposable
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
     // mutant: GSharpKernelFloatProvider.cs:401 `- 32L * (words + marginWords)` -> `... + 1` (4 and 16, inverse)
-    // mutant: GpuBigIntDivRem.Sqrt.cs:195 `SqrtFloorCorrection(...)` removed (9: the estimate 3 - 2^-126 is kept)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:175 `SqrtFloorCorrection(...)` removed (9: the estimate 3 - 2^-126 is kept)
     [InlineData(4u, false, 2, 1)]
     [InlineData(9u, false, 3, 1)]
     [InlineData(4u, true, 1, 2)]
@@ -491,7 +491,7 @@ public class GSharpKernelFloatProviderTests : IDisposable
     // and one of 5957 or 6500 words takes the precision doubling; either way the result is RZ_p of the root, p = 32
     // words.
     // The other float tests stop at 16 words, so without this test no float root reaches the doubling by default.
-    // mutant: GpuBigIntDivRem.InverseSqrtDoubling.cs:69 `>` -> `>=` (5956 counts a doubling run)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:127 `>` -> `>=` (5956 counts a doubling run)
     // mutant: GpuWorkspace.cs:145 `} = 5956;` -> `} = 5957;` (5957 counts no doubling run)
     [SkippableTheory]
     [TestTarget(ExecutionTarget.GpuExecution)]

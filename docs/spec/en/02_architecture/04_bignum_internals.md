@@ -213,19 +213,19 @@ flowchart LR
 
 ### Precision-Doubling Inverse Square Root
 
-`SqrtFloor` takes the approximate inverse square root of the top `w = n + 1` words `A` of its operand (bit length `32w` or `32w - 1`) with `m = ceil(n / 2)` margin words, `B = 32(w + m)`. A root wider than `GpuWorkspace.SqrtPrecisionDoublingThresholdWords` words computes it from the host with ordinary launches instead of the cooperative mega-kernel (`GpuBigIntDivRem.InverseSqrtDoubling.cs`):
+For a `SqrtFloor` root of `n` words wider than `GpuWorkspace.SqrtPrecisionDoublingThresholdWords`, the half-precision inverse square root of the top `w = n + 1` words `A` of the operand (bit length `32w` or `32w - 1`) is computed from the host with ordinary launches (`GpuBigIntDivRem.InverseSqrtDoubling.cs`):
 
-- **Scale**: `E = 16w + 32m + 2`. The stage of `p` working words holds `Y`, an approximation of `x* / 2^E` (`x* = 2^B / sqrt(A)`) with `32p` fraction bits.
-- **Schedule**: `p_K = w + 1`, `p_(k-1) = ceil(p_k / 2) + 1` (2 before a stage of 3 words), down to a first stage of 2 words. The first stage reads the initial guess `x0` (about 30 correct bits) as `floor(x0 / 2^(E - 64))`.
+- **Scale**: the stage of `p` working words holds `Y`, an approximation of `Y*(p) = 2^(16w - 2 + 32p) / sqrt(A)` in `p` words.
+- **Schedule**: `p_K = p_y = max(3, floor(n / 2) + 1)` for the Karp-Markstein step (any `p_K >= 3` is supported), `p_(k-1) = ceil(p_k / 2) + 1` (2 before a stage of 3 words), down to a first stage of 2 words. The first stage reads `InitialGuess(A, 16w + 62)` (about 30 correct bits) directly into its top two words.
 - **One stage** (`dw = max(2, ceil(p / 2))`, four floors, all other products exact):
   - `S = floor(Y^2 / 2^(32(p - 1)))` (first floor);
   - `A_k = floor(A / 2^(32(w - p - 1)))`, the top `p + 1` words of `A` (second floor);
   - `D = floor((2^(64p + 60) - A_k·S) / 2^(32p + 60))`, signed (third floor);
   - `dY = floor(Yt·D / 2^(32 dw + 1))`, `Yt` the top `dw` words of `Y` (fourth floor), and `Y' = Y + dY`.
 - **Signed values without a synchronization**: `D` is kept as `D + 2^(32 dw - 1)`, non-negative for every `|D| < 2^(32 dw - 1)`, and `Yt·D` as `Yt·(D + 2^(32 dw - 1)) - Yt·2^(32 dw - 1)` modulo `2^(32(p + dw + 1))`, so every step uses the unsigned multiplication, shift and modular addition already on the device. Debug builds check the bound on `D` on the device (`BigIntWideOps.CheckFitsBits`); release builds launch nothing for it.
-- **Result**: `x~ = floor(Y_K / 2^(32 p_K - E))`.
-- **Error bounds**: `|D| < 2^(32 dw - 1)` in every stage (at least 24 bits to spare), `|Y_K - floor(x* 2^(32 p_K - E))| <= 1` and `|x~ - floor(x*)| <= 1`, proved for `w >= 2` under the initial-guess error of at most `5·2^-32` (provable, about `2^-29.678`) with `x0 <= x*`.
-- **Contract**: the approximate inverse square root returns `x~ - 1`, so its result stays at most `ApproximateInverseSqrtMaxError` below the floor and never above it, as the mega-kernel's does. `SqrtFloor` then corrects its estimate to the exact floor either way.
+- **Result**: the last stage `Y` at `p_y` working words feeds the Karp-Markstein step directly (no full-width `x~` shift).
+- **Error bounds**: `|D| < 2^(32 dw - 1)` in every stage (at least 24 bits to spare), `|Y_k - Y*(p_k)| <= 5/4 + 2^-21` for every stage `p_k >= 3`, proved for `w >= 2` under the initial-guess error of at most `5·2^-32` (provable, about `2^-29.678`) with `x0 <= x*`.
+- **Contract**: `y = Y - 2` stays at most 3 below `floor(2^P / sqrt(A))` and never above it, which feeds the Karp-Markstein step; `ApproximateInverseSqrt` always uses the cooperative mega-kernel.
 
 ### Karp-Markstein Square Root
 

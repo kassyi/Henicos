@@ -139,8 +139,8 @@ public class GpuBigIntSqrtKarpMarksteinTests(ITestOutputHelper output)
     }
 
     // K-P5, K-P6: SqrtFloor gives the floor and increments InverseSqrtDoublingRuns iff n > threshold.
-    // mutant: GpuBigIntDivRem.Sqrt.cs:147 `root.NumWords > workspace.SqrtPrecisionDoublingThresholdWords` -> `>=`
-    // mutant: GpuBigIntDivRem.Sqrt.cs:150 `workspace.CountInverseSqrtDoubling();` removed
+    // mutant: GpuBigIntDivRem.Sqrt.cs:127 `root.NumWords > workspace.SqrtPrecisionDoublingThresholdWords` -> `>=`
+    // mutant: GpuBigIntDivRem.Sqrt.cs:130 `workspace.CountInverseSqrtDoubling();` removed
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(ThresholdSwitchInputs))]
@@ -166,7 +166,7 @@ public class GpuBigIntSqrtKarpMarksteinTests(ITestOutputHelper output)
     }
 
     // An operand whose word count is not 2 * root.NumWords (narrower or wider) throws ArgumentException.
-    // mutant: GpuBigIntDivRem.Sqrt.cs:179 `operand.NumWords != 2 * n` -> `operand.NumWords < 2 * n` (fails on 9 vs 4)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:159 `operand.NumWords != 2 * n` -> `operand.NumWords < 2 * n` (fails on 9 vs 4)
     [SkippableTheory]
     [Scenario(TestScenario.SadPath)]
     [InlineData(7, 4)]

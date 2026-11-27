@@ -122,7 +122,7 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
         }
 
         // Algebraic defining inequality: floor(2^B / sqrt(a)) satisfies a * x^2 <= 2^(2B) < a * (x + 1)^2.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:83
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:86
         //         `ComputeInitialGuess(targetOperand, resultBuffer, targetBits, isSquareRoot: true);` -> removed
         // input: (16, 4)
         var cpuValue = FromWords(cpuWords);
@@ -165,7 +165,7 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
         }
 
         // Algebraic defining inequality: floor(sqrt(a)) satisfies r^2 <= a < (r + 1)^2.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:279
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:259
         //         `(actualBits + 63) / 64` -> `actualBits / 64`
         // input: 33
         var cpuRoot = FromWords(cpuWords);

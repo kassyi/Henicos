@@ -41,6 +41,9 @@ internal static class InverseSqrtDoublingReference
         /// The exponent <c>B + 32p - E</c> with <c>floor(2^exponent / sqrt(A)) = floor(Y*)</c> at <c>p</c> words.
         /// </summary>
         public int YExponent(int words) => B + 32 * words - E;
+
+        /// <summary>Shifts the last stage <c>Y_K</c> into <c>x~ = floor(Y_K / 2^(32 p_K - E))</c>.</summary>
+        public BigInteger XTilde(BigInteger lastY) => lastY >> (32 * FinalWords - E);
     }
 
     /// <summary>One golden case of the reference model.</summary>
@@ -139,7 +142,7 @@ internal static class InverseSqrtDoublingReference
         out BigInteger xTilde)
     {
         var stages = RunTo(a, g.W, firstY, g.FinalWords, out var lastY);
-        xTilde = lastY >> (32 * g.FinalWords - g.E);
+        xTilde = g.XTilde(lastY);
         return stages;
     }
 

@@ -2,8 +2,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 // Precision-doubling inverse square root driven from the host, for SqrtFloor roots wider than
 // GpuWorkspace.SqrtPrecisionDoublingThresholdWords: a chain of ordinary launches whose working precision doubles from
-// two words to the full width, with no host synchronization between the stages. The derivation and its error bounds
-// are in docs/spec/en/02_architecture/04_bignum_internals.md.
+// two words to the requested final width (p_y for the Karp-Markstein step), with no host synchronization between the
+// stages. The derivation and its error bounds are in docs/spec/en/02_architecture/04_bignum_internals.md.
 public static partial class GpuBigIntDivRem
 {
     /// <summary>
@@ -13,12 +13,12 @@ public static partial class GpuBigIntDivRem
     internal const int InverseSqrtDoublingMaxStages = 40;
 
     /// <summary>
-    /// One stage of the precision-doubling inverse square root, as <see cref="InverseSqrtDoublingForTest"/> reads it
-    /// back.
+    /// One stage of the precision-doubling inverse square root, as <see cref="InverseSqrtDoublingStagesForTest"/> reads
+    /// it back.
     /// </summary>
     /// <param name="Words">The working words <c>p</c> of the stage.</param>
-    /// <param name="Y">The result <c>Y</c> of the stage: <c>x / 2^E</c> as a fixed-point number with <c>32p</c>
-    /// fraction bits, <c>E = 16w + 32m + 2</c>.</param>
+    /// <param name="Y">The result <c>Y</c> of the stage, approximating <c>Y*(p) = 2^(16w - 2 + 32p) / sqrt(A)</c> in
+    /// <c>p</c> words.</param>
     /// <param name="D">The scaled residual the stage used, signed:
     /// <c>D = floor((2^(64p + 60) - A_k·S) / 2^(32p + 60))</c>.</param>
     internal readonly record struct InverseSqrtDoublingStage(int Words, BigInteger Y, BigInteger D);
@@ -62,58 +62,6 @@ public static partial class GpuBigIntDivRem
         return count;
     }
 
-    // The precision doubling is derived for the operand of SqrtFloor: w words, bit length 32w or 32w - 1, the margin
-    // SqrtFloorMarginWords(w - 1), and a root of w - 1 words wider than the threshold of the workspace (so w >= 2)
-    private static bool UsesInverseSqrtDoubling(GpuWorkspace workspace, int operandWords, int marginWords,
-        int actualBits) =>
-        operandWords - 1 > workspace.SqrtPrecisionDoublingThresholdWords
-        && marginWords == SqrtFloorMarginWords(operandWords - 1)
-        && actualBits >= 32 * operandWords - 1;
-
-    /// <summary>
-    /// Test only: runs the precision-doubling inverse square root on a normalized operand of at least two words and
-    /// returns each stage. <paramref name="resultBuffer"/> (<c>w + marginWords</c> words) receives <c>x~</c>, not
-    /// lowered by one. <paramref name="firstY"/>, when given, replaces the input of the first stage (two words, below
-    /// <c>2^64</c>); otherwise the input is the guess of <c>ComputeInitialGuess</c>. Reads every stage back to the
-    /// host.
-    /// </summary>
-    /// <param name="targetOperand">The operand <c>A</c> of <c>w</c> words, bit length <c>32w</c> or
-    /// <c>32w - 1</c>.</param>
-    /// <param name="resultBuffer">Receives <c>x~</c>; it must hold <c>w + marginWords</c> words.</param>
-    /// <param name="marginWords">The margin words <c>m</c>.</param>
-    /// <param name="firstY">The input <c>Y</c> of the first stage, or <see langword="null"/> for the initial
-    /// guess.</param>
-    /// <returns>The stages in order, each with its result <c>Y</c> and its residual <c>D</c>.</returns>
-    /// <exception cref="ArgumentException">The operand has fewer than two words, or
-    /// <paramref name="resultBuffer"/> does not hold <c>w + marginWords</c> words.</exception>
-    /// <exception cref="ArgumentOutOfRangeException"><paramref name="firstY"/> is negative or wider than 64
-    /// bits.</exception>
-    internal static List<InverseSqrtDoublingStage> InverseSqrtDoublingForTest(GpuBigUInt targetOperand,
-        GpuBigUInt resultBuffer, int marginWords, BigInteger? firstY = null)
-    {
-        var operandWords = targetOperand.NumWords;
-        if (operandWords < 2 || resultBuffer.NumWords != operandWords + marginWords)
-        {
-            throw new ArgumentException(
-                $"The precision doubling needs an operand of at least 2 words and a result of operand + margin words. "
-                + $"operand: {operandWords}, margin: {marginWords}, result: {resultBuffer.NumWords} words.");
-        }
-
-        if (firstY is { } v && (v.Sign < 0 || v.GetBitLength() > 64))
-        {
-            throw new ArgumentOutOfRangeException(nameof(firstY), firstY, "The first Y must lie in [0, 2^64).");
-        }
-
-        if (firstY is null)
-        {
-            ComputeInitialGuess(targetOperand, resultBuffer, 32 * (operandWords + marginWords), isSquareRoot: true);
-        }
-
-        var trace = new List<InverseSqrtDoublingStage>();
-        InverseSqrtDoubling(targetOperand, resultBuffer, marginWords, firstY, trace);
-        return trace;
-    }
-
     /// <summary>
     /// Test only: runs the stages of the precision doubling up to <paramref name="finalWords"/> working words from
     /// <paramref name="firstY"/> and returns each stage, reading every stage back to the host.
@@ -146,30 +94,6 @@ public static partial class GpuBigIntDivRem
         var trace = new List<InverseSqrtDoublingStage>();
         RunInverseSqrtDoublingStages(targetOperand, y, trace);
         return trace;
-    }
-
-    // x~ = floor(Y_K / 2^(32 p_K - E)) into resultBuffer, p_K = w + 1. Without firstY, resultBuffer holds the guess x0
-    // of ComputeInitialGuess and the first stage reads x0 / 2^(E - 64).
-    private static void InverseSqrtDoubling(GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int marginWords,
-        BigInteger? firstY, List<InverseSqrtDoublingStage>? trace)
-    {
-        var workspace = targetOperand.Workspace;
-        var finalWords = targetOperand.NumWords + 1;
-        var scaleBits = 16 * targetOperand.NumWords + 32 * marginWords + 2; // E: Y_k approximates x / 2^E
-
-        // Rented buffers are zero, so the words of y below the first stage stay zero
-        using var y = workspace.RentTemp(finalWords);
-        if (firstY is { } value)
-        {
-            WriteInverseSqrtDoublingFirstY(y, value);
-        }
-        else
-        {
-            GpuBigIntMath.ShiftAndResize(resultBuffer, 64 - scaleBits, y.BorrowWords(finalWords - 2, 2));
-        }
-
-        RunInverseSqrtDoublingStages(targetOperand, y, trace);
-        GpuBigIntMath.ShiftAndResize(y, scaleBits - 32 * finalWords, resultBuffer);
     }
 
     // The input Y of the first stage, below 2^64, into the top two words of y
@@ -277,8 +201,8 @@ public static partial class GpuBigIntDivRem
     }
 
     /// <summary>
-    /// The scratch buffers of <see cref="InverseSqrtDoubling"/>, sized for the last stage; each stage uses their low
-    /// words. Not owned: the caller disposes them.
+    /// The scratch buffers of <see cref="RunInverseSqrtDoublingStages"/>, sized for the last stage; each stage uses
+    /// their low words. Not owned: the caller disposes them.
     /// </summary>
     private readonly ref struct InverseSqrtDoublingBuffers(GpuBigUInt y, GpuBigUInt squared, GpuBigUInt product,
         GpuBigUInt residual, GpuBigUInt offsetResidual, GpuBigUInt correction, GpuBigUInt offset, GpuBigUInt difference,

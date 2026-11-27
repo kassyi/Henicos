@@ -22,9 +22,14 @@ public static partial class GpuBigIntDivRem
         scoped GpuBigUIntView targetOperand,
         scoped GpuBigUIntView resultBuffer,
         int marginWords = 0
-    ) =>
-        InverseSqrtCore(targetOperand.AsBorrowedBigUInt(), resultBuffer.AsBorrowedBigUInt(), marginWords,
-            correctsToFloor: true);
+    )
+    {
+        var operand = targetOperand.AsBorrowedBigUInt();
+        var result = resultBuffer.AsBorrowedBigUInt();
+        PrepareInverseSqrt(operand, result, marginWords, out var actualBits, out var iterations);
+        operand.Workspace.Provider.InverseSqrtMega(
+            operand.Workspace, operand, result, marginWords, actualBits, iterations);
+    }
 
     /// <summary>
     /// The largest distance <c>floor(2^B / sqrt(a)) - x</c> of an <see cref="ApproximateInverseSqrt"/> result
@@ -46,24 +51,23 @@ public static partial class GpuBigIntDivRem
     /// products and the step loop of the correction. The result stays below the root because every iteration computes
     /// its products exactly and only rounds down, and one exact Newton step <c>x(3 - a x^2) / 2</c> never passes
     /// <c>2^B / sqrt(a)</c>.
-    /// <para>
-    /// An operand of <see cref="SqrtFloor"/> (bit length <c>32n</c> or <c>32n - 1</c>, margin
-    /// <c>SqrtFloorMarginWords(n - 1)</c>) whose root is wider than
-    /// <see cref="GpuWorkspace.SqrtPrecisionDoublingThresholdWords"/> words takes the precision doubling driven from
-    /// the host; its result, within one of the floor, is lowered by one so that it stays at or below the floor.
-    /// </para>
     /// </remarks>
     internal static void ApproximateInverseSqrt(
         scoped GpuBigUIntView targetOperand,
         scoped GpuBigUIntView resultBuffer,
         int marginWords
-    ) =>
-        InverseSqrtCore(targetOperand.AsBorrowedBigUInt(), resultBuffer.AsBorrowedBigUInt(), marginWords,
-            correctsToFloor: false);
+    )
+    {
+        var operand = targetOperand.AsBorrowedBigUInt();
+        var result = resultBuffer.AsBorrowedBigUInt();
+        PrepareInverseSqrt(operand, result, marginWords, out var actualBits, out var iterations);
+        operand.Workspace.Provider.ApproximateInverseSqrtMega(
+            operand.Workspace, operand, result, marginWords, actualBits, iterations);
+    }
 
-    // InverseSqrt on the owned type; the internal methods above take views and borrow them
-    private static void InverseSqrtCore(GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int marginWords,
-        bool correctsToFloor)
+    // Validates the inverse-square-root buffers, writes the initial guess and computes the Newton iteration count.
+    private static void PrepareInverseSqrt(GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int marginWords,
+        out int actualBits, out int iterations)
     {
         var n = targetOperand.NumWords;
         if (resultBuffer.NumWords != n + marginWords)
@@ -71,40 +75,16 @@ public static partial class GpuBigIntDivRem
             throw new ArgumentException("Result buffer for InverseSqrt must be targetOperand.NumWords + marginWords.");
         }
 
-        var actualBits = GetActualBits(targetOperand);
+        actualBits = GetActualBits(targetOperand);
         if (actualBits == 0)
         {
             throw new DivideByZeroException();
         }
 
         var targetBits = (n + marginWords) * 32;
-        var currentBits = 31; // X_top has 31 bits
-
+        const int CurrentBits = 31; // X_top has 31 bits
         ComputeInitialGuess(targetOperand, resultBuffer, targetBits, isSquareRoot: true);
-
-        if (!correctsToFloor && UsesInverseSqrtDoubling(targetOperand.Workspace, n, marginWords, actualBits))
-        {
-            // Wide roots: precision doubling from the guess in resultBuffer. x~ is within one of the floor; x~ - 1
-            // stays at or below it, as the mega-kernel's; x~ >= 2^(16n + 32m) - 1 >= 2^31 keeps it in range
-            targetOperand.Workspace.CountInverseSqrtDoubling();
-            InverseSqrtDoubling(targetOperand, resultBuffer, marginWords, firstY: null, trace: null);
-            GpuBigIntMath.Sub(resultBuffer, 1u, resultBuffer);
-            return;
-        }
-
-        var iterations = CalculateNewtonRaphsonIterationCount(currentBits, targetBits);
-
-        IGpuAdvancedMathProvider provider = targetOperand.Workspace.Provider;
-        if (correctsToFloor)
-        {
-            provider.InverseSqrtMega(
-                targetOperand.Workspace, targetOperand, resultBuffer, marginWords, actualBits, iterations);
-        }
-        else
-        {
-            provider.ApproximateInverseSqrtMega(
-                targetOperand.Workspace, targetOperand, resultBuffer, marginWords, actualBits, iterations);
-        }
+        iterations = CalculateNewtonRaphsonIterationCount(CurrentBits, targetBits);
     }
 
     /// <summary>
