@@ -262,8 +262,8 @@ internal static class GpuOperatorMacroTranspiler
         context.Visitor.Visit(result);
     }
 
-    // The target of <macro> cannot be called without a barrier frame before E4-2 (on any dialect, or inside a struct
-    // member); report GSH0062 at macro.OperatorCall before any of the call is written
+    // The expansion calls the target of <macro> without the barrier frame it needs to suspend (on any dialect, or
+    // inside a struct member); report GSH0062 at macro.OperatorCall before any of the call is written
     private static bool FailIfSuspendingTarget(in OperatorMacro macro, ref TranspileContext context)
     {
         if (macro.TargetMethod is not { } target ||
@@ -273,8 +273,8 @@ internal static class GpuOperatorMacroTranspiler
         }
 
         // [WHY] Report on every dialect (StackCppDialect included, so NativeStackTranslator.ForKernel keeps #error
-        // instead of replacing it with unguarded stack C++); E4-2 will gate this once stack models support
-        // suspending operator macros.
+        // instead of replacing it with unguarded stack C++). Narrow this once the CPU stack models give operator
+        // macros a barrier frame (#2105).
         var locationContext = context.Emitter.CurrentStructType != null
             ? StructMemberSuspendingCall.DescribeMember(macro.OperatorCall, context.Query.SemanticModel)
             : "through an operator macro";
