@@ -52,14 +52,21 @@ intrinsics as follows:
   another, each as a state machine (`StateMachineLowerer`) that returns at a barrier and resumes after it in the next
   round, so the block passes the barrier once every thread has reached it. The managed path also runs each thread as a
   state machine. A cooperative kernel (`Gpu.SyncGrid()`) runs in grid phases on both CPU paths.
+* **Stack models (opt-in)**: Setting `GSharpNativeBarrierModel=Stack` and `GSharpManagedBarrierModel=Stack` runs each
+  GPU thread on its own stack instead of a state machine where eligible. The state machine remains the default on both
+  CPU paths. When both properties are `Stack`, [GSH0039](../03_bcl_api/diagnostics/GSH0039.md) and
+  [GSH0041](../03_bcl_api/diagnostics/GSH0041.md) are not reported for methods that run on stacks on both paths (or on
+  CUDA).
 * **Warp intrinsics (`Warp.ShuffleSync`, `Warp.ActiveMask()`, votes and reductions)**: PTX instructions on CUDA. On the
   CPU paths, `WarpInstructionRewriter` splits the method at each warp operation, so the lanes of a warp exchange their
   values at the same point. Where the GPU leaves the value of `Warp.ActiveMask()` open, the CPU paths return one of the
   values the GPU may return ([Semantics Charter §6.5](06_semantics.md#65-the-cpu-paths)).
 
 The CPU paths cannot split every shape into states. These forms are compile errors, reported for every dialect, except
-that a project built only for CUDA accepts a warp shuffle in the places that GSH0062 lists, and the jump that GSH0121
-lists in its kernels, and in its device functions too when it does not export its device code
+that [GSH0039](../03_bcl_api/diagnostics/GSH0039.md) and [GSH0041](../03_bcl_api/diagnostics/GSH0041.md) are lifted when
+both `GSharpNativeBarrierModel` and `GSharpManagedBarrierModel` are `Stack` and the method runs on stacks (or on CUDA),
+and that a project built only for CUDA accepts a warp shuffle in the places that GSH0062 lists, and the jump that
+GSH0121 lists in its kernels, and in its device functions too when it does not export its device code
 (`GSharpExportDeviceCode=false`):
 
 * [GSH0037](../03_bcl_api/diagnostics/GSH0037.md): a barrier in a lambda or a local function that the CPU dialects do

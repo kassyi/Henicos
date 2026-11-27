@@ -27,6 +27,12 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
     /// </summary>
     public string GSharpNativeSanitizers { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Gets or sets the native barrier model (<c>StateMachine</c> or <c>Stack</c>); <c>Stack</c> enables
+    /// stack-clash probing on GCC/Clang.
+    /// </summary>
+    public string GSharpNativeBarrierModel { get; set; } = string.Empty;
+
     /// <summary>Gets or sets a value indicating whether to compile for multiple architectures (x64, arm64).</summary>
     public bool GSharpMultiTarget
     {
@@ -43,6 +49,7 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
 
     private string[] _architectures = [];
     private NativeSanitizers _sanitizers;
+    private bool _runsOnNativeStacks;
     private bool _skipCompilation;
 
     /// <inheritdoc />
@@ -72,6 +79,24 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
         if ((_sanitizers & NativeSanitizers.Undefined) != 0 && Toolchain is MsvcToolchain)
         {
             Log.LogWarning(MsvcToolchain.UndefinedSanitizerUnsupportedWarning);
+        }
+
+        var trimmedModel = (GSharpNativeBarrierModel ?? string.Empty).AsSpan().Trim();
+        if (trimmedModel.IsEmpty ||
+            trimmedModel.Equals("StateMachine".AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            _runsOnNativeStacks = false;
+        }
+        else if (trimmedModel.Equals("Stack".AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            _runsOnNativeStacks = true;
+        }
+        else
+        {
+            Log.LogError(
+                $"GSharpNativeBarrierModel value '{GSharpNativeBarrierModel}' is invalid. " +
+                "Supported values are 'StateMachine' and 'Stack'.");
+            return false;
         }
 
         if (MockCompilation)
@@ -162,7 +187,8 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
             Toolchain.IsWindows ? ".obj" : ".o",
             Toolchain.IsWindows && (_sanitizers & NativeSanitizers.Address) != 0,
             _sanitizers,
-            pathComparer);
+            pathComparer,
+            _runsOnNativeStacks);
         var plan = NativeUnitBuildPlanner.Plan(modules, _architectures, settings, Toolchain, Log, CancellationToken);
 
         var intermediateBag = new ConcurrentBag<ITaskItem>();
@@ -257,7 +283,8 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
                 Log,
                 CancellationToken,
                 _sanitizers,
-                artifacts.VcPdbPath))
+                artifacts.VcPdbPath,
+                _runsOnNativeStacks))
         {
             return false;
         }
@@ -292,7 +319,8 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
                     target.Arch,
                     Log,
                     CancellationToken,
-                    _sanitizers))
+                    _sanitizers,
+                    _runsOnNativeStacks))
             {
                 return false;
             }

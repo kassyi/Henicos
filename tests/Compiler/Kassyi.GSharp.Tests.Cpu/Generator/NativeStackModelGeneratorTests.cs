@@ -231,6 +231,98 @@ public class NativeStackModelGeneratorTests
         Assert.DoesNotContain($"inline void {InnerStepName}(", deviceCode, StringComparison.Ordinal);
     }
 
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void NativeStackBytes_StackBuild_EmitsReserveMacroInPreludeAndAotArtifact()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "gsharp-stack-bytes-" + Path.GetRandomFileName());
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var options = new Dictionary<string, string>
+            {
+                ["build_property.GSharpNativeBarrierModel"] = "Stack",
+                ["build_property.GSharpNativeStackBytes"] = "131072",
+                ["build_property.IntermediateOutputPath"] = ".",
+                ["build_property.MSBuildProjectDirectory"] = tempDir
+            };
+            var (driver, _, diagnostics) = GeneratorTestRunner.RunGenerator(
+                s_kernelCompilation.Value, "Cpu", options);
+            Assert.Empty(diagnostics.Where(static d => d.Severity == DiagnosticSeverity.Error));
+
+            var prelude = GetPreludeText(driver.GetRunResult());
+            const string ExpectedMacro = "#define __GSHARP_STACK_RESERVE_BYTES (131072u)";
+            Assert.Contains(ExpectedMacro, prelude, StringComparison.Ordinal);
+
+            var cppArtifact = Path.Combine(tempDir, "Kassyi.GSharp.Kernels_NativeStackSnapshotTest.g.cpp");
+            var hppArtifact = Path.Combine(tempDir, "Kassyi.GSharp.Kernels_NativeStackSnapshotTest.g.hpp");
+            var artifactPath = File.Exists(hppArtifact) ? hppArtifact : cppArtifact;
+            Assert.True(File.Exists(artifactPath), $"Expected AOT artifact {artifactPath} was not written.");
+            var artifactText = File.ReadAllText(artifactPath);
+            int defineIdx = artifactText.IndexOf(ExpectedMacro, StringComparison.Ordinal);
+            int ifndefIdx = artifactText.IndexOf("#ifndef __GSHARP_STACK_RESERVE_BYTES", StringComparison.Ordinal);
+            Assert.True(defineIdx >= 0 && ifndefIdx > defineIdx, "Expected macro before #ifndef guard.");
+        }
+        finally
+        {
+            Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
+    [Theory]
+    [InlineData("Cpu", "StateMachine")]
+    [InlineData("Cpu", "")]
+    [InlineData("Cuda", "Stack")]
+    [Scenario(TestScenario.Boundary)]
+    public void NativeStackBytes_NonStackOrCudaBuild_OmitsReserveMacro(string dialect, string model)
+    {
+        var baseOptions = string.IsNullOrEmpty(model)
+            ? null
+            : new Dictionary<string, string> { ["build_property.GSharpNativeBarrierModel"] = model };
+        var stackBytesOptions = new Dictionary<string, string>
+        {
+            ["build_property.GSharpNativeStackBytes"] = "131072"
+        };
+        if (!string.IsNullOrEmpty(model))
+        {
+            stackBytesOptions["build_property.GSharpNativeBarrierModel"] = model;
+        }
+
+        var (baseDriver, _, _) = GeneratorTestRunner.RunGenerator(s_kernelCompilation.Value, dialect, baseOptions);
+        var (actualDriver, _, _) = GeneratorTestRunner.RunGenerator(
+            s_kernelCompilation.Value, dialect, stackBytesOptions);
+
+        AssertSameGeneratedTrees(baseDriver.GetRunResult(), actualDriver.GetRunResult());
+    }
+
+    [Theory]
+    [InlineData("65536")]
+    [InlineData("131073")]
+    [InlineData("0131072")]
+    [InlineData("abc")]
+    [InlineData("2147483648")]
+    [Scenario(TestScenario.SadPath)]
+    public void NativeStackBytes_InvalidValues_IgnoredByGenerator(string value)
+    {
+        var (baseDriver, _, _) = GeneratorTestRunner.RunGenerator(
+            s_kernelCompilation.Value,
+            "Cpu",
+            new Dictionary<string, string>
+            {
+                ["build_property.GSharpNativeBarrierModel"] = "Stack"
+            });
+        var (actualDriver, _, _) = GeneratorTestRunner.RunGenerator(
+            s_kernelCompilation.Value,
+            "Cpu",
+            new Dictionary<string, string>
+            {
+                ["build_property.GSharpNativeBarrierModel"] = "Stack",
+                ["build_property.GSharpNativeStackBytes"] = value
+            });
+
+        AssertSameGeneratedTrees(baseDriver.GetRunResult(), actualDriver.GetRunResult());
+    }
+
     private static string GetPreludeText(GeneratorDriverRunResult result) =>
         result.GeneratedTrees
             .Single(static t => Path.GetFileName(t.FilePath) == "GSharpSharedCpuPrelude.g.cs")

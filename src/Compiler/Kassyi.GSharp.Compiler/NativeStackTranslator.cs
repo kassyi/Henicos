@@ -50,7 +50,8 @@ internal static class NativeStackTranslator
                 new StructSourceCollector(), stackErrorSites));
             return stackSource.Length > 0
                 ? new KernelCppText(stackSource, GpuKernelGenerator.ToIncludes(requiredIncludesStack),
-                    ErrorSiteTable.MergeSites(stateMachine.ErrorSites, stackErrorSites.Entries.AsEquatableArray()))
+                    ErrorSiteTable.MergeSites(stateMachine.ErrorSites, stackErrorSites.Entries.AsEquatableArray()),
+                    RunsOnStack: true)
                 : stateMachine;
         }
         catch (Exception ex)

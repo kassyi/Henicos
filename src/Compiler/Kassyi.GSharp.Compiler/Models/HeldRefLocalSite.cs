@@ -81,19 +81,56 @@ internal readonly record struct HeldRefLocalSite(string Path, int TreeOrdinal, T
     /// GSH0121 for a goto, at this site: in the syntax tree of <paramref name="compilation"/> that holds it, so that the
     /// editor marks it.
     /// </summary>
-    public void Report(SourceProductionContext context, Compilation compilation)
+    public void Report(SourceProductionContext context, Compilation compilation,
+        string refStructReasonTail = StackOnlyExecution.DefaultRefStructReason) =>
+        context.ReportDiagnostic(CreateDiagnostic(compilation, refStructReasonTail));
+
+    /// <summary>
+    /// Creates GSH0003 (<see cref="GpuCodeConstraints.RefLocalHeldByCpuStateMachine"/>), GSH0039 for a span local, or
+    /// GSH0121 for a goto, at this site: in the syntax tree of <paramref name="compilation"/> that holds it.
+    /// </summary>
+    public Diagnostic CreateDiagnostic(Compilation compilation,
+        string refStructReasonTail = StackOnlyExecution.DefaultRefStructReason)
     {
         var location = FindTree(compilation) is { } tree
             ? Location.Create(tree, Span)
             : Path.Length > 0
                 ? Location.Create(Path, Span, LineSpan)
                 : Location.None;
-        context.ReportDiagnostic(IsChainedLabelGoto
+        return IsChainedLabelGoto
             ? Diagnostic.Create(GSharpDiagnostics.GotoToChainedLabelAcrossStates, location, Label, OuterLabel)
             : SpanName.Length > 0
-                ? Diagnostic.Create(GSharpDiagnostics.CrossBarrierRefStructProhibited, location, SpanName)
+                ? Diagnostic.Create(GSharpDiagnostics.CrossBarrierRefStructProhibited, location, SpanName,
+                    refStructReasonTail)
                 : Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, location,
-                    GpuCodeConstraints.RefLocalHeldByCpuStateMachine));
+                    GpuCodeConstraints.RefLocalHeldByCpuStateMachine);
+    }
+
+    /// <summary>Resolves the method declaration and symbol enclosing this site in <paramref name="compilation"/>.</summary>
+    public bool TryFindEnclosingMethod(
+        Compilation compilation,
+        [NotNullWhen(true)] out IMethodSymbol? method,
+        [NotNullWhen(true)] out MethodDeclarationSyntax? declaration,
+        [NotNullWhen(true)] out SemanticModel? semanticModel)
+    {
+        if (FindTree(compilation) is { } tree &&
+            tree.GetRoot().FindNode(Span, getInnermostNodeForTie: true)
+                .FirstAncestorOrSelf<MethodDeclarationSyntax>() is { } foundDecl)
+        {
+            var model = compilation.GetCachedSemanticModel(tree);
+            if (model.GetDeclaredSymbol<IMethodSymbol>(foundDecl) is { } foundMethod)
+            {
+                method = foundMethod.PartialDefinitionPart ?? foundMethod;
+                declaration = foundDecl;
+                semanticModel = model;
+                return true;
+            }
+        }
+
+        method = null;
+        declaration = null;
+        semanticModel = null;
+        return false;
     }
 
     // The tree with the site's path, or at its ordinal when it has no path

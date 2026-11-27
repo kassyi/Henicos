@@ -34,6 +34,15 @@ internal record struct GeneratorConfig(
     /// <summary>The <c>GSharpNativeBarrierModel</c> of the project; only the C++ dialects read it.</summary>
     public NativeBarrierModel NativeBarrierModel { get; init; }
 
+    /// <summary>The barrier models of both CPU paths and whether this dialect builds them.</summary>
+    public readonly CpuBarrierModels Models => new(NativeBarrierModel, ManagedBarrierModel, !IsCuda);
+
+    /// <summary>
+    /// The optional per-stack reservation size in bytes (<c>GSharpNativeStackBytes</c>), or <see langword="null"/>
+    /// to use the prelude default (<c>1048576</c> bytes).
+    /// </summary>
+    public uint? NativeStackBytes { get; init; }
+
     /// <summary>
     /// Whether the native C++ module runs the GPU threads of a block on their own stacks
     /// (<c>GSharpNativeBarrierModel=Stack</c> on a C++ dialect). The CUDA dialect never does: the generator does not

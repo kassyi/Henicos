@@ -136,12 +136,15 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 options.GlobalOptions.TryGetValue("build_property.GSharpTargetArchitectures", out var architectures);
                 var targetLimits = GpuArchitectureLimits.Resolve(architectures);
                 var managedBarrierModel = ManagedBarrierModels.Read(options.GlobalOptions);
+                options.GlobalOptions.TryGetValue("build_property.GSharpNativeStackBytes", out var stackBytesStr);
+                uint? nativeStackBytes = ParseNativeStackBytes(stackBytesStr);
 
                 return new GeneratorConfig(dialect, emitSource, intermediatePath, exportDeviceCode, isCheckedBuild,
                     targetLimits)
                 {
                     ManagedBarrierModel = managedBarrierModel,
-                    NativeBarrierModel = NativeBarrierModels.Read(options.GlobalOptions)
+                    NativeBarrierModel = NativeBarrierModels.Read(options.GlobalOptions),
+                    NativeStackBytes = nativeStackBytes
                 };
             });
 
@@ -198,20 +201,38 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         var allKernels = kernelMethods.Collect();
         var allDevices = deviceMethods.Collect();
+        var stackForms = ManagedStackPipeline.Forms(context.CompilationProvider, configProvider);
+        var kernelsWithStackForms = ManagedStackPipeline.AttachToKernels(allKernels, stackForms);
 
         // [WHY] A ref local that the CPU state machine would keep in its frame and GSH0039 does not report is the
         // generator's own finding, from the lowering (#1640); reported for the CPU dialect only, which lowers (#929).
-        // GSH0121 rides along, also on a CUDA build that exports device code (ReportHeldRefLocals)
+        // GSH0121 rides along, also on a CUDA build that exports device code (ReportHeldRefLocals). When both CPU
+        // paths run on stacks, the safety net also reports lifted cross-barrier locals for any fallback kernel.
+        var stackSafetyNetInput = kernelsWithStackForms
+            .Combine(stackForms.Select(static (forms, _) => forms.Fallbacks))
+            .Combine(configProvider)
+            .Select(static (input, _) =>
+                input.Right.Models is { BothOnStacks: true, BuildsCpuPaths: true }
+                    ? (KernelStatuses: HeldRefLocalReports.CreateKernelStackStatuses(input.Left.Left),
+                        ManagedFallbacks: input.Left.Right)
+                    : default);
         var heldRefLocalSites = kernelMethods
             .Select(static (kernel, _) => kernel.HeldRefLocalSites)
             .Collect()
             .Combine(deviceMethods.Select(static (device, _) => device.HeldRefLocalSites).Collect())
             .Combine(configProvider)
             .Combine(context.CompilationProvider)
+            .Combine(stackSafetyNetInput)
             .WithTrackingName(HeldRefLocalsTrackingName);
         context.RegisterSourceOutput(heldRefLocalSites,
-            static (spc, input) => ReportHeldRefLocals(spc, input.Left.Left.Left, input.Left.Left.Right,
-                input.Left.Right, input.Right));
+            static (spc, input) => HeldRefLocalReports.ReportHeldRefLocals(
+                spc,
+                input.Left.Left.Left.Left,
+                input.Left.Left.Left.Right,
+                input.Left.Left.Right,
+                input.Left.Right,
+                input.Right.KernelStatuses,
+                input.Right.ManagedFallbacks));
 
         // The structs that other assemblies can name and whose device definition a consumer cannot build from metadata;
         // the structs that device code uses come with the functions
@@ -235,8 +256,6 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var importedCode = allKernels.Combine(allDevices).Combine(deviceImports).Combine(configProvider)
             .Select(static (input, _) => ResolveImports(input.Left.Right, input.Left.Left.Left,
                 GetDistinctDeviceMethods(input.Left.Left.Right), input.Right.IsCuda, input.Right.RunsOnNativeStacks));
-        var stackForms = ManagedStackPipeline.Forms(context.CompilationProvider, configProvider);
-        var kernelsWithStackForms = ManagedStackPipeline.AttachToKernels(allKernels, stackForms);
         var kernelModule = kernelsWithStackForms.Combine(configProvider.Select(static (config, _) => config.EmitSource))
             .Combine(allDevices).Combine(importedCode)
             .Select(static (input, _) => KernelModuleModel.Create(input.Left.Left.Left, input.Left.Left.Right,
@@ -420,7 +439,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 cppText.ErrorSites,
                 heldRefLocalSites,
                 Spill: spill,
-                NativeFallback: cppText.NativeFallback
+                NativeFallback: cppText.NativeFallback,
+                RunsOnNativeStack: cppText.RunsOnStack
             );
         }
         catch (Exception ex)
@@ -436,7 +456,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
     // The declaration whose body is transpiled, with its semantic model: the implementing declaration of a partial
     // method when the attribute is on the defining declaration, which has no body; otherwise the attributed
     // declaration itself
-    private static (MethodDeclarationSyntax Declaration, SemanticModel Model) GetBodyDeclaration(
+    internal static (MethodDeclarationSyntax Declaration, SemanticModel Model) GetBodyDeclaration(
         MethodDeclarationSyntax declaration, IMethodSymbol symbol, SemanticModel model)
     {
         if (symbol.PartialImplementationPart is { } implementation &&
@@ -816,34 +836,6 @@ public class GpuKernelGenerator : IIncrementalGenerator
         ImmutableArray<TranspiledDeviceMethodResult> deviceMethods) =>
         NativeModuleAssembler.GetDistinctDeviceMethods(deviceMethods);
 
-    // GSH0003 at the ref locals that the CPU state machines would keep in their frames (HeldRefLocalSite), GSH0039 and
-    // GSH0121 (which only the generator reports; a goto across a barrier is GSH0040, the analyzer's); a device
-    // function's sites once, however many results it has. A CUDA build emits managed state machines only for the
-    // device functions it exports, so it reports only their GSH0121 (ChainedLabelJumpChecks.FindReported)
-    private static void ReportHeldRefLocals(SourceProductionContext context,
-        ImmutableArray<EquatableArray<HeldRefLocalSite>> kernels,
-        ImmutableArray<EquatableArray<HeldRefLocalSite>> devices,
-        GeneratorConfig config,
-        Compilation compilation)
-    {
-        if (config.IsCuda && !config.ExportDeviceCode)
-        {
-            return;
-        }
-
-        var reported = new HashSet<HeldRefLocalSite>();
-        foreach (var sites in config.IsCuda ? devices : kernels.AddRange(devices))
-        {
-            foreach (var site in sites)
-            {
-                if ((!config.IsCuda || site.IsChainedLabelGoto) && reported.Add(site))
-                {
-                    site.Report(context, compilation);
-                }
-            }
-        }
-    }
-
     // The generator reports its own failure (GSH0048) and the ref locals that only the lowering finds
     // (ReportHeldRefLocals); the analyzers report the user's errors, and a construct the transpiler could not emit is
     // stated in the output as #error
@@ -896,5 +888,30 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         context.AddSource("GSharpSharedTypeKeyedSites.g.cs",
             SourceText.From(writer.ToString(), Encoding.UTF8));
+    }
+
+    private static uint? ParseNativeStackBytes(string? value)
+    {
+        var span = value.AsSpan().Trim();
+        if (span.Length is < 6 or > 10 || span[0] == '0')
+        {
+            return null;
+        }
+
+        ulong parsed = 0;
+        for (int i = 0; i < span.Length; i++)
+        {
+            uint digit = (uint)(span[i] - '0');
+            if (digit > 9u)
+            {
+                return null;
+            }
+
+            parsed = parsed * 10u + digit;
+        }
+
+        return parsed is >= 131072ul and <= 1073741824ul && parsed % 65536ul == 0ul
+            ? (uint)parsed
+            : null;
     }
 }

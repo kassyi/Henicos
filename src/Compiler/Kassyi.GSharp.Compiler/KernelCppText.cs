@@ -7,4 +7,5 @@ internal readonly record struct KernelCppText(
     string Source,
     EquatableArray<string> Includes,
     EquatableArray<ErrorSiteEntry> ErrorSites,
-    StateMachineFallback NativeFallback = default);
+    StateMachineFallback NativeFallback = default,
+    bool RunsOnStack = false);

@@ -51,7 +51,8 @@ public interface INativeToolchain
         string objPath,
         string architecture,
         NativeSanitizers sanitizers = NativeSanitizers.None,
-        string? pdbPath = null);
+        string? pdbPath = null,
+        bool runsOnNativeStacks = false);
 
     /// <summary>
     /// Compiles a single C++ translation unit into an object file (<c>.obj</c> or <c>.o</c>) at
@@ -64,7 +65,8 @@ public interface INativeToolchain
         TaskLoggingHelper log,
         CancellationToken cancellationToken = default,
         NativeSanitizers sanitizers = NativeSanitizers.None,
-        string? pdbPath = null);
+        string? pdbPath = null,
+        bool runsOnNativeStacks = false);
 
     /// <summary>
     /// Links one or more compiled object files into a native shared library at <paramref name="outputPath"/>.
@@ -75,7 +77,8 @@ public interface INativeToolchain
         string architecture,
         TaskLoggingHelper log,
         CancellationToken cancellationToken = default,
-        NativeSanitizers sanitizers = NativeSanitizers.None);
+        NativeSanitizers sanitizers = NativeSanitizers.None,
+        bool runsOnNativeStacks = false);
 
     /// <summary>
     /// Compiles a C++ source file into a native shared library at the specified output path.
@@ -88,6 +91,9 @@ public interface INativeToolchain
     /// <param name="sanitizers">
     /// The native sanitizers (<see cref="NativeSanitizers"/>) to enable for compilation.
     /// </param>
+    /// <param name="runsOnNativeStacks">
+    /// Whether the compiled code runs on per-GPU-thread native stacks (enables stack-clash probing on GCC/Clang).
+    /// </param>
     /// <returns>
     /// <see langword="true"/> if compilation succeeded and produced the output file; otherwise,
     /// <see langword="false"/>.
@@ -98,5 +104,6 @@ public interface INativeToolchain
         string architecture,
         TaskLoggingHelper log,
         CancellationToken cancellationToken = default,
-        NativeSanitizers sanitizers = NativeSanitizers.None);
+        NativeSanitizers sanitizers = NativeSanitizers.None,
+        bool runsOnNativeStacks = false);
 }
