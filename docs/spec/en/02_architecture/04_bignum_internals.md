@@ -235,7 +235,7 @@ Above `GpuWorkspace.SqrtPrecisionDoublingThresholdWords`, `SqrtFloor` (`GpuBigIn
 - **Half-precision inverse**: `y = Y - 2`, where `Y` is the last stage at `p_y >= 3` words (`|Y - Y*(p_y)| <= 5/4 + 2^-21`). Thus `0 <= floor(2^P / sqrt(A)) - y <= 3`, never above the root.
 - **Half-precision root and step**:
   - `A_t = floor(A / 2^(32j))` (`ceil(n / 2) + 1` words), `s0 = floor(A_t·y / 2^(P - 32j))` (`floor(n / 2) + 1` words), `s = s0·2^(16n - 16)`.
-  - `d_hi = A - s0^2` (checked subtraction, `ceil(n / 2) + 1` words, `< 2^(16n + 24)`), `d' = floor(d_hi / 2^31) = floor((a - s^2) / 2^T)` (`ceil(n / 2)` words, checked in Debug by `BigIntWideOps.CheckFitsBits`).
+  - `d_hi = A - s0^2` (checked subtraction, `ceil(n / 2) + 1` words, `< 2^(16n + 21)`), `d' = floor(d_hi / 2^31) = floor((a - s^2) / 2^T)` (`ceil(n / 2)` words, `< 2^(16n - 10)`, checked in Debug by `BigIntWideOps.CheckFitsBits`).
   - `delta = floor(y·d' / 2^(32 p_y))` (borrowed top `ceil(n / 2)` words of `y·d'`, no copy), `r'' = s + delta` (checked addition, `n` words).
 - **Error bound and correction**: `r'' - floor(sqrt(a)) in {-1, 0}` for every `n >= 1`, so `SqrtFloorCorrection` finishes in 0 or 1 step. `a - r''^2` is taken from `r''^2` because a squaring costs less than the two products of `d - 2s*delta - delta^2` on this NTT.
 
