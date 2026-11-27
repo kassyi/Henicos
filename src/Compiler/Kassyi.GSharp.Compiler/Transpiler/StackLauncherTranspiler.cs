@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Backends.Cpp;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 using static GSharpInternalNames.Launcher;
@@ -46,8 +48,10 @@ internal static class StackLauncherTranspiler
                     var (blockType, threadType) = step.ReachesWarpShuffle
                         ? (GSharpInternalNames.StackWarp.BlockType, GSharpInternalNames.StackWarp.ThreadType)
                         : (BlockType, ThreadType);
-                    context.Emitter.Writer.AppendLine(
-                        $"{blockType} {Block}({Stacks}, {BlockDimX} * {BlockDimY} * {BlockDimZ}, {Body});");
+                    context.Emitter.Writer.Append(
+                        $"{blockType} {Block}({Stacks}, {BlockDimX} * {BlockDimY} * {BlockDimZ}, {Body}, ");
+                    CppStringLiteral.Append(context.Emitter.Writer, step.MessageName);
+                    context.Emitter.Writer.AppendLine(");");
                     context.Emitter.Writer.AppendLine(
                         $"{threadType}* {Contexts} = {Block}.threads.data();");
                     context.Emitter.Writer.AppendLine($"std::atomic<bool> {AnyActive}{{true}};");

@@ -273,6 +273,8 @@ The `GpuKernelGenerator` reads several MSBuild properties via `AnalyzerConfigOpt
 - `GSharpEmitSource`: If `true`, the compiler embeds the generated C++ source in the assembly as string constants (`{Kernel}_Source` and the shared `Source` of the prelude and device code classes). A user who needs the whole translation unit concatenates the shared prelude, the shared device code and `{Kernel}_Source`. Defaults to `false` when unset.
 - `IntermediateOutputPath`: Used to determine where to output generated artifacts and intermediate files.
 - `GSharpExportDeviceCode`: If `false`, the assembly writes no device code records for other assemblies and no managed state machines for them (§1.7). Defaults to `true` when unset. Set it to `false` in an application or a test assembly that no other assembly calls into; a library keeps the default.
+- `GSharpNativeBarrierModel`: Selects how the native CPU path executes kernels that reach block barriers or warp collectives: `StateMachine` (default) or `Stack` (§1.5.5).
+- `GSharpNativeStackBytes`: Per-GPU-thread reserved stack size in bytes when `GSharpNativeBarrierModel=Stack` (§1.5.5; integer multiple of `65536` from `131072` to `1073741824`, default `1048576`).
 
 ### 1.5.1 Target GPU Architectures (`GSharpTargetArchitectures`)
 
@@ -343,6 +345,12 @@ The `GSharpCheckMinimumSdkVersion` target in `Kassyi.GSharp.Compiler.targets` ch
 The CUDA build needs the CUDA Toolkit 13.0 or later. `CompileCudaToFatbinTask` runs `nvcc --version` before it compiles, reads the release from the line `Cuda compilation tools, release <major>.<minor>, ...`, and stops the build with error `GS0006` when the major release is below 13. For nvcc 12.0 found as `nvcc` on `PATH`, the message is `G# needs the CUDA Toolkit 13.0 or later; the nvcc run as 'nvcc' is CUDA 12.0. Put a newer nvcc first on PATH, or set GSHARP_TEST_NO_CUDA=1 to build without CUDA.`
 
 An older nvcc is not only unsupported: in the reported runs with CUDA 12.0, the build of `Kassyi.GSharp.Stdlib.GpuMath` did not finish, and cicc ran for more than 20 minutes without output. Without the check the build therefore hangs instead of failing. An output without a readable release line passes the check. The Ubuntu package `nvidia-cuda-toolkit` installs CUDA 12.0 (Ubuntu 24.04) at `/usr/bin/nvcc`; see the prerequisites for the NVIDIA repository.
+
+### 1.5.5 Native CPU Barrier Model and Stack Sizing (`GSharpNativeBarrierModel`, `GSharpNativeStackBytes`)
+
+- **`GSharpNativeBarrierModel`**: Accepts `StateMachine` (default) or `Stack` (validated before `CoreCompile` by `GSharpValidateNativeBarrierModel`). Under `Stack` on the CPU dialect, each GPU thread in a block runs its body on its own native stack (Windows Fibers on Windows; `mmap` with `MAP_NORESERVE` and a 64 KiB `PROT_NONE` guard page on x86-64 Linux, compiled with `-fstack-clash-protection` on GCC/Clang). Ignored on the CUDA dialect.
+- **`GSharpNativeStackBytes`**: Sets the virtual address space reserved per GPU thread stack (in bytes) when `GSharpNativeBarrierModel=Stack` on the CPU dialect. Defaults to `1048576` (1 MiB, `#define __GSHARP_STACK_RESERVE_BYTES (1024u * 1024u)`). Must be an integer multiple of `65536` from `131072` (128 KiB) to `1073741824` (1 GiB) on all OSes (validated before `CoreCompile` by `GSharpValidateNativeStackBytes` in `Kassyi.GSharp.Compiler.targets`; Linux places a 64 KiB `PROT_NONE` guard region at the low end of every stack, so `131072` is the minimum on every OS).
+- **Stack overflow reporting**: A GPU thread that hits its stack guard on the native CPU stack model records `GSharpErrorCode.InsufficientExecutionStack` and ends without terminating the process; the remaining threads of the block continue, and the host launcher throws `InsufficientExecutionStackException` naming the thread, block, kernel, reserved stack size in KiB, and `GSharpNativeStackBytes`.
 
 ## 1.6 Expression Lowering (IIFE)
 

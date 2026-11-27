@@ -18,6 +18,7 @@
     <CompilerVisibleProperty Include="GSharpExportDeviceCode" />
     <CompilerVisibleProperty Include="GSharpCheckedBuild" />
     <CompilerVisibleProperty Include="GSharpNativeBarrierModel" />
+    <CompilerVisibleProperty Include="GSharpNativeStackBytes" />
     <CompilerVisibleProperty Include="GSharpAotEncryptionKey" />
     <CompilerVisibleProperty Include="IntermediateOutputPath" />
     <CompilerVisibleProperty Include="ProjectDir" />
@@ -127,6 +128,17 @@
     <Error Text="GSharpNativeBarrierModel value '$(GSharpNativeBarrierModel)' is invalid. Supported values are 'StateMachine' and 'Stack'." />
   </Target>
 
+  <Target Name="GSharpValidateNativeStackBytes" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(GSharpNativeStackBytes)' != ''">
+    <PropertyGroup>
+      <_GSharpNativeStackBytesIsDigits>$([System.Text.RegularExpressions.Regex]::IsMatch('$(GSharpNativeStackBytes)', '^[1-9][0-9]{0,9}$'))</_GSharpNativeStackBytesIsDigits>
+    </PropertyGroup>
+    <Error Condition="'$(_GSharpNativeStackBytesIsDigits)' != 'true'"
+           Text="GSharpNativeStackBytes value '$(GSharpNativeStackBytes)' is invalid. Supported values are integer multiples of 65536 from 131072 to 1073741824." />
+    <Error Condition="'$(_GSharpNativeStackBytesIsDigits)' == 'true' and ($([System.Int64]::Parse('$(GSharpNativeStackBytes)')) &lt; 131072 or $([System.Int64]::Parse('$(GSharpNativeStackBytes)')) &gt; 1073741824 or $([MSBuild]::Modulo($(GSharpNativeStackBytes), 65536)) != 0)"
+           Text="GSharpNativeStackBytes value '$(GSharpNativeStackBytes)' is invalid. Supported values are integer multiples of 65536 from 131072 to 1073741824." />
+  </Target>
+
   <!-- Define the target to compile CUDA sources -->
   <!-- It runs after CoreCompile (so source generators have emitted .cu files). Not in a design-time build: an IDE
        (Visual Studio, Rider, the C# Dev Kit, MSBuildWorkspace) runs one on every edit, and the generator writes no
@@ -182,7 +194,8 @@
         OutputDirectory="$(IntermediateOutputPath)GSharpNativeDlls" 
         ObjectDirectory="$(IntermediateOutputPath)GSharpNativeObjs"
         GSharpMultiTarget="$(GSharpMultiTarget)"
-        GSharpNativeSanitizers="$(GSharpNativeSanitizers)" >
+        GSharpNativeSanitizers="$(GSharpNativeSanitizers)"
+        GSharpNativeBarrierModel="$(GSharpNativeBarrierModel)" >
       <Output TaskParameter="OutputDlls" ItemName="_GSharpCompiledDlls" />
       <Output TaskParameter="OutputIntermediateFiles" ItemName="_GSharpCompiledIntermediates" />
     </CompileCppToNativeTask>

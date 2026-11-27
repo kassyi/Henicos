@@ -91,8 +91,10 @@ public sealed class MsvcToolchain : INativeToolchain
         string objPath,
         string architecture,
         NativeSanitizers sanitizers = NativeSanitizers.None,
-        string? pdbPath = null)
+        string? pdbPath = null,
+        bool runsOnNativeStacks = false)
     {
+        _ = runsOnNativeStacks;
         var sanitizerFlags = string.Empty;
         if ((sanitizers & NativeSanitizers.Address) != 0)
         {
@@ -113,11 +115,13 @@ public sealed class MsvcToolchain : INativeToolchain
         TaskLoggingHelper log,
         CancellationToken cancellationToken = default,
         NativeSanitizers sanitizers = NativeSanitizers.None,
-        string? pdbPath = null)
+        string? pdbPath = null,
+        bool runsOnNativeStacks = false)
     {
         var vcvarsArch = MsvcEnvironmentResolver.ToVcvarsArchitecture(architecture);
         NativeToolchainHelper.EnsureParentDirectory(objPath);
-        var clArgs = BuildCompileObjectArguments(sourcePath, objPath, architecture, sanitizers, pdbPath);
+        var clArgs = BuildCompileObjectArguments(
+            sourcePath, objPath, architecture, sanitizers, pdbPath, runsOnNativeStacks);
 
         log.LogMessage(MessageImportance.Normal, $"Compiling C++ source for {vcvarsArch}: {sourcePath}");
         return TryRunCl(
@@ -136,8 +140,10 @@ public sealed class MsvcToolchain : INativeToolchain
         string architecture,
         TaskLoggingHelper log,
         CancellationToken cancellationToken = default,
-        NativeSanitizers sanitizers = NativeSanitizers.None)
+        NativeSanitizers sanitizers = NativeSanitizers.None,
+        bool runsOnNativeStacks = false)
     {
+        _ = runsOnNativeStacks;
         if (objPaths.Count == 0)
         {
             log.LogError("Cannot link native shared library with zero object files.");
@@ -173,9 +179,10 @@ public sealed class MsvcToolchain : INativeToolchain
         string architecture,
         TaskLoggingHelper log,
         CancellationToken cancellationToken = default,
-        NativeSanitizers sanitizers = NativeSanitizers.None) =>
+        NativeSanitizers sanitizers = NativeSanitizers.None,
+        bool runsOnNativeStacks = false) =>
         NativeToolchainHelper.TryCompileSingleSourceToSharedLibrary(
-            this, sourcePath, outputPath, architecture, log, cancellationToken, sanitizers);
+            this, sourcePath, outputPath, architecture, log, cancellationToken, sanitizers, runsOnNativeStacks);
 
     private bool TryRunCl(
         string clArgs,

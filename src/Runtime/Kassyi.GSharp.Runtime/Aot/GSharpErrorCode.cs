@@ -51,5 +51,8 @@ public enum GSharpErrorCode
     /// Corresponds to a <c>throw</c> of an exception type that no other code names: the error site holds the type
     /// (<see cref="GSharpErrorSite.ExceptionType"/>).
     /// </summary>
-    Throw = 12
+    Throw = 12,
+
+    /// <summary>Corresponds to <see cref="InsufficientExecutionStackException"/>.</summary>
+    InsufficientExecutionStack = 13
 }

@@ -266,6 +266,7 @@ public static class GSharpErrorMapper
             {
                 GSharpErrorCode.DataRace => "Shared memory data race detected.",
                 GSharpErrorCode.Throw => "An exception was thrown in device code.",
+                GSharpErrorCode.InsufficientExecutionStack => "Insufficient stack to continue executing the program.",
                 _ => "A G# runtime error occurred."
             };
 
@@ -479,6 +480,8 @@ public static class GSharpErrorMapper
             GSharpErrorCode.ArgumentNull => paramName is null
                 ? new ArgumentNullException(message, innerException)
                 : new ArgumentNullException(paramName, message),
+            GSharpErrorCode.InsufficientExecutionStack =>
+                new InsufficientExecutionStackException(message, innerException),
             _ => new InvalidOperationException(message, innerException)
         };
 

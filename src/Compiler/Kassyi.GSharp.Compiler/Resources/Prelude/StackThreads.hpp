@@ -6,7 +6,15 @@
 
 // The address space reserved for each stack. Only the pages a thread touches are committed
 #ifndef __GSHARP_STACK_RESERVE_BYTES
-#define __GSHARP_STACK_RESERVE_BYTES (256u * 1024u)
+#define __GSHARP_STACK_RESERVE_BYTES (1024u * 1024u)
+#endif
+
+#if defined(__SANITIZE_ADDRESS__)
+#define __GSHARP_STACK_ASAN 1
+#elif defined(__has_feature)
+#if __has_feature(address_sanitizer)
+#define __GSHARP_STACK_ASAN 1
+#endif
 #endif
 
 #if defined(__SANITIZE_ADDRESS__)
@@ -22,6 +30,7 @@
 #endif
 
 #if defined(_WIN32)
+#include <excpt.h>
 extern "C" {
 __declspec(dllimport) void* __stdcall CreateFiberEx(size_t commitSize, size_t reserveSize, unsigned long flags,
     void (__stdcall* start)(void*), void* parameter);
@@ -32,9 +41,15 @@ __declspec(dllimport) int __stdcall ConvertFiberToThread(void);
 __declspec(dllimport) int __stdcall IsThreadAFiber(void);
 }
 #elif defined(__linux__) && defined(__x86_64__)
+#include <atomic>
 #include <cerrno>
 #include <fcntl.h>
+#include <mutex>
+#include <new>
+#include <signal.h>
 #include <sys/mman.h>
+#include <sys/syscall.h>
+#include <ucontext.h>
 #include <unistd.h>
 extern "C" void __gsharp_stack_switch(void** save, void* load);
 extern "C" void __gsharp_stack_trampoline();
@@ -68,8 +83,11 @@ struct __gsharp_stack_thread {
     bool __gsharp_yielded_for_block_barrier = false; // waits at Gpu.SyncThreads() until the launcher releases the block
     bool started = false;
     bool has_warp_state = false;                     // a __gsharp_stack_warp_thread
+    bool overflowed = false;                         // set by SEH / SIGSEGV handler on stack guard hit
+    bool overflow_reported = false;                  // prevents duplicate failure recording in __gsharp_stack_resume
     __gsharp_stack_block_base* block = nullptr;
     void* stack = nullptr;                           // Windows: the fiber. Linux: the base of the mapping
+    size_t reserve = 0;                              // reserved bytes of this stack
     void* sp = nullptr;                              // Linux: the stack pointer saved while the thread does not run
 };
 
@@ -109,20 +127,36 @@ inline __gsharp_stack_fp_state __gsharp_stack_capture_fp() noexcept {
     return state;
 }
 
+struct __gsharp_stack_pool;
+inline thread_local const __gsharp_stack_pool* __gsharp_stack_owner = nullptr;
+inline thread_local uint64_t __gsharp_stack_created_count = 0;
+
+extern "C" __declspec(dllexport) GSHARP_EXPORT_INLINE uint64_t __gsharp_stack_get_created_count() noexcept {
+    return __gsharp_stack_created_count;
+}
+
+struct __gsharp_stack_free_entry {
+    void* stack = nullptr;
+    size_t reserve = 0;
+};
+
 // The stacks of one OpenMP thread, kept between the blocks of one launch
 struct __gsharp_stack_pool {
-    std::vector<void*> free;
+    std::vector<__gsharp_stack_free_entry> free;
     // Windows: the fiber of the OpenMP thread. Linux: its stack pointer while a GPU thread runs
     void* scheduler = nullptr;
     bool converted = false;      // Windows: this pool made the OpenMP thread a fiber
     __gsharp_stack_fp_state fp{};
+    const __gsharp_stack_pool* previous_owner = nullptr;
     explicit __gsharp_stack_pool(__gsharp_stack_fp_state initialFp = __gsharp_stack_capture_fp()) noexcept
-        : fp(initialFp) {}
+        : fp(initialFp), previous_owner(__gsharp_stack_owner) {
+        __gsharp_stack_owner = this;
+    }
     __gsharp_stack_pool(const __gsharp_stack_pool&) = delete;
     __gsharp_stack_pool& operator=(const __gsharp_stack_pool&) = delete;
-    void* acquire();                     // a free stack or a new one; throws std::bad_alloc
-    void release(void* stack) noexcept;  // back into free
-    void destroy(void* stack) noexcept;  // DeleteFiber / munmap
+    void* acquire(size_t reserveBytes);                     // a free stack or a new one; throws std::bad_alloc
+    void release(void* stack, size_t reserveBytes) noexcept;  // back into free
+    void destroy(void* stack, size_t reserveBytes) noexcept;  // DeleteFiber / munmap
     ~__gsharp_stack_pool() noexcept;     // destroys the free stacks; Windows: ConvertFiberToThread() when converted
 };
 
@@ -131,9 +165,11 @@ struct __gsharp_stack_block_base {
     __gsharp_stack_pool& pool;
     void (*run)(void*) = nullptr;        // runs the kernel body once, for the calling GPU thread
     void* argument = nullptr;
+    const char* kernel = nullptr;
     std::exception_ptr pending;          // an exception of a GPU thread that is not a failed check
-    __gsharp_stack_block_base(__gsharp_stack_pool& stacks, void (*body)(void*), void* bodyArgument) noexcept
-        : pool(stacks), run(body), argument(bodyArgument) {}
+    __gsharp_stack_block_base(__gsharp_stack_pool& stacks, void (*body)(void*), void* bodyArgument,
+                              const char* kernelName = nullptr) noexcept
+        : pool(stacks), run(body), argument(bodyArgument), kernel(kernelName) {}
 };
 
 // The GPU threads of one block: __gsharp_stack_thread, or __gsharp_stack_warp_thread for a kernel that reaches a warp
@@ -142,7 +178,8 @@ template <typename TThread>
 struct __gsharp_stack_block_of : __gsharp_stack_block_base {
     std::vector<TThread> threads;
     template <typename TBody>
-    __gsharp_stack_block_of(__gsharp_stack_pool& stacks, uint32_t threadCount, TBody& body);
+    __gsharp_stack_block_of(__gsharp_stack_pool& stacks, uint32_t threadCount, TBody& body,
+                            const char* kernelName = nullptr);
     ~__gsharp_stack_block_of() noexcept;
 };
 
@@ -170,7 +207,7 @@ extern "C" __declspec(dllexport) GSHARP_EXPORT_INLINE uint64_t __gsharp_stack_ge
 }
 
 // The whole life of one GPU thread on its stack. No exception leaves it
-inline void __gsharp_stack_run_current() noexcept {
+__noinline__ inline void __gsharp_stack_run_current() noexcept {
     __gsharp_stack_thread* self = __gsharp_stack_current;
     try {
         self->block->run(self->block->argument);
@@ -185,13 +222,180 @@ inline void __gsharp_stack_run_current() noexcept {
 }
 
 #if defined(_WIN32)
+inline void __gsharp_stack_run_guarded(__gsharp_stack_thread* self) noexcept {
+    __try {
+        __gsharp_stack_run_current();
+    } __except (GetExceptionCode() == 0xC00000FDu ? 1 : 0) {
+        self->overflowed = true;
+        self->__gsharp_state = -1;
+        self->__gsharp_yielded_for_block_barrier = false;
+        self->__gsharp_yielded_for_grid_sync = false;
+    }
+}
+
 inline void __stdcall __gsharp_stack_fiber_main(void*) {
     for (;;) {
-        __gsharp_stack_run_current();
+        __gsharp_stack_run_guarded(__gsharp_stack_current);
         SwitchToFiber(__gsharp_stack_current->block->pool.scheduler);
     }
 }
 #elif defined(__linux__) && defined(__x86_64__)
+inline constexpr size_t __gsharp_stack_guard_bytes = 64u * 1024u;
+
+inline long __gsharp_current_tid() noexcept {
+    return static_cast<long>(::syscall(SYS_gettid));
+}
+
+struct __gsharp_altstack_node {
+    std::atomic<long> tid{0};
+    std::atomic<__gsharp_stack_thread*> current{nullptr};
+    __gsharp_altstack_node* next{nullptr};
+};
+
+inline void __gsharp_stack_range_of(
+    const __gsharp_stack_thread* thread,
+    char** low,
+    char** guardEnd,
+    char** top) noexcept {
+    char* base = static_cast<char*>(thread->stack);
+    if (low != nullptr) {
+        *low = base;
+    }
+    if (guardEnd != nullptr) {
+        *guardEnd = base + __gsharp_stack_guard_bytes;
+    }
+    if (top != nullptr) {
+        uintptr_t rawTop = reinterpret_cast<uintptr_t>(base + thread->reserve);
+        *top = reinterpret_cast<char*>(rawTop & ~static_cast<uintptr_t>(15));
+    }
+}
+
+#if !defined(__GSHARP_STACK_ASAN)
+inline constexpr size_t __gsharp_altstack_bytes = 64u * 1024u;
+
+// The signal stack this prelude gave an OS thread, and its entry in the list the handler reads
+struct __gsharp_altstack_tls {
+    bool installed = false;
+    __gsharp_altstack_node* node = nullptr;
+    void* alt = nullptr;
+    stack_t previous{};
+    bool release_registered = false; // __gsharp_tls_release is constructed, so its destructor runs at the thread end
+};
+
+inline thread_local __gsharp_altstack_tls __gsharp_tls_state{};
+
+// At the end of the thread the entry is freed for another thread (tid 0) and the signal stack the thread had before
+// is put back, and ours is unmapped. A launch from a thread_local destructor that runs after this one installs again.
+// [WHY] The state is a trivially destructible object of its own: the stores of a destructor to the members of its own
+// object are dead once that object ends, and the compiler drops them, so a later launch would find the state still
+// installed while the handler no longer finds the entry
+struct __gsharp_altstack_release {
+    bool armed = false;
+    ~__gsharp_altstack_release() noexcept {
+        __gsharp_altstack_tls& state = __gsharp_tls_state;
+        if (state.node != nullptr) {
+            state.node->current.store(nullptr, std::memory_order_release);
+            state.node->tid.store(0, std::memory_order_release);
+            state.node = nullptr;
+        }
+        if (state.alt != nullptr) {
+            stack_t now{};
+            if (::sigaltstack(nullptr, &now) == 0 && now.ss_sp == state.alt && (now.ss_flags & SS_ONSTACK) == 0) {
+                stack_t restore = state.previous;
+                restore.ss_flags = (state.previous.ss_flags & SS_DISABLE) != 0 ? SS_DISABLE : 0;
+                if (::sigaltstack(&restore, nullptr) == 0) {
+                    ::munmap(state.alt, __gsharp_altstack_bytes);
+                }
+            }
+            state.alt = nullptr;
+        }
+        state.installed = false;
+    }
+};
+
+inline thread_local __gsharp_altstack_release __gsharp_tls_release{};
+
+inline std::once_flag __gsharp_segv_once;
+inline struct sigaction __gsharp_prev_sigsegv{};
+inline std::atomic<__gsharp_altstack_node*> __gsharp_altstack_head{nullptr};
+
+inline void __gsharp_forward_sigsegv(int sig, siginfo_t* info, void* uctx) noexcept;
+
+inline void __gsharp_segv_handler(int sig, siginfo_t* info, void* uctx) noexcept {
+    const long tid = __gsharp_current_tid();
+    if (tid <= 0) {
+        __gsharp_forward_sigsegv(sig, info, uctx);
+        return;
+    }
+    __gsharp_stack_thread* self = nullptr;
+    for (const __gsharp_altstack_node* node = __gsharp_altstack_head.load(std::memory_order_acquire);
+         node != nullptr;
+         node = node->next) {
+        if (node->tid.load(std::memory_order_acquire) == tid) {
+            __gsharp_stack_thread* candidate = node->current.load(std::memory_order_acquire);
+            if (candidate != nullptr) {
+                self = candidate;
+                break;
+            }
+        }
+    }
+    if (self == nullptr || self->stack == nullptr || info == nullptr) {
+        __gsharp_forward_sigsegv(sig, info, uctx);
+        return;
+    }
+    char* low = nullptr;
+    char* guardEnd = nullptr;
+    __gsharp_stack_range_of(self, &low, &guardEnd, nullptr);
+    const uintptr_t addr = reinterpret_cast<uintptr_t>(info->si_addr);
+    if (addr < reinterpret_cast<uintptr_t>(low) || addr >= reinterpret_cast<uintptr_t>(guardEnd)) {
+        __gsharp_forward_sigsegv(sig, info, uctx);
+        return;
+    }
+    self->overflowed = true;
+    self->__gsharp_state = -1;
+    self->__gsharp_yielded_for_block_barrier = false;
+    self->__gsharp_yielded_for_grid_sync = false;
+    if (uctx != nullptr) {
+        const auto* uc = static_cast<const ucontext_t*>(uctx);
+        sigset_t restoreMask = uc->uc_sigmask;
+        ::sigdelset(&restoreMask, SIGSEGV);
+        ::pthread_sigmask(SIG_SETMASK, &restoreMask, nullptr);
+    } else {
+        sigset_t unblock{};
+        ::sigemptyset(&unblock);
+        ::sigaddset(&unblock, SIGSEGV);
+        ::pthread_sigmask(SIG_UNBLOCK, &unblock, nullptr);
+    }
+    void* dummy = nullptr;
+    __gsharp_stack_switch(&dummy, self->block->pool.scheduler);
+    std::abort();
+}
+
+inline void __gsharp_forward_sigsegv(int sig, siginfo_t* info, void* uctx) noexcept {
+    const struct sigaction prev = __gsharp_prev_sigsegv;
+    if ((prev.sa_flags & SA_SIGINFO) != 0 &&
+        prev.sa_sigaction != nullptr &&
+        prev.sa_sigaction != &__gsharp_segv_handler) {
+        prev.sa_sigaction(sig, info, uctx);
+        return;
+    }
+    if ((prev.sa_flags & SA_SIGINFO) == 0 &&
+        prev.sa_handler != nullptr &&
+        prev.sa_handler != SIG_DFL &&
+        prev.sa_handler != SIG_IGN) {
+        prev.sa_handler(sig);
+        return;
+    }
+    if ((prev.sa_flags & SA_SIGINFO) == 0 && prev.sa_handler == SIG_IGN) {
+        return;
+    }
+    struct sigaction dfl{};
+    dfl.sa_handler = SIG_DFL;
+    sigemptyset(&dfl.sa_mask);
+    ::sigaction(sig, &dfl, nullptr);
+}
+#endif
+
 extern "C" inline void __gsharp_stack_entry(void*) {
     __gsharp_stack_run_current();
     __gsharp_stack_thread* self = __gsharp_stack_current;
@@ -200,29 +404,30 @@ extern "C" inline void __gsharp_stack_entry(void*) {
 }
 #endif
 
-inline void __gsharp_stack_pool::destroy(void* stack) noexcept {
+inline void __gsharp_stack_pool::destroy(void* stack, size_t reserveBytes) noexcept {
     if (stack == nullptr) {
         return;
     }
 #if defined(_WIN32)
+    (void)reserveBytes;
     DeleteFiber(stack);
 #elif defined(__linux__) && defined(__x86_64__)
-    ::munmap(stack, __GSHARP_STACK_RESERVE_BYTES);
+    ::munmap(stack, reserveBytes);
 #endif
 }
 
-inline void __gsharp_stack_pool::release(void* stack) noexcept {
+inline void __gsharp_stack_pool::release(void* stack, size_t reserveBytes) noexcept {
     if (stack == nullptr) {
         return;
     }
     try {
-        free.push_back(stack);
+        free.push_back({stack, reserveBytes});
     } catch (...) {
-        destroy(stack);
+        destroy(stack, reserveBytes);
     }
 }
 
-inline void* __gsharp_stack_pool::acquire() {
+inline void* __gsharp_stack_pool::acquire(size_t reserveBytes) {
 #if defined(_WIN32)
     if (scheduler == nullptr) {
         if (IsThreadAFiber()) {
@@ -236,69 +441,154 @@ inline void* __gsharp_stack_pool::acquire() {
         }
         converted = true;
     }
-    if (!free.empty()) {
-        void* stack = free.back();
-        free.pop_back();
-        return stack;
+    for (size_t i = free.size(); i > 0; --i) {
+        if (free[i - 1].reserve == reserveBytes) {
+            void* stack = free[i - 1].stack;
+            free[i - 1] = free.back();
+            free.pop_back();
+            return stack;
+        }
     }
-    void* stack = CreateFiberEx(4096, __GSHARP_STACK_RESERVE_BYTES, 1, __gsharp_stack_fiber_main, nullptr);
+    void* stack = CreateFiberEx(4096, reserveBytes, 1, __gsharp_stack_fiber_main, nullptr);
     if (stack == nullptr) {
         throw std::bad_alloc();
     }
+    ++__gsharp_stack_created_count;
     return stack;
 #elif defined(__linux__) && defined(__x86_64__)
-    if (!free.empty()) {
-        void* stack = free.back();
-        free.pop_back();
-        return stack;
+#if !defined(__GSHARP_STACK_ASAN)
+    std::call_once(__gsharp_segv_once, []() {
+        struct sigaction curAction{};
+        if (::sigaction(SIGSEGV, nullptr, &curAction) != 0) {
+            throw std::bad_alloc();
+        }
+        struct sigaction sa{};
+        sa.sa_sigaction = &__gsharp_segv_handler;
+        sa.sa_mask = curAction.sa_mask;
+        sigdelset(&sa.sa_mask, SIGSEGV);
+        sa.sa_flags = SA_SIGINFO | SA_ONSTACK | (curAction.sa_flags & SA_RESTART);
+        if (::sigaction(SIGSEGV, &sa, &__gsharp_prev_sigsegv) != 0) {
+            throw std::bad_alloc();
+        }
+    });
+    // [WHY] A launch from a thread_local destructor that runs after ~__gsharp_altstack_release() installs again; that
+    // signal stack stays mapped, as the destructor does not run a second time
+    if (!__gsharp_tls_state.installed && __gsharp_tls_state.node == nullptr) {
+        const long tid = __gsharp_current_tid();
+        // An entry that an ended thread freed, else a new one. Entries are never freed, as the handler of another
+        // thread may be reading them: the list is as long as the most OS threads that ran stacks at once
+        __gsharp_altstack_node* node = nullptr;
+        for (__gsharp_altstack_node* n = __gsharp_altstack_head.load(std::memory_order_acquire); n != nullptr;
+             n = n->next) {
+            long expected = 0;
+            if (n->tid.compare_exchange_strong(expected, tid, std::memory_order_acq_rel)) {
+                node = n;
+                break;
+            }
+        }
+        if (node == nullptr) {
+            node = new __gsharp_altstack_node{};
+            node->tid.store(tid, std::memory_order_relaxed);
+            node->next = __gsharp_altstack_head.load(std::memory_order_relaxed);
+            while (!__gsharp_altstack_head.compare_exchange_weak(
+                node->next,
+                node,
+                std::memory_order_release,
+                std::memory_order_relaxed)) {
+            }
+        }
+        __gsharp_tls_state.node = node;
+    }
+    if (!__gsharp_tls_state.installed) {
+        // [WHY] A thread that has a signal stack (CoreCLR gives one to each thread it runs) keeps it: the handler
+        // reads nothing on it. Only a thread without one (an OpenMP worker) gets ours
+        if (::sigaltstack(nullptr, &__gsharp_tls_state.previous) != 0) {
+            throw std::bad_alloc();
+        }
+        if ((__gsharp_tls_state.previous.ss_flags & SS_DISABLE) != 0) {
+            void* altBase = ::mmap(nullptr, __gsharp_altstack_bytes, PROT_READ | PROT_WRITE,
+                                   MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+            if (altBase == MAP_FAILED) {
+                throw std::bad_alloc();
+            }
+            stack_t ss{};
+            ss.ss_sp = altBase;
+            ss.ss_size = __gsharp_altstack_bytes;
+            ss.ss_flags = 0;
+            if (::sigaltstack(&ss, nullptr) != 0) {
+                ::munmap(altBase, __gsharp_altstack_bytes);
+                throw std::bad_alloc();
+            }
+            __gsharp_tls_state.alt = altBase;
+        }
+        __gsharp_tls_state.installed = true;
+        // Registers the release at the end of the thread, once: a launch after the release touches it no more
+        if (!__gsharp_tls_state.release_registered) {
+            __gsharp_tls_state.release_registered = true;
+            __gsharp_tls_release.armed = true;
+        }
+    }
+#endif
+    for (size_t i = free.size(); i > 0; --i) {
+        if (free[i - 1].reserve == reserveBytes) {
+            void* stack = free[i - 1].stack;
+            free[i - 1] = free.back();
+            free.pop_back();
+            return stack;
+        }
+    }
+    long page = ::sysconf(_SC_PAGESIZE);
+    if (page <= 0 || __gsharp_stack_guard_bytes >= reserveBytes) {
+        throw std::bad_alloc();
     }
     void* base = ::mmap(
         nullptr,
-        __GSHARP_STACK_RESERVE_BYTES,
+        reserveBytes,
         PROT_READ | PROT_WRITE,
-        MAP_PRIVATE | MAP_ANONYMOUS,
+        MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE,
         -1,
         0);
     if (base == MAP_FAILED) {
         throw std::bad_alloc();
     }
-    long page = ::sysconf(_SC_PAGESIZE);
-    if (page <= 0 ||
-        static_cast<size_t>(page) >= __GSHARP_STACK_RESERVE_BYTES ||
-        ::mprotect(base, static_cast<size_t>(page), PROT_NONE) != 0) {
-        ::munmap(base, __GSHARP_STACK_RESERVE_BYTES);
+    if (::mprotect(base, __gsharp_stack_guard_bytes, PROT_NONE) != 0) {
+        ::munmap(base, reserveBytes);
         throw std::bad_alloc();
     }
+    ++__gsharp_stack_created_count;
     return base;
 #endif
 }
 
 inline __gsharp_stack_pool::~__gsharp_stack_pool() noexcept {
-    for (void* stack : free) {
-        destroy(stack);
+    for (const __gsharp_stack_free_entry& entry : free) {
+        destroy(entry.stack, entry.reserve);
     }
 #if defined(_WIN32)
     if (converted) {
         ConvertFiberToThread();
     }
 #endif
+    __gsharp_stack_owner = previous_owner;
 }
 
 template <typename TThread>
 template <typename TBody>
 inline __gsharp_stack_block_of<TThread>::__gsharp_stack_block_of(__gsharp_stack_pool& stacks, uint32_t threadCount,
-                                                                 TBody& body)
-    : __gsharp_stack_block_base(stacks, [](void* p) { (*static_cast<TBody*>(p))(); }, &body) {
+                                                                 TBody& body, const char* kernelName)
+    : __gsharp_stack_block_base(stacks, [](void* p) { (*static_cast<TBody*>(p))(); }, &body, kernelName) {
     threads.resize(threadCount);
     __gsharp_stack_bind_threads(threads);
     try {
         for (uint32_t i = 0; i < threadCount; i++) {
             TThread& thread = threads[i];
             thread.block = this;
-            thread.stack = pool.acquire();
+            thread.reserve = __GSHARP_STACK_RESERVE_BYTES;
+            thread.stack = pool.acquire(thread.reserve);
 #if defined(__linux__) && defined(__x86_64__)
-            uintptr_t top = (reinterpret_cast<uintptr_t>(thread.stack) + __GSHARP_STACK_RESERVE_BYTES) &
-                ~static_cast<uintptr_t>(15);
+            char* topPtr = nullptr;
+            __gsharp_stack_range_of(&thread, nullptr, nullptr, &topPtr);
+            uintptr_t top = reinterpret_cast<uintptr_t>(topPtr);
             uint64_t* sp = reinterpret_cast<uint64_t*>(top - 64);
             sp[0] = 0;
             std::memcpy(sp, &pool.fp.mxcsr, 4);
@@ -316,7 +606,7 @@ inline __gsharp_stack_block_of<TThread>::__gsharp_stack_block_of(__gsharp_stack_
     } catch (...) {
         for (TThread& thread : threads) {
             if (thread.stack != nullptr) {
-                pool.release(thread.stack);
+                pool.release(thread.stack, thread.reserve);
                 thread.stack = nullptr;
             }
         }
@@ -331,13 +621,15 @@ inline __gsharp_stack_block_of<TThread>::~__gsharp_stack_block_of() noexcept {
             continue;
         }
 #if defined(_WIN32)
-        if (!thread.started || thread.__gsharp_state == -1) {
-            pool.release(thread.stack);
+        if (!thread.overflowed && (!thread.started || thread.__gsharp_state == -1)) {
+            pool.release(thread.stack, thread.reserve);
         } else {
-            pool.destroy(thread.stack);
+            pool.destroy(thread.stack, thread.reserve);
         }
 #else
-        pool.release(thread.stack);
+        char* low = nullptr;
+        __gsharp_stack_range_of(&thread, &low, nullptr, nullptr);
+        pool.release(low, thread.reserve);
 #endif
         thread.stack = nullptr;
     }
@@ -346,14 +638,49 @@ inline __gsharp_stack_block_of<TThread>::~__gsharp_stack_block_of() noexcept {
 // The launcher's step: runs the thread until it reaches Gpu.SyncThreads() or a warp collective, or ends
 inline void __gsharp_stack_resume(__gsharp_stack_thread& thread) {
     __gsharp_stack_block_base* block = thread.block;
+    if (&block->pool != __gsharp_stack_owner) {
+        __gsharp_trap(
+            GSharpErrorCode::InvalidOperation,
+            "G#: internal error: a GPU thread of the stack model was resumed on another OS thread than the one "
+            "that created its stack (please report this G# bug)");
+    }
     thread.started = true;
     __gsharp_stack_current = &thread;
+#if defined(__linux__) && defined(__x86_64__) && !defined(__GSHARP_STACK_ASAN)
+    if (__gsharp_tls_state.node != nullptr) {
+        __gsharp_tls_state.node->current.store(&thread, std::memory_order_release);
+    }
+    std::atomic_signal_fence(std::memory_order_acq_rel);
+#endif
 #if defined(_WIN32)
     SwitchToFiber(thread.stack);
 #elif defined(__linux__) && defined(__x86_64__)
     __gsharp_stack_switch(&block->pool.scheduler, thread.sp);
 #endif
+#if defined(__linux__) && defined(__x86_64__) && !defined(__GSHARP_STACK_ASAN)
+    std::atomic_signal_fence(std::memory_order_acq_rel);
+    if (__gsharp_tls_state.node != nullptr) {
+        __gsharp_tls_state.node->current.store(nullptr, std::memory_order_release);
+    }
+#endif
     __gsharp_stack_current = nullptr;
+    if (thread.overflowed && !thread.overflow_reported) {
+        thread.overflow_reported = true;
+        char text[512];
+        const char* kernelName = (block->kernel != nullptr && block->kernel[0] != '\0')
+            ? block->kernel
+            : "<unknown>";
+        std::snprintf(
+            text,
+            sizeof(text),
+            "G#: thread (%u,%u,%u) of block (%u,%u,%u) of %s overflowed its stack of %llu KiB on the native CPU "
+            "path; raise GSharpNativeStackBytes (the GPU allows 512 KiB of local memory per thread)",
+            threadIdx.x, threadIdx.y, threadIdx.z,
+            blockIdx.x, blockIdx.y, blockIdx.z,
+            kernelName,
+            static_cast<unsigned long long>(thread.reserve / 1024u));
+        __gsharp_record_failure(GSharpErrorCode::InsufficientExecutionStack, text, 0u);
+    }
     if (block->pending) {
         std::exception_ptr ex = std::move(block->pending);
         block->pending = nullptr;

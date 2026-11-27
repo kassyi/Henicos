@@ -14,7 +14,8 @@ internal static class NativeToolchainHelper
         string architecture,
         TaskLoggingHelper log,
         CancellationToken cancellationToken,
-        NativeSanitizers sanitizers)
+        NativeSanitizers sanitizers,
+        bool runsOnNativeStacks = false)
     {
         var baseDir = Path.GetDirectoryName(outputPath) ?? string.Empty;
         var baseName = Path.GetFileNameWithoutExtension(outputPath);
@@ -25,13 +26,14 @@ internal static class NativeToolchainHelper
         try
         {
             if (!toolchain.TryCompileToObject(
-                    sourcePath, objPath, architecture, log, cancellationToken, sanitizers, vcPdbPath))
+                    sourcePath, objPath, architecture, log, cancellationToken, sanitizers, vcPdbPath,
+                    runsOnNativeStacks))
             {
                 return false;
             }
 
             return toolchain.TryLinkSharedLibrary(
-                [objPath], outputPath, architecture, log, cancellationToken, sanitizers);
+                [objPath], outputPath, architecture, log, cancellationToken, sanitizers, runsOnNativeStacks);
         }
         finally
         {
