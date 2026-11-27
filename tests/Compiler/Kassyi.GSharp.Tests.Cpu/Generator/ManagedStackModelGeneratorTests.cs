@@ -704,6 +704,38 @@ public class ManagedStackModelGeneratorTests
             StringComparison.Ordinal);
     }
 
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void ImportedSuspendingWithoutManagedStackForm_StackModel_KeepsCallerOnStateMachineWithFailureLine()
+    {
+        var library = DeviceLibraryBuilder.Build(
+            "XasmLib",
+            new Dictionary<string, string> { ["build_property.GSharpExportDeviceCode"] = "false" },
+            RoslynTestUtility.ReadTestCase("Diagnostics/CrossAssembly/Library.cs"),
+            HandWrittenExportRecords.Read("Diagnostics/CrossAssembly/HandWrittenSuspendingRecord.cs"));
+        var consumer = DeviceLibraryBuilder.CreateConsumer(
+            RoslynTestUtility.ReadTestCase("Diagnostics/CrossAssembly/Consumer.cs"),
+            library);
+
+        var driver = CSharpGeneratorDriver.Create(
+                generators: [new GpuKernelGenerator().AsSourceGenerator()],
+                additionalTexts: null,
+                parseOptions: s_parseOptions,
+                optionsProvider: new TestAnalyzerConfigOptionsProvider("Cpu",
+                    new Dictionary<string, string> { ["build_property.GSharpManagedBarrierModel"] = "Stack" }))
+            .RunGenerators(consumer);
+
+        var result = driver.GetRunResult().Results.Single();
+        Assert.Null(result.Exception);
+        var failures = Assert.Single(result.GeneratedSources,
+            static s => s.HintName == StateMachineFallbackPipeline.HintName).SourceText.ToString();
+        Assert.Contains(
+            "// managed\tConsumerKernels.CallKernel\tImportedSuspendingCall: calls LibMath.Twice of XasmLib, which has no stack form",
+            failures, StringComparison.Ordinal);
+        Assert.DoesNotContain(result.GeneratedSources,
+            static s => s.SourceText.ToString().Contains("ManagedStackRunner.Run(", StringComparison.Ordinal));
+    }
+
     private static readonly SyntaxTree s_macroTree =
         RoslynTestUtility.GetTestCaseContext("Generators/ManagedStackOperatorMacroCases.cs").Tree;
 

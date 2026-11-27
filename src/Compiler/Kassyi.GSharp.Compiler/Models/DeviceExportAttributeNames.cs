@@ -65,6 +65,11 @@ internal static class DeviceExportAttributeNames
         public const string ReachesArrivalBarrier = "ReachesArrivalBarrier";
         public const string ReachesSharedMemory = "ReachesSharedMemory";
         public const string ReachesGeneratedMeaning = "ReachesGeneratedMeaning";
+        public const string ReachesWarpShuffle = "ReachesWarpShuffle";
+        public const string ReachesActiveMask = "ReachesActiveMask";
+        public const string ReachesGridBarrier = "ReachesGridBarrier";
+        public const string ManagedStackForm = "ManagedStackForm";
+        public const string StackOnly = "StackOnly";
     }
 
     /// <summary>The names of one dialect's <see cref="DeviceExportRecord.DialectText"/>.</summary>

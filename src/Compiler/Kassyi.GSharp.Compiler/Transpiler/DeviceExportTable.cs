@@ -314,7 +314,12 @@ internal sealed class DeviceExportTable
             ReachesGeneratedMeaning: named.ContainsKey(AttributeNames.Traits.ReachesGeneratedMeaning)
                 ? GetBool(named, AttributeNames.Traits.ReachesGeneratedMeaning)
                 : GetBool(named, AttributeNames.Traits.ManagedVersion),
-            PrivateManagedFrame: GetBool(named, AttributeNames.Traits.PrivateManagedFrame));
+            PrivateManagedFrame: GetBool(named, AttributeNames.Traits.PrivateManagedFrame),
+            ReachesWarpShuffle: GetBool(named, AttributeNames.Traits.ReachesWarpShuffle),
+            ReachesActiveMask: GetBool(named, AttributeNames.Traits.ReachesActiveMask),
+            ReachesGridBarrier: GetBool(named, AttributeNames.Traits.ReachesGridBarrier),
+            ManagedStackForm: GetBool(named, AttributeNames.Traits.ManagedStackForm),
+            StackOnly: GetBool(named, AttributeNames.Traits.StackOnly));
 
         var record = new DeviceExportRecord(
             kind,

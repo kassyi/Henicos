@@ -208,6 +208,30 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__SameNameHoistedLocalKernels__WarpPrefixAndTotal(int __gsharp_warp_frame, int value)
+{
+int lane = global::Kassyi.GSharp.Core.ThreadIndex.X & 31;
+int original = value;
+for (int d = 1; d < 32; d <<= 1)
+{
+int neighbor = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_shuffle_up_sync<int>(__gsharp_warp_frame, 0, "SameNameHoistedLocalKernels.cs(78,28)", global::Kassyi.GSharp.Tests.Shared.Syntax.SameNameHoistedLocalKernels.FullMask, value, (uint)d);
+if (lane >= d)
+{
+value += neighbor;
+}
+}
+
+int total = original;
+for (uint d = 16u; d >= 1u; d >>= 1)
+{
+int neighbor = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_shuffle_xor_sync<int>(__gsharp_warp_frame, 1, "SameNameHoistedLocalKernels.cs(88,28)", global::Kassyi.GSharp.Tests.Shared.Syntax.SameNameHoistedLocalKernels.FullMask, total, (int)d);
+total += neighbor;
+}
+
+return value * 1000 + total;
+}
+
 }
 }
 

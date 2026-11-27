@@ -1034,6 +1034,203 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static uint __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__MaskOf(int __gsharp_warp_frame)
+{
+uint __gsharp_warp_temp_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_active_mask(__gsharp_warp_frame, 0, "WarpActiveMaskDifferentialKernels.cs(15,36)");
+return __gsharp_warp_temp_0;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__PairWithinMask(int __gsharp_warp_frame, int v, uint[] masks, int t)
+{
+uint __gsharp_warp_temp_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_active_mask(__gsharp_warp_frame, 0, "WarpActiveMaskDifferentialKernels.cs(21,21)");
+uint mask = __gsharp_warp_temp_0;
+masks[t] = mask;
+int __gsharp_warp_temp_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_shuffle_xor_sync<int>(__gsharp_warp_frame, 1, "WarpActiveMaskDifferentialKernels.cs(23,20)", mask, v, 1);
+return v + __gsharp_warp_temp_1;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static uint __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__MaskOrReturn(int __gsharp_warp_frame, int t, uint[] early)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_enter(__gsharp_warp_frame, 0);
+if (t < 4)
+{
+uint __gsharp_warp_temp_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_active_mask(__gsharp_warp_frame, 0, "WarpActiveMaskDifferentialKernels.cs(32,24)");
+early[t] = __gsharp_warp_temp_0;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_leave(__gsharp_warp_frame, 0);
+return 1u;
+}
+
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_reconverge(__gsharp_warp_frame, 0, "WarpActiveMaskDifferentialKernels.cs(30,9)");
+uint __gsharp_warp_temp_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_active_mask(__gsharp_warp_frame, 1, "WarpActiveMaskDifferentialKernels.cs(36,16)");
+return __gsharp_warp_temp_1;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static uint __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__InnerMaskInBranch(int __gsharp_warp_frame, int t, uint[] result)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_enter(__gsharp_warp_frame, 0);
+if (t == 2)
+{
+uint __gsharp_warp_temp_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_active_mask(__gsharp_warp_frame, 0, "WarpActiveMaskDifferentialKernels.cs(1038,29)");
+result[t * 2] = __gsharp_warp_temp_0;
+}
+
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_reconverge(__gsharp_warp_frame, 0, "WarpActiveMaskDifferentialKernels.cs(1036,9)");
+uint __gsharp_warp_temp_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_active_mask(__gsharp_warp_frame, 1, "WarpActiveMaskDifferentialKernels.cs(1041,16)");
+return __gsharp_warp_temp_1;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__SwitchJoinAtForwardGotoLabel(int __gsharp_warp_frame, uint[] result, int t, int u)
+{
+uint m0 = 0u;
+uint m1 = 0u;
+uint m2 = 0u;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_enter(__gsharp_warp_frame, 0);
+switch ((t % 3) + u)
+{
+case 0:
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_enter(__gsharp_warp_frame, 1);
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_enter(__gsharp_warp_frame, 2);
+__gsharp_ReconvergeJoin_2:
+;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_reconverge(__gsharp_warp_frame, 2, "WarpActiveMaskDifferentialKernels.cs(1606,13)");
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_leave(__gsharp_warp_frame, 1);
+uint __gsharp_warp_temp_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_active_mask(__gsharp_warp_frame, 0, "WarpActiveMaskDifferentialKernels.cs(1607,22)");
+m0 = __gsharp_warp_temp_0;
+break;
+case 1:
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_enter(__gsharp_warp_frame, 1);
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_enter(__gsharp_warp_frame, 2);
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_enter(__gsharp_warp_frame, 3);
+if ((t & 4) != 0)
+{
+goto __gsharp_ReconvergeJoin_3;
+}
+
+if ((t & 8) != 0)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_leave(__gsharp_warp_frame, 3);
+goto __gsharp_ReconvergeJoin_2;
+}
+
+uint __gsharp_warp_temp_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_active_mask(__gsharp_warp_frame, 1, "WarpActiveMaskDifferentialKernels.cs(1620,22)");
+m1 = __gsharp_warp_temp_1;
+__gsharp_ReconvergeJoin_3:
+;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_reconverge(__gsharp_warp_frame, 3, "WarpActiveMaskDifferentialKernels.cs(1621,13)");
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_leave(__gsharp_warp_frame, 2);
+__gsharp_ReconvergeJoin_1:
+;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_reconverge(__gsharp_warp_frame, 1, "WarpActiveMaskDifferentialKernels.cs(1621,13)");
+shared:
+;
+uint __gsharp_warp_temp_2 = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_active_mask(__gsharp_warp_frame, 2, "WarpActiveMaskDifferentialKernels.cs(1622,22)");
+m2 = __gsharp_warp_temp_2;
+break;
+default:
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_enter(__gsharp_warp_frame, 1);
+goto __gsharp_ReconvergeJoin_1;
+}
+
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_reconverge(__gsharp_warp_frame, 0, "WarpActiveMaskDifferentialKernels.cs(1604,9)");
+result[t] = m0;
+result[t + 32] = m1;
+result[t + 64] = m2;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__GotoInIf(int __gsharp_warp_frame, uint[] result, int t)
+{
+int n = 0;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_enter(__gsharp_warp_frame, 0);
+L1:
+;
+;
+uint __gsharp_warp_temp_2 = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_active_mask(__gsharp_warp_frame, 0, "WarpActiveMaskDifferentialKernels.cs(1898,30)");
+result[t + 32 * n] = __gsharp_warp_temp_2;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_enter(__gsharp_warp_frame, 1);
+if ((t & 4) == 0)
+{
+if ((t & 3) != 0 && n++ < 2)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_leave(__gsharp_warp_frame, 1);
+goto L1;
+}
+
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_leave(__gsharp_warp_frame, 1);
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_reconverge(__gsharp_warp_frame, 0, "WarpActiveMaskDifferentialKernels.cs(1897,5)");
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_enter(__gsharp_warp_frame, 1);
+uint __gsharp_warp_temp_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_active_mask(__gsharp_warp_frame, 1, "WarpActiveMaskDifferentialKernels.cs(1906,30)");
+result[t + 96] = __gsharp_warp_temp_0;
+}
+else
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_leave(__gsharp_warp_frame, 1);
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_reconverge(__gsharp_warp_frame, 0, "WarpActiveMaskDifferentialKernels.cs(1897,5)");
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_enter(__gsharp_warp_frame, 1);
+}
+
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_reconverge(__gsharp_warp_frame, 1, "WarpActiveMaskDifferentialKernels.cs(1899,9)");
+uint __gsharp_warp_temp_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_active_mask(__gsharp_warp_frame, 2, "WarpActiveMaskDifferentialKernels.cs(1909,27)");
+result[t + 128] = __gsharp_warp_temp_1;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__GotoInForWithEarlyReturn(int __gsharp_warp_frame, uint[] result, int t, int u)
+{
+int n = 0;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_enter(__gsharp_warp_frame, 0);
+L1:
+;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_enter(__gsharp_warp_frame, 1);
+;
+uint __gsharp_warp_temp_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_active_mask(__gsharp_warp_frame, 0, "WarpActiveMaskDifferentialKernels.cs(2673,30)");
+result[t + 32 * n] = __gsharp_warp_temp_1;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_enter(__gsharp_warp_frame, 2);
+for (int j = 0; j < u + 2; j++)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_enter(__gsharp_warp_frame, 3);
+if ((t & 4) == 0)
+{
+if ((t & 3) != 0 && n++ < 2)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_leave(__gsharp_warp_frame, 3);
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_leave(__gsharp_warp_frame, 2);
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_reconverge(__gsharp_warp_frame, 1, "WarpActiveMaskDifferentialKernels.cs(2672,5)");
+goto L1;
+}
+
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_leave(__gsharp_warp_frame, 3);
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_leave(__gsharp_warp_frame, 2);
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_leave(__gsharp_warp_frame, 1);
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_reconverge(__gsharp_warp_frame, 0, "WarpActiveMaskDifferentialKernels.cs(2672,5)");
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_enter(__gsharp_warp_frame, 2);
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_enter(__gsharp_warp_frame, 3);
+uint __gsharp_warp_temp_2 = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_active_mask(__gsharp_warp_frame, 1, "WarpActiveMaskDifferentialKernels.cs(2683,34)");
+result[t + 96] = __gsharp_warp_temp_2;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_leave(__gsharp_warp_frame, 3);
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_leave(__gsharp_warp_frame, 2);
+return;
+}
+
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_reconverge(__gsharp_warp_frame, 3, "WarpActiveMaskDifferentialKernels.cs(2676,13)");
+}
+
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_leave(__gsharp_warp_frame, 2);
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_leave(__gsharp_warp_frame, 1);
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_reconverge(__gsharp_warp_frame, 0, "WarpActiveMaskDifferentialKernels.cs(2672,5)");
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_region_enter(__gsharp_warp_frame, 2);
+__gsharp_ReconvergeJoin_2:
+;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_reconverge(__gsharp_warp_frame, 2, "WarpActiveMaskDifferentialKernels.cs(2674,9)");
+uint __gsharp_warp_temp_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_active_mask(__gsharp_warp_frame, 2, "WarpActiveMaskDifferentialKernels.cs(2688,27)");
+result[t + 128] = __gsharp_warp_temp_0;
+}
+
 }
 }
 
