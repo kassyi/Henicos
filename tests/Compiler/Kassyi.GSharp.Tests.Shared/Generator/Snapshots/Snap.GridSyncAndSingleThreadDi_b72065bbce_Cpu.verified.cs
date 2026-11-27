@@ -227,6 +227,22 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__GridSyncAndSingleThreadDifferentialKernels__InnerGridStep(int[] phaseBuf, int[] scratch, int gid, int total)
+{
+int partner = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((gid + 3), total);
+scratch[gid] = phaseBuf[gid] ^ (phaseBuf[partner] + 19);
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_grid_barrier();
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__GridSyncAndSingleThreadDifferentialKernels__OuterGridStep(int[] phaseBuf, int[] scratch, int[] output, int gid, int total)
+{
+global::Kassyi.GSharp.Tests.Shared.Differential.GridSyncAndSingleThreadDifferentialKernels.__gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__GridSyncAndSingleThreadDifferentialKernels__InnerGridStep(phaseBuf, scratch, gid, total);
+int prev = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((gid + total - 1), total);
+output[gid] = scratch[gid] + scratch[prev];
+}
+
 }
 }
 

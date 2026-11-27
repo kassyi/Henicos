@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Instantiation;
 using Kassyi.GSharp.Compiler.Marshaling;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
@@ -129,7 +130,7 @@ internal static class ManagedStackEligibility
     private static StateMachineReason? FindCalleeReason(SyntaxNode body, Compilation compilation,
         SemanticModel semanticModel, HashSet<IMethodSymbol>? visiting)
     {
-        foreach (var (callee, _) in
+        foreach (var (callee, isMethodGroup) in
                  SuspensionAnalysis.GetReferencedSuspendingFunctions(body, compilation, semanticModel))
         {
             var reason = visiting is null
@@ -137,7 +138,10 @@ internal static class ManagedStackEligibility
                 : FindFunctionReason(callee, compilation, visiting);
             if (reason is not null)
             {
-                return reason;
+                return !SuspensionAnalysis.TryGetDeviceFunctionBody(callee, compilation, out _) &&
+                       reason.Value.Name == nameof(NativeStackObstacle.ImportedSuspendingCall)
+                    ? CreateImportedMissingFormReason(callee, compilation, isMethodGroup)
+                    : reason;
             }
         }
 
@@ -153,7 +157,7 @@ internal static class ManagedStackEligibility
 
     private static StateMachineReason? FindWarpReason(IMethodSymbol kernel, Compilation compilation)
     {
-        if (!SuspensionAnalysis.ReachesWarpShuffle(kernel, compilation))
+        if (!SuspensionAnalysis.ReachesWarpShuffleOnStack(kernel, compilation))
         {
             return null;
         }
@@ -177,13 +181,28 @@ internal static class ManagedStackEligibility
         HashSet<IMethodSymbol> visiting)
     {
         var suspends = SuspensionAnalysis.IsSuspendingFunction(function, compilation);
-        if (!SuspensionAnalysis.TryGetDeviceFunctionBody(function, compilation, out var declaration) ||
-            declaration.GetBodyNode() is not { } body)
+        if (!SuspensionAnalysis.TryGetDeviceFunctionBody(function, compilation, out var declaration))
+        {
+            if (!suspends)
+            {
+                return Managed(nameof(NativeStackObstacle.NoBlockBarrier), NoBarrierSentence);
+            }
+
+            return ImportedStackForms.HasManagedForm(function, compilation)
+                ? null
+                : CreateImportedMissingFormReason(function, compilation, isMethodGroup: false);
+        }
+
+        if (declaration.GetBodyNode() is not { } body)
         {
             return suspends
-                ? Managed(nameof(NativeStackObstacle.ImportedSuspendingCall),
-                    "it calls a suspending device function from another assembly")
+                ? Managed("NoMethodBody", "its body is not in this compilation")
                 : Managed(nameof(NativeStackObstacle.NoBlockBarrier), NoBarrierSentence);
+        }
+
+        if (GenericDefinitions.IsLeftOut(function, compilation))
+        {
+            return Managed("GenericDeviceFunction", "it is a generic device function");
         }
 
         if (!SuspensionAnalysis.RequiresStateMachine(function, compilation))
@@ -222,13 +241,36 @@ internal static class ManagedStackEligibility
             return Managed("FileLocalType", "a suspending device function's copy names a file-local type");
         }
 
-        if (SuspensionAnalysis.ReachesWarpShuffle(function, compilation) &&
+        if (SuspensionAnalysis.ReachesWarpShuffleOnStack(function, compilation) &&
             !WarpFrameLayout.TryGet(function, compilation, out _))
         {
             return Managed(nameof(NativeStackObstacle.WarpLayout), WarpLayoutSentence);
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Builds the fallback reason for an imported suspending device function without a managed stack form.
+    /// </summary>
+    internal static StateMachineReason CreateImportedMissingFormReason(IMethodSymbol callee, Compilation compilation,
+        bool isMethodGroup)
+    {
+        var assemblyName = DeviceExportTable.TryFindFunction(callee, compilation, out var imported)
+            ? imported.AssemblyName
+            : callee.ContainingAssembly?.Name ?? "";
+        var displayName = KernelHostNames.GetMessageName(callee);
+        var detail = isMethodGroup
+            ? $"passes {displayName} of {assemblyName}, which has no stack form, as a method group"
+            : $"calls {displayName} of {assemblyName}, which has no stack form";
+        var sentence = isMethodGroup
+            ? "it passes a suspending device function from another assembly as a method group"
+            : "it calls a suspending device function from another assembly";
+        return new StateMachineReason(
+            CpuPath.Managed,
+            nameof(NativeStackObstacle.ImportedSuspendingCall),
+            sentence,
+            detail);
     }
 
     private static StateMachineReason Managed(string name, string sentence) => new(CpuPath.Managed, name, sentence);

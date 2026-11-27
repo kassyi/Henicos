@@ -205,7 +205,7 @@ export async function checkRepoBaselineConfig(assert: AssertModule): Promise<voi
         options: {
           exclusiveCategories: ["Stress", "Benchmark", "GpuTrap"],
           exclusiveEnv: ["GSHARP_CUDA_TRAP_TESTS"],
-          sharedRecipes: ["test", "test-coverage", "test-differential-cuda"],
+          sharedRecipes: ["test", "test-differential-cuda"],
         },
       },
       { name: "dotnet" },
@@ -473,12 +473,12 @@ export function checkOffloadClassification(assert: AssertModule, host: PluginHos
     "build step before implicit single-project test must not fall back to whole-solution sum",
   );
 
-  // Regression: implicit CPU-only recipes emit --gpu hint symmetrically with explicit Tests.Cpu runs.
-  const gpu = { name: "gpu", forcedExclusive: false };
+  // Regression: implicit CPU-only recipes emit --gpu-exclusive hint symmetrically with explicit Tests.Cpu runs.
+  const gpu = { name: "gpu", forcedExclusive: true };
   for (const cpuRecipe of ["just test-sanitized", "just mutate compiler", "node scripts/human/test-sanitized.js"]) {
     const res = host.check(cpuRecipe, gpu, ctx);
-    assert.strictEqual(res.refuse, undefined, `${cpuRecipe} under --gpu must hint, not refuse`);
-    assert.strictEqual(res.hints?.length, 1, `${cpuRecipe} under --gpu must emit CPU-only hint`);
+    assert.strictEqual(res.refuse, undefined, `${cpuRecipe} under --gpu-exclusive must hint, not refuse`);
+    assert.strictEqual(res.hints?.length, 1, `${cpuRecipe} under --gpu-exclusive must emit CPU-only hint`);
   }
 
   // Regression: Data-vs-Command — paths, filters, and redirections naming `long-checks` must never be refused.

@@ -173,6 +173,17 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__IncrementAcrossBarrier(ref int value, out int previous)
+{
+previous = value;
+value += 1;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__Broadcast(int __gsharp_warp_frame, int value) => global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_shuffle_sync<int>(__gsharp_warp_frame, 0, "DeviceFunctionRefParameterBarrierKernels.cs(18,47)", 0xFFFFFFFFu, value, 0);
+
 }
 }
 

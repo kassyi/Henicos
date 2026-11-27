@@ -242,7 +242,7 @@ internal static class ManagedCSharpTranspiler
             : null;
         var rewriter = new ManagedExecutionRewriter(semanticModel, bodyKind, accessors) { WarpLayout = warpLayout };
         var stackBody = bodyKind == ManagedBodyKind.StackBody &&
-                        SuspensionAnalysis.ReachesActiveMask(methodSymbol, semanticModel.Compilation)
+                        SuspensionAnalysis.ReachesActiveMaskOnStack(methodSymbol, semanticModel.Compilation)
             ? GetStackBody(in plan, methodSymbol)
             : null;
 
@@ -469,7 +469,7 @@ internal static class ManagedCSharpTranspiler
         Dictionary<DeclarationKey, string> renamedLocals,
         SemanticModel semanticModel, string methodName, bool zeroFill, ManagedExecutionRewriter rewriter)
     {
-        // [WHY] Such a goto would stay a C# goto into another case block (CS0159). The analyzer and the generator report
+        // [WHY] Such a goto would stay a C# goto into another case block (CS0159). The generator reports
         // it as an error (GSH0121, or GSH0040 across a barrier; ChainedLabelJumpChecks.FindReported), so the build
         // never runs this method: the declarations stay for the launcher and the callers, and the
         // body that the managed path cannot express is left out (no throw in place of the jump)

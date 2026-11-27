@@ -16,7 +16,7 @@ internal sealed partial class ManagedExecutionRewriter
         // macro replaces. The form of the caller cannot be made; the collector states why and the caller keeps its
         // state machine
         if (bodyKind == ManagedBodyKind.StackBody &&
-            SuspensionAnalysis.ReachesWarpShuffle(callee, semanticModel.Compilation))
+            SuspensionAnalysis.ReachesWarpShuffleOnStack(callee, semanticModel.Compilation))
         {
             throw new InvalidOperationException(
                 $"A stack form cannot call '{callee.Name}', which reaches a warp collective, " +
@@ -172,7 +172,7 @@ internal sealed partial class ManagedExecutionRewriter
     {
         if (bodyKind == ManagedBodyKind.StackBody &&
             MethodGroupReference.Is(node, semanticModel) &&
-            SuspensionAnalysis.ReachesWarpShuffle(method.ReducedFrom ?? method, semanticModel.Compilation))
+            SuspensionAnalysis.ReachesWarpShuffleOnStack(method.ReducedFrom ?? method, semanticModel.Compilation))
         {
             throw new InvalidOperationException(
                 $"A stack form cannot pass '{method.Name}', which reaches a warp collective, as a method group.");

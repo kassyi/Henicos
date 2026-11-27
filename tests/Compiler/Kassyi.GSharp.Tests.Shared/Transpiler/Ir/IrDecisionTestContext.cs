@@ -13,10 +13,10 @@ internal static class IrDecisionTestContext
 {
     /// <summary>Creates a context for deciding the pre-split body <paramref name="method"/>.</summary>
     public static IrDecisionContext Create(Compilation compilation, IrMethod method,
-        ITranspilerDialect? nativeDialect = null) =>
+        ITranspilerDialect? dialect = null) =>
         new(
             compilation,
             IrTemporaryInitializers.Create(method.Body),
-            nativeDialect ?? HostDialects.Cpu,
+            dialect ?? HostDialects.Cpu,
             method);
 }

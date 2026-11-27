@@ -4,11 +4,15 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using GSharpCompiler::Kassyi.GSharp.Compiler;
+using GSharpCompiler::Kassyi.GSharp.Compiler.Backends.Cpp;
 using GSharpCompiler::Kassyi.GSharp.Compiler.Diagnostics.Kernel;
+using GSharpCompiler::Kassyi.GSharp.Compiler.Dialects;
+using GSharpCompiler::Kassyi.GSharp.Compiler.Ir.Bodies;
 using GSharpCompiler::Kassyi.GSharp.Compiler.Ir.Building;
 using GSharpCompiler::Kassyi.GSharp.Compiler.Ir.Classifying;
 using GSharpCompiler::Kassyi.GSharp.Compiler.Lowering;
 using GSharpCompiler::Kassyi.GSharp.Compiler.Marshaling;
+using GSharpCompiler::Kassyi.GSharp.Compiler.Transpiler;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -80,7 +84,8 @@ public class GeneratorBenchmark
         VerifyGeneratorRun(compilation, cuda, "Cuda");
         VerifyGeneratorRun(compilation, cpu, "Cpu");
 
-        _prepared = new Prepared(compilation, cuda, cpu, analyzerOptions, FindGpuMethods(compilation));
+        _prepared = new Prepared(compilation, cuda, cpu, analyzerOptions, FindGpuMethods(compilation),
+            FindPlainDeviceFunctions(compilation));
         WarmUp();
     }
 
@@ -153,6 +158,7 @@ public class GeneratorBenchmark
             _ = RunGenerator_Cpu();
             _ = RunAnalyzers();
             _ = BuildIr_Warm();
+            _ = IrBodyLowering_Warm();
         }
     }
 
@@ -225,6 +231,49 @@ public class GeneratorBenchmark
         return classified;
     }
 
+    /// <summary>
+    /// Lowers every plain device function of the suite through the C++ IR body pipeline (<see cref="IrBodyFronts"/>
+    /// and <see cref="IrBodyLowering"/>) for <see cref="StandardCppDialect"/> on the compilation the generator already
+    /// bound: the cost the IR route adds per device function.
+    /// </summary>
+    [Benchmark]
+    public int IrBodyLowering_Warm() => LowerDeviceFunctions();
+
+    /// <summary>
+    /// <see cref="IrBodyLowering_Warm"/> with an observer that sums the time of each stage, printed after the run.
+    /// </summary>
+    [Benchmark]
+    public int IrBodyLowering_Stages_Warm()
+    {
+        var observer = new StageTotals();
+        int eligible;
+        using (IrBodyProbe.Observe(observer))
+        {
+            eligible = LowerDeviceFunctions();
+        }
+
+        Console.WriteLine(observer.Describe());
+        return eligible;
+    }
+
+    private int LowerDeviceFunctions()
+    {
+        var compilation = State.Compilation;
+        var profile = CppBodyProfile.For(new StandardCppDialect());
+        var eligible = 0;
+        foreach (var method in State.PlainDeviceFunctions)
+        {
+            var front = IrBodyFronts.Create(method, compilation, CancellationToken.None);
+            var result = IrBodyLowering.TryLower(front, profile, CancellationToken.None);
+            if (result.Body is not null)
+            {
+                eligible++;
+            }
+        }
+
+        return eligible;
+    }
+
     private static int BuildIr(Compilation compilation, ImmutableArray<IMethodSymbol> methods)
     {
         var built = 0;
@@ -251,6 +300,31 @@ public class GeneratorBenchmark
                 if (node is MethodDeclarationSyntax method &&
                     (IsKernel(method) || HasAttribute(method, "GpuDeviceFunction")) &&
                     model.GetDeclaredSymbol(method) is { } symbol)
+                {
+                    methods.Add(symbol);
+                }
+            }
+        }
+
+        return methods.ToImmutable();
+    }
+
+    // The device functions the emission plan writes without a state machine, as the plain C++ route takes them
+    private static ImmutableArray<IMethodSymbol> FindPlainDeviceFunctions(Compilation compilation)
+    {
+        var methods = ImmutableArray.CreateBuilder<IMethodSymbol>();
+        foreach (var tree in compilation.SyntaxTrees)
+        {
+            var model = compilation.GetSemanticModel(tree);
+            foreach (var node in tree.GetRoot().DescendantNodes())
+            {
+                if (node is MethodDeclarationSyntax method && !IsKernel(method) &&
+                    HasAttribute(method, "GpuDeviceFunction") &&
+                    (method.Body is not null || method.ExpressionBody is not null) &&
+                    MethodEmissionPlan.Create(method, model, isKernel: false) is
+                    {
+                        Kind: MethodEmissionKind.DeviceFunction, IsGpuKernelEntry: false, Symbol: { } symbol
+                    })
                 {
                     methods.Add(symbol);
                 }
@@ -438,7 +512,28 @@ public class GeneratorBenchmark
         AnalyzerConfigOptionsProvider Cuda,
         AnalyzerConfigOptionsProvider Cpu,
         CompilationWithAnalyzersOptions AnalyzerOptions,
-        ImmutableArray<IMethodSymbol> GpuMethods);
+        ImmutableArray<IMethodSymbol> GpuMethods,
+        ImmutableArray<IMethodSymbol> PlainDeviceFunctions);
+
+    // The time of each stage of the IR body pipeline, summed over a run
+    private sealed class StageTotals : IrBodyObserver
+    {
+        private readonly long[] _ticks = new long[Enum.GetValues<IrBodyStage>().Length];
+
+        public override void OnStage(IrBodyStage stage, long ticks) => _ticks[(int)stage] += ticks;
+
+        public string Describe()
+        {
+            var parts = new string[_ticks.Length];
+            foreach (var stage in Enum.GetValues<IrBodyStage>())
+            {
+                var milliseconds = _ticks[(int)stage] * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+                parts[(int)stage] = $"{stage} {milliseconds:F3} ms";
+            }
+
+            return "IR route stages: " + string.Join(", ", parts);
+        }
+    }
 
     private sealed class BenchmarkAnalyzerConfigOptionsProvider(string targetDialect) : AnalyzerConfigOptionsProvider
     {

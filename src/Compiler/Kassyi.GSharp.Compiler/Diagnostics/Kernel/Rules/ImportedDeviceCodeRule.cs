@@ -230,11 +230,11 @@ internal sealed class ImportedDeviceCodeRule : ISyntaxValidationRule<InvocationE
 
         var index = s_indices.GetValue(compilation, static c => new ReferenceIndex(c));
         var problem = index.CheckRecord(imported, displayName, context.Dialect.IsCuda, others: null,
-            context.NeedsManagedStateMachines);
+            context.NeedsManagedStateMachines, context.BothOnStacks);
         if (problem.Descriptor == null)
         {
             // The records that the text reaches, each checked as the record of the use
-            foreach (var dependency in index.CheckDependencies(imported, context.Dialect.IsCuda))
+            foreach (var dependency in index.CheckDependencies(imported, context.Dialect.IsCuda, context.BothOnStacks))
             {
                 ReportProblem(dependency, location, ref context);
             }
@@ -271,7 +271,7 @@ internal sealed class ImportedDeviceCodeRule : ISyntaxValidationRule<InvocationE
     {
         private readonly Compilation _compilation;
         private readonly Dictionary<string, ImportedDeviceRecord[]> _byName;
-        private readonly ConcurrentDictionary<(string Assembly, string Id, bool IsCuda), ImmutableArray<Problem>> _dependencies = new();
+        private readonly ConcurrentDictionary<(string Assembly, string Id, bool IsCuda, bool BothOnStacks), ImmutableArray<Problem>> _dependencies = new();
 
         public ReferenceIndex(Compilation compilation)
         {
@@ -306,7 +306,7 @@ internal sealed class ImportedDeviceCodeRule : ISyntaxValidationRule<InvocationE
         /// another assembly (<paramref name="others"/>, all the records of the name) or the compilation also gives.
         /// </summary>
         public Problem CheckRecord(ImportedDeviceRecord imported, string displayName, bool isCuda,
-            ImportedDeviceRecord[]? others, bool needsManagedStateMachine = false)
+            ImportedDeviceRecord[]? others, bool needsManagedStateMachine = false, bool bothOnStacks = false)
         {
             var assemblyName = imported.AssemblyName;
             if (!imported.IsCompatible)
@@ -332,14 +332,29 @@ internal sealed class ImportedDeviceCodeRule : ISyntaxValidationRule<InvocationE
                 ]);
             }
 
+            // A stack-only function has no state machine: only a caller that would run one needs both CPU paths on the
+            // stacks (a CUDA kernel calls the CUDA text, which has no state machine either)
+            if (needsManagedStateMachine &&
+                imported.Record is { Kind: DeviceExportRecord.FunctionKind, Traits.StackOnly: true })
+            {
+                if (!bothOnStacks)
+                {
+                    return new Problem(GSharpDiagnostics.DeviceExportUnusable,
+                    [
+                        displayName, assemblyName,
+                        $"'{displayName}' of '{assemblyName}' runs only on the stack models; build the consumer with " +
+                        "GSharpNativeBarrierModel=Stack and GSharpManagedBarrierModel=Stack"
+                    ]);
+                }
+            }
             // The managed form of the caller calls the function's managed state machine in its assembly; the state
             // machines of what that one reaches come with it (its assembly emits it only with them)
-            if (needsManagedStateMachine &&
-                imported.Record is
-                {
-                    Kind: DeviceExportRecord.FunctionKind,
-                    Traits: { Suspends: true, ManagedStateMachine: false }
-                })
+            else if (needsManagedStateMachine &&
+                     imported.Record is
+                     {
+                         Kind: DeviceExportRecord.FunctionKind,
+                         Traits: { Suspends: true, ManagedStateMachine: false }
+                     })
             {
                 return new Problem(GSharpDiagnostics.DeviceExportUnusable,
                 [
@@ -358,11 +373,12 @@ internal sealed class ImportedDeviceCodeRule : ISyntaxValidationRule<InvocationE
         }
 
         /// <summary>The problems of the records that the text of <paramref name="imported"/> reaches.</summary>
-        public ImmutableArray<Problem> CheckDependencies(ImportedDeviceRecord imported, bool isCuda) =>
-            _dependencies.GetOrAdd((imported.AssemblyName, imported.Record.Id, isCuda),
-                key => Walk(imported, key.IsCuda));
+        public ImmutableArray<Problem> CheckDependencies(ImportedDeviceRecord imported, bool isCuda,
+            bool bothOnStacks) =>
+            _dependencies.GetOrAdd((imported.AssemblyName, imported.Record.Id, isCuda, bothOnStacks),
+                key => Walk(imported, key.IsCuda, key.BothOnStacks));
 
-        private ImmutableArray<Problem> Walk(ImportedDeviceRecord start, bool isCuda)
+        private ImmutableArray<Problem> Walk(ImportedDeviceRecord start, bool isCuda, bool bothOnStacks)
         {
             var problems = ImmutableArray.CreateBuilder<Problem>();
             var visited = new HashSet<(string, string)>
@@ -397,7 +413,8 @@ internal sealed class ImportedDeviceCodeRule : ISyntaxValidationRule<InvocationE
                     continue;
                 }
 
-                var problem = CheckRecord(chosen, DescribeRecord(chosen.Record), isCuda, candidates);
+                var problem = CheckRecord(chosen, DescribeRecord(chosen.Record), isCuda, candidates,
+                    bothOnStacks: bothOnStacks);
                 if (problem.Descriptor != null)
                 {
                     problems.Add(problem);

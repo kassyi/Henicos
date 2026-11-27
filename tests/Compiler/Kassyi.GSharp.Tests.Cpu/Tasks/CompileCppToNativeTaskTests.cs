@@ -73,6 +73,7 @@ public class CompileCppToNativeTaskTests
             i => i.FileName == compiler &&
                  i.Arguments.StartsWith("-c ", StringComparison.Ordinal) &&
                  i.Arguments.Contains("-O2") &&
+                 i.Arguments.Contains("-fno-strict-aliasing") &&
                  i.Arguments.Contains("-fPIC") &&
                  i.Arguments.Contains("-std=c++17") &&
                  i.Arguments.Contains("-fopenmp") &&

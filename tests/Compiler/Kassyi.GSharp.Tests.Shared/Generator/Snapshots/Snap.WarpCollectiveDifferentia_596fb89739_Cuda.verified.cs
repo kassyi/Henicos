@@ -238,6 +238,24 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+private static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__WarpCollectiveDifferentialKernels__CountOddLanes(int __gsharp_warp_frame, uint mask, int v) => global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_reduce_add_sync<int>(__gsharp_warp_frame, 0, "WarpCollectiveDifferentialKernels.cs(118,59)", val: v & 1, mask: mask);
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+private static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__WarpCollectiveDifferentialKernels__ShuffleRounds(int __gsharp_warp_frame, int[] input, int[] output, int totalThreads)
+{
+{
+uint __gsharp_gsl_n_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideCount(totalThreads * 2);
+uint __gsharp_gsl_s_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStep();
+for (uint __gsharp_gsl_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
+{
+int __gsharp_unroll_0 = (int)__gsharp_gsl_0;
+int shuffled = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_shuffle_down_sync<int>(__gsharp_warp_frame, 0, "WarpCollectiveDifferentialKernels.cs(167,28)", 0xFFFFFFFFu, input[__gsharp_unroll_0], 1);
+output[(global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32(__gsharp_unroll_0, totalThreads)) * 2 + global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_div_i32(__gsharp_unroll_0, totalThreads)] = shuffled;
+}
+}
+}
+
 }
 }
 

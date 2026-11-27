@@ -4077,6 +4077,24 @@ global::System.Int32 __gsharp_csharp_arg_2 = n;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.NullableDifferentialKernels.NullableMemoryKernelParamToLocalReproKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2));
 return;
 }
+// Throw for overlapping arguments that no CUDA address aligns, as the CUDA launcher does
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(bias.GetValueOrDefault().Span), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(dst))
+{
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[12];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = (global::System.IntPtr)bias.GetValueOrDefault().Length * sizeof(global::System.Int32);
+__gsharp_alias_ranges[2] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[3] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[4] = 4;
+__gsharp_alias_ranges[5] = 0;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = (global::System.IntPtr)(dst?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.ThrowIfNoDeviceAlignment(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 12), new byte[] {3, 11}, "bias,dst", stackalloc int[] {4, 4});
+}
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
 string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);

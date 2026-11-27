@@ -6,9 +6,10 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// (#1267).
 /// </summary>
 /// <remarks>
-/// A view is a slice, which no array identity names, so its region is the launch's own (no sharing through
-/// <c>DeviceArrayRegions.TryGetRegion</c>); a view over no memory (<c>default</c>) reaches the device as a null
-/// array, an empty view over an array as an empty one, as for an array field.
+/// A view is a slice, which no array identity names; when it overlaps another argument, its group's region is recorded
+/// by pinned address and byte length (<c>DeviceArrayRegions.TryGetViewRegion</c>, #1849), and otherwise its region is
+/// the launch's own. A view over no memory (<c>default</c>) reaches the device as a null array, an empty view over an
+/// array as an empty one, as for an array field.
 /// </remarks>
 internal static class ArrayViewFieldEmitter
 {
@@ -65,40 +66,57 @@ internal static class ArrayViewFieldEmitter
         }
     }
 
-    // if (HostArrayCopies.CopyView(ref <value>))
-    // { <span> view = <span of value>; for (...) CopyArrays_<E>(ref view[i], copies); }
-    // (or _ = HostArrayCopies.CopyView(ref <value>); when the elements hold no arrays); nothing for a read-only view,
-    // which the kernel cannot write
+    // _ = copies.CopyView(ref <value>); (when elements hold no arrays or views)
+    // or if (copies.CopyView(ref <value>)) { <span> view = <span of value>; for (...) <element step>; }
+    // or if (copies.CopyView(ref <value>, out <E>[]? view)) { for (...) <element step>; } (read-only view)
     /// <summary>Writes the CPU <c>[In]</c> copy of the view <paramref name="value"/>.</summary>
-    public static void WriteCopyArrays(SourceWriter writer, ArrayFieldView view, string value)
+    public static void WriteCopyArrays(SourceWriter writer, ArrayFieldView view, string value, int depth = 0)
     {
-        if (view.IsReadOnly)
-        {
-            return;
-        }
-
         const string Copies = StructArrayHelperEmitter.CopiesParameter;
-        var copy = $"{StructArrayHelperEmitter.HostArrayCopiesType}.CopyView(ref {value})";
-        if (view.ElementCopyArraysMethodName is not { } elementCopy)
+        if (view.ElementCopy is not { } elementCopy)
         {
-            writer.AppendLine($"_ = {copy};");
+            writer.AppendLine($"_ = {Copies}.CopyView(ref {value});");
             return;
         }
 
-        writer.AppendLine($"if ({copy})");
-        using (writer.Scope())
+        var viewVar = depth == 0 ? View : $"{View}{depth}";
+        var indexVar = StructArrayHelperEmitter.LoopIndex(depth);
+        if (!view.IsReadOnly)
         {
-            writer.AppendLine($"{view.SpanTypeName} {View} = {view.SpanExpression(value)};");
-            writer.AppendLine($"for (int i = 0; i < {View}.Length; i++)");
+            writer.AppendLine($"if ({Copies}.CopyView(ref {value}))");
             using (writer.Scope())
             {
-                writer.AppendLine($"{elementCopy}(ref {View}[i], {Copies});");
+                writer.AppendLine($"{view.SpanTypeName} {viewVar} = {view.SpanExpression(value)};");
+                writer.AppendLine($"for (int {indexVar} = 0; {indexVar} < {viewVar}.Length; {indexVar}++)");
+                using (writer.Scope())
+                {
+                    StructArrayHelperEmitter.WriteCopyArraysStep(
+                        writer, $"{viewVar}[{indexVar}]", elementCopy, depth + 1);
+                }
+            }
+
+            return;
+        }
+
+        // Wrap in a block so the `out` variable stays scoped to this view and cannot collide with sibling views (CS0136)
+        using (writer.Scope())
+        {
+            writer.AppendLine($"if ({Copies}.CopyView(ref {value}, out {view.ElementTypeName}[]? {viewVar}))");
+            using (writer.Scope())
+            {
+                writer.AppendLine($"for (int {indexVar} = 0; {indexVar} < {viewVar}.Length; {indexVar}++)");
+                using (writer.Scope())
+                {
+                    StructArrayHelperEmitter.WriteCopyArraysStep(
+                        writer, $"{viewVar}[{indexVar}]", elementCopy, depth + 1);
+                }
             }
         }
     }
 
     // <span> view = <span of host>; if (!ArrayPinning.IsNull(view)) { int size = ...; if (size > 0)
-    // { cuMemAllocAsync(out <native>.Data, size, hStream); deviceArrays?.AddOwned(<native>.Data); <copy> }
+    // { if (deviceArrays != null && deviceArrays.TryGetViewRegion(view, out IntPtr region)) { <native>.Data = region; }
+    //   else { cuMemAllocAsync(out <native>.Data, size, hStream); deviceArrays?.AddOwned(<native>.Data); <copy> } }
     // else { <native>.Data = GSharpArrayProxy.EmptyArrayData; } <native>.Length = view.Length; }
     private static void WriteCudaMarshal(SourceWriter writer, ArrayFieldView view, string host, string native)
     {
@@ -110,18 +128,30 @@ internal static class ArrayViewFieldEmitter
             writer.AppendLine($"if ({Size} > 0)");
             using (writer.Scope())
             {
+                const string CudaArrays = StructMarshalingEmitter.CudaArraysParameter;
                 writer.AppendLine(
-                    $"{HostTypeNames.CudaException}.ThrowIfError({HostTypeNames.CudaDriverApi}.cuMemAllocAsync(" +
-                    $"out {native}.Data, (global::System.IntPtr){Size}, hStream));");
-                writer.AppendLine($"{StructMarshalingEmitter.CudaArraysParameter}?.AddOwned({native}.Data);");
-                if (view.IsConverted)
+                    $"if ({CudaArrays} != null && {CudaArrays}.TryGetViewRegion({View}, out {HostTypeNames.IntPtr} region))");
+                using (writer.Scope())
                 {
-                    WriteShadowMarshalLoop(writer, view, "tempArray", StructMarshalingEmitter.CudaArraysParameter);
-                    StructBlockCopyEmitter.WritePinnedCopy(writer, "tempArray", $"{native}.Data", toDevice: true);
+                    writer.AppendLine($"{native}.Data = region;");
                 }
-                else
+
+                writer.AppendLine("else");
+                using (writer.Scope())
                 {
-                    WritePinnedSpanCopy(writer, view, native, toDevice: true);
+                    writer.AppendLine(
+                        $"{HostTypeNames.CudaException}.ThrowIfError({HostTypeNames.CudaDriverApi}.cuMemAllocAsync(" +
+                        $"out {native}.Data, (global::System.IntPtr){Size}, hStream));");
+                    writer.AppendLine($"{CudaArrays}?.AddOwned({native}.Data);");
+                    if (view.IsConverted)
+                    {
+                        WriteShadowMarshalLoop(writer, view, "tempArray", CudaArrays);
+                        StructBlockCopyEmitter.WritePinnedCopy(writer, "tempArray", $"{native}.Data", toDevice: true);
+                    }
+                    else
+                    {
+                        WritePinnedSpanCopy(writer, view, native, toDevice: true);
+                    }
                 }
             }
 
