@@ -1,6 +1,6 @@
 using Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules;
 
-namespace Kassyi.GSharp.Compiler.Transpiler;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>
 /// Decides what a call in GPU code, or a method group that device code names, calls (<see cref="CallTargetPlan"/>):

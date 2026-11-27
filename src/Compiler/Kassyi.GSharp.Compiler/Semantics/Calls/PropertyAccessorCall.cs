@@ -1,6 +1,6 @@
 using Microsoft.CodeAnalysis.Operations;
 
-namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>
 /// Turns a read or write of a property with accessor functions of a struct that G# emits into a call of its getter or
