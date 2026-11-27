@@ -21,6 +21,27 @@ public sealed class ConditionalExpressionTranspilerRule : SyntaxNodeTranspilerRu
     {
         if (node.WhenTrue is RefExpressionSyntax || node.WhenFalse is RefExpressionSyntax)
         {
+            if (context.Query.SemanticModel.GetSafeConstantValue(node.Condition) is { HasValue: true, Value: bool selected })
+            {
+                // [WHY] Roslyn folds a constant-condition ref conditional to the selected branch, so an unselected
+                // ref readonly branch must not promote the C++ conditional pointer type to const T*.
+                var chosen = selected ? node.WhenTrue : node.WhenFalse;
+                using (context.Emitter.Writer.Parentheses())
+                {
+                    context.Emitter.Writer.Append('*');
+                    if (chosen is RefExpressionSyntax refChosen)
+                    {
+                        RefSyntaxHelper.TranspileAsByRefArgument(ref context, refChosen.Expression);
+                    }
+                    else
+                    {
+                        StackArrayLocals.AppendView(chosen, ref context);
+                    }
+                }
+
+                return;
+            }
+
             // [WHY] A ref conditional is an lvalue in C#. Selecting between addresses and dereferencing the result
             // yields an equivalent C++ lvalue, so it works both as a value and as a 'ref' argument ('&(*(...))').
             using (context.Emitter.Writer.Parentheses())

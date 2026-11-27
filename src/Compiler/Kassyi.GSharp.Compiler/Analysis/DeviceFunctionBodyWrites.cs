@@ -105,15 +105,28 @@ internal static class DeviceFunctionBodyWrites
                 SyntaxKind.PostDecrementExpression),
             _ => false
         };
+        var isPointerAccess = access is MemberAccessExpressionSyntax
+        {
+            RawKind: (int)SyntaxKind.PointerMemberAccessExpression
+        };
         var effect = DeviceFunctionEffect.None;
         if (property.GetMethod is { } getter && (!assigned || !access.Parent.IsKind(SyntaxKind.SimpleAssignmentExpression)))
         {
-            effect = ClassifyCalled(getter, receiver, method, body, model, compilation, visiting);
+            effect = isPointerAccess
+                ? Classify(GetDefinition(getter), compilation, visiting) == DeviceFunctionEffect.None
+                    ? DeviceFunctionEffect.None
+                    : DeviceFunctionEffect.Memory
+                : ClassifyCalled(getter, receiver, method, body, model, compilation, visiting);
         }
 
         if (assigned && property.SetMethod is { } setter)
         {
-            effect = Max(effect, ClassifyCalled(setter, receiver, method, body, model, compilation, visiting));
+            var setterEffect = isPointerAccess
+                ? Classify(GetDefinition(setter), compilation, visiting) == DeviceFunctionEffect.None
+                    ? DeviceFunctionEffect.None
+                    : DeviceFunctionEffect.Memory
+                : ClassifyCalled(setter, receiver, method, body, model, compilation, visiting);
+            effect = Max(effect, setterEffect);
         }
 
         return effect;
@@ -220,14 +233,18 @@ internal static class DeviceFunctionBodyWrites
 
         if (!callee.IsStatic && callee.MethodKind != MethodKind.Constructor && callee.ContainingType.IsValueType)
         {
-            result = Max(result, call is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access }
-                ? ClassifyTarget(access.Expression, method, body, model)
+            result = Max(result, call is InvocationExpressionSyntax inv &&
+                                 inv.Expression.UnwrapParentheses() is MemberAccessExpressionSyntax access
+                ? access.IsKind(SyntaxKind.PointerMemberAccessExpression)
+                    ? DeviceFunctionEffect.Memory
+                    : ClassifyTarget(access.Expression, method, body, model)
                 : ClassifyReceiverOfThis(method));
         }
 
         // c.Inc() of 'static void Inc(this ref Cell c)' passes c by reference, with no ref keyword at the call
         if (callee.ReducedFrom is { Parameters: [{ RefKind: RefKind.Ref }, ..] } &&
-            call is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax receiver })
+            call is InvocationExpressionSyntax reducerCall &&
+            reducerCall.Expression.UnwrapParentheses() is MemberAccessExpressionSyntax receiver)
         {
             result = Max(result, ClassifyTarget(receiver.Expression, method, body, model));
         }
