@@ -455,6 +455,9 @@ internal sealed class ManagedWorkerSignal
     private long _taken;
     private volatile int _spinning;
 
+    // The interruptions that arrived while a failed wait waited for its signal; see WaitAfterFailure
+    internal int DiscardedInterrupts { get; private set; }
+
     internal ManagedWorkerSignal(bool useKernelSignalAndWait)
     {
         if (useKernelSignalAndWait)
@@ -550,7 +553,9 @@ internal sealed class ManagedWorkerSignal
                 }
                 catch (ThreadInterruptedException)
                 {
-                    // Drop extra interruptions once a failure is already on its way, as ManagedBatonSignal does.
+                    // [WHY] As ManagedBatonSignal.WaitAfterFailure: the thread already ends this wait with the
+                    // exception of its first failure, so a further interruption is counted and dropped
+                    DiscardedInterrupts++;
                 }
             }
 
