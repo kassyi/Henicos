@@ -91,5 +91,70 @@ internal readonly ref struct KernelBarrierValidator(
                 case InvocationExpressionSyntax invocation: KernelConstructChecks.InspectInvocation(_scan, invocation); break;
             }
         }
+
+        var body = (SyntaxNode?)methodDecl.Body ?? methodDecl.ExpressionBody;
+        if (body != null)
+        {
+            InspectDirectCallees(body);
+        }
+    }
+
+    private void InspectDirectCallees(SyntaxNode body)
+    {
+        var compilation = semanticModel.Compilation;
+        foreach (var (callee, site) in DirectCallees.Of([body], TypeArgumentMap.None, compilation))
+        {
+            if (DirectCallees.IsMethodGroupSite(site, callee, semanticModel))
+            {
+                continue;
+            }
+
+            if (site is InvocationExpressionSyntax invocation &&
+                semanticModel.GetSymbol(invocation) is IMethodSymbol invoked &&
+                callee.IsEqualTo(invoked.GetConstructedReducedFrom() ?? invoked))
+            {
+                continue;
+            }
+
+            if (!SuspensionAnalysis.IsSuspendingFunction(callee, compilation))
+            {
+                continue;
+            }
+
+            _scan.HasSplitPoint = true;
+            if (!SuspensionAnalysis.ReachesBlockBarrier(callee, compilation))
+            {
+                continue;
+            }
+
+            var scope = SuspensionAnalysis.GetBarrierScope(callee, compilation);
+            var existingIndex = FindSyncPointIndex(site);
+            if (existingIndex >= 0)
+            {
+                if (_scan.SyncPoints[existingIndex].Scope != SyncScope.Grid && scope == SyncScope.Grid)
+                {
+                    _scan.SyncPoints[existingIndex] = (site, SyncScope.Grid, IsCall: true);
+                }
+
+                continue;
+            }
+
+            _scan.SyncPoints.Add((site, scope, IsCall: true));
+            _scan.RecordSyncPointName(site, callee);
+            BarrierDivergenceChecks.InspectBarrierAncestors(_scan, site);
+        }
+    }
+
+    private int FindSyncPointIndex(SyntaxNode site)
+    {
+        for (var i = 0; i < _scan.SyncPoints.Count; i++)
+        {
+            if (_scan.SyncPoints[i].Barrier == site)
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 }

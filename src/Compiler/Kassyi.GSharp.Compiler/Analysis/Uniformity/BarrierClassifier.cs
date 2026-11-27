@@ -63,16 +63,32 @@ internal sealed class BarrierClassifier(UniformityState state)
     /// </summary>
     public BarrierDivergence GetCallSiteDivergence(SyntaxNode call)
     {
-        if (!state.Recorder.Sites.TryGetValue(call, out var site) || site.Call is not { } invocation)
+        if (!state.Recorder.Sites.TryGetValue(call, out var site) || site.Call is not { } primaryCall)
         {
             return BarrierDivergence.None;
         }
 
-        var masks = GetSiteMasks(call);
-        var callee = invocation.TargetMethod;
+        var result = GetSingleCallSiteDivergence(call, primaryCall, site.Node, site.SplitIndex);
+        if (state.Recorder.ExtraSiteCalls != null &&
+            state.Recorder.ExtraSiteCalls.TryGetValue(call, out var extras))
+        {
+            foreach (var extra in extras)
+            {
+                result = Combine(result, GetSingleCallSiteDivergence(call, extra.Call, extra.Node, extra.SplitIndex));
+            }
+        }
+
+        return result;
+    }
+
+    private BarrierDivergence GetSingleCallSiteDivergence(SyntaxNode call, BarrierCallSite callSite, int node,
+        int splitIndex)
+    {
+        var masks = GetSiteMasks(call, callSite.Target);
+        var callee = callSite.Target;
         return state.Reader.TryGetSummarizedCallee(callee, out var definition, out var declaration)
-            ? GetLocalCallSiteDivergence(call, definition, declaration, masks)
-            : GetImportedCallSiteDivergence(call, callee, masks);
+            ? GetLocalCallSiteDivergence(definition, declaration, masks, node, splitIndex)
+            : GetImportedCallSiteDivergence(callee, masks, node, splitIndex);
     }
 
     /// <summary>
@@ -120,7 +136,8 @@ internal sealed class BarrierClassifier(UniformityState state)
     /// </summary>
     public static ExportedBarrierDivergence GetExportedDivergence(IMethodSymbol method, Compilation compilation)
     {
-        var definition = method.OriginalDefinition;
+        var definition = (method.ReducedFrom ?? method).OriginalDefinition;
+        definition = definition.PartialImplementationPart ?? definition;
         if (!SuspensionAnalysis.TryGetDeviceFunctionBody(definition, compilation, out var declaration) ||
             !SuspensionAnalysis.ReachesBlockBarrier(definition, compilation))
         {
@@ -177,18 +194,216 @@ internal sealed class BarrierClassifier(UniformityState state)
     }
 
     /// <summary>Records the argument masks of a barrier-reaching call in the solved state, while they are recorded.</summary>
-    public void RecordSiteMasks(IInvocationOperation call, ControlFlowGraph graph, ThreadVariance[] current)
+    public void RecordSiteMasks(IOperation operation, ControlFlowGraph graph, ThreadVariance[] current,
+        SyntaxNode siteSyntax)
     {
         if (state.SiteMasks is not { } siteMasks)
         {
             return;
         }
 
-        var masks = state.Reader.GetArgumentMasks(call.Arguments, graph, current);
-        siteMasks[call.Syntax] = siteMasks.TryGetValue(call.Syntax, out var seen)
-            ? new ArgumentMasks(seen.Block | masks.Block, seen.Grid | masks.Grid)
+        if (state.Recorder.Sites.TryGetValue(siteSyntax, out var primary) &&
+            primary.Call is { } primaryCall &&
+            primaryCall.Operation == operation)
+        {
+            MergeSiteMask(siteMasks, primaryCall, graph, current);
+        }
+
+        if (state.Recorder.ExtraSiteCalls != null &&
+            state.Recorder.ExtraSiteCalls.TryGetValue(siteSyntax, out var extras))
+        {
+            foreach (var extra in extras)
+            {
+                if (extra.Call.Operation == operation)
+                {
+                    MergeSiteMask(siteMasks, extra.Call, graph, current);
+                }
+            }
+        }
+    }
+
+    private void MergeSiteMask(Dictionary<SiteMaskKey, ArgumentMasks> siteMasks, BarrierCallSite site,
+        ControlFlowGraph graph, ThreadVariance[] current)
+    {
+        var masks = ComputeSiteMasks(site, graph, current);
+        var key = new SiteMaskKey(site.Site, site.Target);
+        siteMasks[key] = siteMasks.TryGetValue(key, out var seen)
+            ? CombineMasks(seen, masks)
             : masks;
     }
+
+    private ArgumentMasks ComputeSiteMasks(BarrierCallSite site, ControlFlowGraph graph, ThreadVariance[] current) =>
+        site.Operation switch
+        {
+            IInvocationOperation invocation => state.Reader.GetArgumentMasks(invocation.Arguments, graph, current),
+            IObjectCreationOperation creation => state.Reader.GetArgumentMasks(creation.Arguments, graph, current),
+            IConversionOperation conversion =>
+                MaskAtOrdinal(state.Reader.Evaluate(conversion.Operand, graph, current), 0),
+            IPropertyReferenceOperation property => ComputePropertySiteMasks(property, site.Target, graph, current),
+            ICollectionExpressionOperation collection => ComputeCollectionSiteMasks(collection, graph, current),
+            IBinaryOperation binary => ComputeBinarySiteMasks(binary, site.Target, graph, current),
+            IUnaryOperation unary => ComputeUnarySiteMasks(unary, site.Target, graph, current),
+            IIncrementOrDecrementOperation increment =>
+                MaskAtOrdinal(state.Reader.Evaluate(increment.Target, graph, current), 0),
+            ICompoundAssignmentOperation compound => ComputeCompoundSiteMasks(compound, site.Target, graph, current),
+            ISimpleAssignmentOperation assignment when IsPropertySetter(site.Target) =>
+                CombineMasks(
+                    state.Reader.GetArgumentMasks(site.Arguments, graph, current),
+                    MaskAtOrdinal(state.Reader.Evaluate(assignment.Value, graph, current), site.Arguments.Length)),
+            ISimpleAssignmentOperation assignment when site.Target.IsStatic =>
+                MaskAtOrdinal(state.Reader.Evaluate(assignment.Value, graph, current), 0),
+            _ => default
+        };
+
+    private static bool IsPropertySetter(IMethodSymbol method) =>
+        method.MethodKind == MethodKind.PropertySet ||
+        (method.AssociatedSymbol is IPropertySymbol { SetMethod: { } setter } && method.IsEqualTo(setter));
+
+    private ArgumentMasks ComputeBinarySiteMasks(IBinaryOperation binary, IMethodSymbol target,
+        ControlFlowGraph graph, ThreadVariance[] current)
+    {
+        var offset = binary.OperatorMethod is { } op
+            ? Math.Max(0, target.Parameters.Length - op.Parameters.Length)
+            : 0;
+        var left = MaskAtOrdinal(state.Reader.Evaluate(binary.LeftOperand, graph, current), offset);
+        var right = MaskAtOrdinal(state.Reader.Evaluate(binary.RightOperand, graph, current), offset + 1);
+        return CombineMasks(left, right);
+    }
+
+    private ArgumentMasks ComputeUnarySiteMasks(IUnaryOperation unary, IMethodSymbol target,
+        ControlFlowGraph graph, ThreadVariance[] current)
+    {
+        var offset = unary.OperatorMethod is { } op
+            ? Math.Max(0, target.Parameters.Length - op.Parameters.Length)
+            : 0;
+        return MaskAtOrdinal(state.Reader.Evaluate(unary.Operand, graph, current), offset);
+    }
+
+    private ArgumentMasks ComputeCompoundSiteMasks(ICompoundAssignmentOperation compound, IMethodSymbol target,
+        ControlFlowGraph graph, ThreadVariance[] current)
+    {
+        if (target.IsEqualTo(compound.OperatorMethod))
+        {
+            var left = MaskAtOrdinal(state.Reader.Evaluate(compound.Target, graph, current), 0);
+            var right = MaskAtOrdinal(state.Reader.Evaluate(compound.Value, graph, current), 1);
+            return CombineMasks(left, right);
+        }
+
+        if (target.IsEqualTo(compound.InConversion.MethodSymbol))
+        {
+            return MaskAtOrdinal(state.Reader.Evaluate(compound.Target, graph, current), 0);
+        }
+
+        if (target.IsEqualTo(compound.OutConversion.MethodSymbol))
+        {
+            return MaskAtOrdinal(state.Reader.Evaluate(compound, graph, current), 0);
+        }
+
+        return default;
+    }
+
+    private ArgumentMasks ComputePropertySiteMasks(IPropertyReferenceOperation property, IMethodSymbol target,
+        ControlFlowGraph graph, ThreadVariance[] current)
+    {
+        var masks = state.Reader.GetArgumentMasks(property.Arguments, graph, current);
+        if (!IsPropertySetter(target))
+        {
+            return masks;
+        }
+
+        var valueVariance = property.Parent switch
+        {
+            ISimpleAssignmentOperation assignment when assignment.Target == property =>
+                state.Reader.Evaluate(assignment.Value, graph, current),
+            ICompoundAssignmentOperation compound when compound.Target == property =>
+                state.Reader.Evaluate(compound, graph, current),
+            ICoalesceAssignmentOperation coalesce when coalesce.Target == property =>
+                state.Reader.Evaluate(coalesce, graph, current),
+            IIncrementOrDecrementOperation increment =>
+                state.Reader.Evaluate(increment, graph, current),
+            ITupleOperation => EvaluateDeconstructionValue(property, graph, current),
+            _ => ThreadVariance.Uniform
+        };
+
+        var valueMask = MaskAtOrdinal(valueVariance, property.Arguments.Length);
+        return CombineMasks(masks, valueMask);
+    }
+
+    private ThreadVariance EvaluateDeconstructionValue(IPropertyReferenceOperation property, ControlFlowGraph graph,
+        ThreadVariance[] current)
+    {
+        var indices = ImmutableArray.CreateBuilder<int>();
+        IOperation child = property;
+        while (child.Parent is ITupleOperation outer)
+        {
+            var index = -1;
+            for (var i = 0; i < outer.Elements.Length; i++)
+            {
+                if (outer.Elements[i] == child)
+                {
+                    index = i;
+                    break;
+                }
+            }
+
+            if (index < 0)
+            {
+                return ThreadVariance.Uniform;
+            }
+
+            indices.Add(index);
+            child = outer;
+        }
+
+        if (child.Parent is not IDeconstructionAssignmentOperation deconstruction ||
+            deconstruction.Target != child)
+        {
+            return ThreadVariance.Uniform;
+        }
+
+        var rhs = deconstruction.Value;
+        for (var i = indices.Count - 1; i >= 0; i--)
+        {
+            while (rhs is IConversionOperation { OperatorMethod: null } conversion)
+            {
+                rhs = conversion.Operand;
+            }
+
+            if (rhs is ITupleOperation tuple && indices[i] < tuple.Elements.Length)
+            {
+                rhs = tuple.Elements[indices[i]];
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return state.Reader.Evaluate(rhs, graph, current);
+    }
+
+    private static ArgumentMasks CombineMasks(ArgumentMasks a, ArgumentMasks b) =>
+        new(a.Block | b.Block, a.Grid | b.Grid);
+
+    private ArgumentMasks ComputeCollectionSiteMasks(ICollectionExpressionOperation collection,
+        ControlFlowGraph graph, ThreadVariance[] current)
+    {
+        var combined = ThreadVariance.Uniform;
+        foreach (var element in collection.Elements)
+        {
+            combined |= state.Reader.Evaluate(element, graph, current);
+        }
+
+        return MaskAtOrdinal(combined, 0);
+    }
+
+    private static ArgumentMasks MaskAtOrdinal(ThreadVariance variance, int ordinal) =>
+        variance switch
+        {
+            ThreadVariance.Block => new ArgumentMasks(ArgumentMasks.Bit(ordinal), 0),
+            ThreadVariance.Grid => new ArgumentMasks(0, ArgumentMasks.Bit(ordinal)),
+            _ => default
+        };
 
     private static bool Diverges(ThreadVariance branch, SyncScope scope) =>
         scope == SyncScope.Grid ? branch != ThreadVariance.Uniform : branch == ThreadVariance.Block;
@@ -300,21 +515,22 @@ internal sealed class BarrierClassifier(UniformityState state)
     // A callee in this compilation: reported where the call is when the callee diverges with these arguments and not
     // with uniform ones (the callee reports that case itself), or when the threads that leave the callee early meet the
     // others at a split point after the call
-    private BarrierDivergence GetLocalCallSiteDivergence(SyntaxNode call, IMethodSymbol definition,
-        SyntaxNode declaration, ArgumentMasks masks)
+    private BarrierDivergence GetLocalCallSiteDivergence(IMethodSymbol definition, SyntaxNode declaration,
+        ArgumentMasks masks, int node, int splitIndex)
     {
         var summary = state.Reader.GetCalleeSummary(definition, declaration, masks);
         var uniform = state.Reader.GetCalleeSummary(definition, declaration, default);
         return summary.Barrier switch
         {
             BarrierDivergence.Condition when uniform.Barrier != BarrierDivergence.Condition => BarrierDivergence.Condition,
-            BarrierDivergence.ExitOnly when ReachesSplitAfter(call) => BarrierDivergence.Condition,
+            BarrierDivergence.ExitOnly when ReachesSplitAfter(node, splitIndex) => BarrierDivergence.Condition,
             _ => BarrierDivergence.None
         };
     }
 
     // A callee of another assembly, judged from the one bit per parameter that its export record carries
-    private BarrierDivergence GetImportedCallSiteDivergence(SyntaxNode call, IMethodSymbol callee, ArgumentMasks masks)
+    private BarrierDivergence GetImportedCallSiteDivergence(IMethodSymbol callee, ArgumentMasks masks, int node,
+        int splitIndex)
     {
         if (!DeviceExportTable.TryFindFunction((callee.ReducedFrom ?? callee).OriginalDefinition,
                 state.Model.Compilation, out var imported))
@@ -330,7 +546,7 @@ internal sealed class BarrierClassifier(UniformityState state)
         }
 
         return (record.Traits.HasExitOnlyBarrier || (record.Traits.DivergentExitOnlyParameters & variant) != 0) &&
-               ReachesSplitAfter(call)
+               ReachesSplitAfter(node, splitIndex)
             ? BarrierDivergence.Condition
             : BarrierDivergence.None;
     }
@@ -345,43 +561,62 @@ internal sealed class BarrierClassifier(UniformityState state)
     // What a barrier-reaching call outside a divergent region adds to the summary of the method that makes it
     private BarrierDivergence GetCallComposition(SyntaxNode call)
     {
-        if (!state.Recorder.Sites.TryGetValue(call, out var site) ||
-            site.Call is not { } invocation ||
-            !state.Reader.TryGetSummarizedCallee(invocation.TargetMethod, out var definition, out var declaration))
+        if (!state.Recorder.Sites.TryGetValue(call, out var site) || site.Call is not { } primaryCall)
         {
             return BarrierDivergence.None;
         }
 
-        var barrier = state.Reader.GetCalleeSummary(definition, declaration, GetSiteMasks(call)).Barrier;
-        return barrier == BarrierDivergence.ExitOnly && ReachesSplitAfter(call) ? BarrierDivergence.Condition : barrier;
+        var result = GetSingleCallComposition(call, primaryCall, site.Node, site.SplitIndex);
+        if (state.Recorder.ExtraSiteCalls != null &&
+            state.Recorder.ExtraSiteCalls.TryGetValue(call, out var extras))
+        {
+            foreach (var extra in extras)
+            {
+                result = Combine(result, GetSingleCallComposition(call, extra.Call, extra.Node, extra.SplitIndex));
+            }
+        }
+
+        return result;
+    }
+
+    private BarrierDivergence GetSingleCallComposition(SyntaxNode call, BarrierCallSite callSite, int node,
+        int splitIndex)
+    {
+        if (!state.Reader.TryGetSummarizedCallee(callSite.Target, out var definition, out var declaration))
+        {
+            return BarrierDivergence.None;
+        }
+
+        var barrier = state.Reader.GetCalleeSummary(definition, declaration, GetSiteMasks(call, callSite.Target))
+            .Barrier;
+        return barrier == BarrierDivergence.ExitOnly && ReachesSplitAfter(node, splitIndex)
+            ? BarrierDivergence.Condition
+            : barrier;
     }
 
     // The stronger divergence
     private static BarrierDivergence Combine(BarrierDivergence current, BarrierDivergence next) =>
         next > current ? next : current;
 
-    // Whether a split point follows the call: later in its node, or on any path from the node
-    private bool ReachesSplitAfter(SyntaxNode call)
+    // Whether a split point follows the call occurrence: later in its node, or on any path from the node
+    private bool ReachesSplitAfter(int node, int splitIndex)
     {
-        if (!state.Recorder.SplitsAt.TryGetValue(call, out var nodes))
+        if (node < 0 || splitIndex < 0)
         {
             return false;
         }
 
-        foreach (var node in nodes)
+        var splits = state.NodeAt(node).Splits;
+        if (splitIndex < splits.Count - 1)
         {
-            var splits = state.NodeAt(node).Splits;
-            if (splits.IndexOf(call) < splits.Count - 1)
+            return true;
+        }
+
+        foreach (var successor in state.Successors[node])
+        {
+            if (ReachesSplit(successor))
             {
                 return true;
-            }
-
-            foreach (var successor in state.Successors[node])
-            {
-                if (ReachesSplit(successor))
-                {
-                    return true;
-                }
             }
         }
 
@@ -389,10 +624,12 @@ internal sealed class BarrierClassifier(UniformityState state)
     }
 
     // The argument masks of a barrier-reaching call, from the solved state
-    private ArgumentMasks GetSiteMasks(SyntaxNode call)
+    private ArgumentMasks GetSiteMasks(SyntaxNode call, IMethodSymbol target)
     {
         RecordAllSiteMasks();
-        return state.SiteMasks != null && state.SiteMasks.TryGetValue(call, out var recorded) ? recorded : default;
+        return state.SiteMasks != null && state.SiteMasks.TryGetValue(new SiteMaskKey(call, target), out var recorded)
+            ? recorded
+            : default;
     }
 
     // Records the argument masks of every barrier-reaching call, from the solved state
@@ -403,7 +640,7 @@ internal sealed class BarrierClassifier(UniformityState state)
             return;
         }
 
-        state.SiteMasks = new Dictionary<SyntaxNode, ArgumentMasks>();
+        state.SiteMasks = new Dictionary<SiteMaskKey, ArgumentMasks>();
         var current = new ThreadVariance[state.Recorder.ValueCount];
         for (var node = 0; node < state.NodeCount; node++)
         {

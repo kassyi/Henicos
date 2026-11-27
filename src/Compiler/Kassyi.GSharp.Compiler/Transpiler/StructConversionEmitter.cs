@@ -35,7 +35,7 @@ internal static class StructConversionEmitter
         conversion is { MethodKind: MethodKind.Conversion, IsImplicitlyDeclared: false } &&
         !conversion.HasAttribute(KnownAttributes.GpuOperatorMacro) &&
         conversion.ContainingType is { IsRefLikeType: false } containingType &&
-        GlobalCppNames.IsEmittedUserType(containingType) &&
+        EmittedUserTypes.IsEmittedUserType(containingType) &&
         (TryGetConversionDeclaration(conversion, out _) ||
          (DeviceExportTable.IsOutside(conversion, compilation) && DeviceExportTable.TryFind(conversion, out _)));
 

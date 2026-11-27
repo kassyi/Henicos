@@ -24,6 +24,26 @@ internal static class SplicedAssignmentWalker
             SplicedOperationWalker.Walk(context, assignment.Target, graph);
         }
 
+        if (assignment.Target is IFlowCaptureReferenceOperation captureRef &&
+            assignment.Syntax.IsKind(SyntaxKind.CoalesceAssignmentExpression) &&
+            context.TryGetCapturedProperty(graph, captureRef.Id, out var capturedProperty) &&
+            capturedProperty.Property is { RefKind: RefKind.None, SetMethod: { } setter } &&
+            SplicedCallWalker.GetMemberSplit(context.Model.Compilation, setter, capturedProperty.Arguments,
+                assignment, graph, capturedProperty.Syntax) is { } setterSplit)
+        {
+            context.Record((recorder, node) => recorder.OnSplit(setterSplit, node), context.Current.Index);
+        }
+
+        if (assignment.Syntax is VariableDeclaratorSyntax
+            {
+                Parent.Parent: FixedStatementSyntax, Initializer.Value: { } initializer
+            } &&
+            PinnableReferenceLookup.Find(initializer, context.Model) is { } pinnable)
+        {
+            SplicedCallWalker.RecordMethodSplitIfSuspending(context,
+                pinnable.GetConstructedReducedFrom() ?? pinnable, assignment, graph);
+        }
+
         RecordAssignment(context, assignment, graph);
     }
 
@@ -42,6 +62,15 @@ internal static class SplicedAssignmentWalker
     {
         SplicedOperationWalker.Walk(context, assignment.Value, graph);
         SplicedOperationWalker.Walk(context, assignment.Target, graph);
+        if (assignment is ICompoundAssignmentOperation compound)
+        {
+            SplicedCallWalker.RecordMethodSplitIfSuspending(context, compound.InConversion.MethodSymbol, compound,
+                graph);
+            SplicedCallWalker.RecordMethodSplitIfSuspending(context, compound.OperatorMethod, compound, graph);
+            SplicedCallWalker.RecordMethodSplitIfSuspending(context, compound.OutConversion.MethodSymbol, compound,
+                graph);
+        }
+
         RecordAssignment(context, assignment, graph);
     }
 

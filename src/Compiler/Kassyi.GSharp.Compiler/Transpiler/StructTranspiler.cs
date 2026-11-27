@@ -52,7 +52,7 @@ internal static class StructTranspiler
     /// <remarks>A struct without such parts is defined from metadata by the consumer, from its fields alone.</remarks>
     public static bool IsExportedOnItsOwn(INamedTypeSymbol type, Compilation compilation)
     {
-        if (!GlobalCppNames.IsEmittedUserType(type) || type.IsGenericType || type.IsRefLikeType ||
+        if (!EmittedUserTypes.IsEmittedUserType(type) || type.IsGenericType || type.IsRefLikeType ||
             !GeneratedMemberAccessibility.IsAtLeastInternal(type) ||
             !type.TryGetDeclaringSyntax<TypeDeclarationSyntax>(out var declaration) ||
             !compilation.ContainsSyntaxTree(declaration.SyntaxTree))
@@ -70,7 +70,7 @@ internal static class StructTranspiler
                        (member is IPropertySymbol property && StructAbiMembers.HasAccessorFunctions(property)) ||
                        (member is IMethodSymbol conversion &&
                         StructConversionEmitter.IsEmittedStructConversion(conversion, c))) ||
-               UsingTranspiler.FindDisposeMethod(type, compilation) != null;
+               UsingDisposeLookup.Find(type, compilation) != null;
     }
 
     /// <summary>
@@ -94,7 +94,7 @@ internal static class StructTranspiler
 
         StructOrdering.RegisterUsedStructIfApplicable(type, ref context);
         using var disposeWriter = new SourceWriter();
-        if (UsingTranspiler.FindDisposeMethod(type, compilation) != null)
+        if (UsingDisposeLookup.Find(type, compilation) != null)
         {
             context.Emitter.Writer = disposeWriter;
             context.Emitter.DisposedStructs.Add(type);
