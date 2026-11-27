@@ -43,6 +43,10 @@
     <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);GS0002</MSBuildWarningsAsMessages>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(GSharpIrCpp)' == 'true'">
+    <Features>$(Features);gsharp-ir-cpp</Features>
+  </PropertyGroup>
+
   <Target Name="GSharpAddGeneratedItemsToOutputDirectory" DependsOnTargets="GSharpCompileCuda;GSharpCompileCpu" BeforeTargets="CopyFilesToOutputDirectory">
     <ItemGroup>
       <!-- For transitive ProjectReference copy -->

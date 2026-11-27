@@ -197,10 +197,10 @@ function buildSteps(options, outDir, isolateMutateCompiler) {
     ),
     'sanitized-linux': sanitizedLinuxStep,
     stability: queuedStep(
-      ['--gpu'], 'just', ['test-stability', options.stability, 'true'],
+      ['--gpu-exclusive'], 'just', ['test-stability', options.stability, 'true'],
       { gpu: true, lane: 'gpu', target: 'local:gpu' },
     ),
-    coverage: queuedStep(['--gpu'], 'just', ['test-coverage'], { gpu: true, lane: 'gpu', target: 'local:gpu' }),
+    coverage: queuedStep(['--gpu-exclusive'], 'just', ['test-coverage'], { gpu: true, lane: 'gpu', target: 'local:gpu' }),
     'mutate-compiler': queuedStep(
       isolateMutateCompiler ? ['--local', '--weight', String(ParallelMutateCompilerWeight)] : ['--local'],
       'node',

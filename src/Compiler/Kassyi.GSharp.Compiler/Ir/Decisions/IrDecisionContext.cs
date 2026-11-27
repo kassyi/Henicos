@@ -3,12 +3,12 @@ namespace Kassyi.GSharp.Compiler.Ir.Decisions;
 /// <summary>Inputs shared across one run of <see cref="IrDecisions"/>.</summary>
 /// <param name="compilation">The compilation containing the method.</param>
 /// <param name="temporaries">The temporary variable initializers of the tree being decided.</param>
-/// <param name="nativeDialect">The native dialect used for target, member, and argument decisions.</param>
+/// <param name="dialect">The dialect used for target, member, and argument decisions.</param>
 /// <param name="original">The original pre-spill method body from which unwritten local initializers are taken.</param>
 internal sealed class IrDecisionContext(
     Compilation compilation,
     IrTemporaryInitializers temporaries,
-    ITranspilerDialect nativeDialect,
+    ITranspilerDialect dialect,
     IrMethod original)
 {
     /// <summary>The compilation containing the method.</summary>
@@ -17,8 +17,8 @@ internal sealed class IrDecisionContext(
     /// <summary>The temporary variable initializers of the tree being decided.</summary>
     public IrTemporaryInitializers TemporaryInitializers { get; } = temporaries;
 
-    /// <summary>The native dialect used by the native emitter for target, member, and argument decisions.</summary>
-    public ITranspilerDialect NativeDialect { get; } = nativeDialect;
+    /// <summary>The dialect used for target, member, and argument decisions.</summary>
+    public ITranspilerDialect Dialect { get; } = dialect;
 
     /// <summary>The method being decided.</summary>
     public IMethodSymbol Method { get; } = original.Symbol;
