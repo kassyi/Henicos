@@ -7,6 +7,7 @@ namespace Kassyi.GSharp.Runtime.Aot;
 internal sealed class ManagedStackThreadPool
 {
     internal const int MaxIdleThreads = 1024;
+    private const int ParallelThreadStartThreshold = 16;
 
     internal static readonly ManagedStackThreadPool Instance = new();
 
@@ -51,9 +52,9 @@ internal sealed class ManagedStackThreadPool
 
     // <nested>: the calling thread rents while an earlier launch of its own still holds the thread's buffer (see
     // ManagedStackRunner.Run), so the workers go into a new array
-    internal ManagedStackThread[] Rent(int count, bool nested)
+    internal ManagedStackThread[] Rent(int count, bool nested, bool useKernelSignalAndWait = false)
     {
-        if (!TryRent(count, nested, out var workers, out _, out var failure))
+        if (!TryRent(count, nested, useKernelSignalAndWait, out var workers, out _, out var failure))
         {
             ExceptionDispatchInfo.Throw(failure);
         }
@@ -63,11 +64,11 @@ internal sealed class ManagedStackThreadPool
 
     // Like Rent, but returns false with the number of workers already obtained/started when starting an OS thread fails
     // with OutOfMemoryException or ThreadStartException (the obtained workers are already returned to the pool)
-    internal bool TryRent(int count, bool nested, out ManagedStackThread[] workers, out int startedCount,
-        [NotNullWhen(false)] out Exception? failure)
+    internal bool TryRent(int count, bool nested, bool useKernelSignalAndWait, out ManagedStackThread[] workers,
+        out int startedCount, [NotNullWhen(false)] out Exception? failure)
     {
         var rented = AllocateWorkers(count, nested);
-        var fromPool = PopIdle(rented, count);
+        var fromPool = PopIdle(rented, count, useKernelSignalAndWait);
         if (fromPool == count)
         {
             workers = rented;
@@ -79,7 +80,7 @@ internal sealed class ManagedStackThreadPool
         var created = 0;
         try
         {
-            StartThreads(rented, fromPool, count, ref created);
+            StartThreads(rented, fromPool, count, useKernelSignalAndWait, ref created);
             t_threadsStartedForTest?.Invoke();
             CountCreated(created);
             workers = rented;
@@ -90,8 +91,9 @@ internal sealed class ManagedStackThreadPool
         catch (Exception ex) when (ex is OutOfMemoryException or ThreadStartException)
         {
             // [WHY] The resource failure of the rent is what the caller wraps; an interruption of the wait for the
-            // gate here comes while that failure is already on its way, and is dropped (see ReturnTakingTheGate)
-            ReturnTakingTheGate(rented, fromPool + created, created);
+            // gate here comes while that failure is already on its way, and is dropped (see ReturnTakingTheGate).
+            // Scan the full [0..count) range because a parallel start failure can leave non-contiguous null slots.
+            ReturnTakingTheGate(rented, count, created);
             workers = [];
             startedCount = fromPool + created;
             failure = ex;
@@ -99,7 +101,7 @@ internal sealed class ManagedStackThreadPool
         }
         catch
         {
-            ReturnTakingTheGate(rented, fromPool + created, created);
+            ReturnTakingTheGate(rented, count, created);
             throw;
         }
     }
@@ -116,8 +118,36 @@ internal sealed class ManagedStackThreadPool
         return workers;
     }
 
-    // Takes up to <count> idle threads into workers[0..]; how many it took
-    private int PopIdle(ManagedStackThread[] workers, int count)
+    // Takes up to <count> idle threads matching <useKernelSignalAndWait> into workers[0..]; any mismatched idle
+    // threads (for example when a test switches wake-ahead mode) are retired safely under the gate.
+    private int PopIdle(ManagedStackThread[] workers, int count, bool useKernelSignalAndWait)
+    {
+        var fromPool = 0;
+        EnterGate();
+        try
+        {
+            while (fromPool < count && _idle.Count > 0)
+            {
+                var w = _idle.Pop();
+                if (w.Go.UsesKernelSignalAndWait != useKernelSignalAndWait)
+                {
+                    w.Retire = true;
+                    w.Go.Set();
+                    continue;
+                }
+
+                workers[fromPool++] = w;
+            }
+        }
+        finally
+        {
+            Monitor.Exit(_gate);
+        }
+
+        return fromPool;
+    }
+
+    private int PopAnyIdle(ManagedStackThread[] workers, int count)
     {
         var fromPool = 0;
         EnterGate();
@@ -174,23 +204,88 @@ internal sealed class ManagedStackThreadPool
     }
 
     // Starts the threads of workers[<from>..<count>), counting each one that has started in <created>
-    private static void StartThreads(ManagedStackThread[] workers, int from, int count, ref int created)
+    private static void StartThreads(ManagedStackThread[] workers, int from, int count, bool useKernelSignalAndWait,
+        ref int created)
     {
+        var missing = count - from;
+        if (missing >= ParallelThreadStartThreshold && t_beforeThreadStartForTest is null)
+        {
+            StartThreadsParallel(workers, from, count, useKernelSignalAndWait, ref created);
+            return;
+        }
+
         for (var i = from; i < count; i++)
         {
             t_beforeThreadStartForTest?.Invoke(i);
-            var self = new ManagedStackThread();
-            // [WHY] The default stack size of the platform, as the thread that ran the state machine had: a smaller
-            // stack would turn a deep recursion that ran before into a StackOverflow, which no handler can catch
-            var thread = new Thread(() => WorkerLoop(self))
-            {
-                IsBackground = true,
-                Name = "G# managed GPU thread"
-            };
-            thread.UnsafeStart();
-            workers[i] = self;
+            workers[i] = StartSingleThread(useKernelSignalAndWait);
             created++;
         }
+    }
+
+    private static void StartThreadsParallel(ManagedStackThread[] workers, int from, int count,
+        bool useKernelSignalAndWait, ref int created)
+    {
+        var missing = count - from;
+        var workerCount = Math.Min(Environment.ProcessorCount, Math.Max(1, missing / 8));
+        if (workerCount <= 1)
+        {
+            for (var i = from; i < count; i++)
+            {
+                workers[i] = StartSingleThread(useKernelSignalAndWait);
+                created++;
+            }
+
+            return;
+        }
+
+        var chunk = (missing + workerCount - 1) / workerCount;
+        var tasks = new Task[workerCount];
+        var sharedCreated = 0;
+        ExceptionDispatchInfo? firstFailure = null;
+        for (var p = 0; p < workerCount; p++)
+        {
+            var sliceStart = from + (p * chunk);
+            var sliceEnd = Math.Min(count, sliceStart + chunk);
+            tasks[p] = Task.Run(() =>
+            {
+                for (var i = sliceStart; i < sliceEnd; i++)
+                {
+                    if (Volatile.Read(ref firstFailure) is not null)
+                    {
+                        return;
+                    }
+
+                    try
+                    {
+                        workers[i] = StartSingleThread(useKernelSignalAndWait);
+                        Interlocked.Increment(ref sharedCreated);
+                    }
+                    catch (Exception ex)
+                    {
+                        Interlocked.CompareExchange(ref firstFailure, ExceptionDispatchInfo.Capture(ex), null);
+                        return;
+                    }
+                }
+            });
+        }
+
+        Task.WaitAll(tasks);
+        created += Volatile.Read(ref sharedCreated);
+        firstFailure?.Throw();
+    }
+
+    private static ManagedStackThread StartSingleThread(bool useKernelSignalAndWait)
+    {
+        var self = new ManagedStackThread(useKernelSignalAndWait);
+        // [WHY] The default stack size of the platform, as the thread that ran the state machine had: a smaller
+        // stack would turn a deep recursion that ran before into a StackOverflow, which no handler can catch
+        var thread = new Thread(() => WorkerLoop(self))
+        {
+            IsBackground = true,
+            Name = "G# managed GPU thread"
+        };
+        thread.UnsafeStart();
+        return self;
     }
 
     // [WHY] A contended wait for the gate is a wait of the thread: it goes through a SynchronizationContext that asks
@@ -263,8 +358,12 @@ internal sealed class ManagedStackThreadPool
         for (var i = 0; i < count; i++)
         {
             // Every worker has left the kernel: the launch unwinds them all before it returns them
-            // (ManagedStackRunner.CancelWaiting)
-            var w = workers[i];
+            // (ManagedStackRunner.CancelWaiting); parallel Rent failure can leave null slots.
+            if (workers[i] is not { } w)
+            {
+                continue;
+            }
+
             w.Launch = null;
             w.Body = null;
             w.Failure = null;
@@ -294,7 +393,7 @@ internal sealed class ManagedStackThreadPool
     internal IDisposable BorrowIdleThreadsForTest()
     {
         var workers = new ManagedStackThread[IdleThreadCount];
-        return new BorrowScope(this, workers, PopIdle(workers, workers.Length));
+        return new BorrowScope(this, workers, PopAnyIdle(workers, workers.Length));
     }
 
     private static void WorkerLoop(ManagedStackThread self)
@@ -311,6 +410,7 @@ internal sealed class ManagedStackThreadPool
             // means that the baton of the stack model lost step, an error of G# that must not pass unnoticed
             var launch = self.Launch ?? throw new InvalidOperationException(
                 "G#: internal error: a stack thread was woken without a launch (the managed stack model lost step)");
+            ManagedStackThread? nextWorker = null;
             if (!launch.Cancelled)
             {
                 try
@@ -323,15 +423,26 @@ internal sealed class ManagedStackThreadPool
                     // running thread) belongs to the kernel: Sleep(0) throws it here, so that it fails this launch
                     // instead of a wait between launches
                     Thread.Sleep(0);
+                    if (!launch.Cancelled)
+                    {
+                        if (launch.ReachesWarpCollective)
+                        {
+                            ManagedGpuContext.MarkWarpLaneExited(self.ThreadIndexInBlock);
+                        }
+
+                        nextWorker = launch.PrepareNextHandOver(self, selfDone: true);
+                    }
                 }
                 catch (ManagedLaunchCancelledException)
                 {
                     // The launch ended while this thread waited: the stack is unwound, nothing to report
                     self.Failure = null;
+                    nextWorker = null;
                 }
                 catch (Exception ex)
                 {
                     self.Failure = ExceptionDispatchInfo.Capture(ex);
+                    nextWorker = null;
                 }
                 finally
                 {
@@ -339,9 +450,18 @@ internal sealed class ManagedStackThreadPool
                 }
             }
 
-            // Answers the scheduler; the wait for the next wake is the one at the top of the loop
+            // Answers the next runnable thread of the round or the scheduler; the wait for the next wake is at the top of the loop
             self.Done = true;
-            launch.Scheduler.Set();
+            launch.HandOverCount++;
+            if (nextWorker is not null)
+            {
+                launch.WakeAheadAtOffset(launch.CurrentOrderIndex);
+                nextWorker.Go.Set();
+            }
+            else
+            {
+                launch.Scheduler.Set();
+            }
         }
     }
 
@@ -354,7 +474,7 @@ internal sealed class ManagedStackThreadPool
         {
             try
             {
-                self.Go.Wait();
+                self.Go.WaitOutsideKernel(self);
                 return;
             }
             catch (ThreadInterruptedException)

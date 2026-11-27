@@ -23,7 +23,7 @@ public static partial class ManagedGpuContext
         }
 
         self.AtBlockBarrier = true;
-        ManagedBaton.HandOver(launch.Scheduler, self.Go);
+        ManagedBaton.HandOverNext(self, launch);
         if (launch.Cancelled)
         {
             throw new ManagedLaunchCancelledException();
@@ -53,7 +53,7 @@ public static partial class ManagedGpuContext
         }
 
         self.AtGridSync = true;
-        ManagedBaton.HandOver(launch.Scheduler, self.Go);
+        ManagedBaton.HandOverNext(self, launch);
         if (launch.Cancelled)
         {
             throw new ManagedLaunchCancelledException();
