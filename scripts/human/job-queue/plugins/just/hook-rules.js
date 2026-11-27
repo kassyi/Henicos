@@ -59,8 +59,8 @@ function validateOptions(options) {
   };
 }
 
-/** The recipe of a just invocation, after its options. */
-function justRecipe(list, unquote) {
+/** The recipe name and token index of a just invocation, after its options. */
+function justRecipeCall(list, unquote) {
   for (let i = 1; i < list.length; i++) {
     const arg = unquote(list[i]);
     if (JustValueOptions.includes(arg)) {
@@ -75,10 +75,35 @@ function justRecipe(list, unquote) {
       continue; // a variable assignment before the recipe: just profile=cpu fuzz-diff
     }
     if (!arg.startsWith('-')) {
-      return arg;
+      return { recipe: arg, index: i };
     }
   }
-  return '';
+  return { recipe: '', index: -1 };
+}
+
+/** The recipe of a just invocation, after its options. */
+function justRecipe(list, unquote) {
+  return justRecipeCall(list, unquote).recipe;
+}
+
+/** Recipe arguments after `recipeIndex`, dropping unquoted shell redirections. */
+function recipeArguments(list, recipeIndex, unquote) {
+  const args = [];
+  for (let i = recipeIndex + 1; i < list.length; i++) {
+    const raw = list[i];
+    const quoted = raw.startsWith("'") || raw.startsWith('"');
+    if (!quoted) {
+      if (/^(?:\d+|&|\*)?>>?$/.test(raw)) {
+        i++;
+        continue;
+      }
+      if (/^(?:\d+|&|\*)?>>?\S+$/.test(raw)) {
+        continue;
+      }
+    }
+    args.push(unquote(raw));
+  }
+  return args;
 }
 
 /** Builds the `just` recipe command rule from `options.{hookRecipes, hookDryRunRecipes}`. */
@@ -114,7 +139,12 @@ function rewrite(_segment, list, reason, context) {
   if (reason.tool !== 'just' || (context && context.changedDirectory)) {
     return null;
   }
-  return recipeQueue(reason.verb, context.root, context.entry);
+  const unquote = (context && typeof context.argumentText === 'function' && context.argumentText) || defaultUnquote;
+  const { index } = justRecipeCall(list, unquote);
+  const args = index >= 0 ? recipeArguments(list, index, unquote) : [];
+  // The words as written, so that a dry run is skipped when the shell would expand one ($P, a glob)
+  const rawArgs = index >= 0 ? recipeArguments(list, index, (word) => word) : [];
+  return recipeQueue(reason.verb, context.root, context.entry, args, undefined, rawArgs);
 }
 
 module.exports = {

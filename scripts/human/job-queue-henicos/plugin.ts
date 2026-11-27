@@ -17,12 +17,11 @@ import {
   readCommandLine,
 } from "../job-queue/plugin-api.ts";
 import { isDotnetTest, selectsCategory } from "../job-queue/plugins/dotnet/plugin.ts";
-import { planBuildStep } from "../job-queue/plugins/dotnet/build-split.ts";
 import { cpuOnlyTestProjects, justPositionals, resolveBudgets, resolveTestsDir, testMemoryMb } from "./budgets.ts";
-import { formatOutsideLanguageRefusal, parseSharedCommand } from "./command-language.ts";
 import { nameFilterShare } from "./name-filter.ts";
 import { checkHenicosOffload, classifyOffloadCommand } from "./offload-probe.ts";
-import { shareDecision, shareOptions } from "./share-rules.ts";
+import { sharedTurnRefusal } from "./share-refusal.ts";
+import { shareDecision } from "./share-rules.ts";
 
 const DefaultBudgetsFile = "tests/memory-budgets.yml";
 const DefaultTestsDir = "tests";
@@ -241,15 +240,9 @@ const plugin = {
       };
     }
     if (!resource.forcedExclusive) {
-      const options = shareOptions(context.options);
-      if (options !== null) {
-        const split = planBuildStep(command, context.shell);
-        const turnCommand = split !== null ? split.tests : command;
-        const parsed = parseSharedCommand(turnCommand, context.shell);
-        const inLanguage = parsed !== null && (parsed.kind !== "recipe" || options.sharedRecipes.includes(parsed.name));
-        if (!inLanguage) {
-          return { refuse: formatOutsideLanguageRefusal(turnCommand, context.shell) };
-        }
+      const refusal = sharedTurnRefusal(command, context.shell, context.options);
+      if (refusal !== null) {
+        return { refuse: refusal };
       }
     }
     const budgets = resolveBudgets(

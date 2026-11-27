@@ -85,7 +85,8 @@ function denialText(reasons) {
     `${reasons.join(', ')} must run through the job queue, ` +
     'so that parallel agents do not oversubscribe the machine:\n' +
     '  node scripts/human/job-queue.js run -- "<command>"\n' +
-    '  node scripts/human/job-queue.js run --gpu -- "<command>"   (uses the GPU; replaces gpu-lock.js)\n' +
+    '  node scripts/human/job-queue.js run --gpu -- "<command>"             (uses the GPU; replaces gpu-lock.js)\n' +
+    '  node scripts/human/job-queue.js run --gpu-exclusive -- "<command>"   (uses the GPU outside the share language)\n' +
     'The queue waits for a free slot and then runs the command here. ' +
     'It prints `queued j<nnnn>` at once: keep the id and ' +
     'read the expected start and end with `node scripts/human/job-queue.js status <id> --json` (`status` lists every ' +
@@ -115,7 +116,7 @@ function additionalContext(plan) {
 function undecidedNote(undecided) {
   return (
     'The hook did not queue it by itself, since it cannot tell whether the command uses the GPU ' +
-    `(${undecided.join('; ')}): add --gpu when it does.`
+    `(${undecided.join('; ')}): add --gpu when it does, or --gpu-exclusive when it uses the GPU outside the share language.`
   );
 }
 
@@ -132,6 +133,17 @@ function rewrite(segment, list, reason, context) {
   const testsDir = (context && context.options && context.options.testsDir) || DefaultTestsDir;
   const result = testGpu(segment, context.root, defaultLookup(testsDir));
   return result.undecided !== undefined ? result : { gpu: result.gpu, options: [] };
+}
+
+/**
+ * True when `run --gpu` would accept the command (share-refusal.ts, the same definition the queue client applies), so
+ * the hook may queue it with --gpu; false sends it with --gpu-exclusive. The TypeScript module is loaded on first use.
+ */
+function confirmSharedGpu(command, shell, options) {
+  if (!isPlainObject(options) || options.sharedRecipes === undefined) {
+    return true; // without the share options the client refuses nothing (shareOptions in share-rules.ts)
+  }
+  return require('./share-refusal.ts').sharedTurnRefusal(command, shell, options) === null;
 }
 
 module.exports = {
@@ -153,6 +165,7 @@ module.exports = {
   },
   legacyQueueScripts: ['build-queue.js'],
   rewrite,
+  confirmSharedGpu,
   messages: {
     denialText,
     additionalContext,

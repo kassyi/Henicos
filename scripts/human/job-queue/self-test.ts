@@ -7,7 +7,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { createRequire, syncBuiltinESMExports } from "node:module";
-import { EntryScript, OrphanPollMs, StartupGraceMs } from "./constants.ts";
+import { EntryScript, GpuLockHeldVariable, OrphanPollMs, StartupGraceMs } from "./constants.ts";
 import { request } from "./client-connect.ts";
 import { RunHistory } from "./history.ts";
 import { type StatusJob, type StatusReply } from "./protocol.ts";
@@ -74,447 +74,518 @@ async function named(name: string, check: () => void | Promise<void>): Promise<v
   }
 }
 
+/**
+ * Strips `GSHARP_JOB_QUEUE_*` (except `GSHARP_JOB_QUEUE_LANGUAGE_FUZZ`), `GSHARP_GPU_LOCK_HELD`, `MSBUILDCORELIMIT`,
+ * and `MSBUILDNODECOREALLOCATIONWEIGHT` from `env` so a self-test run inside a queued job does not inherit the outer
+ * job's nesting or MSBuild-limit state, and returns a restore callback.
+ */
+export function stripQueueEnv(env: NodeJS.ProcessEnv = process.env): () => void {
+  const saved = new Map<string, string | undefined>();
+  for (const key of Object.keys(env)) {
+    const upper = key.toUpperCase();
+    if (
+      (upper.startsWith("GSHARP_JOB_QUEUE_") && upper !== "GSHARP_JOB_QUEUE_LANGUAGE_FUZZ") ||
+      upper === GpuLockHeldVariable ||
+      upper === "MSBUILDCORELIMIT" ||
+      upper === "MSBUILDNODECOREALLOCATIONWEIGHT"
+    ) {
+      saved.set(key, env[key]);
+      delete env[key];
+    }
+  }
+  return () => {
+    for (const [key, value] of saved) {
+      if (value === undefined) {
+        delete env[key];
+      } else {
+        env[key] = value;
+      }
+    }
+  };
+}
+
+/** Verifies `stripQueueEnv` removes queue nesting and MSBuild-limit variables and restores them cleanly. */
+function checkStripQueueEnv(): void {
+  const testEnv: NodeJS.ProcessEnv = {
+    GSHARP_JOB_QUEUE_JOB: "42",
+    GSHARP_JOB_QUEUE_PORT: "47117",
+    GSHARP_JOB_QUEUE_LANGUAGE_FUZZ: "12",
+    GSHARP_GPU_LOCK_HELD: "tmp/gpu-test-lock",
+    MSBUILDCORELIMIT: "3",
+    MSBUILDNODECOREALLOCATIONWEIGHT: "100",
+    UNRELATED_VAR: "keep",
+  };
+  const restore = stripQueueEnv(testEnv);
+  assert.strictEqual(testEnv.GSHARP_JOB_QUEUE_JOB, undefined, "GSHARP_JOB_QUEUE_JOB stripped");
+  assert.strictEqual(testEnv.GSHARP_JOB_QUEUE_PORT, undefined, "GSHARP_JOB_QUEUE_PORT stripped");
+  assert.strictEqual(testEnv.GSHARP_GPU_LOCK_HELD, undefined, "GSHARP_GPU_LOCK_HELD stripped");
+  assert.strictEqual(testEnv.MSBUILDCORELIMIT, undefined, "MSBUILDCORELIMIT stripped");
+  assert.strictEqual(testEnv.MSBUILDNODECOREALLOCATIONWEIGHT, undefined, "MSBUILDNODECOREALLOCATIONWEIGHT stripped");
+  assert.strictEqual(testEnv.GSHARP_JOB_QUEUE_LANGUAGE_FUZZ, "12", "language fuzz setting preserved");
+  assert.strictEqual(testEnv.UNRELATED_VAR, "keep", "unrelated env preserved");
+  restore();
+  assert.strictEqual(testEnv.GSHARP_JOB_QUEUE_JOB, "42", "GSHARP_JOB_QUEUE_JOB restored");
+  assert.strictEqual(testEnv.GSHARP_JOB_QUEUE_PORT, "47117", "GSHARP_JOB_QUEUE_PORT restored");
+  assert.strictEqual(testEnv.GSHARP_GPU_LOCK_HELD, "tmp/gpu-test-lock", "GSHARP_GPU_LOCK_HELD restored");
+  assert.strictEqual(testEnv.MSBUILDCORELIMIT, "3", "MSBUILDCORELIMIT restored");
+  assert.strictEqual(testEnv.MSBUILDNODECOREALLOCATIONWEIGHT, "100", "MSBUILDNODECOREALLOCATIONWEIGHT restored");
+  assert.strictEqual(testEnv.GSHARP_JOB_QUEUE_LANGUAGE_FUZZ, "12", "language fuzz still preserved");
+  assert.strictEqual(testEnv.UNRELATED_VAR, "keep", "unrelated env still preserved");
+}
+
 export async function selfTest(options?: { languageFuzz?: number }): Promise<void> {
+  const restoreQueueEnv = stripQueueEnv(process.env);
   const prevFuzz = process.env.GSHARP_JOB_QUEUE_LANGUAGE_FUZZ;
   if (options?.languageFuzz !== undefined && options.languageFuzz > 0) {
     process.env.GSHARP_JOB_QUEUE_LANGUAGE_FUZZ = String(options.languageFuzz);
   }
-  const cjsAssert = createRequire(import.meta.url)("node:assert") as Record<string, unknown>;
-  const originalAssert = new Map<string, (...args: unknown[]) => unknown>();
-  let unitAssertions = 0;
-  for (const key of Object.keys(cjsAssert)) {
-    if (key === "AssertionError" || key === "strict") {
-      continue;
-    }
-    const value = cjsAssert[key];
-    if (typeof value === "function") {
-      const original = value as (...args: unknown[]) => unknown;
-      originalAssert.set(key, original);
-      const restoreIdentity = key === "match" || key === "doesNotMatch";
-      const wrapped = function (this: unknown, ...args: unknown[]): unknown {
-        unitAssertions++;
-        if (!restoreIdentity) {
-          return Reflect.apply(original, this, args);
-        }
-        // Node 22's internalMatch distinguishes match vs doesNotMatch via `fn === assert.match`.
-        cjsAssert[key] = original;
-        try {
-          return Reflect.apply(original, this, args);
-        } finally {
-          cjsAssert[key] = wrapped;
-        }
-      };
-      cjsAssert[key] = wrapped;
-    }
-  }
-  syncBuiltinESMExports();
   try {
-    for (const [name, check] of Object.entries({
-      ...JobIdChecks,
-      ...FairnessChecks,
-      ...SchedulerChecks,
-      ...RemoteChecks,
-      ...ResourceChecks,
-      ...JobStateChecks,
-    })) {
-      await named(name, () => check(assert));
+    const cjsAssert = createRequire(import.meta.url)("node:assert") as Record<string, unknown>;
+    const originalAssert = new Map<string, (...args: unknown[]) => unknown>();
+    let unitAssertions = 0;
+    for (const key of Object.keys(cjsAssert)) {
+      if (key === "AssertionError" || key === "strict") {
+        continue;
+      }
+      const value = cjsAssert[key];
+      if (typeof value === "function") {
+        const original = value as (...args: unknown[]) => unknown;
+        originalAssert.set(key, original);
+        const restoreIdentity = key === "match" || key === "doesNotMatch";
+        const wrapped = function (this: unknown, ...args: unknown[]): unknown {
+          unitAssertions++;
+          if (!restoreIdentity) {
+            return Reflect.apply(original, this, args);
+          }
+          // Node 22's internalMatch distinguishes match vs doesNotMatch via `fn === assert.match`.
+          cjsAssert[key] = original;
+          try {
+            return Reflect.apply(original, this, args);
+          } finally {
+            cjsAssert[key] = wrapped;
+          }
+        };
+        cjsAssert[key] = wrapped;
+      }
     }
-    await named("checkShellHelpers", checkShellHelpers);
-    for (const [name, check] of Object.entries({
-      ...JobServerChecks,
-      ...QueueHintChecks,
-      ...SharedServerChecks,
-      ...ProbeChecks,
-      ...ClientChecks,
-      ...ShareClientChecks,
-    })) {
-      await named(name, () => check(assert));
+    syncBuiltinESMExports();
+    try {
+      for (const [name, check] of Object.entries({
+        ...JobIdChecks,
+        ...FairnessChecks,
+        ...SchedulerChecks,
+        ...RemoteChecks,
+        ...ResourceChecks,
+        ...JobStateChecks,
+      })) {
+        await named(name, () => check(assert));
+      }
+      await named("checkShellHelpers", checkShellHelpers);
+      await named("checkStripQueueEnv", checkStripQueueEnv);
+      for (const [name, check] of Object.entries({
+        ...JobServerChecks,
+        ...QueueHintChecks,
+        ...SharedServerChecks,
+        ...ProbeChecks,
+        ...ClientChecks,
+        ...ShareClientChecks,
+      })) {
+        await named(name, () => check(assert));
+      }
+      await named("checkView", checkView);
+      await named("checkLib", checkLib);
+      await named("checkPlugins", () => checkPlugins(assert));
+      await named("pluginChecks", () => runPluginChecks(assert));
+    } finally {
+      for (const [key, original] of originalAssert) {
+        cjsAssert[key] = original;
+      }
+      syncBuiltinESMExports();
     }
-    await named("checkView", checkView);
-    await named("checkLib", checkLib);
-    await named("checkPlugins", () => checkPlugins(assert));
-    await named("pluginChecks", () => runPluginChecks(assert));
+    process.stdout.write(`job-queue self-test: ${unitAssertions} assertions in the unit checks\n`);
+
+    const fixture = new QueueFixture();
+    const { dir, env, children, servers, ports } = fixture;
+    const { client, sleeper, gated, open, started, whenExists, startScheduler } = fixture;
+    const { statusOf, usedWithin, waitFor, jobWith, runningWith, jobsWith, rawClient } = fixture;
+    try {
+      // 1. At most 2 jobs at once, in arrival order; a client killed with its command frees its slot.
+      fixture.part = "part 1 (at most 2 jobs at once, in arrival order)";
+      const port = firstTestPort();
+      ports.push(port);
+      await startScheduler(port, 2);
+      await delay(StartupGraceMs);
+      const marker = path.join(dir, "log.txt");
+      const script = path.join(dir, "job.js");
+      const gate = path.join(dir, "gate-1");
+      // Logs its start, waits for the gate, logs its end 300 ms later
+      fs.writeFileSync(
+        script,
+        "const fs=require('fs');const [f,i,g]=process.argv.slice(2);" +
+          "fs.appendFileSync(f,`start ${i} ${Date.now()}\\n`);" +
+          "const t=setInterval(()=>{if(fs.existsSync(g)){clearInterval(t);" +
+          "setTimeout(()=>{fs.appendFileSync(f,`end ${i} ${Date.now()}\\n`)},300)}},50);",
+      );
+      const job = (i: number): string => `"${process.execPath}" "${script}" "${marker}" ${i} "${gate}"`;
+      // Its own command: a kill on Windows can let the client see the command end first and record the run (`taskkill
+      // /F` ends a command with exit code 1, like a failure)
+      const holder = client(port, sleeper(59999));
+      await runningWith(port, sleeper(59999));
+      const runs: Promise<number | null>[] = [];
+      for (const i of [0, 1, 2, 3]) {
+        runs.push(client(port, job(i)).done);
+        await jobWith(port, job(i)); // one at a time, so that they arrive in this order
+      }
+      const before = await statusOf(port);
+      assert.strictEqual(before.used, 2, "the holder and one job fill the 2 slots");
+      assert.strictEqual(before.waiting.length, 3, "the other jobs wait");
+      before.waiting.forEach((waiting, index) => {
+        assert.strictEqual(waiting.ahead, index, "the jobs ahead of a waiting job");
+        assert.ok(
+          waiting.startAt !== null && waiting.endAt !== null && waiting.endAt > waiting.startAt,
+          "expected start and end",
+        );
+        const previous = before.waiting[index - 1];
+        assert.ok(
+          previous === undefined || (waiting.startAt ?? 0) >= (previous.startAt ?? 0),
+          "a later job is expected to start later",
+        );
+      });
+      // run prints its id at once; status <id> --json tells the same job
+      // Both slots: it waits while the holder runs, however fast the jobs above have ended
+      const asking = spawn(
+        process.execPath,
+        [EntryScript, "run", "--port", String(port), "--slots", "2", "--weight", "2", "--", sleeper(100)],
+        {
+          stdio: ["ignore", "ignore", "pipe"],
+          windowsHide: true,
+          env,
+        },
+      );
+      children.push(asking);
+      // A limit, so that a line that no longer matches fails here with what was printed instead of waiting for ever (the
+      // client waits until the gate below opens)
+      let printed = "";
+      const queuedId = await new Promise<number>((resolve) => {
+        const limit = setTimeout(() => resolve(0), QueuedLineMs);
+        asking.stderr.on("data", (data: Buffer) => {
+          printed += data.toString();
+          const match = /queued j(\d+): (\d+) ahead, expected start/.exec(printed);
+          if (match) {
+            clearTimeout(limit);
+            resolve(Number(match[1]));
+          }
+        });
+        asking.on("close", () => {
+          clearTimeout(limit);
+          resolve(0);
+        });
+      });
+      assert.ok(
+        queuedId > 0,
+        `run prints "queued j<nnnn>: <n> ahead, expected start ..." while it waits; within ${QueuedLineMs} ms it printed: ${JSON.stringify(printed)}`,
+      );
+      const one = spawnSync(
+        process.execPath,
+        [EntryScript, "status", String(queuedId), "--json", "--port", String(port)],
+        {
+          encoding: "utf8",
+          windowsHide: true,
+          env,
+        },
+      );
+      const view = JSON.parse(one.stdout) as StatusJob;
+      assert.strictEqual(view.id, queuedId);
+      assert.strictEqual(view.state, "waiting");
+      assert.ok(Number.isFinite(view.endAt), "status <id> --json gives the expected end");
+      open(gate);
+      // The holder keeps its slot until the four jobs have ended, so that they run one after another, each granted when
+      // the one before it has ended: the times they log are then in the order of the grants. Two free slots are granted
+      // milliseconds apart, and commands that take longer than that to start log their starts in either order.
+      assert.deepStrictEqual(await Promise.all(runs), [0, 0, 0, 0]);
+      stopChild(holder);
+      const events = fs
+        .readFileSync(marker, "utf8")
+        .trim()
+        .split("\n")
+        .map((line) => line.split(" "))
+        .map(([kind, i, time]) => ({ kind, i: Number(i), time: Number(time) }))
+        .sort((x, y) => x.time - y.time || (x.kind === "end" ? -1 : 1));
+      let concurrent = 0;
+      let peak = 0;
+      for (const event of events) {
+        concurrent += event.kind === "start" ? 1 : -1;
+        peak = Math.max(peak, concurrent);
+      }
+      assert.ok(peak <= 1, `one job at a time ran beside the holder (2 slots), saw ${peak}`);
+      assert.deepStrictEqual(
+        events.filter((e) => e.kind === "start").map((e) => e.i),
+        [0, 1, 2, 3],
+        "arrival order",
+      );
+      assert.strictEqual(await usedWithin(port, 0, OrphanReleaseMs), 0, "every slot came back");
+
+      // 2. A client killed alone (its command keeps running) keeps the slot until the command exits.
+      fixture.part = "part 2 (a client killed alone keeps its slot)";
+      const loneStarted = path.join(dir, "started-2");
+      const lone = client(port, started(8000, loneStarted));
+      await whenExists(loneStarted);
+      lone.kill("SIGKILL"); // the client only; on Windows its shell ends with it, the command the shell started runs on
+      await waitFor(port, "the client is seen lost", (s) => (s.running[0]?.orphan ? true : undefined));
+      await delay(OrphanPollMs + 500); // a poll of the lost client's command has run
+      const orphaned = await statusOf(port);
+      assert.strictEqual(orphaned.used, 1, "the slot stays while the command of a lost client runs");
+      assert.strictEqual(orphaned.running[0]?.orphan, true);
+      assert.strictEqual(await usedWithin(port, 0, 8000 + OrphanReleaseMs), 0, "the slot comes back when it exits");
+
+      // 3. cancel-all stops running jobs and empties the queue; the clients exit with 4.
+      fixture.part = "part 3 (cancel-all, recorded run times)";
+      const r1 = client(port, sleeper(60000));
+      const r2 = client(port, sleeper(60000));
+      const w1 = client(port, sleeper(60000));
+      await jobsWith(port, sleeper(60000), 3);
+      const result = await request(port, { type: "cancel", all: true });
+      assert.strictEqual((result?.cancelled as number[]).length, 3);
+      assert.deepStrictEqual(await Promise.all([r1.done, r2.done, w1.done]), [4, 4, 4]);
+      // A cancelled running job keeps its slot until its client has stopped the command and closed
+      assert.strictEqual(await usedWithin(port, 0, 5000), 0);
+      const empty = await statusOf(port);
+      assert.deepStrictEqual([empty.used, empty.running.length, empty.waiting.length], [0, 0, 0]);
+      // Run times are recorded for the commands that ended by themselves, not for killed, lost or cancelled ones, nor
+      // for one stopped early (done with completed: false, as a client sends after a signal)
+      const rawRun = async (command: string, completed: boolean): Promise<void> => {
+        const c = await rawClient(port);
+        c.send(registration(command, 1, process.pid));
+        assert.ok((await c.until("granted")) !== null, `granted: ${command}`);
+        c.send({ type: "done", completed, exitCode: 0 });
+        c.socket.end();
+        await c.closed;
+      };
+      await rawRun("stopped early", false);
+      await rawRun("ran to its end", true);
+      // The scheduler records when it sees the close, after our side closed; the early run's close came before
+      let recorded = new RunHistory(path.join(dir, "history.json"), () => {});
+      for (let i = 0; i < 30 && recorded.estimate("ran to its end") === null; i++) {
+        await delay(100);
+        recorded = new RunHistory(path.join(dir, "history.json"), () => {});
+      }
+      for (const i of [0, 1, 2, 3]) {
+        assert.ok(recorded.estimate(job(i)) !== null, `job ${i} is recorded`);
+      }
+      assert.ok(recorded.estimate("ran to its end") !== null, "a run that ended by itself is recorded");
+      assert.strictEqual(recorded.estimate("stopped early"), null, "a run stopped early is not recorded");
+      assert.strictEqual(recorded.estimate(sleeper(60000)), null, "killed and cancelled runs are not recorded");
+      assert.strictEqual(
+        recorded.estimate(started(8000, loneStarted)),
+        null,
+        "the run of a lost client is not recorded",
+      );
+
+      // 4. After a scheduler restart, running jobs re-register before waiting ones are granted: never over capacity.
+      //    The two running commands wait for a gate, so that they still run whenever the next scheduler is up.
+      fixture.part = "part 4 (running jobs re-register after a scheduler restart)";
+      const restartGate = path.join(dir, "gate-restart");
+      const k1 = client(port, gated(0, restartGate));
+      const k2 = client(port, gated(0, restartGate));
+      await waitFor(port, "two commands run", (s) =>
+        s.running.filter((j) => j.commandPid !== null).length === 2 ? true : undefined,
+      );
+      const k3 = client(port, sleeper(500));
+      await jobWith(port, sleeper(500));
+      const restartedAt = Date.now();
+      servers[0]?.kill("SIGKILL"); // the clients start the next scheduler themselves
+      let maxUsed = 0;
+      let adoptedSince = Infinity;
+      // At least 3 s of samples, and on until a running job was seen (the next scheduler may take a while to start)
+      for (let i = 0; i < 100 && (i < 20 || adoptedSince === Infinity); i++) {
+        const snapshot = await request(port, { type: "status" }).catch(() => null); // the scheduler may be restarting
+        if (snapshot !== null && snapshot.type === "status") {
+          const status = snapshot as unknown as StatusReply;
+          maxUsed = Math.max(maxUsed, status.used);
+          status.running.forEach((j) => (adoptedSince = Math.min(adoptedSince, j.grantedAt ?? Infinity)));
+        }
+        await delay(150);
+      }
+      assert.ok(maxUsed <= 2, `never over capacity after a restart, saw ${maxUsed}`);
+      assert.ok(adoptedSince < restartedAt, "a re-registered job keeps the start of its command, not the restart time");
+      open(restartGate);
+      assert.deepStrictEqual(await Promise.all([k1.done, k2.done, k3.done]), [0, 0, 0]);
+
+      // 6. The command runs in the chosen shell and its exit code comes back: PowerShell passes the code of the last
+      //    native program on; bash and sh understand their own syntax.
+      fixture.part = "part 6 (the chosen shell and its exit code)";
+      const exitOf = async (shell: string, command: string): Promise<number | null> =>
+        client(port, command, ["--shell", shell]).done;
+      const node = `"${process.execPath.replace(/\\/g, "/")}"`;
+      const hasGitBash = spawnSync(gitBashPath(), ["-c", "exit 0"], { windowsHide: true }).status === 0;
+      if (process.platform === "win32") {
+        assert.strictEqual(await exitOf("pwsh", `$x = 1; & ${node} -e "process.exit(5)"`), 5, "pwsh: native exit code");
+        assert.strictEqual(await exitOf("cmd", "exit 6"), 6, "cmd");
+      }
+      if (hasGitBash) {
+        assert.strictEqual(await exitOf("bash", "FOO=7; true 2>/dev/null; exit $FOO"), 7, "bash syntax");
+      }
+
+      // 7. Several words after `--` arrive as argv already split by the caller's shell; each reaches the command as it
+      // was.
+      fixture.part = "part 7 (argv after --)";
+      const argvExit = (shell: string): Promise<number | null> =>
+        new Promise((resolve) => {
+          // The command compares its own argv with the words, so each word makes the round trip through the shell
+          const check = "process.exit(JSON.stringify(process.argv.slice(1))===process.env.BQ_EXPECT?0:9)";
+          const words = [
+            "A&B c|d",
+            "it's",
+            "-Dfoo.bar=1",
+            "C:\\dir\\f.txt",
+            "@x.rsp",
+            "x,",
+            "-p:A=1",
+            "Category!=Stress",
+            "$HOME",
+          ];
+          const args = [
+            EntryScript,
+            "run",
+            "--port",
+            String(port),
+            "--shell",
+            shell,
+            "--",
+            process.execPath,
+            "-e",
+            check,
+            ...words,
+          ];
+          const child = spawn(process.execPath, args, {
+            stdio: "ignore",
+            windowsHide: true,
+            env: { ...env, BQ_EXPECT: JSON.stringify(words) },
+          });
+          children.push(child);
+          child.on("close", resolve);
+        });
+      const shells = process.platform === "win32" ? ["pwsh", "cmd"] : ["sh"];
+      if (hasGitBash) {
+        shells.push("bash");
+      }
+      for (const shell of shells) {
+        assert.strictEqual(await argvExit(shell), 0, `argv after -- survives ${shell}`);
+      }
+
+      // 8. A client that lost only its connection re-registers: its kept slot is replaced under the same id, and a
+      //    waiting job does not get it in between (capacity 2: A weighs 2, W waits with 2).
+      fixture.part = "part 8 (a client that lost its connection re-registers)";
+      await usedWithin(port, 0, 5000);
+      // Unix: a group leader, as the command a client starts, so that the scheduler sees its group alive
+      const sleeperProcess = spawn(process.execPath, ["-e", "setTimeout(function(){},20000)"], {
+        windowsHide: true,
+        detached: process.platform !== "win32",
+      });
+      children.push(sleeperProcess);
+      const fakeClientPid = process.pid;
+      const first = await rawClient(port);
+      const requestA = registration("A", 2, fakeClientPid);
+      first.send(requestA);
+      assert.ok((await first.until("granted")) !== null, "A is granted");
+      const spawnedAt = Date.now();
+      first.send({ type: "started", commandPid: sleeperProcess.pid ?? 0, spawnedAt });
+      const waiter = await rawClient(port);
+      waiter.send(registration("W", 2, 1));
+      await waiter.until("queued");
+      const keptId = (await runningWith(port, "A")).id;
+      first.close();
+      await waitFor(port, "A is seen lost", (s) =>
+        s.running.some((j) => j.id === keptId && j.orphan) ? true : undefined,
+      );
+      const again = await rawClient(port);
+      again.send({ ...requestA, type: "adopt", id: keptId, commandPid: sleeperProcess.pid ?? 0, spawnedAt });
+      assert.ok((await again.until("adopted")) !== null, "A re-registers");
+      const readopted = await statusOf(port);
+      assert.deepStrictEqual(
+        [readopted.used, readopted.running.map((j) => j.command), readopted.waiting.map((j) => j.command)],
+        [2, ["A"], ["W"]],
+        "re-registration replaces the kept slot without handing it to W",
+      );
+      assert.strictEqual(readopted.running[0]?.id, keptId, "the re-registered job keeps its id");
+      again.close();
+      waiter.close();
+      stopChild(sleeperProcess);
+
+      // 5. A job whose client was lost before a restart still holds its slot after it (restored from jobs-<port>.json).
+      fixture.part = "part 5 (the job of a lost client is restored after a restart)";
+      // Part 8 closed A's connection and stopped its command: both slots come back once the scheduler has observed the
+      // processes, as for any lost client (OrphanReleaseMs), and the job below cannot start before that
+      assert.strictEqual(await usedWithin(port, 0, OrphanReleaseMs), 0, "the slots of part 8 came back");
+      const lostStarted = path.join(dir, "started-5");
+      const lost = client(port, started(8000, lostStarted));
+      await whenExists(lostStarted);
+      lost.kill("SIGKILL"); // the client only
+      const beforeRestart = await waitFor(port, "the client is seen lost", (s) =>
+        s.running[0]?.orphan ? s : undefined,
+      );
+      await request(port, { type: "stop" });
+      await delay(300);
+      await startScheduler(port, 2);
+      const restored = await statusOf(port);
+      assert.strictEqual(restored.used, 1, "the job of the lost client is restored after the restart");
+      assert.strictEqual(restored.running[0]?.orphan, true);
+      assert.strictEqual(restored.running[0]?.id, beforeRestart.running[0]?.id, "a job keeps its id across a restart");
+      const fresh = client(port, sleeper(100));
+      await delay(StartupGraceMs + 800);
+      assert.ok(fresh.exitCode === 0 || (await fresh.done) === 0);
+      const newIds = JSON.parse(fs.readFileSync(path.join(dir, `jobs-${port}.json`), "utf8")) as { nextId: number };
+      assert.ok(newIds.nextId > (beforeRestart.running[0]?.id ?? Infinity), "new ids continue after the saved ones");
+      assert.strictEqual(await usedWithin(port, 0, 8000 + OrphanReleaseMs), 0, "and released when its command exits");
+
+      // 9. hrrn re-grants while jobs wait, not only when a job ends: a short job that overtakes the waiting wide one
+      //    starts within RegrantMs, although nothing ends before the running job (20 s).
+      fixture.part = "part 9 (checkRegrant)";
+      await checkRegrant(fixture, port + 1);
+
+      // 10. move, set-weight and --after end to end, and their survival across a scheduler restart.
+      fixture.part = "part 10 (checkPlacementAndDependencies)";
+      await checkPlacementAndDependencies(fixture, port + 2);
+
+      // 11. --gpu jobs wait for their GPU turn in the scheduler: in order, visible and cancellable while they wait.
+      fixture.part = "part 11 (checkGpuTurnsEndToEnd)";
+      await checkGpuTurnsEndToEnd(fixture, port + 3);
+
+      // 12. wait <id> exits with the outcome of a job: when a running job ends (also across a restart), at once for an
+      //     ended one, with 2 for an unknown id.
+      fixture.part = "part 12 (checkWait)";
+      await checkWait(fixture, port + 4);
+
+      // 13. start <id> runs a waiting job beside the running ones, over the pool.
+      fixture.part = "part 13 (checkStart)";
+      await checkStart(fixture, port + 5);
+
+      // 14. A client that comes back: re-registrations that race with the old connection's close or the observation of
+      //     its processes, and another process that reuses its pid.
+      fixture.part = "part 14 (checkReconnects)";
+      await checkReconnects(fixture, port + 6);
+
+      // 15. A restarted scheduler holds every job of its state file from the first event; an older file keeps the grace.
+      fixture.part = "part 15 (checkRestarts)";
+      await checkRestarts(fixture, port + 10);
+
+      // 16. pause: nothing waiting starts, running jobs end, the pause survives a restart, start <id> still works,
+      //     pause --until-idle waits for the running jobs, resume grants.
+      fixture.part = "part 16 (checkPause)";
+      await checkPause(fixture, port + 20);
+    } catch (error) {
+      process.stderr.write(`${fixture.part} failed\n${fixture.schedulerLogTail()}`);
+      throw error;
+    } finally {
+      await fixture.cleanup();
+    }
   } finally {
     if (prevFuzz === undefined) {
       delete process.env.GSHARP_JOB_QUEUE_LANGUAGE_FUZZ;
     } else {
       process.env.GSHARP_JOB_QUEUE_LANGUAGE_FUZZ = prevFuzz;
     }
-    for (const [key, original] of originalAssert) {
-      cjsAssert[key] = original;
-    }
-    syncBuiltinESMExports();
-  }
-  process.stdout.write(`job-queue self-test: ${unitAssertions} assertions in the unit checks\n`);
-
-  const fixture = new QueueFixture();
-  const { dir, env, children, servers, ports } = fixture;
-  const { client, sleeper, gated, open, started, whenExists, startScheduler } = fixture;
-  const { statusOf, usedWithin, waitFor, jobWith, runningWith, jobsWith, rawClient } = fixture;
-  try {
-    // 1. At most 2 jobs at once, in arrival order; a client killed with its command frees its slot.
-    fixture.part = "part 1 (at most 2 jobs at once, in arrival order)";
-    const port = firstTestPort();
-    ports.push(port);
-    await startScheduler(port, 2);
-    await delay(StartupGraceMs);
-    const marker = path.join(dir, "log.txt");
-    const script = path.join(dir, "job.js");
-    const gate = path.join(dir, "gate-1");
-    // Logs its start, waits for the gate, logs its end 300 ms later
-    fs.writeFileSync(
-      script,
-      "const fs=require('fs');const [f,i,g]=process.argv.slice(2);" +
-        "fs.appendFileSync(f,`start ${i} ${Date.now()}\\n`);" +
-        "const t=setInterval(()=>{if(fs.existsSync(g)){clearInterval(t);" +
-        "setTimeout(()=>{fs.appendFileSync(f,`end ${i} ${Date.now()}\\n`)},300)}},50);",
-    );
-    const job = (i: number): string => `"${process.execPath}" "${script}" "${marker}" ${i} "${gate}"`;
-    // Its own command: a kill on Windows can let the client see the command end first and record the run (`taskkill
-    // /F` ends a command with exit code 1, like a failure)
-    const holder = client(port, sleeper(59999));
-    await runningWith(port, sleeper(59999));
-    const runs: Promise<number | null>[] = [];
-    for (const i of [0, 1, 2, 3]) {
-      runs.push(client(port, job(i)).done);
-      await jobWith(port, job(i)); // one at a time, so that they arrive in this order
-    }
-    const before = await statusOf(port);
-    assert.strictEqual(before.used, 2, "the holder and one job fill the 2 slots");
-    assert.strictEqual(before.waiting.length, 3, "the other jobs wait");
-    before.waiting.forEach((waiting, index) => {
-      assert.strictEqual(waiting.ahead, index, "the jobs ahead of a waiting job");
-      assert.ok(
-        waiting.startAt !== null && waiting.endAt !== null && waiting.endAt > waiting.startAt,
-        "expected start and end",
-      );
-      const previous = before.waiting[index - 1];
-      assert.ok(
-        previous === undefined || (waiting.startAt ?? 0) >= (previous.startAt ?? 0),
-        "a later job is expected to start later",
-      );
-    });
-    // run prints its id at once; status <id> --json tells the same job
-    // Both slots: it waits while the holder runs, however fast the jobs above have ended
-    const asking = spawn(
-      process.execPath,
-      [EntryScript, "run", "--port", String(port), "--slots", "2", "--weight", "2", "--", sleeper(100)],
-      {
-        stdio: ["ignore", "ignore", "pipe"],
-        windowsHide: true,
-        env,
-      },
-    );
-    children.push(asking);
-    // A limit, so that a line that no longer matches fails here with what was printed instead of waiting for ever (the
-    // client waits until the gate below opens)
-    let printed = "";
-    const queuedId = await new Promise<number>((resolve) => {
-      const limit = setTimeout(() => resolve(0), QueuedLineMs);
-      asking.stderr.on("data", (data: Buffer) => {
-        printed += data.toString();
-        const match = /queued j(\d+): (\d+) ahead, expected start/.exec(printed);
-        if (match) {
-          clearTimeout(limit);
-          resolve(Number(match[1]));
-        }
-      });
-      asking.on("close", () => {
-        clearTimeout(limit);
-        resolve(0);
-      });
-    });
-    assert.ok(
-      queuedId > 0,
-      `run prints "queued j<nnnn>: <n> ahead, expected start ..." while it waits; within ${QueuedLineMs} ms it printed: ${JSON.stringify(printed)}`,
-    );
-    const one = spawnSync(
-      process.execPath,
-      [EntryScript, "status", String(queuedId), "--json", "--port", String(port)],
-      {
-        encoding: "utf8",
-        windowsHide: true,
-        env,
-      },
-    );
-    const view = JSON.parse(one.stdout) as StatusJob;
-    assert.strictEqual(view.id, queuedId);
-    assert.strictEqual(view.state, "waiting");
-    assert.ok(Number.isFinite(view.endAt), "status <id> --json gives the expected end");
-    open(gate);
-    // The holder keeps its slot until the four jobs have ended, so that they run one after another, each granted when
-    // the one before it has ended: the times they log are then in the order of the grants. Two free slots are granted
-    // milliseconds apart, and commands that take longer than that to start log their starts in either order.
-    assert.deepStrictEqual(await Promise.all(runs), [0, 0, 0, 0]);
-    stopChild(holder);
-    const events = fs
-      .readFileSync(marker, "utf8")
-      .trim()
-      .split("\n")
-      .map((line) => line.split(" "))
-      .map(([kind, i, time]) => ({ kind, i: Number(i), time: Number(time) }))
-      .sort((x, y) => x.time - y.time || (x.kind === "end" ? -1 : 1));
-    let concurrent = 0;
-    let peak = 0;
-    for (const event of events) {
-      concurrent += event.kind === "start" ? 1 : -1;
-      peak = Math.max(peak, concurrent);
-    }
-    assert.ok(peak <= 1, `one job at a time ran beside the holder (2 slots), saw ${peak}`);
-    assert.deepStrictEqual(
-      events.filter((e) => e.kind === "start").map((e) => e.i),
-      [0, 1, 2, 3],
-      "arrival order",
-    );
-    assert.strictEqual(await usedWithin(port, 0, OrphanReleaseMs), 0, "every slot came back");
-
-    // 2. A client killed alone (its command keeps running) keeps the slot until the command exits.
-    fixture.part = "part 2 (a client killed alone keeps its slot)";
-    const loneStarted = path.join(dir, "started-2");
-    const lone = client(port, started(8000, loneStarted));
-    await whenExists(loneStarted);
-    lone.kill("SIGKILL"); // the client only; on Windows its shell ends with it, the command the shell started runs on
-    await waitFor(port, "the client is seen lost", (s) => (s.running[0]?.orphan ? true : undefined));
-    await delay(OrphanPollMs + 500); // a poll of the lost client's command has run
-    const orphaned = await statusOf(port);
-    assert.strictEqual(orphaned.used, 1, "the slot stays while the command of a lost client runs");
-    assert.strictEqual(orphaned.running[0]?.orphan, true);
-    assert.strictEqual(await usedWithin(port, 0, 8000 + OrphanReleaseMs), 0, "the slot comes back when it exits");
-
-    // 3. cancel-all stops running jobs and empties the queue; the clients exit with 4.
-    fixture.part = "part 3 (cancel-all, recorded run times)";
-    const r1 = client(port, sleeper(60000));
-    const r2 = client(port, sleeper(60000));
-    const w1 = client(port, sleeper(60000));
-    await jobsWith(port, sleeper(60000), 3);
-    const result = await request(port, { type: "cancel", all: true });
-    assert.strictEqual((result?.cancelled as number[]).length, 3);
-    assert.deepStrictEqual(await Promise.all([r1.done, r2.done, w1.done]), [4, 4, 4]);
-    // A cancelled running job keeps its slot until its client has stopped the command and closed
-    assert.strictEqual(await usedWithin(port, 0, 5000), 0);
-    const empty = await statusOf(port);
-    assert.deepStrictEqual([empty.used, empty.running.length, empty.waiting.length], [0, 0, 0]);
-    // Run times are recorded for the commands that ended by themselves, not for killed, lost or cancelled ones, nor
-    // for one stopped early (done with completed: false, as a client sends after a signal)
-    const rawRun = async (command: string, completed: boolean): Promise<void> => {
-      const c = await rawClient(port);
-      c.send(registration(command, 1, process.pid));
-      assert.ok((await c.until("granted")) !== null, `granted: ${command}`);
-      c.send({ type: "done", completed, exitCode: 0 });
-      c.socket.end();
-      await c.closed;
-    };
-    await rawRun("stopped early", false);
-    await rawRun("ran to its end", true);
-    // The scheduler records when it sees the close, after our side closed; the early run's close came before
-    let recorded = new RunHistory(path.join(dir, "history.json"), () => {});
-    for (let i = 0; i < 30 && recorded.estimate("ran to its end") === null; i++) {
-      await delay(100);
-      recorded = new RunHistory(path.join(dir, "history.json"), () => {});
-    }
-    for (const i of [0, 1, 2, 3]) {
-      assert.ok(recorded.estimate(job(i)) !== null, `job ${i} is recorded`);
-    }
-    assert.ok(recorded.estimate("ran to its end") !== null, "a run that ended by itself is recorded");
-    assert.strictEqual(recorded.estimate("stopped early"), null, "a run stopped early is not recorded");
-    assert.strictEqual(recorded.estimate(sleeper(60000)), null, "killed and cancelled runs are not recorded");
-    assert.strictEqual(recorded.estimate(started(8000, loneStarted)), null, "the run of a lost client is not recorded");
-
-    // 4. After a scheduler restart, running jobs re-register before waiting ones are granted: never over capacity.
-    //    The two running commands wait for a gate, so that they still run whenever the next scheduler is up.
-    fixture.part = "part 4 (running jobs re-register after a scheduler restart)";
-    const restartGate = path.join(dir, "gate-restart");
-    const k1 = client(port, gated(0, restartGate));
-    const k2 = client(port, gated(0, restartGate));
-    await waitFor(port, "two commands run", (s) =>
-      s.running.filter((j) => j.commandPid !== null).length === 2 ? true : undefined,
-    );
-    const k3 = client(port, sleeper(500));
-    await jobWith(port, sleeper(500));
-    const restartedAt = Date.now();
-    servers[0]?.kill("SIGKILL"); // the clients start the next scheduler themselves
-    let maxUsed = 0;
-    let adoptedSince = Infinity;
-    // At least 3 s of samples, and on until a running job was seen (the next scheduler may take a while to start)
-    for (let i = 0; i < 100 && (i < 20 || adoptedSince === Infinity); i++) {
-      const snapshot = await request(port, { type: "status" }).catch(() => null); // the scheduler may be restarting
-      if (snapshot !== null && snapshot.type === "status") {
-        const status = snapshot as unknown as StatusReply;
-        maxUsed = Math.max(maxUsed, status.used);
-        status.running.forEach((j) => (adoptedSince = Math.min(adoptedSince, j.grantedAt ?? Infinity)));
-      }
-      await delay(150);
-    }
-    assert.ok(maxUsed <= 2, `never over capacity after a restart, saw ${maxUsed}`);
-    assert.ok(adoptedSince < restartedAt, "a re-registered job keeps the start of its command, not the restart time");
-    open(restartGate);
-    assert.deepStrictEqual(await Promise.all([k1.done, k2.done, k3.done]), [0, 0, 0]);
-
-    // 6. The command runs in the chosen shell and its exit code comes back: PowerShell passes the code of the last
-    //    native program on; bash and sh understand their own syntax.
-    fixture.part = "part 6 (the chosen shell and its exit code)";
-    const exitOf = async (shell: string, command: string): Promise<number | null> =>
-      client(port, command, ["--shell", shell]).done;
-    const node = `"${process.execPath.replace(/\\/g, "/")}"`;
-    const hasGitBash = spawnSync(gitBashPath(), ["-c", "exit 0"], { windowsHide: true }).status === 0;
-    if (process.platform === "win32") {
-      assert.strictEqual(await exitOf("pwsh", `$x = 1; & ${node} -e "process.exit(5)"`), 5, "pwsh: native exit code");
-      assert.strictEqual(await exitOf("cmd", "exit 6"), 6, "cmd");
-    }
-    if (hasGitBash) {
-      assert.strictEqual(await exitOf("bash", "FOO=7; true 2>/dev/null; exit $FOO"), 7, "bash syntax");
-    }
-
-    // 7. Several words after `--` arrive as argv already split by the caller's shell; each reaches the command as it
-    // was.
-    fixture.part = "part 7 (argv after --)";
-    const argvExit = (shell: string): Promise<number | null> =>
-      new Promise((resolve) => {
-        // The command compares its own argv with the words, so each word makes the round trip through the shell
-        const check = "process.exit(JSON.stringify(process.argv.slice(1))===process.env.BQ_EXPECT?0:9)";
-        const words = [
-          "A&B c|d",
-          "it's",
-          "-Dfoo.bar=1",
-          "C:\\dir\\f.txt",
-          "@x.rsp",
-          "x,",
-          "-p:A=1",
-          "Category!=Stress",
-          "$HOME",
-        ];
-        const args = [
-          EntryScript,
-          "run",
-          "--port",
-          String(port),
-          "--shell",
-          shell,
-          "--",
-          process.execPath,
-          "-e",
-          check,
-          ...words,
-        ];
-        const child = spawn(process.execPath, args, {
-          stdio: "ignore",
-          windowsHide: true,
-          env: { ...env, BQ_EXPECT: JSON.stringify(words) },
-        });
-        children.push(child);
-        child.on("close", resolve);
-      });
-    const shells = process.platform === "win32" ? ["pwsh", "cmd"] : ["sh"];
-    if (hasGitBash) {
-      shells.push("bash");
-    }
-    for (const shell of shells) {
-      assert.strictEqual(await argvExit(shell), 0, `argv after -- survives ${shell}`);
-    }
-
-    // 8. A client that lost only its connection re-registers: its kept slot is replaced under the same id, and a
-    //    waiting job does not get it in between (capacity 2: A weighs 2, W waits with 2).
-    fixture.part = "part 8 (a client that lost its connection re-registers)";
-    await usedWithin(port, 0, 5000);
-    // Unix: a group leader, as the command a client starts, so that the scheduler sees its group alive
-    const sleeperProcess = spawn(process.execPath, ["-e", "setTimeout(function(){},20000)"], {
-      windowsHide: true,
-      detached: process.platform !== "win32",
-    });
-    children.push(sleeperProcess);
-    const fakeClientPid = process.pid;
-    const first = await rawClient(port);
-    const requestA = registration("A", 2, fakeClientPid);
-    first.send(requestA);
-    assert.ok((await first.until("granted")) !== null, "A is granted");
-    const spawnedAt = Date.now();
-    first.send({ type: "started", commandPid: sleeperProcess.pid ?? 0, spawnedAt });
-    const waiter = await rawClient(port);
-    waiter.send(registration("W", 2, 1));
-    await waiter.until("queued");
-    const keptId = (await runningWith(port, "A")).id;
-    first.close();
-    await waitFor(port, "A is seen lost", (s) =>
-      s.running.some((j) => j.id === keptId && j.orphan) ? true : undefined,
-    );
-    const again = await rawClient(port);
-    again.send({ ...requestA, type: "adopt", id: keptId, commandPid: sleeperProcess.pid ?? 0, spawnedAt });
-    assert.ok((await again.until("adopted")) !== null, "A re-registers");
-    const readopted = await statusOf(port);
-    assert.deepStrictEqual(
-      [readopted.used, readopted.running.map((j) => j.command), readopted.waiting.map((j) => j.command)],
-      [2, ["A"], ["W"]],
-      "re-registration replaces the kept slot without handing it to W",
-    );
-    assert.strictEqual(readopted.running[0]?.id, keptId, "the re-registered job keeps its id");
-    again.close();
-    waiter.close();
-    stopChild(sleeperProcess);
-
-    // 5. A job whose client was lost before a restart still holds its slot after it (restored from jobs-<port>.json).
-    fixture.part = "part 5 (the job of a lost client is restored after a restart)";
-    // Part 8 closed A's connection and stopped its command: both slots come back once the scheduler has observed the
-    // processes, as for any lost client (OrphanReleaseMs), and the job below cannot start before that
-    assert.strictEqual(await usedWithin(port, 0, OrphanReleaseMs), 0, "the slots of part 8 came back");
-    const lostStarted = path.join(dir, "started-5");
-    const lost = client(port, started(8000, lostStarted));
-    await whenExists(lostStarted);
-    lost.kill("SIGKILL"); // the client only
-    const beforeRestart = await waitFor(port, "the client is seen lost", (s) => (s.running[0]?.orphan ? s : undefined));
-    await request(port, { type: "stop" });
-    await delay(300);
-    await startScheduler(port, 2);
-    const restored = await statusOf(port);
-    assert.strictEqual(restored.used, 1, "the job of the lost client is restored after the restart");
-    assert.strictEqual(restored.running[0]?.orphan, true);
-    assert.strictEqual(restored.running[0]?.id, beforeRestart.running[0]?.id, "a job keeps its id across a restart");
-    const fresh = client(port, sleeper(100));
-    await delay(StartupGraceMs + 800);
-    assert.ok(fresh.exitCode === 0 || (await fresh.done) === 0);
-    const newIds = JSON.parse(fs.readFileSync(path.join(dir, `jobs-${port}.json`), "utf8")) as { nextId: number };
-    assert.ok(newIds.nextId > (beforeRestart.running[0]?.id ?? Infinity), "new ids continue after the saved ones");
-    assert.strictEqual(await usedWithin(port, 0, 8000 + OrphanReleaseMs), 0, "and released when its command exits");
-
-    // 9. hrrn re-grants while jobs wait, not only when a job ends: a short job that overtakes the waiting wide one
-    //    starts within RegrantMs, although nothing ends before the running job (20 s).
-    fixture.part = "part 9 (checkRegrant)";
-    await checkRegrant(fixture, port + 1);
-
-    // 10. move, set-weight and --after end to end, and their survival across a scheduler restart.
-    fixture.part = "part 10 (checkPlacementAndDependencies)";
-    await checkPlacementAndDependencies(fixture, port + 2);
-
-    // 11. --gpu jobs wait for their GPU turn in the scheduler: in order, visible and cancellable while they wait.
-    fixture.part = "part 11 (checkGpuTurnsEndToEnd)";
-    await checkGpuTurnsEndToEnd(fixture, port + 3);
-
-    // 12. wait <id> exits with the outcome of a job: when a running job ends (also across a restart), at once for an
-    //     ended one, with 2 for an unknown id.
-    fixture.part = "part 12 (checkWait)";
-    await checkWait(fixture, port + 4);
-
-    // 13. start <id> runs a waiting job beside the running ones, over the pool.
-    fixture.part = "part 13 (checkStart)";
-    await checkStart(fixture, port + 5);
-
-    // 14. A client that comes back: re-registrations that race with the old connection's close or the observation of
-    //     its processes, and another process that reuses its pid.
-    fixture.part = "part 14 (checkReconnects)";
-    await checkReconnects(fixture, port + 6);
-
-    // 15. A restarted scheduler holds every job of its state file from the first event; an older file keeps the grace.
-    fixture.part = "part 15 (checkRestarts)";
-    await checkRestarts(fixture, port + 10);
-
-    // 16. pause: nothing waiting starts, running jobs end, the pause survives a restart, start <id> still works,
-    //     pause --until-idle waits for the running jobs, resume grants.
-    fixture.part = "part 16 (checkPause)";
-    await checkPause(fixture, port + 20);
-  } catch (error) {
-    process.stderr.write(`${fixture.part} failed\n${fixture.schedulerLogTail()}`);
-    throw error;
-  } finally {
-    await fixture.cleanup();
+    restoreQueueEnv();
   }
   process.stdout.write("job-queue self-test passed\n");
 }
