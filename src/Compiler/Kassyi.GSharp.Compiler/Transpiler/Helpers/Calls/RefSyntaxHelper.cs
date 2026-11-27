@@ -231,7 +231,7 @@ internal static class RefSyntaxHelper
             IFieldSymbol { IsConst: false, IsStatic: false } => CppLocation.Storage,
             IPropertySymbol { RefKind: RefKind.Ref or RefKind.RefReadOnly } => CppLocation.Storage,
             IPropertySymbol { ContainingType: INamedTypeSymbol containingType } property
-                when GlobalCppNames.IsEmittedUserType(containingType) &&
+                when EmittedUserTypes.IsEmittedUserType(containingType) &&
                      !StructAbiMembers.HasAccessorFunctions(property) =>
                 CppLocation.AutoPropertyStorage,
             _ => CppLocation.None

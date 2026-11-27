@@ -24,7 +24,7 @@ internal static class StructConstructorEmitter
     public static bool IsEmittedStructConstructor(IMethodSymbol? constructor, Compilation compilation) =>
         constructor is { MethodKind: MethodKind.Constructor, IsImplicitlyDeclared: false, IsStatic: false } &&
         constructor.ContainingType is { } containingType &&
-        GlobalCppNames.IsEmittedUserType(containingType) &&
+        EmittedUserTypes.IsEmittedUserType(containingType) &&
         (TryGetConstructorDeclaration(constructor, out _, out _) ||
          (DeviceExportTable.IsOutside(constructor, compilation) && DeviceExportTable.TryFind(constructor, out _)));
 

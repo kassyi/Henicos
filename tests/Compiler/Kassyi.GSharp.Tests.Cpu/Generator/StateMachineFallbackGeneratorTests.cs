@@ -105,6 +105,11 @@ public class StateMachineFallbackGeneratorTests
     [InlineData("FallbackCases.FloatSwitchNaNKernel", NativeStackObstacle.CaseValueWithoutLabel, "case value")]
     [InlineData("FallbackCases.WarpOperatorMacroKernel", NativeStackObstacle.WarpOperatorMacro, "operator macro")]
     [InlineData("FallbackCases.StackBodyLoweringKernel", NativeStackObstacle.StackBodyLowering, "lowered")]
+    [InlineData("FallbackCases.StructCtorBarrierKernel", NativeStackObstacle.StructMemberSplit, "struct member")]
+    [InlineData("FallbackCases.StructCtorDeviceHelper", NativeStackObstacle.StructMemberSplit, "struct member")]
+    [InlineData("FallbackCases.GridSyncStructCtorKernel", NativeStackObstacle.StructMemberSplit, "struct member")]
+    [InlineData("FallbackCases.GridSyncStructCtorDeviceHelper", NativeStackObstacle.StructMemberSplit, "struct member")]
+    [InlineData("FallbackCases.CallsGridSyncStructCtorDeviceKernel", NativeStackObstacle.StructMemberSplit, "struct member")]
     internal void StateMachineFallbacks_NativeObstacle_EmitsLineAndReason(
         string displayName,
         NativeStackObstacle obstacle,
@@ -180,6 +185,9 @@ public class StateMachineFallbackGeneratorTests
     [InlineData("FallbackCases", "CallsFileLocalDeviceKernel", "FileLocalType", "file-local")]
     [InlineData("FallbackCases", "CallsInstanceDeviceKernel", "InstanceDeviceFunction", "instance")]
     [InlineData("FallbackCases", "CallsNonPartialDeviceKernel", "NonPartialContainingType", "partial")]
+    [InlineData("FallbackCases", "StructCtorBarrierKernel", "StructMemberSplit", "struct member")]
+    [InlineData("FallbackCases", "GridSyncStructCtorKernel", "StructMemberSplit", "struct member")]
+    [InlineData("FallbackCases", "CallsGridSyncStructCtorDeviceKernel", "StructMemberSplit", "struct member")]
     public void StateMachineFallbacks_ManagedKernelReason_EmitsLineAndReason(
         string typeName,
         string methodName,
@@ -228,6 +236,8 @@ public class StateMachineFallbackGeneratorTests
     [InlineData("FallbackCases", "FileLocalDeviceHelper", "FileLocalType", "file-local")]
     [InlineData("InstanceDeviceHolder", "InstanceSuspendingHelper", "InstanceDeviceFunction", "instance")]
     [InlineData("NonPartialHolder", "NonPartialSuspendingHelper", "NonPartialContainingType", "partial")]
+    [InlineData("FallbackCases", "StructCtorDeviceHelper", "StructMemberSplit", "struct member")]
+    [InlineData("FallbackCases", "GridSyncStructCtorDeviceHelper", "StructMemberSplit", "struct member")]
     public void StateMachineFallbacks_ManagedSuspendingDeviceReason_EmitsLineAndReason(
         string typeName,
         string methodName,

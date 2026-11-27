@@ -343,6 +343,212 @@ public static partial class EligibilityKernels
         Gpu.ForUnroll(0, 2, IneligiblePartialStep);
         data[ThreadIndex.X] += 1;
     }
+
+    [GpuKernel]
+    public static void StructCtorBarrierKernel(int[] data)
+    {
+        var h = new BarrierCtor(1);
+        data[ThreadIndex.X] = h.Value;
+    }
+
+    [GpuKernel]
+    public static void StructCtorAndDirectBarrierKernel(int[] data)
+    {
+        var h = new BarrierCtor(1);
+        Gpu.SyncThreads();
+        data[ThreadIndex.X] = h.Value;
+    }
+
+    [GpuDeviceFunction]
+    public static int StructCtorDeviceWait(int value)
+    {
+        var h = new BarrierCtor(value);
+        return h.Value;
+    }
+
+    [GpuKernel]
+    public static void GenericStructBarrierKernel(int[] data)
+    {
+        var h = new GenericWrap<BarrierAction>(1);
+        data[ThreadIndex.X] = h.Value;
+    }
+
+    [GpuKernel]
+    public static void GenericStructPlainKernel(int[] data)
+    {
+        var h = new GenericWrap<PlainAction>(1);
+        data[ThreadIndex.X] = h.Value;
+    }
+
+    [GpuKernel]
+    public static void GridSyncStructCtorKernel(int[] data)
+    {
+        var h = new GridSyncCtor(1);
+        data[ThreadIndex.X] = h.Value;
+    }
+
+    [GpuDeviceFunction]
+    public static int GridSyncStructCtorDeviceFunc(int value)
+    {
+        var h = new GridSyncCtor(value);
+        return h.Value;
+    }
+
+    [GpuKernel]
+    public static void CallsGridSyncStructCtorDeviceKernel(int[] data)
+    {
+        data[ThreadIndex.X] = GridSyncStructCtorDeviceFunc(1);
+    }
+
+    [GpuDeviceFunction]
+    public static partial void PartialGenericStep<T>() where T : struct, IWrapAction;
+
+    public static partial void PartialGenericStep<T>() where T : struct, IWrapAction => default(T).Run();
+
+    [GpuKernel]
+    public static void ConstrainedGenMethodKernel(int[] data)
+    {
+        var h = new GenericConstrainedGenMethodWrap<ImplWrapActionGen, BarrierAction>(1);
+        data[ThreadIndex.X] = h.Value;
+    }
+
+    [GpuKernel]
+    public static void ConstrainedGenMethodPlainKernel(int[] data)
+    {
+        var h = new GenericConstrainedGenMethodWrap<ImplWrapActionGen, PlainAction>(1);
+        data[ThreadIndex.X] = h.Value;
+    }
+
+    [GpuKernel]
+    public static void PartialGenericKernel(int[] data)
+    {
+        var h = new PartialGenericWrap<BarrierAction>(1);
+        data[ThreadIndex.X] = h.Value;
+    }
+
+    [GpuKernel]
+    public static void PartialGenericPlainKernel(int[] data)
+    {
+        var h = new PartialGenericWrap<PlainAction>(1);
+        data[ThreadIndex.X] = h.Value;
+    }
+
+    [GpuKernel]
+    public static void PartialStructGenericDeviceFunctionKernel(int[] data)
+    {
+        PartialStructGenericHelper.PartialHelper<int>();
+        data[ThreadIndex.X] = 1;
+    }
+
+    [GpuKernel]
+    public static void PartialGenericStructDeviceFunctionKernel(int[] data)
+    {
+        PartialGenStruct<int>.PartialHelper();
+        data[ThreadIndex.X] = 1;
+    }
+
+    public partial struct PartialStructGenericHelper
+    {
+        public static partial void PartialHelper<T>();
+
+        [GpuDeviceFunction]
+        public static partial void PartialHelper<T>()
+        {
+            Gpu.SyncThreads();
+        }
+    }
+
+    public partial struct PartialGenStruct<T>
+    {
+        public static partial void PartialHelper();
+
+        [GpuDeviceFunction]
+        public static partial void PartialHelper()
+        {
+            Gpu.SyncThreads();
+        }
+    }
+
+    public interface IWrapActionGen
+    {
+        void Run<U>() where U : struct, IWrapAction;
+    }
+
+    public struct ImplWrapActionGen : IWrapActionGen
+    {
+        public void Run<U>() where U : struct, IWrapAction => default(U).Run();
+    }
+
+    public struct GenericConstrainedGenMethodWrap<T, U> where T : struct, IWrapActionGen where U : struct, IWrapAction
+    {
+        public int Value;
+
+        public GenericConstrainedGenMethodWrap(int x)
+        {
+            default(T).Run<U>();
+            Value = x;
+        }
+    }
+
+    public struct PartialGenericWrap<T> where T : struct, IWrapAction
+    {
+        public int Value;
+
+        public PartialGenericWrap(int x)
+        {
+            PartialGenericStep<T>();
+            Value = x;
+        }
+    }
+
+    public interface IWrapAction
+    {
+        void Run();
+    }
+
+    public struct BarrierAction : IWrapAction
+    {
+        public void Run() => Gpu.SyncThreads();
+    }
+
+    public struct PlainAction : IWrapAction
+    {
+        public void Run()
+        {
+        }
+    }
+
+    public struct GenericWrap<T> where T : struct, IWrapAction
+    {
+        public int Value;
+
+        public GenericWrap(int x)
+        {
+            default(T).Run();
+            Value = x;
+        }
+    }
+
+    public struct GridSyncCtor
+    {
+        public int Value;
+
+        public GridSyncCtor(int value)
+        {
+            Gpu.SyncGrid();
+            Value = value;
+        }
+    }
+
+    public struct BarrierCtor
+    {
+        public int Value;
+
+        public BarrierCtor(int value)
+        {
+            Value = StackDeviceWait(value);
+        }
+    }
 }
 
 [SkipSnapshotConsistency("Input for ManagedStackEligibilityTests")]

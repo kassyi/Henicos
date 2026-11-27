@@ -10,15 +10,15 @@
 #   occurrences:  every node the C++ writer cannot spell, most first
 #   eligible:     the methods of the population with an IR body
 kinds:
-  Kernel: 4265
-  DeviceFunction: 1202
-  SuspendingDeviceFunction: 438
+  Kernel: 4350
+  DeviceFunction: 1222
+  SuspendingDeviceFunction: 448
   Iterator: 120
 reasons:
-  None: 96
+  None: 98
   IrNotBuilt: 0
   StrykerMutant: 1
-  SplitCall: 7
+  SplitCall: 10
   OpaqueNode: 130
   RemovedCall: 3
   Macro: 6
@@ -56,8 +56,8 @@ opaque:
   - {key: "UnsupportedOperation/TupleExpression", count: 1}
   - {key: "UnsupportedShape/ObjectCreationExpression", count: 1}
 split:
-  - {key: "BlockBarrier", count: 4}
-  - {key: "SuspendingCall", count: 2}
+  - {key: "BlockBarrier", count: 6}
+  - {key: "SuspendingCall", count: 3}
   - {key: "WarpShuffle", count: 1}
 firstHit:
   - {key: "NativePlain:IrBinary/-", count: 321}
@@ -129,4 +129,4 @@ occurrences:
   - {key: "NativePlain:IrLocalDeclaration/Type:String", count: 1}
   - {key: "NativePlain:IrVariableReference/Declaration", count: 1}
   - {key: "NativePlain:IrVariableReference/Type:Pointer", count: 1}
-eligible: 96
+eligible: 98
