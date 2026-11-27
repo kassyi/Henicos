@@ -479,42 +479,56 @@ public static class MethodTranspiler
         StateMachineFrame? frame, ImmutableArray<ResumeLocal> resumeLocals, BlockSyntax? activeMaskBody,
         ref TranspileContext context)
     {
-        using (context.Emitter.Writer.Scope())
+        var receiver = ReceiverParameter.Plan(in plan);
+        var previousSelf = context.Emitter.StructSelf;
+        if (receiver.Type is { } receiverType)
         {
-            // __gsharp_launch_epoch = __gsharp_epoch;  (a CUDA kernel, before anything that can fail)
-            if (plan.Kind == MethodEmissionKind.Kernel && plan.Symbol != null && context.Emitter.Dialect.IsCuda)
-            {
-                context.Emitter.Writer.AppendLine(
-                    $"{GSharpInternalNames.Prelude.LaunchEpoch} = {GSharpInternalNames.Launcher.Epoch};");
-            }
+            context.Emitter.StructSelf = new StructSelfReference(receiverType, SelfForm.ReceiverParameter);
+        }
 
-            DynamicSharedMemoryEmitter.WriteKernelPrologue(in plan, ref context);
-            StackWarpEmitter.WriteKernelPrologue(in plan, ref context);
+        try
+        {
+            using (context.Emitter.Writer.Scope())
+            {
+                // __gsharp_launch_epoch = __gsharp_epoch;  (a CUDA kernel, before anything that can fail)
+                if (plan.Kind == MethodEmissionKind.Kernel && plan.Symbol != null && context.Emitter.Dialect.IsCuda)
+                {
+                    context.Emitter.Writer.AppendLine(
+                        $"{GSharpInternalNames.Prelude.LaunchEpoch} = {GSharpInternalNames.Launcher.Epoch};");
+                }
 
-            if (plan.HasAutoResult)
-            {
-                context.Emitter.Writer.AppendLine(
-                    $"unsigned int {GSharpInternalNames.ReturnValue.GlobalThreadIndex} = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x)" +
-                    " * (blockDim.x * blockDim.y * blockDim.z) +" +
-                    " threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;");
-            }
+                DynamicSharedMemoryEmitter.WriteKernelPrologue(in plan, ref context);
+                StackWarpEmitter.WriteKernelPrologue(in plan, ref context);
 
-            if (lowered != null)
-            {
-                WriteStateMachineBody(in plan, lowered, frame ?? throw MissingFrame(), resumeLocals, ref context);
+                if (plan.HasAutoResult)
+                {
+                    context.Emitter.Writer.AppendLine(
+                        $"unsigned int {GSharpInternalNames.ReturnValue.GlobalThreadIndex} = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x)" +
+                        " * (blockDim.x * blockDim.y * blockDim.z) +" +
+                        " threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;");
+                }
+
+                if (lowered != null)
+                {
+                    WriteStateMachineBody(in plan, lowered, frame ?? throw MissingFrame(), resumeLocals, ref context);
+                }
+                else if (activeMaskBody != null)
+                {
+                    context.Visitor.Visit(activeMaskBody);
+                }
+                else if (plan.Declaration.Body != null)
+                {
+                    context.Visitor.Visit(plan.Declaration.Body);
+                }
+                else if (plan.Declaration.ExpressionBody != null)
+                {
+                    WriteExpressionBody(in plan, plan.Declaration.ExpressionBody, ref context);
+                }
             }
-            else if (activeMaskBody != null)
-            {
-                context.Visitor.Visit(activeMaskBody);
-            }
-            else if (plan.Declaration.Body != null)
-            {
-                context.Visitor.Visit(plan.Declaration.Body);
-            }
-            else if (plan.Declaration.ExpressionBody != null)
-            {
-                WriteExpressionBody(in plan, plan.Declaration.ExpressionBody, ref context);
-            }
+        }
+        finally
+        {
+            context.Emitter.StructSelf = previousSelf;
         }
     }
 

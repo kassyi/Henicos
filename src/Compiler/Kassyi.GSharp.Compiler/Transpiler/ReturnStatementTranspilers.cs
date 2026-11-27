@@ -94,7 +94,7 @@ internal static class ReturnStatementTranspilers
             return new ReturnPlan(kind, emitsStateTermination);
         }
 
-        var noValueKind = context.Emitter is { StructConstructorType: not null, CallableDepth: 1 }
+        var noValueKind = context.Emitter is { StructSelf.Form: SelfForm.ConstructorSelf, CallableDepth: 1 }
             ? ReturnKind.ConstructorSelf
             : ReturnKind.Void;
         return new ReturnPlan(noValueKind, emitsStateTermination);

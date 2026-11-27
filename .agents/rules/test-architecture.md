@@ -134,6 +134,7 @@ public abstract class StateMachineTestBase
     - **Axis 1 (Execution Target)**: `[TestTarget(ExecutionTarget.GpuExecution)]`, `[TestTarget(ExecutionTarget.CpuExecution)]`
     - **Axis 2 (Domain Category)**: `[Category(TestCategory.Compiler)]`, `[Category(TestCategory.Runtime)]`, `[Category(TestCategory.Syntax)]`, `[Category(TestCategory.Stdlib)]`, etc.
     - **Axis 3 (Behavior Scenario)**: `[Scenario(TestScenario.HappyPath)]`, `[Scenario(TestScenario.SadPath)]`, `[Scenario(TestScenario.Boundary)]`
+    - **Timing / performance tests**: Any test that measures execution time or performance MUST carry `[Category(TestCategory.Benchmark)]` (never raw `[Trait]`, which `HNT0008` forbids). Shared GPU runs (`Category!=Stress&Category!=Benchmark&Category!=GpuTrap`, such as `just test`) exclude them, and the `--list-tests` check keeps any name-filtered run that selects a `Benchmark` test exclusive so concurrent workloads cannot skew timings.
     - **Platform constraint (orthogonal to Category)**: `[Platform(TestPlatform.Windows)]` (`PlatformDiscoverer`, `emitCategoryAlias: false`) on any test or class that requires Windows and skips on non-Windows hosts; keep the runtime `Skip.IfNot(OperatingSystem.IsWindows(), ...)` guard inside the method for local Linux runs, and never substitute raw `[Trait("Platform", "Windows")]` (`HNT0008`).
     - Never hardcode ticket numbers, roadmap IDs, or Feature IDs into test attributes.
 

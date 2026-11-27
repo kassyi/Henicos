@@ -109,6 +109,11 @@ internal readonly record struct StateMachineReason(
             nameof(NativeStackObstacle.StackBodyLowering),
             "its body could not be lowered for the stack model",
             detail),
+        NativeStackObstacle.StructMemberSplit => new(
+            CpuPath.Native,
+            nameof(NativeStackObstacle.StructMemberSplit),
+            "it reaches a barrier or warp collective through a struct member",
+            detail),
         _ => throw new ArgumentOutOfRangeException(nameof(obstacle), obstacle, null)
     };
 }

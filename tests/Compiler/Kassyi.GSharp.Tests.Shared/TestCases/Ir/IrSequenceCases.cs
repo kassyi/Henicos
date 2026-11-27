@@ -1,9 +1,41 @@
 #nullable enable
+using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
 
 namespace IrSequenceCases;
 
-public struct Cell { public int V; }
+[InlineArray(2)]
+public struct InlineCellBuf
+{
+    private Cell _e0;
+}
+
+public partial struct Cell
+{
+    public int V;
+
+    [GpuDeviceFunction]
+    public int Add(int x)
+    {
+        V += x;
+        return V;
+    }
+
+    [GpuDeviceFunction]
+    public readonly int Read() => V;
+}
+
+public ref partial struct RefCell
+{
+    public int V;
+
+    [GpuDeviceFunction]
+    public int Add(int x)
+    {
+        V += x;
+        return V;
+    }
+}
 
 public static class Forms
 {
@@ -91,11 +123,81 @@ public static class Forms
     public static int AddTo(this ref int a, int b) { a += b; return a; }
     [GpuDeviceFunction]
     public static int Plus(this in int a, int b) => a + b;
+    [GpuDeviceFunction]
+    public static int ExtAdd(this ref Cell c, int x) { c.V += x; return c.V; }
     public static void ExtensionRefReceiver(int i, int[] r) { r[0] = r[i].AddTo(Bump(ref i)); }
     public static void ExtensionInReceiver(int i, int[] r) { r[0] = r[i].Plus(Bump(ref i)); }
+    public static void ParenthesizedInstanceCallOrder(Cell c, int[] r) { r[0] = c.V + ((c.Add))(1); }
+    public static void ParenthesizedInstanceCallOrderFirst(Cell c, int[] r) { r[0] = ((c.Add))(1) + c.V; }
+    public static void ParenthesizedExtensionCallOrder(Cell c, int[] r) { r[0] = c.V + ((c.ExtAdd))(1); }
+
+    [GpuDeviceFunction]
+    public static Cell MakeCell(int v) => new() { V = v };
+
+    [GpuDeviceFunction]
+    public static int BumpCell(ref Cell c)
+    {
+        c.V += 1;
+        return c.V;
+    }
+
+    [GpuDeviceFunction]
+    public static int BumpRefCell(ref RefCell c)
+    {
+        c.V += 1;
+        return c.V;
+    }
+
+    [GpuDeviceFunction]
+    public static int BumpBool(ref bool c)
+    {
+        c = !c;
+        return 1;
+    }
+
+    public static void InstanceRefReceiver(int i, Cell[] cells, int[] r) { r[0] = cells[i].Add(Bump(ref i)); }
+    public static void InstanceInReceiverCopy(in Cell p, ref Cell q, int[] r) { r[0] = p.Add(BumpCell(ref q)); }
+    public static void InstanceRefReadOnlyLocalCopy(ref Cell q, int[] r)
+    {
+        ref readonly var p = ref q;
+        r[0] = p.Add(BumpCell(ref q));
+    }
+    public static void InstanceRefStructReceiver(bool c, RefCell a, RefCell b, int[] r)
+    {
+        r[0] = (c ? ref a : ref b).Add(BumpBool(ref c));
+    }
+    public static void InstanceRefStructLocalNoSpill(RefCell rc, int[] r) { r[0] = rc.Add(BumpRefCell(ref rc)); }
+    public static void InstanceRvalueReceiver(int x, int[] r) { r[0] = MakeCell(x).Add(Bump(ref x)); }
+    public static void InstanceRefReadOnlyConditionalCopy(bool c, in Cell a, in Cell b, int[] r)
+    {
+        r[0] = (c ? ref a : ref b).Add(BumpBool(ref c));
+    }
+
+    public static void InstanceMixedRefReadOnlyConditionalCopy(bool c, ref Cell a, in Cell b, int[] r)
+    {
+        r[0] = (c ? ref a : ref b).Add(BumpBool(ref c));
+    }
+
+    public static void InstanceConstFalseRefConditionalAddress(ref Cell a, Cell[] cells, int i, int[] r)
+    {
+        ref readonly var ro = ref a;
+        r[0] = (false ? ref ro : ref cells[i]).Add(Bump(ref i));
+    }
+
+    public static void InstanceConstTrueRefConditionalReadOnlyCopy(ref Cell a, ref Cell b, int[] r)
+    {
+        ref readonly var ro = ref a;
+        r[0] = (true ? ref ro : ref b).Add(BumpCell(ref b));
+    }
 }
 
-public struct CellIn
+public static class InlineArrayForms
+{
+    public static int InstanceInInlineArrayElementCopy(in InlineCellBuf buf, ref Cell q) =>
+        buf[0].Add(Forms.BumpCell(ref q));
+}
+
+public partial struct CellIn
 {
     public int A;
     public int B;
@@ -121,7 +223,7 @@ public static class InRvalueForms
     public static void CreationInRvalue(int x, CellIn[] r) { r[0] = new CellIn(x + 0, Bump(ref x)); }
 }
 
-public struct Cell3
+public partial struct Cell3
 {
     public int A;
     public int B;
@@ -135,7 +237,7 @@ public struct Cell3
     }
 }
 
-public struct Cell2
+public partial struct Cell2
 {
     public int A;
     public int B;

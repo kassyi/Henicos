@@ -108,7 +108,7 @@ internal sealed partial class ManagedExecutionRewriter
             visited is not InvocationExpressionSyntax call ||
             semanticModel.GetSymbol(node) is not IMethodSymbol callee ||
             SyncIntrinsicClassifier.Classify(callee).Kind == SyncIntrinsicKind.WarpShuffle ||
-            !SuspensionAnalysis.ReachesWarpShuffle(callee, semanticModel.Compilation))
+            !SuspensionAnalysis.ReachesWarpShuffleOnStack(callee, semanticModel.Compilation))
         {
             return visited;
         }

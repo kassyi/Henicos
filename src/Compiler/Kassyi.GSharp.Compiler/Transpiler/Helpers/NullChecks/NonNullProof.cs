@@ -221,8 +221,9 @@ internal static class NonNullProof
             {
                 RefKind: RefKind.None,
                 HasExplicitDefaultValue: false,
-                ContainingSymbol: IMethodSymbol { MethodKind: MethodKind.Ordinary, IsStatic: true } method
-            })
+                ContainingSymbol: IMethodSymbol { MethodKind: MethodKind.Ordinary } method
+            } ||
+            (!method.IsStatic && method.ContainingType is not { IsValueType: true }))
         {
             return false;
         }

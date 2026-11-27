@@ -113,7 +113,7 @@ internal static class PropertyAccessorCall
             symbol is not IPropertySymbol property ||
             !NeedsCopy(property, dialect, model.Compilation) ||
             model.GetSafeOperation(node) is not IPropertyReferenceOperation { Instance: { } receiver } ||
-            !IsReadOnlyVariable(receiver))
+            !ReadOnlyReceivers.IsReadOnlyVariable(receiver))
         {
             return null;
         }
@@ -135,7 +135,15 @@ internal static class PropertyAccessorCall
     /// </summary>
     public static INamedTypeSymbol? CopyTypeOf(IPropertySymbol property, INamedTypeSymbol? currentStruct,
         Compilation compilation) =>
-        StructTypeSubstitution.SubstituteTypeParameters(property.ContainingType, currentStruct, compilation) as
+        CopyTypeOf(property.ContainingType, currentStruct, compilation);
+
+    /// <summary>
+    /// <paramref name="containingType"/> with the type arguments of <paramref name="currentStruct"/> in place of its
+    /// type parameters, for a defensive copy of a struct receiver.
+    /// </summary>
+    public static INamedTypeSymbol? CopyTypeOf(INamedTypeSymbol containingType, INamedTypeSymbol? currentStruct,
+        Compilation compilation) =>
+        StructTypeSubstitution.SubstituteTypeParameters(containingType, currentStruct, compilation) as
             INamedTypeSymbol;
 
     /// <summary>
@@ -144,38 +152,6 @@ internal static class PropertyAccessorCall
     public static INamedTypeSymbol? PlanCopyType(SyntaxNode node, ISymbol? symbol, ref TranspileContext context) =>
         PlanCopyType(node, symbol, context.Query.SemanticModel, context.Emitter.Dialect,
             context.Emitter.CurrentStructType);
-
-    // [WHY] The cases where C# copies the receiver of a call of a member that is not readonly (Roslyn's
-    // Binder.CheckValueKind / IsReadOnly of the receiver): a value (a call result) is a temporary in C++ as well
-    private static bool IsReadOnlyVariable(IOperation receiver) =>
-        receiver switch
-        {
-            IParameterReferenceOperation parameter =>
-                parameter.Parameter.RefKind is RefKind.In or RefKind.RefReadOnlyParameter,
-            ILocalReferenceOperation local => local.Local.RefKind == RefKind.RefReadOnly,
-            IFieldReferenceOperation { Field.IsReadOnly: true } field =>
-                !IsWrittenInConstructor(field),
-            IFieldReferenceOperation { Instance: { } instance, Field.ContainingType.IsValueType: true } =>
-                IsReadOnlyVariable(instance),
-            IInstanceReferenceOperation self =>
-                self.SemanticModel?.GetEnclosingSymbol(self.Syntax.SpanStart) is IMethodSymbol
-                {
-                    IsReadOnly: true,
-                    MethodKind: not MethodKind.Constructor
-                },
-            IInvocationOperation invocation => invocation.TargetMethod.RefKind == RefKind.RefReadOnly,
-            IPropertyReferenceOperation reference => reference.Property.RefKind == RefKind.RefReadOnly,
-            _ => false
-        };
-
-    // A readonly field of the struct, written through this in a constructor of the struct, is not readonly there
-    private static bool IsWrittenInConstructor(IFieldReferenceOperation field) =>
-        field.Instance is IInstanceReferenceOperation &&
-        field.SemanticModel?.GetEnclosingSymbol(field.Syntax.SpanStart) is IMethodSymbol
-        {
-            MethodKind: MethodKind.Constructor
-        } constructor &&
-        constructor.ContainingType.IsEqualTo(field.Field.ContainingType);
 
     /// <summary>
     /// Appends <c>()</c> after the name of <paramref name="symbol"/> when <paramref name="node"/> reads it through its

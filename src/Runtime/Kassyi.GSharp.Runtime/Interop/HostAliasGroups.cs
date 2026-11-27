@@ -100,6 +100,72 @@ public sealed class HostAliasGroups
         return null;
     }
 
+    /// <summary>
+    /// CPU: finds the arguments that overlap, as <see cref="Find(ReadOnlySpan{nint}, ReadOnlySpan{byte}, string)"/>
+    /// does, after throwing for a group that CUDA cannot align (<see cref="ThrowIfNoDeviceAlignment"/>).
+    /// </summary>
+    /// <param name="ranges">
+    /// <see cref="RangeFields"/> values per argument (the length in bytes is 0 for a null or empty argument).
+    /// </param>
+    /// <param name="traits">The <see cref="CopiesIn"/>, <see cref="CopiesBack"/>, ... flags of each argument.</param>
+    /// <param name="names">The parameter names, separated by commas, for the exception messages.</param>
+    /// <param name="deviceAlignments">
+    /// The CUDA alignment of each argument (see <see cref="ThrowIfNoDeviceAlignment"/>).
+    /// </param>
+    /// <exception cref="NotSupportedException">
+    /// A group cannot share one copy, or overlapping arguments cannot align all of their element types at one CUDA
+    /// address.
+    /// </exception>
+    public static HostAliasGroups? Find(ReadOnlySpan<nint> ranges, ReadOnlySpan<byte> traits, string names,
+        ReadOnlySpan<int> deviceAlignments)
+    {
+        ThrowIfNoDeviceAlignment(ranges, traits, names, deviceAlignments);
+        return Find(ranges, traits, names);
+    }
+
+    /// <summary>
+    /// CPU: checks whether any group of overlapping arguments cannot align all of its members at one device address
+    /// under <paramref name="deviceAlignments"/>, throwing the same <see cref="NotSupportedException"/> as CUDA.
+    /// Returns immediately without allocating when no pair of arguments overlaps.
+    /// </summary>
+    /// <param name="ranges">
+    /// <see cref="RangeFields"/> values per argument (the length in bytes is 0 for a null or empty argument).
+    /// </param>
+    /// <param name="traits">The <see cref="CopiesIn"/>, <see cref="CopiesBack"/>, ... flags of each argument.</param>
+    /// <param name="names">The parameter names, separated by commas, for the exception message.</param>
+    /// <param name="deviceAlignments">
+    /// The CUDA device alignment of each top-level candidate argument, or a negative value to skip checking groups
+    /// containing a CUDA-converted member; held entries beyond its length fall back to their range alignment.
+    /// </param>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="ranges"/> does not hold <see cref="RangeFields"/> values per entry of <paramref name="traits"/>.
+    /// </exception>
+    /// <exception cref="NotSupportedException">
+    /// Overlapping arguments cannot align all of their element types at one device address.
+    /// </exception>
+    public static void ThrowIfNoDeviceAlignment(ReadOnlySpan<nint> ranges, ReadOnlySpan<byte> traits, string names,
+        ReadOnlySpan<int> deviceAlignments)
+    {
+        var count = traits.Length;
+        if (ranges.Length != count * RangeFields)
+        {
+            throw new ArgumentException(
+                "The range list does not hold RangeFields values per argument.", nameof(ranges));
+        }
+
+        for (var i = 0; i < count; i++)
+        {
+            for (var j = i + 1; j < count; j++)
+            {
+                if (Joins(ranges, traits, i, j))
+                {
+                    HostAliasGrouping.ThrowIfNoDeviceAlignment(ranges, traits, names, deviceAlignments);
+                    return;
+                }
+            }
+        }
+    }
+
     /// <summary>Whether argument <paramref name="index"/> belongs to a group.</summary>
     public bool IsMember(int index) => _groupOf[index] >= 0;
 

@@ -1,73 +1,22 @@
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
 /// <summary>
-/// Reports a <c>goto</c> to the inner label of chained labels (<c>second</c> of <c>first: second: s</c>) from another
-/// state of the CPU state machine (GSH0121) (<see cref="KernelBarrierValidator"/>).
+/// Finds the <c>goto</c>s to the inner label of chained labels (<c>second</c> of <c>first: second: s</c>) from another
+/// state of the CPU state machine, which the generator reports as GSH0121 (<see cref="HeldRefLocalSite"/>).
 /// </summary>
 /// <remarks>
 /// [WHY] Whether the goto and the label share a state is decided on the flattened body: lowering detaches some labels
 /// (the labels of a statement that holds a split point, the first labels of a reconvergence region) and starts states
-/// at others. The check lowers the method as the generator does (<see cref="MethodEmissionPlan"/>) and reports the list
-/// that the lowering made (<see cref="LoweredStateMachine.GotosToChainedLabelsAcrossStates"/>), so the two never
-/// disagree. It lowers only a method that has a split point, a goto and chained labels, where the managed state machine
-/// is emitted: on a project that builds the CPU paths, or a device function of one that exports its device code (its
-/// consumers on the CPU paths run that state machine; a CUDA kernel runs as written).
-/// The generator reports the same diagnostics from its own lowering (<see cref="HeldRefLocalSite"/>), so a build without
-/// the analyzers, or one whose analyzer failed to lower the method, still stops; the compiler shows a diagnostic that
-/// both report at one place once.
+/// at others. The generator reports the list that its own lowering made
+/// (<see cref="LoweredStateMachine.GotosToChainedLabelsAcrossStates"/>), on a project that builds the CPU paths and for
+/// a device function of one that exports its device code (a CUDA kernel runs as written).
+/// GSH0121 is the generator's alone: the analyzer does not report it. An IDE shows the diagnostics of the analyzer and
+/// of the generator side by side and does not merge equal ones at the same place, so a diagnostic reported from both
+/// would be seen twice (#2121). A build without the analyzers still stops, and a method that the generator cannot lower
+/// is reported as GSH0048.
 /// </remarks>
 internal static class ChainedLabelJumpChecks
 {
-    /// <summary>
-    /// Reports GSH0121 for every goto that the lowering of the method leaves as a jump into another state.
-    /// </summary>
-    internal static void Validate(KernelBarrierScan scan)
-    {
-        if (!scan.HasSplitPoint || scan.Gotos.Count == 0 ||
-            !scan.Labels
-                .AsStackEnumerable()
-                .Any(static label => label.Parent is LabeledStatementSyntax) ||
-            !(BarrierUsageAnalyzer.BuildsCpuPaths(scan.Context.Options) ||
-              (!scan.IsKernel && ExportsDeviceCode(scan.Context.Options))))
-        {
-            return;
-        }
-
-        LoweredStateMachine? lowered;
-        try
-        {
-            lowered = MethodEmissionPlan.Create(scan.Method, scan.SemanticModel, isKernel: scan.IsKernel).Lowered;
-        }
-        catch (Exception exception) when (exception is not OperationCanceledException)
-        {
-            // [WHY] Not swallowed: the generator lowers the same method. When its lowering succeeds it reports GSH0121
-            // itself; when it fails it reports GSH0048, or states a method too deep to lower (GSH0102) as #error in the
-            // output. Letting the exception escape would fail the whole analyzer (AD0001) and lose the diagnostics of
-            // every other method.
-            return;
-        }
-
-        if (lowered is null)
-        {
-            return;
-        }
-
-        foreach (var (location, jump, crossesBarrier) in FindReported(scan.Method, scan.SemanticModel, lowered))
-        {
-            // A goto across a barrier is GSH0040's, which CrossBarrierChecks reports
-            if (crossesBarrier)
-            {
-                continue;
-            }
-
-            scan.Context.ReportDiagnostic(
-                GSharpDiagnostics.GotoToChainedLabelAcrossStates,
-                location,
-                jump.Label,
-                jump.OuterLabel);
-        }
-    }
-
     /// <summary>
     /// The gotos of <paramref name="lowered"/> that cannot be lowered
     /// (<see cref="LoweredStateMachine.GotosToChainedLabelsAcrossStates"/>), each with its place in the user's source and
@@ -75,9 +24,9 @@ internal static class ChainedLabelJumpChecks
     /// (<see cref="CrossBarrierChecks.IsCrossBarrierGoto"/>), every other one GSH0121's.
     /// </summary>
     /// <remarks>
-    /// The one definition for the analyzer and the generator, so both report the same diagnostics; the generator
-    /// reports GSH0040 too for the gotos across a barrier, as the analyzer does, since a build without the analyzers
-    /// would otherwise pass with the managed body left out. The goto of the
+    /// The one definition of the gotos the generator reports; it reports GSH0040 too for the gotos across a barrier, as
+    /// the analyzer does (<see cref="CrossBarrierChecks"/>), since a build without the analyzers would otherwise pass
+    /// with the managed body left out. The goto of the
     /// lowered body is found again in the user's source by its reported place, and its label as GSH0040 finds it
     /// (<see cref="CrossBarrierChecks.FindTargetLabel"/>). The barriers are the calls that run (<see cref="RemovedCalls"/>) and
     /// <see cref="KernelConstructChecks.IsBarrierCall"/> accepts; in a device iterator, where the scan collects none
@@ -142,11 +91,4 @@ internal static class ChainedLabelJumpChecks
 
         return (barriers, labels);
     }
-
-    // Exported unless the project turns it off, as the generator reads it: the managed state machines of the device
-    // code are then emitted for the dialects too
-    private static bool ExportsDeviceCode(AnalyzerOptions options) =>
-        !(options.AnalyzerConfigOptionsProvider.GlobalOptions
-              .TryGetValue("build_property.GSharpExportDeviceCode", out var export) &&
-          string.Equals(export, "false", StringComparison.OrdinalIgnoreCase));
 }
