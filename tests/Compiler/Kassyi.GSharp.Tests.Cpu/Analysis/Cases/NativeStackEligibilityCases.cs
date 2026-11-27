@@ -842,7 +842,7 @@ namespace NativeStackOperatorMacroCases
         }
     }
 
-    // Pre-E4-2: operator macro target is skipped until E4-2 enables suspending operator macros
+    // The operator macro target is skipped until the stack models run suspending operator macros (#2273)
     public struct GridSyncMacroSum
     {
         public int V;
@@ -852,7 +852,7 @@ namespace NativeStackOperatorMacroCases
             throw new GpuOnlyException();
     }
 
-    // Pre-E4-2: operator macro target is skipped until E4-2 enables suspending operator macros
+    // The operator macro target is skipped until the stack models run suspending operator macros (#2273)
     public struct BarrierMacroSum
     {
         public int V;
@@ -910,7 +910,7 @@ namespace NativeStackOperatorMacroCases
             data[ThreadIndex.X] = z.V;
         }
 
-        // Pre-E4-2: operator macro target is skipped until E4-2 enables suspending operator macros
+        // The operator macro target is skipped until the stack models run suspending operator macros (#2273)
         [GpuKernel]
         public static void GridSyncMacroAfterBarrierKernel(int[] data)
         {
@@ -921,7 +921,7 @@ namespace NativeStackOperatorMacroCases
             data[ThreadIndex.X] = z.V;
         }
 
-        // Pre-E4-2: operator macro target is skipped until E4-2 enables suspending operator macros
+        // The operator macro target is skipped until the stack models run suspending operator macros (#2273)
         [GpuKernel]
         public static void BarrierMacroWithoutDirectBarrierKernel(int[] data)
         {

@@ -125,7 +125,7 @@ public class NativeStackEligibilityTests
         Assert.Equal(expected, NativeStackEligibility.Classify(symbol, declaration, model));
     }
 
-    // Pre-E4-2: operator macro target is skipped until E4-2 enables suspending operator macros
+    // The operator macro target is skipped until the stack models run suspending operator macros (#2273)
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("GridSyncMacroAfterBarrierKernel", NativeStackObstacle.None)]
@@ -207,8 +207,8 @@ public class NativeStackEligibilityTests
     }
 
     [Fact]
-    [Scenario(TestScenario.Boundary)]
-    public void Classify_ImportedSuspendingDeviceFunction_ReturnsImportedSuspendingCall()
+    [Scenario(TestScenario.HappyPath)]
+    public void Classify_ImportedSuspendingDeviceFunction_ReturnsNone()
     {
         var libCompilation = RoslynTestUtility.CreateCompilation(ReadCase("NativeStackImportedLibraryCases.cs"))
             .WithAssemblyName("ImportedStackLib");
@@ -221,13 +221,13 @@ public class NativeStackEligibilityTests
 
         var (symbol, declaration, model) = GetKernel(consumerCompilation, "ConsumerApp.Kernels", "CallRemoteKernel");
         Assert.Equal(
-            NativeStackObstacle.ImportedSuspendingCall,
+            NativeStackObstacle.None,
             NativeStackEligibility.Classify(symbol, declaration, model));
     }
 
     [Fact]
-    [Scenario(TestScenario.Boundary)]
-    public void Classify_TransitiveImportedSuspendingDeviceFunction_ReturnsImportedSuspendingCall()
+    [Scenario(TestScenario.HappyPath)]
+    public void Classify_TransitiveImportedSuspendingDeviceFunction_ReturnsNone()
     {
         var libCompilation = RoslynTestUtility.CreateCompilation(ReadCase("NativeStackImportedLibraryCases.cs"))
             .WithAssemblyName("ImportedStackLib");
@@ -241,14 +241,82 @@ public class NativeStackEligibilityTests
         var (symbol, declaration, model) =
             GetKernel(consumerCompilation, "ConsumerApp.Kernels", "CallLocalWrapperKernel");
         Assert.Equal(
-            NativeStackObstacle.ImportedSuspendingCall,
+            NativeStackObstacle.None,
             NativeStackEligibility.Classify(symbol, declaration, model));
 
         var (groupSymbol, groupDeclaration, groupModel) =
             GetKernel(consumerCompilation, "ConsumerApp.Kernels", "PassRemoteMethodGroupKernel");
         Assert.Equal(
-            NativeStackObstacle.ImportedSuspendingCall,
+            NativeStackObstacle.None,
             NativeStackEligibility.Classify(groupSymbol, groupDeclaration, groupModel));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Classify_ImportedRecordWithoutCppStack_ReturnsImportedCallWithoutStackForm()
+    {
+        var library = DeviceLibraryBuilder.Build(
+            "XasmLib",
+            new Dictionary<string, string> { ["build_property.GSharpExportDeviceCode"] = "false" },
+            RoslynTestUtility.ReadTestCase("Diagnostics/CrossAssembly/Library.cs"),
+            HandWrittenExportRecords.Read("Diagnostics/CrossAssembly/HandWrittenSuspendingRecord.cs"));
+        var consumer = DeviceLibraryBuilder.CreateConsumer(
+            RoslynTestUtility.ReadTestCase("Diagnostics/CrossAssembly/Consumer.cs"),
+            library);
+
+        var (symbol, declaration, model) = GetKernel(consumer, "CrossAssemblyConsumer.ConsumerKernels", "CallKernel");
+        Assert.Equal(
+            NativeStackObstacle.ImportedCallWithoutStackForm,
+            NativeStackEligibility.Classify(symbol, declaration, model));
+    }
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("StackConsumerKernels", "CallsBlockBarrierKernel", NativeStackObstacle.None)]
+    [InlineData("StackConsumerKernels", "CallsThroughLocalDeviceKernel", NativeStackObstacle.None)]
+    [InlineData("DerivedStackConsumer", "CallsProtectedBarrierKernel", NativeStackObstacle.None)]
+    [InlineData("StackConsumerKernels", "CallsGridBarrierKernel", NativeStackObstacle.ImportedCallWithoutStackForm)]
+    [InlineData("StackConsumerKernels", "CallsWarpShuffleKernel", NativeStackObstacle.WarpLayout)]
+    [InlineData("StackConsumerKernels", "CallsActiveMaskKernel", NativeStackObstacle.WarpLayout)]
+    internal void Classify_ImportedStackTraitsLibrary_ReflectsStackObstacles(
+        string typeName,
+        string methodName,
+        NativeStackObstacle expected)
+    {
+        var library = DeviceLibraryBuilder.Build(
+            "StackTraitsLib",
+            null,
+            RoslynTestUtility.ReadTestCase("Generators/DeviceExportStackTraitsLibrary.cs"));
+        var consumer = DeviceLibraryBuilder.CreateConsumer(
+            RoslynTestUtility.ReadTestCase("Analysis/CrossAssemblyStackConsumer.cs"),
+            library);
+
+        var (symbol, declaration, model) = GetKernel(consumer, $"CrossAssemblyStackConsumerCase.{typeName}", methodName);
+        Assert.Equal(expected, NativeStackEligibility.Classify(symbol, declaration, model));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Classify_ImportedGridFunctionWithCppStack_ReturnsGridSync()
+    {
+        var record = HandWrittenExportRecords.Read("Diagnostics/CrossAssembly/HandWrittenSuspendingRecord.cs")
+            .Replace(
+                "Effect = \"None\")]",
+                "ReachesGridBarrier = true, CppStackSignature = \"inline int __gsharp_fn_XasmLib__LibMath__Twice(int x);\", CppStackBody = \"inline int __gsharp_fn_XasmLib__LibMath__Twice(int x){return x;}\", Effect = \"None\")]",
+                StringComparison.Ordinal);
+        var library = DeviceLibraryBuilder.Build(
+            "XasmLib",
+            new Dictionary<string, string> { ["build_property.GSharpExportDeviceCode"] = "false" },
+            RoslynTestUtility.ReadTestCase("Diagnostics/CrossAssembly/Library.cs"),
+            record);
+        var consumer = DeviceLibraryBuilder.CreateConsumer(
+            RoslynTestUtility.ReadTestCase("Diagnostics/CrossAssembly/Consumer.cs"),
+            library);
+
+        var (symbol, declaration, model) = GetKernel(consumer, "CrossAssemblyConsumer.ConsumerKernels", "CallKernel");
+        Assert.Equal(
+            NativeStackObstacle.GridSync,
+            NativeStackEligibility.Classify(symbol, declaration, model));
     }
 
     [Theory]

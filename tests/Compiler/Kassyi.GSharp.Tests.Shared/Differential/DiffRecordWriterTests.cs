@@ -434,32 +434,512 @@ public sealed class DiffRecordWriterTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void ComputeOutputsHash_BitwisePolicy_HashesRawBytesAndDistinguishesBitPatterns()
+    public void ComputeOutputsHash_BitwisePolicy_CanonicalizesNaNsAndPreservesDistinctNonNaNBits()
     {
+        const uint SignalingNanBits = 0x7F80_0001u;
         float quietNanA = BitConverter.Int32BitsToSingle(0x7FC0_0001);
-        float quietNanB = BitConverter.Int32BitsToSingle(0x7FC0_0002);
+        float negativeQuietNan = BitConverter.Int32BitsToSingle(unchecked((int)0xFFC0_0002u));
+        float canonicalNan = BitConverter.Int32BitsToSingle(0x7FC0_0000);
 
         var bufA = new DiffBuffers().Out<float>("bw", 2, OutputPolicy.Bitwise);
         bufA.Get<float>("bw")[0] = +0.0f;
         bufA.Get<float>("bw")[1] = quietNanA;
 
-        var bufSame = new DiffBuffers().Out<float>("bw", 2, OutputPolicy.Bitwise);
-        bufSame.Get<float>("bw")[0] = +0.0f;
-        bufSame.Get<float>("bw")[1] = quietNanA;
+        var bufSignalingNan = new DiffBuffers().Out<float>("bw", 2, OutputPolicy.Bitwise);
+        bufSignalingNan.Get<float>("bw")[0] = +0.0f;
+        MemoryMarshal.Cast<float, uint>(bufSignalingNan.Get<float>("bw").AsSpan())[1] = SignalingNanBits;
+
+        var bufNegativeNan = new DiffBuffers().Out<float>("bw", 2, OutputPolicy.Bitwise);
+        bufNegativeNan.Get<float>("bw")[0] = +0.0f;
+        bufNegativeNan.Get<float>("bw")[1] = negativeQuietNan;
+
+        var bufCanonicalNan = new DiffBuffers().Out<float>("bw", 2, OutputPolicy.Bitwise);
+        bufCanonicalNan.Get<float>("bw")[0] = +0.0f;
+        bufCanonicalNan.Get<float>("bw")[1] = canonicalNan;
 
         var bufNegZero = new DiffBuffers().Out<float>("bw", 2, OutputPolicy.Bitwise);
         bufNegZero.Get<float>("bw")[0] = -0.0f;
         bufNegZero.Get<float>("bw")[1] = quietNanA;
 
-        var bufDiffNan = new DiffBuffers().Out<float>("bw", 2, OutputPolicy.Bitwise);
-        bufDiffNan.Get<float>("bw")[0] = +0.0f;
-        bufDiffNan.Get<float>("bw")[1] = quietNanB;
+        var bufPosInf = new DiffBuffers().Out<float>("bw", 2, OutputPolicy.Bitwise);
+        bufPosInf.Get<float>("bw")[0] = float.PositiveInfinity;
+        bufPosInf.Get<float>("bw")[1] = 1.0f;
 
-        Assert.True(bufA.Find("bw").CellsMatch(bufDiffNan.Find("bw"), 1));
+        var bufNegInf = new DiffBuffers().Out<float>("bw", 2, OutputPolicy.Bitwise);
+        bufNegInf.Get<float>("bw")[0] = float.NegativeInfinity;
+        bufNegInf.Get<float>("bw")[1] = 1.0f;
+
+        var bufSubnormal = new DiffBuffers().Out<float>("bw", 2, OutputPolicy.Bitwise);
+        bufSubnormal.Get<float>("bw")[0] = float.Epsilon;
+        bufSubnormal.Get<float>("bw")[1] = 1.0f;
+
+        var bufZero = new DiffBuffers().Out<float>("bw", 2, OutputPolicy.Bitwise);
+        bufZero.Get<float>("bw")[0] = +0.0f;
+        bufZero.Get<float>("bw")[1] = 1.0f;
+
+        var bufOnePlusUlp = new DiffBuffers().Out<float>("bw", 2, OutputPolicy.Bitwise);
+        bufOnePlusUlp.Get<float>("bw")[0] = +0.0f;
+        bufOnePlusUlp.Get<float>("bw")[1] = BitConverter.Int32BitsToSingle(BitConverter.SingleToInt32Bits(1.0f) + 1);
+
+        Assert.True(bufA.Find("bw").CellsMatch(bufSignalingNan.Find("bw"), 1));
         string? hashA = DiffRecordWriter.ComputeOutputsHash(bufA);
-        Assert.Equal(hashA, DiffRecordWriter.ComputeOutputsHash(bufSame));
+        Assert.Equal(hashA, DiffRecordWriter.ComputeOutputsHash(bufSignalingNan));
+        Assert.Equal(hashA, DiffRecordWriter.ComputeOutputsHash(bufNegativeNan));
+        Assert.Equal(hashA, DiffRecordWriter.ComputeOutputsHash(bufCanonicalNan));
         Assert.NotEqual(hashA, DiffRecordWriter.ComputeOutputsHash(bufNegZero));
-        Assert.NotEqual(hashA, DiffRecordWriter.ComputeOutputsHash(bufDiffNan));
+        Assert.NotEqual(DiffRecordWriter.ComputeOutputsHash(bufPosInf), DiffRecordWriter.ComputeOutputsHash(bufNegInf));
+        Assert.NotEqual(DiffRecordWriter.ComputeOutputsHash(bufZero), DiffRecordWriter.ComputeOutputsHash(bufSubnormal));
+        Assert.NotEqual(DiffRecordWriter.ComputeOutputsHash(bufZero), DiffRecordWriter.ComputeOutputsHash(bufOnePlusUlp));
+
+        // Exact policy continues to distinguish distinct NaN payloads (write raw sNaN bits so Release JIT cannot quiet).
+        var exactNanA = new DiffBuffers().Out<float>("ex", 1, OutputPolicy.Exact);
+        MemoryMarshal.Cast<float, uint>(exactNanA.Get<float>("ex").AsSpan())[0] = SignalingNanBits;
+        var exactNanB = new DiffBuffers().Out<float>("ex", 1, OutputPolicy.Exact);
+        exactNanB.Get<float>("ex")[0] = quietNanA;
+        Assert.NotEqual(DiffRecordWriter.ComputeOutputsHash(exactNanA), DiffRecordWriter.ComputeOutputsHash(exactNanB));
+
+        // Large buffer (> 128 floats, exceeding 512-byte scratch chunk) canonicalizes across chunk boundaries.
+        var chunkA = new DiffBuffers().Out<float>("chunk", 200, OutputPolicy.Bitwise);
+        var chunkB = new DiffBuffers().Out<float>("chunk", 200, OutputPolicy.Bitwise);
+        for (int i = 0; i < 200; i++)
+        {
+            chunkA.Get<float>("chunk")[i] = i;
+            chunkB.Get<float>("chunk")[i] = i;
+        }
+        MemoryMarshal.Cast<float, uint>(chunkA.Get<float>("chunk").AsSpan())[0] = SignalingNanBits;
+        chunkB.Get<float>("chunk")[0] = negativeQuietNan;
+        chunkA.Get<float>("chunk")[199] = quietNanA;
+        chunkB.Get<float>("chunk")[199] = canonicalNan;
+        Assert.Equal(DiffRecordWriter.ComputeOutputsHash(chunkA), DiffRecordWriter.ComputeOutputsHash(chunkB));
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void ComputeOutputsHash_BitwisePolicyDoubleAndHalf_CanonicalizesNaNsAndPreservesDistinctNonNaNBits()
+    {
+        const ulong DoubleSnanBits = 0x7FF0_0000_0000_0001UL;
+        double doubleQnan = BitConverter.Int64BitsToDouble(0x7FF8_0000_0000_0002L);
+        double doubleNegNan = BitConverter.Int64BitsToDouble(unchecked((long)0xFFF8_0000_0000_0003UL));
+
+        var dA = new DiffBuffers().Out<double>("bd", 2, OutputPolicy.Bitwise);
+        dA.Get<double>("bd")[0] = +0.0;
+        MemoryMarshal.Cast<double, ulong>(dA.Get<double>("bd").AsSpan())[1] = DoubleSnanBits;
+
+        var dB = new DiffBuffers().Out<double>("bd", 2, OutputPolicy.Bitwise);
+        dB.Get<double>("bd")[0] = +0.0;
+        dB.Get<double>("bd")[1] = doubleQnan;
+
+        var dNegNan = new DiffBuffers().Out<double>("bd", 2, OutputPolicy.Bitwise);
+        dNegNan.Get<double>("bd")[0] = +0.0;
+        dNegNan.Get<double>("bd")[1] = doubleNegNan;
+
+        var dNegZero = new DiffBuffers().Out<double>("bd", 2, OutputPolicy.Bitwise);
+        dNegZero.Get<double>("bd")[0] = -0.0;
+        dNegZero.Get<double>("bd")[1] = doubleQnan;
+
+        string? dHash = DiffRecordWriter.ComputeOutputsHash(dA);
+        Assert.Equal(dHash, DiffRecordWriter.ComputeOutputsHash(dB));
+        Assert.Equal(dHash, DiffRecordWriter.ComputeOutputsHash(dNegNan));
+        Assert.NotEqual(dHash, DiffRecordWriter.ComputeOutputsHash(dNegZero));
+
+        var dExactA = new DiffBuffers().Out<double>("exd", 1, OutputPolicy.Exact);
+        MemoryMarshal.Cast<double, ulong>(dExactA.Get<double>("exd").AsSpan())[0] = DoubleSnanBits;
+        var dExactB = new DiffBuffers().Out<double>("exd", 1, OutputPolicy.Exact);
+        dExactB.Get<double>("exd")[0] = doubleQnan;
+        Assert.NotEqual(DiffRecordWriter.ComputeOutputsHash(dExactA), DiffRecordWriter.ComputeOutputsHash(dExactB));
+
+        const ushort HalfSnanBits = 0x7C01;
+        Half halfQnan = BitConverter.UInt16BitsToHalf(0x7E01);
+        Half halfNegNan = BitConverter.UInt16BitsToHalf(0xFE02);
+
+        var hA = new DiffBuffers().Out<Half>("bh", 2, OutputPolicy.Bitwise);
+        hA.Get<Half>("bh")[0] = (Half)(+0.0f);
+        MemoryMarshal.Cast<Half, ushort>(hA.Get<Half>("bh").AsSpan())[1] = HalfSnanBits;
+
+        var hB = new DiffBuffers().Out<Half>("bh", 2, OutputPolicy.Bitwise);
+        hB.Get<Half>("bh")[0] = (Half)(+0.0f);
+        hB.Get<Half>("bh")[1] = halfQnan;
+
+        var hNegNan = new DiffBuffers().Out<Half>("bh", 2, OutputPolicy.Bitwise);
+        hNegNan.Get<Half>("bh")[0] = (Half)(+0.0f);
+        hNegNan.Get<Half>("bh")[1] = halfNegNan;
+
+        var hNegZero = new DiffBuffers().Out<Half>("bh", 2, OutputPolicy.Bitwise);
+        hNegZero.Get<Half>("bh")[0] = (Half)(-0.0f);
+        hNegZero.Get<Half>("bh")[1] = halfQnan;
+
+        string? hHash = DiffRecordWriter.ComputeOutputsHash(hA);
+        Assert.Equal(hHash, DiffRecordWriter.ComputeOutputsHash(hB));
+        Assert.Equal(hHash, DiffRecordWriter.ComputeOutputsHash(hNegNan));
+        Assert.NotEqual(hHash, DiffRecordWriter.ComputeOutputsHash(hNegZero));
+
+        var hExactA = new DiffBuffers().Out<Half>("exh", 1, OutputPolicy.Exact);
+        MemoryMarshal.Cast<Half, ushort>(hExactA.Get<Half>("exh").AsSpan())[0] = HalfSnanBits;
+        var hExactB = new DiffBuffers().Out<Half>("exh", 1, OutputPolicy.Exact);
+        hExactB.Get<Half>("exh")[0] = halfQnan;
+        Assert.NotEqual(DiffRecordWriter.ComputeOutputsHash(hExactA), DiffRecordWriter.ComputeOutputsHash(hExactB));
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void ComputeOutputsHash_MixedColumnPoliciesWithBitwise_CanonicalizesOnlyBitwiseColumns()
+    {
+        const uint NanABits = 0x7F80_0001u;
+        float nanB = BitConverter.Int32BitsToSingle(unchecked((int)0xFFC0_0002u));
+
+        // Case 1: [Exact, Bitwise] where Policy == policies[0] == Exact (AppendOutputBuffer path).
+        var exBwA = new DiffBuffers()
+            .Out<float>("m1", 2, [("exact", OutputPolicy.Exact), ("bitwise", OutputPolicy.Bitwise)]);
+        var exBwASpan = MemoryMarshal.Cast<float, uint>(exBwA.Get<float>("m1").AsSpan());
+        exBwASpan[0] = NanABits;
+        exBwASpan[1] = NanABits;
+        exBwA.Get<float>("m1")[2] = 1.5f;
+        exBwA.Get<float>("m1")[3] = +0.0f;
+
+        var exBwSame = new DiffBuffers()
+            .Out<float>("m1", 2, [("exact", OutputPolicy.Exact), ("bitwise", OutputPolicy.Bitwise)]);
+        MemoryMarshal.Cast<float, uint>(exBwSame.Get<float>("m1").AsSpan())[0] = NanABits;
+        exBwSame.Get<float>("m1")[1] = nanB;
+        exBwSame.Get<float>("m1")[2] = 1.5f;
+        exBwSame.Get<float>("m1")[3] = +0.0f;
+
+        var exBwDiffExactNan = new DiffBuffers()
+            .Out<float>("m1", 2, [("exact", OutputPolicy.Exact), ("bitwise", OutputPolicy.Bitwise)]);
+        exBwDiffExactNan.Get<float>("m1")[0] = nanB;
+        exBwDiffExactNan.Get<float>("m1")[1] = nanB;
+        exBwDiffExactNan.Get<float>("m1")[2] = 1.5f;
+        exBwDiffExactNan.Get<float>("m1")[3] = +0.0f;
+
+        string? hashExBw = DiffRecordWriter.ComputeOutputsHash(exBwA);
+        Assert.Equal(hashExBw, DiffRecordWriter.ComputeOutputsHash(exBwSame));
+        Assert.NotEqual(hashExBw, DiffRecordWriter.ComputeOutputsHash(exBwDiffExactNan));
+
+        // Case 2: [Bitwise, Exact] where Policy == policies[0] == Bitwise (AppendOutputBuffer path).
+        var bwExA = new DiffBuffers()
+            .Out<float>("m2", 1, [("bitwise", OutputPolicy.Bitwise), ("exact", OutputPolicy.Exact)]);
+        var bwExASpan = MemoryMarshal.Cast<float, uint>(bwExA.Get<float>("m2").AsSpan());
+        bwExASpan[0] = NanABits;
+        bwExASpan[1] = NanABits;
+
+        var bwExSame = new DiffBuffers()
+            .Out<float>("m2", 1, [("bitwise", OutputPolicy.Bitwise), ("exact", OutputPolicy.Exact)]);
+        bwExSame.Get<float>("m2")[0] = nanB;
+        MemoryMarshal.Cast<float, uint>(bwExSame.Get<float>("m2").AsSpan())[1] = NanABits;
+
+        var bwExDiffExactNan = new DiffBuffers()
+            .Out<float>("m2", 1, [("bitwise", OutputPolicy.Bitwise), ("exact", OutputPolicy.Exact)]);
+        bwExDiffExactNan.Get<float>("m2")[0] = nanB;
+        bwExDiffExactNan.Get<float>("m2")[1] = nanB;
+
+        string? hashBwEx = DiffRecordWriter.ComputeOutputsHash(bwExA);
+        Assert.Equal(hashBwEx, DiffRecordWriter.ComputeOutputsHash(bwExSame));
+        Assert.NotEqual(hashBwEx, DiffRecordWriter.ComputeOutputsHash(bwExDiffExactNan));
+
+        // Case 3: [Ignore, Bitwise, Exact] routed through AppendMixedColumnBuffer.
+        var mixedA = new DiffBuffers().Out<float>(
+            "m3",
+            1,
+            [("ignored", OutputPolicy.Ignore), ("bitwise", OutputPolicy.Bitwise), ("exact", OutputPolicy.Exact)]
+        );
+        mixedA.Get<float>("m3")[0] = 10.0f;
+        var mixedASpan = MemoryMarshal.Cast<float, uint>(mixedA.Get<float>("m3").AsSpan());
+        mixedASpan[1] = NanABits;
+        mixedASpan[2] = NanABits;
+
+        var mixedSame = new DiffBuffers().Out<float>(
+            "m3",
+            1,
+            [("ignored", OutputPolicy.Ignore), ("bitwise", OutputPolicy.Bitwise), ("exact", OutputPolicy.Exact)]
+        );
+        mixedSame.Get<float>("m3")[0] = 999.0f;
+        mixedSame.Get<float>("m3")[1] = nanB;
+        MemoryMarshal.Cast<float, uint>(mixedSame.Get<float>("m3").AsSpan())[2] = NanABits;
+
+        var mixedDiffExactNan = new DiffBuffers().Out<float>(
+            "m3",
+            1,
+            [("ignored", OutputPolicy.Ignore), ("bitwise", OutputPolicy.Bitwise), ("exact", OutputPolicy.Exact)]
+        );
+        mixedDiffExactNan.Get<float>("m3")[0] = 999.0f;
+        mixedDiffExactNan.Get<float>("m3")[1] = nanB;
+        mixedDiffExactNan.Get<float>("m3")[2] = nanB;
+
+        string? hashMixed = DiffRecordWriter.ComputeOutputsHash(mixedA);
+        Assert.Equal(hashMixed, DiffRecordWriter.ComputeOutputsHash(mixedSame));
+        Assert.NotEqual(hashMixed, DiffRecordWriter.ComputeOutputsHash(mixedDiffExactNan));
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void ComputeOutputsHash_MultisetPolicyWithNaNs_CanonicalizesNaNsAcrossOrderAndPreservesSignedZeros()
+    {
+        const uint SingleSnanBits = 0x7F80_0001u;
+        float singleQnan = BitConverter.Int32BitsToSingle(0x7FC0_0001);
+        float singleNegQnan = BitConverter.Int32BitsToSingle(unchecked((int)0xFFC0_0002u));
+        float singleCanonicalNan = BitConverter.Int32BitsToSingle(0x7FC0_0000);
+
+        var floatA = new DiffBuffers().Out<float>("mf", 3, OutputPolicy.Multiset);
+        floatA.Get<float>("mf")[0] = 1.0f;
+        MemoryMarshal.Cast<float, uint>(floatA.Get<float>("mf").AsSpan())[1] = SingleSnanBits;
+        floatA.Get<float>("mf")[2] = singleNegQnan;
+
+        var floatB = new DiffBuffers().Out<float>("mf", 3, OutputPolicy.Multiset);
+        floatB.Get<float>("mf")[0] = singleQnan;
+        floatB.Get<float>("mf")[1] = 1.0f;
+        floatB.Get<float>("mf")[2] = singleCanonicalNan;
+
+        var floatASorted = floatA.Find("mf").CreateSortedCopy();
+        var floatBSorted = floatB.Find("mf").CreateSortedCopy();
+        Assert.True(floatASorted.CellsMatch(floatBSorted, 0));
+        Assert.True(floatASorted.CellsMatch(floatBSorted, 1));
+        Assert.True(floatASorted.CellsMatch(floatBSorted, 2));
+
+        string? floatHashA = DiffRecordWriter.ComputeOutputsHash(floatA);
+        Assert.Equal(floatHashA, DiffRecordWriter.ComputeOutputsHash(floatB));
+
+        // Signed zeros remain distinct while still permutation-invariant alongside canonicalized NaNs.
+        var floatNegZero = new DiffBuffers().Out<float>("mf", 3, OutputPolicy.Multiset);
+        floatNegZero.Get<float>("mf")[0] = -0.0f;
+        floatNegZero.Get<float>("mf")[1] = 1.0f;
+        floatNegZero.Get<float>("mf")[2] = singleQnan;
+
+        var floatPosZero = new DiffBuffers().Out<float>("mf", 3, OutputPolicy.Multiset);
+        floatPosZero.Get<float>("mf")[0] = +0.0f;
+        floatPosZero.Get<float>("mf")[1] = 1.0f;
+        floatPosZero.Get<float>("mf")[2] = singleCanonicalNan;
+
+        Assert.NotEqual(DiffRecordWriter.ComputeOutputsHash(floatNegZero), DiffRecordWriter.ComputeOutputsHash(floatPosZero));
+
+        var floatBothZerosA = new DiffBuffers().Out<float>("mf", 3, OutputPolicy.Multiset);
+        floatBothZerosA.Get<float>("mf")[0] = -0.0f;
+        floatBothZerosA.Get<float>("mf")[1] = +0.0f;
+        MemoryMarshal.Cast<float, uint>(floatBothZerosA.Get<float>("mf").AsSpan())[2] = SingleSnanBits;
+
+        var floatBothZerosB = new DiffBuffers().Out<float>("mf", 3, OutputPolicy.Multiset);
+        floatBothZerosB.Get<float>("mf")[0] = singleNegQnan;
+        floatBothZerosB.Get<float>("mf")[1] = +0.0f;
+        floatBothZerosB.Get<float>("mf")[2] = -0.0f;
+
+        Assert.Equal(DiffRecordWriter.ComputeOutputsHash(floatBothZerosA), DiffRecordWriter.ComputeOutputsHash(floatBothZerosB));
+
+        // double
+        const ulong DoubleSnanBits = 0x7FF0_0000_0000_0001UL;
+        double doubleQnan = BitConverter.Int64BitsToDouble(0x7FF8_0000_0000_0002L);
+        double doubleNegQnan = BitConverter.Int64BitsToDouble(unchecked((long)0xFFF8_0000_0000_0003UL));
+        double doubleCanonicalNan = BitConverter.Int64BitsToDouble(0x7FF8_0000_0000_0000L);
+
+        var doubleA = new DiffBuffers().Out<double>("md", 3, OutputPolicy.Multiset);
+        doubleA.Get<double>("md")[0] = 1.0;
+        MemoryMarshal.Cast<double, ulong>(doubleA.Get<double>("md").AsSpan())[1] = DoubleSnanBits;
+        doubleA.Get<double>("md")[2] = doubleNegQnan;
+
+        var doubleB = new DiffBuffers().Out<double>("md", 3, OutputPolicy.Multiset);
+        doubleB.Get<double>("md")[0] = doubleQnan;
+        doubleB.Get<double>("md")[1] = 1.0;
+        doubleB.Get<double>("md")[2] = doubleCanonicalNan;
+
+        Assert.Equal(DiffRecordWriter.ComputeOutputsHash(doubleA), DiffRecordWriter.ComputeOutputsHash(doubleB));
+
+        var doubleNegZero = new DiffBuffers().Out<double>("md", 2, OutputPolicy.Multiset);
+        doubleNegZero.Get<double>("md")[0] = -0.0;
+        doubleNegZero.Get<double>("md")[1] = doubleQnan;
+
+        var doublePosZero = new DiffBuffers().Out<double>("md", 2, OutputPolicy.Multiset);
+        doublePosZero.Get<double>("md")[0] = +0.0;
+        doublePosZero.Get<double>("md")[1] = doubleCanonicalNan;
+
+        Assert.NotEqual(DiffRecordWriter.ComputeOutputsHash(doubleNegZero), DiffRecordWriter.ComputeOutputsHash(doublePosZero));
+
+        // Half
+        const ushort HalfSnanBits = 0x7C01;
+        Half halfQnan = BitConverter.UInt16BitsToHalf(0x7E01);
+        Half halfNegQnan = BitConverter.UInt16BitsToHalf(0xFE02);
+        Half halfCanonicalNan = BitConverter.UInt16BitsToHalf(0x7E00);
+
+        var halfA = new DiffBuffers().Out<Half>("mh", 3, OutputPolicy.Multiset);
+        halfA.Get<Half>("mh")[0] = (Half)1.0f;
+        MemoryMarshal.Cast<Half, ushort>(halfA.Get<Half>("mh").AsSpan())[1] = HalfSnanBits;
+        halfA.Get<Half>("mh")[2] = halfNegQnan;
+
+        var halfB = new DiffBuffers().Out<Half>("mh", 3, OutputPolicy.Multiset);
+        halfB.Get<Half>("mh")[0] = halfQnan;
+        halfB.Get<Half>("mh")[1] = (Half)1.0f;
+        halfB.Get<Half>("mh")[2] = halfCanonicalNan;
+
+        Assert.Equal(DiffRecordWriter.ComputeOutputsHash(halfA), DiffRecordWriter.ComputeOutputsHash(halfB));
+
+        var halfNegZero = new DiffBuffers().Out<Half>("mh", 2, OutputPolicy.Multiset);
+        halfNegZero.Get<Half>("mh")[0] = (Half)(-0.0f);
+        halfNegZero.Get<Half>("mh")[1] = halfQnan;
+
+        var halfPosZero = new DiffBuffers().Out<Half>("mh", 2, OutputPolicy.Multiset);
+        halfPosZero.Get<Half>("mh")[0] = (Half)(+0.0f);
+        halfPosZero.Get<Half>("mh")[1] = halfCanonicalNan;
+
+        Assert.NotEqual(DiffRecordWriter.ComputeOutputsHash(halfNegZero), DiffRecordWriter.ComputeOutputsHash(halfPosZero));
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void ComputeOutputsHash_MixedColumnPoliciesWithMultiset_CanonicalizesMultisetAndBitwiseColumnsOnly()
+    {
+        const uint SingleSnanBits = 0x7F80_0001u;
+        float singleQnan = BitConverter.Int32BitsToSingle(0x7FC0_0001);
+        float singleNegQnan = BitConverter.Int32BitsToSingle(unchecked((int)0xFFC0_0002u));
+        float singleCanonicalNan = BitConverter.Int32BitsToSingle(0x7FC0_0000);
+
+        // Case 1: [Multiset, Bitwise, Exact] routed through TryAppendCanonicalNaNFloatingBytes.
+        var colA = new DiffBuffers().Out<float>(
+            "mc1",
+            3,
+            [("multiset", OutputPolicy.Multiset), ("bitwise", OutputPolicy.Bitwise), ("exact", OutputPolicy.Exact)]
+        );
+        var colAData = colA.Get<float>("mc1");
+        var colABits = MemoryMarshal.Cast<float, uint>(colAData.AsSpan());
+        colAData[0] = 3.0f;
+        colABits[1] = SingleSnanBits;
+        colABits[2] = SingleSnanBits;
+        colABits[3] = SingleSnanBits;
+        colAData[4] = 1.5f;
+        colAData[5] = +0.0f;
+        colAData[6] = singleNegQnan;
+        colAData[7] = singleNegQnan;
+        colAData[8] = 2.5f;
+
+        var colSame = new DiffBuffers().Out<float>(
+            "mc1",
+            3,
+            [("multiset", OutputPolicy.Multiset), ("bitwise", OutputPolicy.Bitwise), ("exact", OutputPolicy.Exact)]
+        );
+        var colSameData = colSame.Get<float>("mc1");
+        var colSameBits = MemoryMarshal.Cast<float, uint>(colSameData.AsSpan());
+        colSameData[0] = singleQnan;
+        colSameData[1] = singleCanonicalNan;
+        colSameBits[2] = SingleSnanBits;
+        colSameData[3] = singleCanonicalNan;
+        colSameData[4] = 1.5f;
+        colSameData[5] = +0.0f;
+        colSameData[6] = 3.0f;
+        colSameData[7] = singleQnan;
+        colSameData[8] = 2.5f;
+
+        var colDiffExactNan = new DiffBuffers().Out<float>(
+            "mc1",
+            3,
+            [("multiset", OutputPolicy.Multiset), ("bitwise", OutputPolicy.Bitwise), ("exact", OutputPolicy.Exact)]
+        );
+        var colDiffExactData = colDiffExactNan.Get<float>("mc1");
+        colSameData.CopyTo(colDiffExactData, 0);
+        colDiffExactData[2] = singleQnan;
+
+        string? colHash = DiffRecordWriter.ComputeOutputsHash(colA);
+        Assert.Equal(colHash, DiffRecordWriter.ComputeOutputsHash(colSame));
+        Assert.NotEqual(colHash, DiffRecordWriter.ComputeOutputsHash(colDiffExactNan));
+
+        // Case 2: [Ignore, Multiset, Exact] routed through AppendMixedColumnBuffer (float, double, Half).
+        var ignA = new DiffBuffers().Out<float>(
+            "mc2",
+            2,
+            [("ignore", OutputPolicy.Ignore), ("multiset", OutputPolicy.Multiset), ("exact", OutputPolicy.Exact)]
+        );
+        var ignAData = ignA.Get<float>("mc2");
+        ignAData[0] = 10.0f;
+        MemoryMarshal.Cast<float, uint>(ignAData.AsSpan())[1] = SingleSnanBits;
+        MemoryMarshal.Cast<float, uint>(ignAData.AsSpan())[2] = SingleSnanBits;
+        ignAData[3] = 20.0f;
+        ignAData[4] = 1.0f;
+        ignAData[5] = +0.0f;
+
+        var ignSame = new DiffBuffers().Out<float>(
+            "mc2",
+            2,
+            [("ignore", OutputPolicy.Ignore), ("multiset", OutputPolicy.Multiset), ("exact", OutputPolicy.Exact)]
+        );
+        var ignSameData = ignSame.Get<float>("mc2");
+        ignSameData[0] = 999.0f;
+        ignSameData[1] = 1.0f;
+        MemoryMarshal.Cast<float, uint>(ignSameData.AsSpan())[2] = SingleSnanBits;
+        ignSameData[3] = 888.0f;
+        ignSameData[4] = singleNegQnan;
+        ignSameData[5] = +0.0f;
+
+        var ignDiffExactNan = new DiffBuffers().Out<float>(
+            "mc2",
+            2,
+            [("ignore", OutputPolicy.Ignore), ("multiset", OutputPolicy.Multiset), ("exact", OutputPolicy.Exact)]
+        );
+        var ignDiffExactData = ignDiffExactNan.Get<float>("mc2");
+        ignSameData.CopyTo(ignDiffExactData, 0);
+        ignDiffExactData[2] = singleNegQnan;
+
+        string? ignHash = DiffRecordWriter.ComputeOutputsHash(ignA);
+        Assert.Equal(ignHash, DiffRecordWriter.ComputeOutputsHash(ignSame));
+        Assert.NotEqual(ignHash, DiffRecordWriter.ComputeOutputsHash(ignDiffExactNan));
+
+        // double and Half through AppendMixedColumnBuffer with [Ignore, Multiset, Exact]
+        const ulong DoubleSnanBits = 0x7FF0_0000_0000_0001UL;
+        double doubleNegQnan = BitConverter.Int64BitsToDouble(unchecked((long)0xFFF8_0000_0000_0003UL));
+        var ignDoubleA = new DiffBuffers().Out<double>(
+            "mc2d",
+            2,
+            [("ignore", OutputPolicy.Ignore), ("multiset", OutputPolicy.Multiset), ("exact", OutputPolicy.Exact)]
+        );
+        ignDoubleA.Get<double>("mc2d")[0] = 1.0;
+        MemoryMarshal.Cast<double, ulong>(ignDoubleA.Get<double>("mc2d").AsSpan())[1] = DoubleSnanBits;
+        MemoryMarshal.Cast<double, ulong>(ignDoubleA.Get<double>("mc2d").AsSpan())[2] = DoubleSnanBits;
+        ignDoubleA.Get<double>("mc2d")[3] = 2.0;
+        ignDoubleA.Get<double>("mc2d")[4] = -0.0;
+        ignDoubleA.Get<double>("mc2d")[5] = 3.0;
+
+        var ignDoubleSame = new DiffBuffers().Out<double>(
+            "mc2d",
+            2,
+            [("ignore", OutputPolicy.Ignore), ("multiset", OutputPolicy.Multiset), ("exact", OutputPolicy.Exact)]
+        );
+        ignDoubleSame.Get<double>("mc2d")[0] = 777.0;
+        ignDoubleSame.Get<double>("mc2d")[1] = -0.0;
+        MemoryMarshal.Cast<double, ulong>(ignDoubleSame.Get<double>("mc2d").AsSpan())[2] = DoubleSnanBits;
+        ignDoubleSame.Get<double>("mc2d")[3] = 666.0;
+        ignDoubleSame.Get<double>("mc2d")[4] = doubleNegQnan;
+        ignDoubleSame.Get<double>("mc2d")[5] = 3.0;
+
+        Assert.Equal(DiffRecordWriter.ComputeOutputsHash(ignDoubleA), DiffRecordWriter.ComputeOutputsHash(ignDoubleSame));
+
+        const ushort HalfSnanBits = 0x7C01;
+        Half halfNegQnan = BitConverter.UInt16BitsToHalf(0xFE02);
+        var ignHalfA = new DiffBuffers().Out<Half>(
+            "mc2h",
+            2,
+            [("ignore", OutputPolicy.Ignore), ("multiset", OutputPolicy.Multiset), ("exact", OutputPolicy.Exact)]
+        );
+        ignHalfA.Get<Half>("mc2h")[0] = (Half)1.0f;
+        MemoryMarshal.Cast<Half, ushort>(ignHalfA.Get<Half>("mc2h").AsSpan())[1] = HalfSnanBits;
+        MemoryMarshal.Cast<Half, ushort>(ignHalfA.Get<Half>("mc2h").AsSpan())[2] = HalfSnanBits;
+        ignHalfA.Get<Half>("mc2h")[3] = (Half)2.0f;
+        ignHalfA.Get<Half>("mc2h")[4] = (Half)(-0.0f);
+        ignHalfA.Get<Half>("mc2h")[5] = (Half)3.0f;
+
+        var ignHalfSame = new DiffBuffers().Out<Half>(
+            "mc2h",
+            2,
+            [("ignore", OutputPolicy.Ignore), ("multiset", OutputPolicy.Multiset), ("exact", OutputPolicy.Exact)]
+        );
+        ignHalfSame.Get<Half>("mc2h")[0] = (Half)777.0f;
+        ignHalfSame.Get<Half>("mc2h")[1] = (Half)(-0.0f);
+        MemoryMarshal.Cast<Half, ushort>(ignHalfSame.Get<Half>("mc2h").AsSpan())[2] = HalfSnanBits;
+        ignHalfSame.Get<Half>("mc2h")[3] = (Half)666.0f;
+        ignHalfSame.Get<Half>("mc2h")[4] = halfNegQnan;
+        ignHalfSame.Get<Half>("mc2h")[5] = (Half)3.0f;
+
+        Assert.Equal(DiffRecordWriter.ComputeOutputsHash(ignHalfA), DiffRecordWriter.ComputeOutputsHash(ignHalfSame));
     }
 
     [Fact]

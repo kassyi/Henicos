@@ -219,8 +219,7 @@
 (15,35)-(15,75) GSH0065 analyzer: The static member 'StaticMemberAccessTwiceKernels.s_counter' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
 
 ## Analyzers/InstanceDeviceFunction_SadPath.cs
-(10,16)-(10,21) GSH0066 analyzer: The method 'S.Twice' is marked with [GpuDeviceFunction] but is an instance method. Mark the method as 'static' and pass the struct as a parameter.
-(16,16)-(16,19) GSH0066 analyzer: The method 'C.Add' is marked with [GpuDeviceFunction] but is an instance method. Mark the method as 'static' and pass the struct as a parameter.
+(16,16)-(16,19) GSH0066 analyzer: The method 'C.Add' is marked with [GpuDeviceFunction] but is declared on a reference type (device code has no class instances; mark the method as 'static').
 
 ## Analyzers/SharedMemoryDisposable_SadPath.cs
 (25,40)-(25,47) GSH0069 analyzer: SharedMemory<T> cannot hold the disposable type 'Handle'. Shared memory is released with the thread block, so its elements are never disposed.

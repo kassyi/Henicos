@@ -239,11 +239,18 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
             throw new InvalidOperationException("A lowered resume call does not wrap a call to a device function.");
         }
 
-        // The frame and the resume protocol follow the static call; the reduced and instance forms have their receiver
-        // out of the arguments
-        if (callee.ReducedFrom != null || !callee.IsStatic)
+        // The frame and the resume protocol follow the static call. A reduced extension call is unsupported (GSH0003);
+        // a suspending instance [GpuDeviceFunction] is already reported with GSH0066 at its declaration.
+        if (callee.ReducedFrom != null)
         {
             context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, call, SuspendingExtensionCall);
+            context.Visitor.AppendUnsupportedPlaceholder(call);
+            return;
+        }
+
+        if (!callee.IsStatic)
+        {
+            context.Visitor.AppendUnsupportedPlaceholder(call);
             return;
         }
 

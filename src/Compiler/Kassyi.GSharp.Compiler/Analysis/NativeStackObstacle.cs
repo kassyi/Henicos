@@ -7,7 +7,12 @@ internal enum NativeStackObstacle
     GridSync,
     Cooperative,
     RecursiveSuspendingCall,
-    ImportedSuspendingCall,
+
+    /// <summary>
+    /// A suspending device function from another assembly has no usable native stack C++ form
+    /// (<see cref="Models.DeviceExportRecord.HasCppStack"/> is false, or the record is incompatible).
+    /// </summary>
+    ImportedCallWithoutStackForm,
 
     /// <summary>
     /// A warp collective or a call that reaches one has no place in the visit counts of the kernel

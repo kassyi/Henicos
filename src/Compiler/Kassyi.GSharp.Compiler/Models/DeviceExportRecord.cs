@@ -13,8 +13,17 @@ internal readonly record struct DeviceExportRecord(
     DeviceExportRecord.DialectText Cpp,
     DeviceExportRecord.FunctionTraits Traits,
     string InternalError,
-    EquatableArray<string> ErrorSites = default)
+    EquatableArray<string> ErrorSites = default,
+    DeviceExportRecord.DialectText CppStack = default)
 {
+    private readonly DialectText _cppStack = CppStack.NonNull();
+
+    /// <summary>The native stack C++ text and dependencies of a suspending device function.</summary>
+    public DialectText CppStack
+    {
+        get => _cppStack.NonNull();
+        init => _cppStack = value.NonNull();
+    }
     /// <summary>The names the record defines and refers to.</summary>
     public readonly record struct ExportNames(
         string CppName,
@@ -43,6 +52,11 @@ internal readonly record struct DeviceExportRecord(
 
         /// <summary>No text, failed: a consumer copies nothing of the dialect.</summary>
         public static DialectText NotTranspiled => Empty with { Failed = true };
+
+        internal DialectText NonNull() =>
+            Signature is not null && Body is not null && Dispose is not null
+                ? this
+                : new(References, Signature ?? "", Body ?? "", Dispose ?? "", Includes, Failed);
     }
 
     /// <summary>The traits and execution requirements of a device function.</summary>
@@ -100,7 +114,7 @@ internal readonly record struct DeviceExportRecord(
     /// finds the records by those names. A change of <c>InternalNames.yml</c> or of a prelude changes
     /// <see cref="CurrentPreludeHash"/> by itself.
     /// </remarks>
-    public const int CurrentFormatVersion = 6;
+    public const int CurrentFormatVersion = 7;
 
     /// <summary>
     /// The hash that this G# writes into its records and requires of the records it imports
@@ -117,8 +131,74 @@ internal readonly record struct DeviceExportRecord(
         HashHelper.ComputeFnv1A64($"{GSharpPreludeResources.Hash}/{CurrentFormatVersion}")
             .ToString("x16", CultureInfo.InvariantCulture);
 
+    /// <summary>Whether the record holds a usable native stack C++ form.</summary>
+    public bool HasCppStack => !CppStack.Failed && CppStack.Signature.Length > 0;
+
     /// <summary>The text of the CUDA or the C++ dialect.</summary>
     public DialectText GetDialect(bool isCuda) => isCuda ? Cuda : Cpp;
+
+    /// <summary>
+    /// The text of the CUDA or the C++ dialect, joined with <see cref="CppStack"/> when running on native stacks.
+    /// </summary>
+    public DialectText GetDialect(bool isCuda, bool onStacks)
+    {
+        if (isCuda || !onStacks || !HasCppStack)
+        {
+            return GetDialect(isCuda);
+        }
+
+        return new DialectText(
+            References: UnionOrdered(Cpp.References, CppStack.References),
+            Signature: JoinOnNewLine(Cpp.Signature, CppStack.Signature),
+            Body: JoinOnNewLine(Cpp.Body, CppStack.Body),
+            Dispose: Cpp.Dispose,
+            Includes: UnionOrdered(Cpp.Includes, CppStack.Includes),
+            Failed: Cpp.Failed);
+    }
+
+    private static string JoinOnNewLine(string first, string second)
+    {
+        if (first.Length == 0)
+        {
+            return second;
+        }
+
+        if (second.Length == 0)
+        {
+            return first;
+        }
+
+        return first[first.Length - 1] == '\n'
+            ? first + second
+            : first + "\n" + second;
+    }
+
+    private static EquatableArray<string> UnionOrdered(EquatableArray<string> first, EquatableArray<string> second)
+    {
+        if (first.IsDefaultOrEmpty)
+        {
+            return second;
+        }
+
+        if (second.IsDefaultOrEmpty)
+        {
+            return first;
+        }
+
+        var set = new HashSet<string>(StringComparer.Ordinal);
+        first
+            .AsStackEnumerable()
+            .AddTo(set);
+        second
+            .AsStackEnumerable()
+            .AddTo(set);
+        var builder = ImmutableArray.CreateBuilder<string>(set.Count);
+        set
+            .AsStackEnumerable()
+            .AddTo(builder);
+        builder.Sort(StringComparer.Ordinal);
+        return builder.MoveToImmutable().AsEquatableArray();
+    }
 
     /// <summary>Whether the record holds a value: a default record has no ID.</summary>
     public bool IsValid => !string.IsNullOrEmpty(Id);

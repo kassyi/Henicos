@@ -255,7 +255,7 @@ public class ManagedStackEligibilityTests
         var failures = Assert.Single(result.GeneratedSources,
             static s => s.HintName == StateMachineFallbackPipeline.HintName).SourceText.ToString();
         Assert.Contains(
-            "// managed\tStackConsumerKernels.CallsNonPartialKernel\tImportedSuspendingCall: calls ClosedStackLib.WaitClosed of StackTraitsLib, which has no stack form",
+            "// managed\tStackConsumerKernels.CallsNonPartialKernel\tImportedCallWithoutStackForm: calls ClosedStackLib.WaitClosed of StackTraitsLib, which has no stack form",
             failures, StringComparison.Ordinal);
 
         var kernelWrapper = Assert.Single(result.GeneratedSources,
@@ -513,7 +513,7 @@ public class ManagedStackEligibilityTests
         Assert.False(ManagedStackEligibility.IsStackFunction(waitGeneric, library));
     }
 
-    // Pre-E4-2: operator macro target is skipped until E4-2 enables suspending operator macros
+    // The operator macro target is skipped until the stack models run suspending operator macros (#2273)
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void IsStackKernel_SuspendingOperatorMacroInNonPartialType_SkipsMacroTarget()

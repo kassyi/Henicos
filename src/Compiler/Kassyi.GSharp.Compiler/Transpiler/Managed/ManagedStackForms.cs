@@ -270,7 +270,7 @@ internal static class ManagedStackFormCollector
         var semanticModel = compilation.GetCachedSemanticModel(declaration.SyntaxTree);
         foreach (var site in DirectCallees.Of([body], TypeArgumentMap.Of(method), compilation))
         {
-            if (CalleeSite.IsOperatorMacro(site, compilation)) // E4-2 removes this skip
+            if (CalleeSite.IsOperatorMacro(site, compilation)) // see CalleeSite.IsOperatorMacro (#2273)
             {
                 continue;
             }

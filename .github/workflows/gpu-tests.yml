@@ -171,9 +171,11 @@ jobs:
           --blame-crash --blame-crash-dump-type mini
 
       - name: Run CPU Managed Stack Model Tests
+        id: diff-managed-stack
         if: matrix.suite == 'cpu'
         env:
           GSHARP_TEST_NO_CUDA: "1"
+          GSHARP_DIFF_RECORD: ${{ runner.temp }}/diff-records/managed-stack
         run: >-
           dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj
           -c Release -p:GSharpOutputVariant=managed-stack -p:GSharpManagedBarrierModel=Stack
@@ -188,6 +190,15 @@ jobs:
           --base "${{ runner.temp }}/diff-records/default"
           --stack "${{ runner.temp }}/diff-records/stack"
           --models native
+          --allow tests/Compiler/Kassyi.GSharp.Tests.Shared/Differential/Harness/BarrierModelDivergences.json
+
+      - name: Compare the managed barrier models
+        if: ${{ !cancelled() && matrix.suite == 'cpu' && steps.diff-default.outcome != 'skipped' && steps.diff-managed-stack.outcome != 'skipped' }}
+        run: >-
+          node scripts/human/compare-barrier-models.js
+          --base "${{ runner.temp }}/diff-records/default"
+          --stack "${{ runner.temp }}/diff-records/managed-stack"
+          --models managed
           --allow tests/Compiler/Kassyi.GSharp.Tests.Shared/Differential/Harness/BarrierModelDivergences.json
 
       - name: Upload differential barrier-model records

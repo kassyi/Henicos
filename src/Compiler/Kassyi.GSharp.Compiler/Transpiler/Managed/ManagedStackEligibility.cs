@@ -148,7 +148,7 @@ internal static class ManagedStackEligibility
     {
         foreach (var site in callees)
         {
-            if (CalleeSite.IsOperatorMacro(site, compilation)) // E4-2 removes this skip
+            if (CalleeSite.IsOperatorMacro(site, compilation)) // see CalleeSite.IsOperatorMacro (#2273)
             {
                 continue;
             }
@@ -168,7 +168,7 @@ internal static class ManagedStackEligibility
             {
                 var definition = GenericExpansion.GetCanonicalDefinition(site.Callee);
                 return !SuspensionAnalysis.TryGetDeviceFunctionBody(definition, compilation, out _) &&
-                       reason.Value.Name == nameof(NativeStackObstacle.ImportedSuspendingCall)
+                       reason.Value.Name == nameof(NativeStackObstacle.ImportedCallWithoutStackForm)
                     ? CreateImportedMissingFormReason(definition, compilation, isMethodGroup)
                     : reason;
             }
@@ -347,7 +347,7 @@ internal static class ManagedStackEligibility
             : "it calls a suspending device function from another assembly";
         return new StateMachineReason(
             CpuPath.Managed,
-            nameof(NativeStackObstacle.ImportedSuspendingCall),
+            nameof(NativeStackObstacle.ImportedCallWithoutStackForm),
             sentence,
             detail);
     }

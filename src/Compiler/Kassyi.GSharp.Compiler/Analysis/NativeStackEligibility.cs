@@ -100,7 +100,29 @@ internal static class NativeStackEligibility
             if (!SuspensionAnalysis.TryGetDeviceFunctionBody(
                     GenericExpansion.GetCanonicalDefinition(callee), compilation, out var calleeDeclaration))
             {
-                return NativeStackObstacle.ImportedSuspendingCall;
+                if (DeviceExportTable.TryFindFunction(callee, compilation, out var imported) &&
+                    imported is { IsCompatible: true, Record.HasCppStack: true })
+                {
+                    var traits = imported.Record.Traits;
+                    if (traits.ReachesBlockBarrier)
+                    {
+                        facts |= BodyFacts.BlockBarrier;
+                    }
+
+                    if (traits.ReachesGridBarrier)
+                    {
+                        facts |= BodyFacts.GridSync;
+                    }
+
+                    if (traits.ReachesWarpShuffle)
+                    {
+                        facts |= BodyFacts.WarpCollective;
+                    }
+
+                    continue;
+                }
+
+                return NativeStackObstacle.ImportedCallWithoutStackForm;
             }
 
             // Recursive suspending functions (#926, GSH0061) do not get a stack overload; keep them on the
@@ -198,7 +220,7 @@ internal static class NativeStackEligibility
                 member is IMethodSymbol target && SuspensionAnalysis.ReachesWarpShuffleOnStack(target, c));
 
     private static bool IsSuspendingDeviceFunctionSite(CalleeSite site, Compilation compilation) =>
-        !CalleeSite.IsOperatorMacro(site, compilation) && // E4-2 removes this skip
+        !CalleeSite.IsOperatorMacro(site, compilation) && // see CalleeSite.IsOperatorMacro (#2273)
         site.Callee.MethodKind is MethodKind.Ordinary or MethodKind.ReducedExtension &&
         SuspensionAnalysis.HasDeviceFunctionAttribute(site.Callee) &&
         SuspensionAnalysis.IsSuspendingFunction(site.Callee, compilation);

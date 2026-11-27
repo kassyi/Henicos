@@ -27,7 +27,8 @@ internal sealed class CallTargetRule :
     public ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
         ImmutableArray.Create(
             GSharpDiagnostics.UnmappedMethodCalledFromGpuCode,
-            GSharpDiagnostics.IntrinsicNotImplementedByDialect
+            GSharpDiagnostics.IntrinsicNotImplementedByDialect,
+            GSharpDiagnostics.UnsupportedSyntax
         );
 
     private CallTargetRule()
@@ -48,7 +49,7 @@ internal sealed class CallTargetRule :
         if (context.SemanticModel.GetSymbol(node) is IMethodSymbol called &&
             MethodGroupReference.Is(node, context.SemanticModel))
         {
-            Report(node, called, ref context, reportsUnsupportedIntrinsic: false);
+            Report(node, called, ref context, reportsUnsupportedIntrinsic: false, isMethodGroup: true);
         }
     }
 
@@ -63,7 +64,7 @@ internal sealed class CallTargetRule :
         if (context.SemanticModel.GetSymbol(node) is IMethodSymbol called &&
             MethodGroupReference.Is(node, context.SemanticModel))
         {
-            Report(node, called, ref context, reportsUnsupportedIntrinsic: false);
+            Report(node, called, ref context, reportsUnsupportedIntrinsic: false, isMethodGroup: true);
         }
     }
 
@@ -88,10 +89,22 @@ internal sealed class CallTargetRule :
     }
 
     // [WHY] Only the plans that depend on the dialect; a call in the arguments of a call that C# removes is never
-    // emitted. Only a call of an intrinsic the dialect does not implement becomes a runtime failure
+    // emitted. Only a call of an intrinsic the dialect does not implement becomes a runtime failure.
+    // An instance device function method group cannot form a delegate without boxing a receiver copy (GSH0003).
     private static void Report(SyntaxNode node, IMethodSymbol called, ref ValidationContext context,
-        bool reportsUnsupportedIntrinsic)
+        bool reportsUnsupportedIntrinsic, bool isMethodGroup = false)
     {
+        if (isMethodGroup &&
+            !RemovedCalls.IsInRemovedCall(node, context.SemanticModel) &&
+            CallTargetClassifier.IsUnsupportedInstanceMethodGroup(called, context.Dialect))
+        {
+            context.ReportDiagnostic(
+                GSharpDiagnostics.UnsupportedSyntax,
+                node,
+                CallTargetClassifier.InstanceDeviceFunctionMethodGroup);
+            return;
+        }
+
         var plan = CallTargetClassifier.Classify(called, node, context.SemanticModel, context.Dialect);
         var reported = plan.Kind == CallTargetKind.Unmapped ||
                        (reportsUnsupportedIntrinsic && plan.Kind == CallTargetKind.UnsupportedIntrinsic);

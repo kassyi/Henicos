@@ -34,7 +34,7 @@ public class ImplicitCallDiagnosticsTests
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, GpuCodeConstraints.ExpressionTreeLambda));
     }
 
-    // Line 32 builds UnmarkedBag with a builder that is not a device function; line 57 pins through an instance method
+    // Line 32 builds UnmarkedBag with a builder that is not a device function; line 57 pins through an unmarked instance method
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
@@ -51,7 +51,13 @@ public class ImplicitCallDiagnosticsTests
             diagnostics.Ranges(GSharpDiagnostics.UnmarkedMethodCalledFromGpuCode.Id));
         Assert.Equal(
             [(Analyzer, 57, 25, 57, 31)],
-            diagnostics.Ranges(GSharpDiagnostics.UnmarkedMethodCalledFromGpuCode.Id, "instance methods of structs"));
+            diagnostics.Ranges(
+                GSharpDiagnostics.UnmarkedMethodCalledFromGpuCode.Id,
+                "'InstancePinned.GetPinnableReference'"));
+        var message = Assert.Single(
+            diagnostics,
+            d => d.Id == GSharpDiagnostics.UnmarkedMethodCalledFromGpuCode.Id && d.StartLine == 57).Message;
+        Assert.Contains("add [GpuDeviceFunction]", message);
     }
 
     // ImmutableArray<int> is built by ImmutableArray.Create, which allocates its array on the heap

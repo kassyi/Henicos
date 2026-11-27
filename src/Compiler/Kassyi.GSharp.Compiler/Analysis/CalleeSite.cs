@@ -10,7 +10,8 @@ internal readonly record struct CalleeSite(IMethodSymbol Callee, SyntaxNode Site
     /// <c>&amp;&amp;</c>/<c>||</c> over a user-defined <c>&amp;</c>/<c>|</c>), which the stack paths do not yet
     /// follow.
     /// </summary>
-    // E4-2 removes this skip
+    // [WHY] GSH0062 stops every operator macro whose target suspends until the stack models give the expansion a
+    // barrier frame (#2273); the callers skip these sites until then
     public static bool IsOperatorMacro(CalleeSite site, Compilation compilation) =>
         site.Site is BinaryExpressionSyntax or PrefixUnaryExpressionSyntax or PostfixUnaryExpressionSyntax &&
         site.Callee.MethodKind == MethodKind.Ordinary &&

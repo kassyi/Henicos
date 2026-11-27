@@ -73,10 +73,10 @@ internal readonly record struct StateMachineReason(
             nameof(NativeStackObstacle.RecursiveSuspendingCall),
             "it reaches a recursive suspending device function",
             detail),
-        NativeStackObstacle.ImportedSuspendingCall => new(
+        NativeStackObstacle.ImportedCallWithoutStackForm => new(
             CpuPath.Native,
-            nameof(NativeStackObstacle.ImportedSuspendingCall),
-            "it calls a suspending device function from another assembly",
+            nameof(NativeStackObstacle.ImportedCallWithoutStackForm),
+            "it calls a suspending device function from another assembly without a stack form",
             detail),
         NativeStackObstacle.WarpLayout => new(
             CpuPath.Native,

@@ -127,7 +127,20 @@ internal static class JumpedOverDeclarations
             return type;
         }
 
-        return semanticModel.GetTypeSymbol(initializer) ?? semanticModel.GetConvertedTypeSymbol(initializer);
+        var resolved = semanticModel.GetTypeSymbol(initializer) ?? semanticModel.GetConvertedTypeSymbol(initializer);
+        if (resolved is not null)
+        {
+            return resolved;
+        }
+
+        if (initializer is ThisExpressionSyntax &&
+            semanticModel.GetCompilationNode(initializer) is { } compilationNode)
+        {
+            return SemanticModelExtensions.GetSemanticModelForTree(semanticModel, compilationNode.SyntaxTree)
+                .GetEnclosingSymbol(compilationNode.SpanStart)?.ContainingType;
+        }
+
+        return null;
     }
 
     // A struct whose C++ form has a default constructor: it holds an array (GSharpArray<T>) or such a struct, or it is
