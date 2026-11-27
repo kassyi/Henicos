@@ -74,7 +74,11 @@ async function named(name: string, check: () => void | Promise<void>): Promise<v
   }
 }
 
-export async function selfTest(): Promise<void> {
+export async function selfTest(options?: { languageFuzz?: number }): Promise<void> {
+  const prevFuzz = process.env.GSHARP_JOB_QUEUE_LANGUAGE_FUZZ;
+  if (options?.languageFuzz !== undefined && options.languageFuzz > 0) {
+    process.env.GSHARP_JOB_QUEUE_LANGUAGE_FUZZ = String(options.languageFuzz);
+  }
   const cjsAssert = createRequire(import.meta.url)("node:assert") as Record<string, unknown>;
   const originalAssert = new Map<string, (...args: unknown[]) => unknown>();
   let unitAssertions = 0;
@@ -131,6 +135,11 @@ export async function selfTest(): Promise<void> {
     await named("checkPlugins", () => checkPlugins(assert));
     await named("pluginChecks", () => runPluginChecks(assert));
   } finally {
+    if (prevFuzz === undefined) {
+      delete process.env.GSHARP_JOB_QUEUE_LANGUAGE_FUZZ;
+    } else {
+      process.env.GSHARP_JOB_QUEUE_LANGUAGE_FUZZ = prevFuzz;
+    }
     for (const [key, original] of originalAssert) {
       cjsAssert[key] = original;
     }

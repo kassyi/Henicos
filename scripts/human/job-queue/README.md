@@ -249,10 +249,12 @@ the build step, with the resource `{ name: "gpu", forcedExclusive }` (`--gpu-exc
 decides, `"timeout"`, `"error"`, `"invalid"`, or `"stale"` after `stillValid` fails; sanitized to
 `/^[a-z0-9:_-]{1,64}$/`, with `"shared"` banned on exclusive reasons) with `request` and `adopt`. The scheduler sets
 two reasons of its own: `"downgrade"` for a `downgrade` that carries none, and `"rebind"` for a shared turn that
-registers again as exclusive without a reason. The repository's plugin gives, among others, `list:<n>` (the exclusive
-tests the name-filter list found), `list-timeout` (the list job was stopped on its time limit), `list-spawn-error`
-(it could not be started), `list-failed` (it exited non-zero) and `list-no-marker` (its output did not say that no
-test matches). Without plugins it sends no `share` or `shareReason`; the GPU
+registers again as exclusive without a reason. The repository's plugin gives, among others, `not-language` (outside the allow-listed command language in
+`../job-queue-henicos/command-language.ts`), `categories`, `shared-recipe`, `exclusive-recipe`, `binary-test`,
+`msbuild-property`, `no-filter`, `filter-unreadable`, `filter-categories`, `exclusive-category`, `exclusive-env`,
+`list:<n>` (the exclusive tests the name-filter list found), `list-timeout` (the list job was stopped on its time
+limit), `list-spawn-error` (it could not be started), `list-failed` (it exited non-zero) and `list-no-marker` (its
+output did not say that no test matches). Without plugins it sends no `share` or `shareReason`; the GPU
 holder and a job without a turn send neither. The scheduler logs `share=shared(<reason>)` or `share=exclusive(<reason>)`
 (or `share=shared` / `share=exclusive` when no reason was sent) on the `grant` line of `server.log`, and includes
 `shareReason` in `status --json` and `jobs-<port>.json`. The repository's rules are in
@@ -279,15 +281,16 @@ shared one and are not started; messages of a replaced connection are not read. 
 short wait for the lock and a command already running at an `adopt` after a scheduler restart are not covered; a turn
 that queues again after a lost connection is checked at its next grant.
 
-The henicos plugin answers for a `dotnet test` whose `--filter` is positive name terms alone (`nameFilterCheck`). The
-list must read the assembly the run reads, so only a command of one `dotnet test` step with `--no-build`, started by
-nothing but `DiffEngine_Disabled=...` and run by `dotnet`, `dotnet.exe` or an absolute path to one (no `cd`, `export`,
-other leading assignment or other step except `echo`), whose project is a `.csproj` or a directory with exactly one
-`.csproj` and no solution, with no brace or glob character, is read. It runs `dotnet test <project> --no-build
---list-tests --filter "(<names>)&(Category=<each exclusive category>)"` as a CPU job of the queue (`job-queue.js run`,
-without `--gpu`, output read from its standard output) and answers `"shared"` only for exit code 0, the runner's `No
-test matches the given testcase filter` line and no test name in the output. Anything else (a failure, a missing build,
-a time out) is exclusive. The assemblies are the `Test run for <path> (<framework>)` lines of the output, one per target
+The henicos plugin answers for a `dotnet test` in the allow-listed command language (`command-language.ts`) whose
+`--filter` is positive name terms alone (`nameFilterCheck`). Leading `DiffEngine_Disabled` and `DOTNET_CLI_UI_LANGUAGE`
+prefixes (bash `NAME=value ` or PowerShell `$env:NAME='value';` / `"value";`, never bare values or smart quotes) are
+accepted by the grammar and stripped when building the list command; the command must pass `--no-build`, name one
+`.csproj` or a directory with exactly one `.csproj` and no solution, and use only known safe options. It runs
+`dotnet test <project> --no-build --list-tests --filter "(<names>)&(Category=<each exclusive category>)"` as a CPU job
+of the queue (`job-queue.js run`, without `--gpu`, output read from its standard output) and answers `"shared"` only for
+exit code 0, the runner's `No test matches the given testcase filter` line and no test name in the output. Anything else
+(a failure, a missing build, a time out) is exclusive. The assemblies are the `Test run for <path> (<framework>)` lines
+of the output, one per target
 framework: none named, one missing, one written after the list job started, or one that is not among the
 `<project name>.dll` files under the project's `bin` that were hashed before the list job started (or whose hash changed
 since: MSBuild copies a build from `obj` to `bin` and keeps the compile time, so the time alone does not show a copy
@@ -433,8 +436,9 @@ their old meaning.
 
 1. Type-check: `node scripts/human/check-types.js` (installs `tsc` and `@types/node` into `tmp/typecheck/` on first
    use; until then an editor reports `Cannot find name 'process'`).
-2. Self-test: `node scripts/human/job-queue.js --self-test` (plus `node scripts/human/gpu-lock.js --self-test` and
-   `node scripts/human/gpu-fault-watch.js --self-test` when the lock or the NVIDIA watch modules change). The unit
+2. Self-test: `node scripts/human/job-queue.js --self-test` (plus `--language-fuzz <n>` to run `<n>` generated
+   command-language property cases per shell instead of the default 50, and `node scripts/human/gpu-lock.js --self-test`
+   and `node scripts/human/gpu-fault-watch.js --self-test` when the lock or the NVIDIA watch modules change). The unit
    checks print `job-queue self-test: <n> assertions in the unit checks` before the end-to-end `QueueFixture` parts, and
    dynamically run every bundled `plugins/*/checks.ts` and every `config.plugins[]` entry's `checks.ts` (even when
    `JOB_QUEUE_PLUGINS=0` is set; an enabled plugin lacking `checks.ts` fails the self-test). It starts schedulers on

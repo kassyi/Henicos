@@ -17,6 +17,7 @@ import { removeDirectory } from "../job-queue/self-test-support.ts";
 import { shortCommand } from "../job-queue/view.ts";
 import { selectsCategory } from "../job-queue/plugins/dotnet/plugin.ts";
 import { cpuOnlyTestProjects, parseBudgets, testMemoryMb } from "./budgets.ts";
+import { checkCommandLanguage } from "./command-language-checks.ts";
 import { checkNameFilter } from "./name-filter-checks.ts";
 import { checkHenicosOffloadSources } from "./offload-source-checks.ts";
 import {
@@ -348,12 +349,14 @@ const ShareTable: readonly [string, "shared" | "exclusive"][] = [
   [`dotnet test X --filter "${Kept}`, "exclusive"],
   [`dotnet test X --no-build --filter "${Kept}"`, "shared"],
   [`dotnet build X && dotnet test X --no-build --filter "${Kept}"`, "exclusive"],
-  [`cd tests && dotnet test X --filter "${Kept}"; echo done`, "shared"],
-  [`Set-Location tests; dotnet test X --filter "${Kept}"; Pop-Location`, "shared"],
-  [`$env:DiffEngine_Disabled='true'; dotnet test X --filter "${Kept}"`, "shared"],
-  [`dotnet.exe test X --filter "${Kept}"`, "shared"],
+  [`cd tests && dotnet test X --filter "${Kept}"; echo done`, "exclusive"],
+  [`Set-Location tests; dotnet test X --filter "${Kept}"; Pop-Location`, "exclusive"],
+  [`$env:DiffEngine_Disabled='true'; dotnet test X --filter "${Kept}"`, "exclusive"],
+  [`DiffEngine_Disabled=true dotnet test X --filter "${Kept}"`, "shared"],
+  [`DOTNET_CLI_UI_LANGUAGE=en dotnet test X --filter "${Kept}"`, "shared"],
+  [`dotnet.exe test X --filter "${Kept}"`, "exclusive"],
   [`dotnet test bin/Tests.dll --filter "${Kept}"`, "exclusive"],
-  [`dotnet test X --filter="${Kept}"`, "shared"],
+  [`dotnet test X --filter="${Kept}"`, "exclusive"],
   [`dotnet test X --filter:"${Kept}"`, "exclusive"],
   ['dotnet test X --filter ""', "exclusive"],
   ['dotnet test X --filter " "', "exclusive"],
@@ -376,7 +379,7 @@ const ShareTable: readonly [string, "shared" | "exclusive"][] = [
   [`dotnet test X --filter "${Kept}" | tee log`, "exclusive"],
   [`dotnet test X --filter "${Kept}" || echo failed`, "exclusive"],
   [`dotnet test X --filter "${Kept}&(Name~A|Name~B)"`, "exclusive"],
-  // A variable the shell expands: the words are not what runs
+  // A variable the shell expands: outside the allow-listed language
   ['dotnet test X --filter "$FILTER"', "exclusive"],
   ["dotnet test X --filter $FILTER", "exclusive"],
   ['export F=Category=Stres; dotnet test X --filter "${F}s"', "exclusive"],
@@ -389,7 +392,7 @@ const ShareTable: readonly [string, "shared" | "exclusive"][] = [
   [`$DOTNET test X; dotnet test X --filter "${Kept}"`, "exclusive"],
   [`$out = dotnet test Y; dotnet test X --filter "${Kept}"`, "exclusive"],
   [`dotnet test X --filter "${Kept}" -e "V=$V"`, "exclusive"],
-  [`dotnet test X --filter "${Kept}" -e 'A=$B'`, "shared"],
+  [`dotnet test X --filter "${Kept}" -e 'A=$B'`, "exclusive"],
   ['dotnet test X --filter "Name~Foo" -e $V=1', "exclusive"],
   ['dotnet test $P --filter "Name~Foo" $EXTRA', "exclusive"],
   // The trap variable in any case, also split by quotes
@@ -400,11 +403,12 @@ const ShareTable: readonly [string, "shared" | "exclusive"][] = [
   ['dotnet test X --filter "Name~Foo" -e gsharp_cuda_trap_tests=1', "exclusive"],
   ['dotnet test X --filter "Name~Foo" -e "GSHARP_CUDA_""TRAP_TESTS=1"', "exclusive"],
   [`dotnet test X --filter "${Kept}" -e GSHARP_CUDA_\\TRAP_TESTS=1`, "exclusive"],
-  // A variable set under a name a variable makes
+  // A variable set under a name a variable makes, or outside the prefix allowlist
   [`export $V=1; dotnet test X --filter "${Kept}"`, "exclusive"],
   [`export \${P}TRAP_TESTS=1; dotnet test X --filter "${Kept}"`, "exclusive"],
-  [`export A=1; dotnet test X --filter "${Kept}"`, "shared"],
-  // A test case filter spelled another way: it may pick the tests the --filter keeps out
+  [`export A=1; dotnet test X --filter "${Kept}"`, "exclusive"],
+  // MSBuild properties and alternative test case filters stay exclusive
+  [`dotnet test X --filter "${Kept}" -p:Configuration=Release`, "exclusive"],
   [`dotnet test X --filter "${Kept}" -p:VSTestTestCaseFilter=FullyQualifiedName~PoolStressTests`, "exclusive"],
   [
     `dotnet test X --filter "${Kept}" -- RunConfiguration.TestCaseFilter=FullyQualifiedName~PoolStressTests`,
@@ -445,25 +449,29 @@ function checkShareRules(assert: AssertModule, host: PluginHost): void {
       [`dotnet test X --filter "${Kept}"`, "categories"],
       ["just test", "shared-recipe"],
       ['just test --filter "FullyQualifiedName~Foo"', "filter-categories"],
-      ["just test -- RunConfiguration.TestCaseFilter=Name~Foo", "filter-unreadable"],
+      ["just test -- RunConfiguration.TestCaseFilter=Name=Foo", "filter-unreadable"],
       ["just test-stability", "exclusive-recipe"],
       ["dotnet test X --no-build", "no-filter"],
       [`dotnet test bin/Tests.dll --filter "${Kept}"`, "binary-test"],
-      [`dotnet test X --filter "${Kept}" --filter:"Name~Foo"`, "filter-unreadable"],
-      [`dotnet test X --filter:"${Kept}"`, "filter-unreadable"],
-      ['dotnet test X --filter:v "Name~Foo"', "filter-unreadable"],
-      ["dotnet test X -p:VSTestTestCaseFilter=Name~Foo", "filter-unreadable"],
-      ["dotnet test X -- RunConfiguration.TestCaseFilter=Name~Foo", "filter-unreadable"],
+      [`dotnet test X --filter "${Kept}" -p:Configuration=Release`, "msbuild-property"],
+      ["dotnet test X -p:VSTestTestCaseFilter=Name=Foo", "filter-unreadable"],
+      ["dotnet test X -- RunConfiguration.TestCaseFilter=Name=Foo", "filter-unreadable"],
+      ["just test -- RunConfiguration.TestCaseFilter=Name~Foo", "not-language"],
+      ["dotnet test X -p:VSTestTestCaseFilter=Name~Foo", "not-language"],
       ['dotnet test X --filter "Category!=Stress"', "filter-categories"],
-      ["$env:DiffEngine_Disabled='true'; dotnet test X --no-build --filter \"Name~Foo\"", "env-prefix"],
-      ['ROWBATCH_ROOTS=1 dotnet test X --no-build --filter "Name~Foo"', "env-prefix"],
       [`dotnet test X --filter "${Kept}&Category=Stress"`, "exclusive-category"],
       [`dotnet test X --filter "${Kept}" -e GSHARP_CUDA_TRAP_TESTS=1`, "exclusive-env"],
-      [`dotnet test X --filter "${Kept}" | tee log`, "piped"],
-      [`dotnet test X --filter "${Kept}`, "unreadable"],
-      ["echo hello", "no-work"],
-      ['dotnet test X --filter "$FILTER"', "hidden"],
-      ["dotnet build X", "not-test-command"],
+      // Commands outside the allow-listed language all report "not-language"
+      [`dotnet test X --filter "${Kept}" --filter:"Name~Foo"`, "not-language"],
+      [`dotnet test X --filter:"${Kept}"`, "not-language"],
+      ['dotnet test X --filter:v "Name~Foo"', "not-language"],
+      ["$env:DiffEngine_Disabled='true'; dotnet test X --no-build --filter \"Name~Foo\"", "not-language"],
+      ['ROWBATCH_ROOTS=1 dotnet test X --no-build --filter "Name~Foo"', "not-language"],
+      [`dotnet test X --filter "${Kept}" | tee log`, "not-language"],
+      [`dotnet test X --filter "${Kept}`, "not-language"],
+      ["echo hello", "not-language"],
+      ['dotnet test X --filter "$FILTER"', "not-language"],
+      ["dotnet build X", "not-language"],
     ];
     for (const [command, expectedReason] of reasonCases) {
       assert.strictEqual(
@@ -476,6 +484,20 @@ function checkShareRules(assert: AssertModule, host: PluginHost): void {
         expectedReason,
         `shareDecision reason for: ${command}`,
       );
+    }
+    // PowerShell env prefixes are accepted when shell is pwsh or powershell
+    for (const psShell of ["pwsh", "powershell"] as const) {
+      const psCtx = { ...ctx, shell: psShell };
+      const psShared = host.classify(`$env:DiffEngine_Disabled='true'; dotnet test X --filter "${Kept}"`, Gpu, psCtx);
+      assert.deepStrictEqual([psShared.share, psShared.shareReason], ["shared", "categories"]);
+      const psNamed = host.classify(
+        `$env:DiffEngine_Disabled="true"; $env:DOTNET_CLI_UI_LANGUAGE='en'; dotnet test tests/X/X.csproj --no-build --filter "FullyQualifiedName~Foo"`,
+        Gpu,
+        psCtx,
+      );
+      assert.deepStrictEqual([psNamed.share, psNamed.shareReason], [undefined, undefined]);
+      const psBare = host.classify(`$env:DiffEngine_Disabled= hostname; dotnet test X --filter "${Kept}"`, Gpu, psCtx);
+      assert.deepStrictEqual([psBare.share, psBare.shareReason], ["exclusive", "not-language"]);
     }
     // A command that nameFilterCheck reads has no opinion (checkShare judges it by the test list); a veto stays one
     const named = 'dotnet test tests/X/X.csproj --no-build --filter "FullyQualifiedName~Foo"';
@@ -649,4 +671,5 @@ export async function checks(assert: AssertModule): Promise<void> {
   await checkHenicosOffloadProbe(assert, loaded.configRoot);
   await checkHenicosOffloadSources(assert, loaded.configRoot);
   await checkNameFilter(assert);
+  await checkCommandLanguage(assert);
 }
