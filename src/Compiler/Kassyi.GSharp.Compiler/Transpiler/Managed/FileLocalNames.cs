@@ -157,14 +157,28 @@ internal static class FileLocalNames
             return $"its body holds {DescribeRewrite(declaration, compilation)}, which only the managed path rewrites";
         }
 
-        var model = compilation.GetCachedSemanticModel(declaration.SyntaxTree);
-        foreach (var callee in ManagedVersionAnalysis.GetReferencedDeviceFunctions(declaration, model))
+        if (declaration.GetBodyNode() is { } body)
         {
-            if (ManagedVersionAnalysis.Needs(callee, compilation))
+            foreach (var site in DirectCallees.Of([body], TypeArgumentMap.Of(method), compilation))
             {
-                return $"it calls '{FormatMethod(callee)}', which needs the managed path's own rewrite of what it " +
-                       "holds (an operator macro, a float or double StackLinq Sum, Gpu.InlinePtx or an integer " +
-                       "division or remainder)";
+                if (CalleeSite.IsOperatorMacro(site, compilation)) // see CalleeSite.IsOperatorMacro (#2273)
+                {
+                    continue;
+                }
+
+                if (site.Callee.MethodKind is not (MethodKind.Ordinary or MethodKind.ReducedExtension) ||
+                    !SuspensionAnalysis.HasDeviceFunctionAttribute(site.Callee))
+                {
+                    continue;
+                }
+
+                var callee = ManagedVersionAnalysis.GetDefinition(site.Callee);
+                if (ManagedVersionAnalysis.Needs(callee, compilation))
+                {
+                    return $"it calls '{FormatMethod(callee)}', which needs the managed path's own rewrite of what it " +
+                           "holds (an operator macro, a float or double StackLinq Sum, Gpu.InlinePtx or an integer " +
+                           "division or remainder)";
+                }
             }
         }
 
@@ -274,15 +288,27 @@ internal static class FileLocalNames
         }
 
         if (!method.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var declaration) ||
-            !compilation.ContainsSyntaxTree(declaration.SyntaxTree))
+            !compilation.ContainsSyntaxTree(declaration.SyntaxTree) ||
+            declaration.GetBodyNode() is not { } body)
         {
             return null;
         }
 
         // A copy calls the copies of the functions it needs: their state machines and managed versions
-        var model = compilation.GetCachedSemanticModel(declaration.SyntaxTree);
-        foreach (var callee in ManagedVersionAnalysis.GetReferencedDeviceFunctions(declaration, model))
+        foreach (var site in DirectCallees.Of([body], TypeArgumentMap.Of(method), compilation))
         {
+            if (CalleeSite.IsOperatorMacro(site, compilation)) // see CalleeSite.IsOperatorMacro (#2273)
+            {
+                continue;
+            }
+
+            if (site.Callee.MethodKind is not (MethodKind.Ordinary or MethodKind.ReducedExtension) ||
+                !SuspensionAnalysis.HasDeviceFunctionAttribute(site.Callee))
+            {
+                continue;
+            }
+
+            var callee = ManagedVersionAnalysis.GetDefinition(site.Callee);
             if (FindBlock(callee, compilation, visited) is { } blocked)
             {
                 return blocked;
