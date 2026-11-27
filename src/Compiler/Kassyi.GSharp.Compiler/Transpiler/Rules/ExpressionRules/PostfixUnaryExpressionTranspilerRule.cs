@@ -49,7 +49,7 @@ public sealed class PostfixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerR
         // unnarrowed value of a raw narrow step (#722, #1079)
         if (context.Query.SemanticModel.GetSafeOperation(node) is IIncrementOrDecrementOperation step &&
             step.Syntax.RawKind == node.RawKind &&
-            IntegerSemantics.GetIncrementHelper(step, node, ref context) is { } helper)
+            IntegerSemanticsEmitter.GetIncrementHelper(step, node, ref context) is { } helper)
         {
             IntegerSemanticsEmitter.AppendStep(step, node, node.Operand, helper, ref context);
             return;

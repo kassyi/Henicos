@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.NullChecks;
+namespace Kassyi.GSharp.Compiler.Semantics;
 
 /// <summary>
 /// Whether code of the member that declares a local or a parameter can change it after its declaration: an assignment

@@ -30,7 +30,7 @@ internal static class ArrayViewMemberCall
         }
 
         var writer = context.Emitter.Writer;
-        StackArrayLocals.AppendView(node.Expression, ref context);
+        StackArrayLocalsEmitter.AppendView(node.Expression, ref context);
         writer.Append(method.Name == "Slice" ? ".template CheckedSlice" : ".template CheckedCopyTo");
         using (writer.InlineScope("<", ">"))
         {

@@ -39,18 +39,18 @@ internal readonly record struct CompoundOperator(string Operator, string? Helper
         var helper = operation == null ? null : IntegerSemantics.GetCompoundHelper(operation) ?? remainder;
         var shiftMask = operation != null && helper == null ? IntegerSemantics.GetCompoundShiftMask(operation) : 0;
         return new CompoundOperator(binaryOperator, helper, shiftMask, ConvertsValue: remainder != null,
-            DivisorCheck.PlanSite(helper, node, ref context));
+            DivisorCheckEmitter.PlanSite(helper, node, ref context));
     }
 
     /// <summary>
     /// The operator of the increment or decrement <paramref name="operation"/> at <paramref name="node"/>: the Prelude
-    /// function of a step that wraps (<see cref="IntegerSemantics.GetIncrementHelper"/>), otherwise <c>+</c> or
+    /// function of a step that wraps (<see cref="IntegerSemanticsEmitter.GetIncrementHelper"/>), otherwise <c>+</c> or
     /// <c>-</c>.
     /// </summary>
     public static CompoundOperator ForStep(IIncrementOrDecrementOperation operation, ExpressionSyntax node,
         ref TranspileContext context) =>
         new(operation.Kind == OperationKind.Increment ? "+" : "-",
-            IntegerSemantics.GetIncrementHelper(operation, node, ref context), 0);
+            IntegerSemanticsEmitter.GetIncrementHelper(operation, node, ref context), 0);
 
     /// <summary>
     /// Writes the operation on the temporaries <paramref name="left"/> and <paramref name="right"/>, or on the constant

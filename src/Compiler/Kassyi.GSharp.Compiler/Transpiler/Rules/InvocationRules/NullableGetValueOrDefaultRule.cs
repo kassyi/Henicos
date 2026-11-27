@@ -100,7 +100,7 @@ internal sealed class NullableGetValueOrDefaultRule : IInvocationTranspilerRule
         }
         else if (plan.Fallback is { } argument)
         {
-            ArithmeticConversions.AppendArgument(argument, plan.ValueType, ref context);
+            ArithmeticConversionsEmitter.AppendArgument(argument, plan.ValueType, ref context);
         }
         else
         {

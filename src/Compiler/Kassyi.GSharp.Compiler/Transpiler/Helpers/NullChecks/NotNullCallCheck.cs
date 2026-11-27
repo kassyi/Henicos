@@ -34,7 +34,7 @@ internal static class NotNullCallCheck
         NonNullProof.IsProvenNonNull(array, model)
             ? new NotNullCheck(array, null)
             : new NotNullCheck(array,
-                ArrayNullCheck.PlanSite(call, null, SiteMessage, TrapKind, model, table, currentMemberName));
+                ArrayNullCheckEmitter.PlanSite(call, null, SiteMessage, TrapKind, model, table, currentMemberName));
 
     /// <summary>
     /// Writes the plan of <see cref="Plan(InvocationExpressionSyntax, ExpressionSyntax, ref TranspileContext)"/>:
@@ -44,7 +44,7 @@ internal static class NotNullCallCheck
     {
         if (check.Site is { } site)
         {
-            ArrayNullCheck.AppendHelperCall(GSharpInternalNames.Prelude.ArrayNotNull, check.Array, site, ref context);
+            ArrayNullCheckEmitter.AppendHelperCall(GSharpInternalNames.Prelude.ArrayNotNull, check.Array, site, ref context);
             return;
         }
 

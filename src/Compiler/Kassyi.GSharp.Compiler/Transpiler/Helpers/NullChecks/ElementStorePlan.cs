@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.NullChecks;
 
 /// <summary>
 /// How a simple assignment stores into an element of an array whose array and index were evaluated into temporaries
-/// before the right side (<see cref="ArrayNullCheck.PlanElementStore"/>): whether the array temporary binds the array
+/// before the right side (<see cref="ArrayNullCheckEmitter.PlanElementStore"/>): whether the array temporary binds the array
 /// by reference, and the null check the store makes, if any.
 /// </summary>
 /// <param name="BindsArrayByReference">

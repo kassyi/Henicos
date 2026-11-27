@@ -181,7 +181,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         for (var j = 0; j < arguments.Count; j++)
         {
             checks.Add(callee.FindParameter(arguments, j) is { } parameter
-                ? ArgumentNullCheck.PlanArgument(arguments[j].Expression, parameter, ref context)
+                ? ArgumentNullCheckEmitter.PlanArgument(arguments[j].Expression, parameter, ref context)
                 : ArgumentCheck.None);
         }
 
@@ -350,7 +350,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
                     using (context.Emitter.Writer.Parentheses())
                     {
                         sequence.AppendArgument(arguments[j], parameter, ref context, convertArguments);
-                        ArgumentNullCheck.AppendArgumentCheckTail(check, ref context);
+                        ArgumentNullCheckEmitter.AppendArgumentCheckTail(check, ref context);
                     }
                 }
 

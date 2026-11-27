@@ -70,7 +70,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
-        NullRepresentation.AppendCoalesceAssignment(node, ref context);
+        NullRepresentationEmitter.AppendCoalesceAssignment(node, ref context);
     }
 
     // x = y, in the C# order when the operands interfere
@@ -209,7 +209,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
         ElementAccessExpressionSyntax element, ref TranspileContext context)
     {
         var model = context.Query.SemanticModel;
-        var plan = ArrayNullCheck.PlanElementStore(element, model, context.Emitter.ErrorSites,
+        var plan = ArrayNullCheckEmitter.PlanElementStore(element, model, context.Emitter.ErrorSites,
             context.Emitter.CurrentMemberName);
         var valueType = model.GetTypeSymbol(node.Left);
 
@@ -221,7 +221,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
         writer.AppendLine(";");
         var value = EvaluationOrder.DeclareTemp(ref context, node.Right, reference: false, valueType);
         sequence.Return();
-        ArrayNullCheck.AppendElementOfTemps(plan, array, index, writer);
+        ArrayNullCheckEmitter.AppendElementOfTemps(plan, array, index, writer);
         writer.Append(" = ");
         EvaluationOrder.AppendTempName(writer, value);
     }

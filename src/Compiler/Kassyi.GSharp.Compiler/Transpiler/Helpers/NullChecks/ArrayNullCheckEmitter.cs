@@ -3,83 +3,20 @@ using Kassyi.GSharp.Compiler.Backends.Cpp;
 namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.NullChecks;
 
 /// <summary>
-/// The null check of a C# array read (#706): <c>Length</c> and the other <c>System.Array</c> members, an element and
-/// <c>foreach</c> throw <see cref="NullReferenceException"/> on a null array in C#, and so do <c>Length</c>,
-/// <c>IsEmpty</c>, an element and <c>foreach</c> of a default <c>ImmutableArray&lt;T&gt;</c>, whose array is null. The
-/// receiver goes through the Prelude helper <c>__gsharp_array_ref(&lt;receiver&gt;, &lt;site&gt;)</c>, which fails on
-/// every build (#1409). In a kernel body the place is a site of the kernel's error site table, so the host exception
-/// carries it on CUDA as well (<see cref="NullCheckSite"/>).
+/// Writes C++ array null checks and plans syntax error sites for the syntax transpiler (<see cref="ArrayNullCheck"/>).
 /// </summary>
-/// <remarks>
-/// <para>
-/// Only a receiver of a C# array type or of <c>ImmutableArray&lt;T&gt;</c> is checked: a span is never null in C#, and
-/// <c>is null</c>, <c>??</c>, a conversion to a span (<c>AsSpan</c>) or passing the array along read nothing.
-/// </para>
-/// <para>
-/// No check is emitted where the receiver cannot be null, as RyuJIT drops a null check that an assertion proves
-/// (symbol-based only, <see cref="NonNullProof"/>): a stack array local, a non-nullable array parameter of a device
-/// function whose calls check it, and a conditional whose branches are both such receivers. A kernel parameter is
-/// checked whatever its annotation: the launcher passes a null array as a C# call does.
-/// </para>
-/// </remarks>
-internal static class ArrayNullCheck
+internal static class ArrayNullCheckEmitter
 {
-    /// <summary>The text of the error of a registered site, whose place the error site table holds.</summary>
-    public const string SiteMessage = "G#: a null array is read";
-
-    /// <summary>The text of the error, followed by the place of the receiver (<see cref="SourcePlace"/>).</summary>
-    public const string MessagePrefix = SiteMessage + NullCheckSiteWriter.PlaceSeparator;
-
-    /// <summary>The trap kind of the site ID, which tells the site apart from another trap at the same place.</summary>
-    internal const string TrapKind = "ArrayNull";
-
     // The trap kind of the check of the array a StackLinq query starts from
     private const string LinqSourceTrapKind = "LinqSourceNull";
 
-    /// <summary>Whether a read through <paramref name="receiver"/> needs the null check.</summary>
-    public static bool NeedsCheck(ExpressionSyntax receiver, SemanticModel semanticModel) =>
-        IsCheckedType(semanticModel.GetTypeSymbol(receiver)) && MayBeNull(receiver, semanticModel);
-
-    // A C# array, or an ImmutableArray<T>, whose default holds a null array
-    internal static bool IsCheckedType(ITypeSymbol? type) =>
-        type is IArrayTypeSymbol || IsImmutableArray(type);
-
-    private static bool IsImmutableArray(ITypeSymbol? type) =>
-        type is INamedTypeSymbol { IsGenericType: true, Name: "ImmutableArray" } named &&
-        named.ContainingNamespace.IsSystemCollectionsImmutable();
-
-    private static bool MayBeNull(ExpressionSyntax expression, SemanticModel semanticModel)
-    {
-        expression = SkipParentheses(expression);
-
-        // c ? a : b is null only when the branch it takes is (a null literal branch may be)
-        if (expression is ConditionalExpressionSyntax conditional)
-        {
-            return MayBeNull(conditional.WhenTrue, semanticModel) || MayBeNull(conditional.WhenFalse, semanticModel);
-        }
-
-        // A stack array (#1543), or a non-nullable array that a call has checked (#1409)
-        if (NonNullProof.IsProvenNonNull(expression, semanticModel))
-        {
-            return false;
-        }
-
-        // A host static member, which GSH0065 reports
-        return !IsHostStaticField(semanticModel.GetSymbol(expression));
-    }
-
-    /// <summary>
-    /// Whether <paramref name="symbol"/> is a static field (a host static member, which GSH0065 reports).
-    /// </summary>
-    internal static bool IsHostStaticField(ISymbol? symbol) => symbol is IFieldSymbol { IsStatic: true };
-
     /// <summary>
     /// Writes <paramref name="receiver"/> for a read: <c>__gsharp_array_ref(&lt;receiver&gt;, "&lt;message&gt;")</c> when
-    /// it needs the check (<see cref="NeedsCheck"/>), otherwise the receiver as it is.
+    /// it needs the check (<see cref="ArrayNullCheck.NeedsCheck"/>), otherwise the receiver as it is.
     /// </summary>
     public static void AppendReceiver(ExpressionSyntax receiver, ref TranspileContext context)
     {
-        if (!NeedsCheck(receiver, context.Query.SemanticModel))
+        if (!ArrayNullCheck.NeedsCheck(receiver, context.Query.SemanticModel))
         {
             context.Visitor.Visit(receiver);
             return;
@@ -97,7 +34,7 @@ internal static class ArrayNullCheck
         ref TranspileContext context)
     {
         var receiver = node.Expression;
-        if (!IsArrayMember(member) || !NeedsCheck(receiver, context.Query.SemanticModel))
+        if (!ArrayNullCheck.IsArrayMember(member) || !ArrayNullCheck.NeedsCheck(receiver, context.Query.SemanticModel))
         {
             return false;
         }
@@ -129,8 +66,8 @@ internal static class ArrayNullCheck
     {
         var model = context.Query.SemanticModel;
         if (node.ArgumentList.Arguments is not [var argument] ||
-            IsIndexOrRange(argument.Expression, model) ||
-            !NeedsCheck(node.Expression, model))
+            ArrayNullCheck.IsIndexOrRange(argument.Expression, model) ||
+            !ArrayNullCheck.NeedsCheck(node.Expression, model))
         {
             return false;
         }
@@ -159,25 +96,18 @@ internal static class ArrayNullCheck
     }
 
     /// <summary>
-    /// Whether <paramref name="node"/> is an element of a one-dimensional C# array at an <c>int</c>-like index (not
-    /// <c>^i</c> or a range): a location whose null and bounds check C# makes when it reads or stores the element.
-    /// </summary>
-    public static bool IsArrayElement(ElementAccessExpressionSyntax node, SemanticModel model) =>
-        node.ArgumentList.Arguments is [{ RefKindKeyword.RawKind: (int)SyntaxKind.None } argument] &&
-        model.GetTypeSymbol(node.Expression) is IArrayTypeSymbol { Rank: 1 } &&
-        !IsIndexOrRange(argument.Expression, model);
-
-    /// <summary>
-    /// The plan of a store into the element <paramref name="node"/> (<see cref="IsArrayElement"/>) through an array and
-    /// an index in temporaries: a stack array is bound by reference, and an array that may be null is checked at the
-    /// store, with a site of <paramref name="table"/> (or a message naming the place when the method has no table).
+    /// The plan of a store into the element <paramref name="node"/> (<see cref="ArrayNullCheck.IsArrayElement"/>) through
+    /// an array and an index in temporaries: a stack array is bound by reference, and an array that may be null is
+    /// checked at the store, with a site of <paramref name="table"/> (or a message naming the place when the method has
+    /// no table).
     /// </summary>
     public static ElementStorePlan PlanElementStore(ElementAccessExpressionSyntax node, SemanticModel model,
         ErrorSiteTable? table, string? currentMemberName) =>
         new(
             StackArrayLocals.IsStackArrayReference(node.Expression, model),
-            NeedsCheck(node.Expression, model)
-                ? PlanSite(node.Expression, null, SiteMessage, TrapKind, model, table, currentMemberName)
+            ArrayNullCheck.NeedsCheck(node.Expression, model)
+                ? PlanSite(node.Expression, null, ArrayNullCheck.SiteMessage, ArrayNullCheck.TrapKind, model, table,
+                    currentMemberName)
                 : null
         );
 
@@ -250,8 +180,8 @@ internal static class ArrayNullCheck
     private static readonly AnnotatedCheck s_arrayNullCheck = new(
         LoweringAnnotations.ArrayNullCheckAnnotationKind,
         GSharpInternalNames.Prelude.ArrayRef,
-        SiteMessage,
-        TrapKind);
+        ArrayNullCheck.SiteMessage,
+        ArrayNullCheck.TrapKind);
 
     private static readonly AnnotatedCheck s_segmentCheck = new(
         LoweringAnnotations.SegmentCheckAnnotationKind,
@@ -295,7 +225,7 @@ internal static class ArrayNullCheck
     public static NullCheckSite? PlanLinqSource(ExpressionSyntax source, ref TranspileContext context)
     {
         var model = context.Query.SemanticModel;
-        if (model.GetTypeSymbol(source) is not IArrayTypeSymbol || !NeedsCheck(source, model))
+        if (model.GetTypeSymbol(source) is not IArrayTypeSymbol || !ArrayNullCheck.NeedsCheck(source, model))
         {
             return null;
         }
@@ -350,7 +280,7 @@ internal static class ArrayNullCheck
     /// lowering recorded for the source of a <c>foreach</c>.
     /// </summary>
     public static NullCheckSite PlanSite(ExpressionSyntax receiver, string place, ref TranspileContext context) =>
-        PlanSite(receiver, place, SiteMessage, TrapKind, ref context);
+        PlanSite(receiver, place, ArrayNullCheck.SiteMessage, ArrayNullCheck.TrapKind, ref context);
 
     /// <summary>
     /// A site of the kernel's error site table for <paramref name="node"/> with <paramref name="message"/>, or, in a
@@ -378,47 +308,5 @@ internal static class ArrayNullCheck
         var location = model.GetReportLocation(node);
         var memberName = ErrorSiteTable.GetSourceMemberName(node, model) ?? currentMemberName ?? "";
         return new NullCheckSite(table.Register(location, memberName, message, trapKind), "");
-    }
-
-    /// <summary>Plans the error site of an array read (element or Length) from a report location.</summary>
-    internal static NullCheckSite PlanReadSite(Location location, Compilation compilation, ErrorSiteTable? table,
-        string? currentMemberName) =>
-        NullCheckSiteWriter.PlanSite(location, null, SiteMessage, TrapKind, compilation, table, currentMemberName);
-
-    // Whether type is System.Index or System.Range
-    internal static bool IsIndexOrRangeType(ITypeSymbol? type) =>
-        type is INamedTypeSymbol { Name: "Index" or "Range" } named &&
-        named.ContainingNamespace.IsSystemNamespace();
-
-    // a[^1] and a[1..]: an argument of type System.Index or System.Range
-    private static bool IsIndexOrRange(ExpressionSyntax argument, SemanticModel model) =>
-        argument is RangeExpressionSyntax || IsIndexOrRangeType(model.GetTypeSymbol(argument));
-
-    // An instance member of System.Array: Length, LongLength, Rank, GetLength, ... (not an extension method such as
-    // AsSpan), or Length / IsEmpty of ImmutableArray<T>, which read its array (IsDefault and AsSpan do not)
-    internal static bool IsArrayMember(ISymbol? member) =>
-        member is { IsStatic: false, ContainingType.SpecialType: SpecialType.System_Array } &&
-        member is not IMethodSymbol { MethodKind: MethodKind.ReducedExtension } ||
-        member is IPropertySymbol { IsStatic: false, Name: "Length" or "IsEmpty" } property &&
-        IsImmutableArray(property.ContainingType);
-
-    // Parentheses, and the null-forgiving operator, which has no run-time meaning (a! is null when a is)
-    private static ExpressionSyntax SkipParentheses(ExpressionSyntax expression)
-    {
-        while (true)
-        {
-            switch (expression)
-            {
-                case ParenthesizedExpressionSyntax parenthesized:
-                    expression = parenthesized.Expression;
-                    break;
-                case PostfixUnaryExpressionSyntax suppressed
-                    when suppressed.IsKind(SyntaxKind.SuppressNullableWarningExpression):
-                    expression = suppressed.Operand;
-                    break;
-                default:
-                    return expression;
-            }
-        }
     }
 }

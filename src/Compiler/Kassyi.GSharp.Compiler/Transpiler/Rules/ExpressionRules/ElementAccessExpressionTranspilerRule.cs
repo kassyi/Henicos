@@ -36,7 +36,7 @@ public sealed class ElementAccessExpressionTranspilerRule : SyntaxNodeTranspiler
         }
 
         // An element of a null array throws NullReferenceException in C# (#706), after the index is evaluated
-        if (ArrayNullCheck.TryAppendCheckedElement(node, ref context))
+        if (ArrayNullCheckEmitter.TryAppendCheckedElement(node, ref context))
         {
             return;
         }

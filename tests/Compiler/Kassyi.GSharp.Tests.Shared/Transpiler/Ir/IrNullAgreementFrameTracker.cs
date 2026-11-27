@@ -133,7 +133,7 @@ internal static class IrNullAgreementFrameTracker
             }
             else if (current is InvocationExpressionSyntax { ArgumentList.Arguments: [{ } only] } call &&
                      model.GetSymbol(call) is IMethodSymbol method &&
-                     Compiler.Transpiler.Helpers.NullChecks.NonNullProof.IsNotNullMethod(method))
+                     NonNullProof.IsNotNullMethod(method))
             {
                 current = only.Expression;
             }

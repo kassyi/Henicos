@@ -48,7 +48,7 @@ public sealed class PrefixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerRu
             context.Query.SemanticModel.GetSafeConstantValue(node) is { HasValue: true, Value: { } value } &&
             context.Query.SemanticModel.GetTypeSymbol(node) is { } type)
         {
-            ConstantAtUse.Append(node, type, value, ref context);
+            ConstantAtUseEmitter.Append(node, type, value, ref context);
             return;
         }
 
@@ -70,7 +70,7 @@ public sealed class PrefixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerRu
             }
 
             if (operation is IIncrementOrDecrementOperation step &&
-                IntegerSemantics.GetIncrementHelper(step, node, ref context) is { } stepHelper)
+                IntegerSemanticsEmitter.GetIncrementHelper(step, node, ref context) is { } stepHelper)
             {
                 IntegerSemanticsEmitter.AppendStep(step, node, node.Operand, stepHelper, ref context);
                 return;
@@ -78,7 +78,7 @@ public sealed class PrefixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerRu
 
             if (IntegerSemantics.TryGetNarrowEnumResultType(operation, out var narrowType))
             {
-                ArithmeticConversions.AppendConversion(narrowType, ref context);
+                ArithmeticConversionsEmitter.AppendConversion(narrowType, ref context);
                 using (context.Emitter.Writer.Parentheses())
                 {
                     OperatorSpacing.AppendOperator(node.OperatorToken.Text, node.Operand, ref context);
@@ -97,7 +97,7 @@ public sealed class PrefixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerRu
             ArithmeticConversions.TryGetPromotedType(unary, out var promoted))
         {
             context.Emitter.Writer.Append(node.OperatorToken.Text);
-            ArithmeticConversions.AppendOperand(unary.Operand, node.Operand, promoted, ref context);
+            ArithmeticConversionsEmitter.AppendOperand(unary.Operand, node.Operand, promoted, ref context);
             return;
         }
 

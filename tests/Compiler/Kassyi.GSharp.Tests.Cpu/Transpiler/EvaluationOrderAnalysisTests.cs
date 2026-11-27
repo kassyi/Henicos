@@ -78,7 +78,7 @@ public class EvaluationOrderAnalysisTests
     {
         var (element, model) = GetResult(method);
 
-        var plan = ArrayNullCheck.PlanElementStore((ElementAccessExpressionSyntax)element, model, table: null,
+        var plan = ArrayNullCheckEmitter.PlanElementStore((ElementAccessExpressionSyntax)element, model, table: null,
             currentMemberName: null);
 
         Assert.Equal(byReference, plan.BindsArrayByReference);

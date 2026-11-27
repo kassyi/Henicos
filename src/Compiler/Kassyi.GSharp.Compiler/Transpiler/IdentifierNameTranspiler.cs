@@ -28,7 +28,7 @@ internal static class IdentifierNameTranspiler
 
         if (symbol is IFieldSymbol { IsConst: true, HasConstantValue: true } field)
         {
-            ConstantAtUse.Append(node, field.Type, field.ConstantValue, ref context);
+            ConstantAtUseEmitter.Append(node, field.Type, field.ConstantValue, ref context);
             return;
         }
 
@@ -36,7 +36,7 @@ internal static class IdentifierNameTranspiler
         // label is a constant expression and a goto past the declaration skips nothing
         if (symbol is ILocalSymbol { IsConst: true, HasConstantValue: true } constLocal)
         {
-            ConstantAtUse.Append(node, constLocal.Type, constLocal.ConstantValue, ref context);
+            ConstantAtUseEmitter.Append(node, constLocal.Type, constLocal.ConstantValue, ref context);
             return;
         }
 
@@ -176,7 +176,7 @@ internal static class IdentifierNameTranspiler
         if (symbol is IMethodSymbol method)
         {
             DynamicSharedMemoryEmitter.FailIfReferencedWithoutCall(node, method, ref context);
-            NonNullProof.FailIfReferencedWithoutCall(node, method, ref context);
+            NonNullProofEmitter.FailIfReferencedWithoutCall(node, method, ref context);
             SuspendingCallReference.FailIfReferencedWithoutCall(node, method, ref context);
         }
     }

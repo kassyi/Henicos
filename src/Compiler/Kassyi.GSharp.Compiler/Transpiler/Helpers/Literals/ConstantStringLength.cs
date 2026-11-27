@@ -38,7 +38,7 @@ internal static class ConstantStringLength
             return true;
         }
 
-        ConstantAtUse.Append(node, length.Type, text.Length, ref context);
+        ConstantAtUseEmitter.Append(node, length.Type, text.Length, ref context);
         return true;
     }
 }
