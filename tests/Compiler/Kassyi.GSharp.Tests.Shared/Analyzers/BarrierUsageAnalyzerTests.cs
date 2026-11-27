@@ -577,7 +577,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task ChainedLabelJump_GotoToInnerLabelFromAnotherState_ReportsGSH0121OnceFromTheGeneratorOnly()
+    public async Task ChainedLabelJump_GotoToInnerLabelFromAnotherState_ReportsGSH0121OnceFromTheGeneratorOnlyAndTheOutputCompiles()
     {
         var compilation = RoslynTestUtility.CreateCompilation(
             RoslynTestUtility.ReadTestCase("Analyzers/BarrierUsage/ChainedLabelGotoKernels.cu.cs"));
@@ -591,6 +591,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
         // mutant: FindGotosToChainedLabelsAcrossStates `!=` -> `==` -> none of these, and the same-state goto instead
         // mutant: the chain walk stops after one inner label -> no report at line 59
         // mutant: NumberStates with an empty set of state labels -> no report at line 85
+        // mutant: HeldRefLocalSite.Collect without the GSH0121 sites -> the generator reports nothing
         Assert.Empty(run.Analyzer.Where(d => d.Id == id));
         Assert.Equal(
             [
@@ -601,20 +602,6 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
                 (DiagnosticOrigin.Generator, 102, 13, 102, 25)
             ],
             GeneratorRanges(run, id));
-    }
-
-    [Fact]
-    [Scenario(TestScenario.SadPath)]
-    public async Task ChainedLabelJump_Generator_ReportsGSH0121AndTheGeneratedCSharpCompiles()
-    {
-        var compilation = RoslynTestUtility.CreateCompilation(
-            RoslynTestUtility.ReadTestCase("Analyzers/BarrierUsage/ChainedLabelGotoKernels.cu.cs"));
-
-        var run = await KernelDiagnostics.RunCompilationAsync(compilation, "Cpu");
-
-        // The generator reports the diagnostics from its own lowering, so a build without the analyzers stops too
-        // mutant: HeldRefLocalSite.Collect without the GSH0121 sites -> the generator reports nothing
-        Assert.Empty(run.Analyzer);
         Assert.Equal(5, run.Generator.Length);
         Assert.Empty(KernelDiagnostics.FindStatedFailures(run));
         // The managed output of a rejected method is not written: no CS0159 is generated
@@ -655,7 +642,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
         // analyzers stops at the same places; GSH0121 comes from the generator alone
         // mutant: FindReported without the IsCrossBarrierGoto check -> GSH0121 at lines 31 and 50 too
         // mutant: IsCrossBarrierGoto given the goto of the lowered body -> GSH0121 at lines 31 and 50 too
-        // mutant: GSH0121 left out whenever the method has a barrier -> no GSH0121 at line 70
+        // mutant: HeldRefLocalSite.Collect skipping a method that has a barrier -> no GSH0121 at line 70
         // mutant: HeldRefLocalSite.Report without the CrossesBarrier branch -> the generator reports GSH0121 at 31 and 50
         var gsh0040 = GSharpDiagnostics.CrossBarrierGotoProhibited.Id;
         var gsh0121 = GSharpDiagnostics.GotoToChainedLabelAcrossStates.Id;
@@ -686,6 +673,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
             new Dictionary<string, string> { ["build_property.GSharpExportDeviceCode"] = "false" });
 
         Assert.DoesNotContain(run.Analyzer, static d => d.Id == GSharpDiagnostics.GotoToChainedLabelAcrossStates.Id);
+        // mutant: ReportHeldRefLocals without the early return for CUDA without the export -> the device function's GSH0121
         Assert.Empty(run.Generator);
         Assert.Empty(KernelDiagnostics.FindStatedFailures(run));
     }
