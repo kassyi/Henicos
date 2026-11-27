@@ -114,7 +114,8 @@ internal static class SqrtKarpMarksteinReference
 
     /// <summary>
     /// Asserts K-P2 (<c>0 &lt;= floor(2^P / sqrt(A)) - y &lt;= 3</c>), K-P3 (buffer bounds for <c>s0</c>, <c>d_hi</c>,
-    /// <c>d'</c>, <c>delta</c>) and K-P4 (<c>floor(sqrt(a)) - r'' in {0, 1}</c>). Returns <c>floor(2^P / sqrt(A)) - y</c>.
+    /// <c>d'</c>, <c>delta</c>) and K-P4 (<c>floor(sqrt(a)) - r'' in {0, 1}</c>).
+    /// Returns <c>floor(2^P / sqrt(A)) - y</c>.
     /// </summary>
     internal static BigInteger AssertTraceProperties(BigInteger a, int rootWords, Trace trace, string label)
     {
