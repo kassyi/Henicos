@@ -30,7 +30,6 @@
 - "StructLayoutValidator (Layout/StructLayoutValidator.cs) -> GlobalCppNames (Transpiler/GlobalCppNames.cs)"
 - "SuspensionAnalysis (Analysis/SuspensionAnalysis.cs) -> DeviceExportTable (Transpiler/DeviceExportTable.cs)"
 - "SuspensionAnalysis (Analysis/SuspensionAnalysis.cs) -> ImportedDeviceRecord (Transpiler/ImportedDeviceRecord.cs)"
-- "SuspensionAnalysis (Analysis/SuspensionAnalysis.cs) -> RemovedCalls (Transpiler/RemovedCalls.cs)"
 - "SyncGridBody (SyncGridBody.cs) -> LoweringAnnotations (Lowering/LoweringAnnotations.cs)"
 - "SyncGridBody.ReturnRewriter (SyncGridBody.cs) -> LoweringAnnotations (Lowering/LoweringAnnotations.cs)"
 - "SyncGridBody.ReturnRewriter (SyncGridBody.cs) -> LoweringSyntax (Lowering/LoweringSyntax.cs)"
