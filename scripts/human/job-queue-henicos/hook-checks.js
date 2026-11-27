@@ -46,11 +46,22 @@ function checkTestProjectGuards(assert) {
 
 function checkRealConfigIntegration(assert, createEngine) {
   const { check, checkDetailed, hookAnswer, denialText } = createEngine({ tolerant: false });
-  const { queuedText } = require('../../../scripts/agent/check-queued-command/queue-rewrite.js');
+  const { defaultMessages, queuedText } = require('../../../scripts/agent/check-queued-command/queue-rewrite.js');
 
   // The wording of this plugin, not the engine's neutral default, is what the agents read
   assert.strictEqual(denialText(['dotnet build']), henicosPlugin.messages.denialText(['dotnet build']));
   assert.ok(denialText(['dotnet build']).includes('(uses the GPU; replaces gpu-lock.js)'), 'repository wording');
+  assert.ok(
+    denialText(['dotnet build']).includes('--gpu-exclusive') &&
+      denialText(['dotnet build']).includes('outside the share language'),
+    'repository denialText mentions --gpu-exclusive',
+  );
+  const neutralDefaults = defaultMessages('scripts/human/job-queue.js');
+  assert.ok(
+    neutralDefaults.denialText(['dotnet build']).includes('--gpu-exclusive') &&
+      neutralDefaults.undecidedNote(['reason']).includes('--gpu-exclusive'),
+    'defaultMessages mention --gpu-exclusive',
+  );
 
   const denied = [
     'node scripts/human/gpu-lock.js -- "dotnet test X"',
@@ -222,6 +233,20 @@ function checkRealConfigIntegration(assert, createEngine) {
     ['PowerShell', `dotnet test Kassyi.GSharp.Tests.Cpu --filter "Name~it's" -p:Y='a b'`, false, []],
     ['PowerShell', 'dotnet build X && dotnet test Kassyi.GSharp.Tests.Cuda', true, []],
     ['PowerShell', 'just test-differential-cuda', true, []],
+    // --gpu-exclusive recipes and conditional `{{ if ... }}` recipes resolved via `just --dry-run`
+    ['Bash', 'just test-coverage', false, ['--gpu-exclusive']],
+    ['PowerShell', 'just test-coverage', false, ['--gpu-exclusive']],
+    ['Bash', 'just test-stability', false, ['--gpu-exclusive']],
+    ['Bash', 'just test-checked', false, ['--gpu-exclusive']],
+    ['Bash', 'just bench', false, ['--gpu-exclusive']],
+    ['Bash', 'just test-category Runtime', false, ['--gpu-exclusive']],
+    ['Bash', 'just mutate gpumath', true, []],
+    ['Bash', 'just mutate gpumath main', false, ['--gpu-exclusive']],
+    ['Bash', 'just mutate compiler', false, []],
+    ['Bash', 'just mutate compiler-cuda', false, []],
+    ['Bash', 'just test-memory Kassyi.GSharp.Tests.Cuda', false, ['--gpu-exclusive']],
+    ['Bash', 'just test-memory Kassyi.GSharp.Tests.Cpu', false, []],
+    ['Bash', 'dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --filter FullyQualifiedName~Foo', true, []],
   ];
   for (const [tool, command, gpu, options] of rewritten) {
     const kind = tool === 'PowerShell' ? 'pwsh' : 'bash';
@@ -348,13 +373,13 @@ function checkRealConfigIntegration(assert, createEngine) {
     'dotnet test tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests',
     'dotnet test Kassyi.GSharp.Tests.Cpu && dotnet test Kassyi.ZeroAlloc.Linq.Tests',
     'dotnet msbuild Henicos.slnx -t:VSTest',
-    'just test-memory Kassyi.GSharp.Tests.Cuda',
-    'just mutate compiler',
+    'just test-memory',
   ];
   for (const command of undecided) {
     const denial = answer('Bash', command).hookSpecificOutput;
     assert.strictEqual(denial.updatedInput, undefined, `should not queue: ${command}`);
     assert.ok(/--gpu when it does/.test(denial.permissionDecisionReason), `should mention --gpu: ${command}`);
+    assert.ok(/--gpu-exclusive/.test(denial.permissionDecisionReason), `should mention --gpu-exclusive: ${command}`);
   }
 }
 

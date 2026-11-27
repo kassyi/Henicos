@@ -2,18 +2,73 @@
 
 // Justfile parsing and queue option inspection for the built-in just hook plugin.
 //
-// Usage: require('./justfile.js').recipeQueue(recipe, root, entry) returns { options, gpu } or { undecided }.
+// Usage: require('./justfile.js').recipeQueue(recipe, root, entry, args) returns { options, gpu, gpuExclusive } or
+// { undecided }.
 
+const childProcess = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 
 const JustfileName = 'justfile';
-const OptionsPattern = /^((--gpu|--weight \d+)( |$))*$/;
+const OptionsPattern = /^((--gpu-exclusive|--gpu|--weight \d+)( |$))*$/;
+const DryRunTimeoutMs = 5000;
 
 /** Builds the regex matching `queue := "node <entry> run"` in a justfile. */
 function buildQueueLinePattern(entry) {
   const escaped = entry.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return new RegExp(`^queue := "node ${escaped} run"\\s*$`, 'm');
+}
+
+/** Builds the regex matching a `node <entry> run <options> -- ` command in `just --dry-run` output. */
+function buildDryRunQueuePattern(entry) {
+  const escaped = entry.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(?:^|\\s)node\\s+${escaped}\\s+run\\b(.*?)\\s--\\s`);
+}
+
+/** Splits validated queue options into { options, gpu, gpuExclusive }. */
+function parseQueueOptions(options) {
+  const list = options === '' ? [] : options.split(' ');
+  const gpuExclusive = list.includes('--gpu-exclusive');
+  const gpu = gpuExclusive || list.includes('--gpu');
+  return {
+    options: list.filter((option) => option !== '--gpu' && option !== '--gpu-exclusive'),
+    gpu,
+    gpuExclusive,
+  };
+}
+
+/** Runs `just --dry-run` once with a 5-second timeout to resolve conditional recipe queue options. */
+function runJustDryRun(justfilePath, recipe, args) {
+  return childProcess.spawnSync('just', ['--dry-run', '--justfile', justfilePath, recipe, ...args], {
+    encoding: 'utf8',
+    timeout: DryRunTimeoutMs,
+    windowsHide: true,
+  });
+}
+
+/** Resolves queue options from the first `node <entry> run ... -- ` line of `just --dry-run` output. */
+function resolveDryRunQueue(recipe, justfilePath, entry, args, dryRun) {
+  const fallback = { undecided: `just ${recipe} chooses its queue options from its arguments` };
+  let result;
+  try {
+    result = dryRun(justfilePath, recipe, args);
+  } catch (_error) {
+    return fallback;
+  }
+  if (!result || result.error || result.signal || result.status !== 0) {
+    return fallback;
+  }
+  const output = [result.stderr, result.stdout].filter((part) => typeof part === 'string' && part !== '').join('\n');
+  const pattern = buildDryRunQueuePattern(entry);
+  for (const line of output.split(/\r?\n/)) {
+    const match = pattern.exec(line);
+    if (match === null) {
+      continue;
+    }
+    const options = match[1].trim().replace(/\s+/g, ' ');
+    return OptionsPattern.test(options) ? parseQueueOptions(options) : fallback;
+  }
+  return fallback;
 }
 
 /** The bodies of the recipe in the justfile (one per platform variant), continued lines joined; empty if absent. */
@@ -65,11 +120,12 @@ function justVariables(justfile) {
   return variables;
 }
 
-/** The queue options of a just recipe: { options, gpu } or { undecided: why }. */
-function recipeQueue(recipe, root, entry) {
+/** The queue options of a just recipe: { options, gpu, gpuExclusive } or { undecided: why }. */
+function recipeQueue(recipe, root, entry, args = [], dryRun = runJustDryRun) {
+  const justfilePath = path.join(root, JustfileName);
   let justfile;
   try {
-    justfile = fs.readFileSync(path.join(root, JustfileName), 'utf8');
+    justfile = fs.readFileSync(justfilePath, 'utf8');
   } catch (error) {
     return { undecided: `could not read the justfile: ${error.message}` };
   }
@@ -89,15 +145,16 @@ function recipeQueue(recipe, root, entry) {
   }
   const [options] = [...found];
   if (found.size > 1 || !OptionsPattern.test(options)) {
-    return { undecided: `just ${recipe} chooses its queue options from its arguments` };
+    return resolveDryRunQueue(recipe, justfilePath, entry, Array.isArray(args) ? args : [], dryRun);
   }
-  const list = options === '' ? [] : options.split(' ');
-  return { options: list.filter((option) => option !== '--gpu'), gpu: list.includes('--gpu') };
+  return parseQueueOptions(options);
 }
 
 module.exports = {
+  DryRunTimeoutMs,
   JustfileName,
   OptionsPattern,
+  buildDryRunQueuePattern,
   buildQueueLinePattern,
   justVariables,
   recipeBodies,

@@ -85,7 +85,8 @@ function denialText(reasons) {
     `${reasons.join(', ')} must run through the job queue, ` +
     'so that parallel agents do not oversubscribe the machine:\n' +
     '  node scripts/human/job-queue.js run -- "<command>"\n' +
-    '  node scripts/human/job-queue.js run --gpu -- "<command>"   (uses the GPU; replaces gpu-lock.js)\n' +
+    '  node scripts/human/job-queue.js run --gpu -- "<command>"             (uses the GPU; replaces gpu-lock.js)\n' +
+    '  node scripts/human/job-queue.js run --gpu-exclusive -- "<command>"   (uses the GPU outside the share language)\n' +
     'The queue waits for a free slot and then runs the command here. ' +
     'It prints `queued j<nnnn>` at once: keep the id and ' +
     'read the expected start and end with `node scripts/human/job-queue.js status <id> --json` (`status` lists every ' +
@@ -115,7 +116,7 @@ function additionalContext(plan) {
 function undecidedNote(undecided) {
   return (
     'The hook did not queue it by itself, since it cannot tell whether the command uses the GPU ' +
-    `(${undecided.join('; ')}): add --gpu when it does.`
+    `(${undecided.join('; ')}): add --gpu when it does, or --gpu-exclusive when it uses the GPU outside the share language.`
   );
 }
 
