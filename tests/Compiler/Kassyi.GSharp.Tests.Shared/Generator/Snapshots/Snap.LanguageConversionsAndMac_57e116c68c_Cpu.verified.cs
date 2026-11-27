@@ -448,6 +448,36 @@ private static extern void Target([global::System.Runtime.CompilerServices.Unsaf
 internal static void Invoke(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNum p0, global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNum p1, global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNum p2) => Target(default, ref p0, p1, p2);
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__SuspendAndCombineMacro(int[] scratch, int localTid, int x, int y, out int totalCalls)
+{
+global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroContext ctx = new global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroContext
+{
+Bias = 7,
+Calls = 0
+};
+var a = new global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNum(x);
+var b = new global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNum(y);
+global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNum pre = default;
+global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNumOps.AddWithContext(ref ctx, out pre, a, b);
+scratch[localTid] = pre.Value;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+int neighbor = scratch[(localTid + 1) % (int)global::Kassyi.GSharp.Core.BlockDimension.X];
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+var n = new global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNum(neighbor);
+global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNum post = default;
+global::Kassyi.GSharp.Tests.Shared.Differential.LanguageConversionsAndMacrosDifferentialKernels.__gsharp_stackaccessor_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__SuspendAndCombineMacro_0.Invoke(ref post, pre, n);
+totalCalls = ctx.Calls;
+return post.Value;
+}
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+private static class __gsharp_stackaccessor_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__SuspendAndCombineMacro_0
+{
+[global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.StaticMethod, Name = "PrivateSubtract")]
+private static extern void Target([global::System.Runtime.CompilerServices.UnsafeAccessorType("Kassyi.GSharp.Tests.Shared.Differential.DiffMacroSecretOps, SnapshotTest")] object? _, ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNum p0, global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNum p1, global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNum p2);
+internal static void Invoke(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNum p0, global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNum p1, global::Kassyi.GSharp.Tests.Shared.Differential.DiffMacroNum p2) => Target(default, ref p0, p1, p2);
+}
+
 }
 }
 

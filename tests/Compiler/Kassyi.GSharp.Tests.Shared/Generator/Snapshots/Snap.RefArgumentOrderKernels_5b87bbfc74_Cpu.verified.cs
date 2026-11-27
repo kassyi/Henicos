@@ -1045,6 +1045,103 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+private static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WaitAndReturnInt(int value)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return value;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+private static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__SetThenReturnOne(ref int x)
+{
+x = 1000;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return 1;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+private static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__SumAfterBarrier(int a, int b, int[] result)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+result[global::Kassyi.GSharp.Core.ThreadIndex.X] = a + b;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+private static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__AddAfterBarrier(ref int target, int value)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+target += value + 1000;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+private static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__AddAfterChangingIndex(ref int target, int[] idx)
+{
+idx[global::Kassyi.GSharp.Core.ThreadIndex.X] = 63 - global::Kassyi.GSharp.Core.ThreadIndex.X;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+target += 1000;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+private static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__IncrementSecondThenAdd(ref int target, ref int i)
+{
+i++;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+target += 1000;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+private static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__IncrementFirstThenAdd(ref int i, ref int target)
+{
+i++;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+target += 1000;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+private static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WriteThenRead(ref int x, int v, int[] result)
+{
+x = 5;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+result[global::Kassyi.GSharp.Core.ThreadIndex.X] = v;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+private static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__PassOn(ref int p, int[] data, int[] result)
+{
+global::Kassyi.GSharp.Tests.Shared.Core.RefArgumentOrderKernels.__gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WriteElementThenRead(p, data, result);
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+private static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WriteElementThenRead(int v, int[] data, int[] result)
+{
+data[global::Kassyi.GSharp.Core.ThreadIndex.X] = 99;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+result[global::Kassyi.GSharp.Core.ThreadIndex.X] = v;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+private static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__ReadInAfterBarrier(in int p, int q, int[] result)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+result[global::Kassyi.GSharp.Core.ThreadIndex.X] = p * 10 + q;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+private static void __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WriteElementThenReadIn(in int p, int[] data, int[] result)
+{
+data[global::Kassyi.GSharp.Core.ThreadIndex.X] = 5;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+result[global::Kassyi.GSharp.Core.ThreadIndex.X] = p;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+private static long __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WaitAndReturn(long x)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return x;
+}
+
 }
 }
 

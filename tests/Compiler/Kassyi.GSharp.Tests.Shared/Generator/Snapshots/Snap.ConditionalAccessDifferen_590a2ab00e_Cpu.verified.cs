@@ -386,6 +386,26 @@ global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalAccessExtensionMethod
 }
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__BarrierEvaluation(ref int evaluations)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+evaluations++;
+return 1;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint? __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__BarrierPickPoint(int selector, ref int evaluations)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+evaluations++;
+return selector == 0 ? null : new global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint
+{
+X = 7,
+Y = 4
+};
+}
+
 }
 }
 

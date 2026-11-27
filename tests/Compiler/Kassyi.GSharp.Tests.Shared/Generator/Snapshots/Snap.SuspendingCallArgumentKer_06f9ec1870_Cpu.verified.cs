@@ -121,6 +121,14 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Syntax__SuspendingCallArgumentKernels__PairSum(int __gsharp_warp_frame, int value, uint scale = 3u, bool negate = false, global::Kassyi.GSharp.Tests.Shared.Syntax.PacketColor color = global::Kassyi.GSharp.Tests.Shared.Syntax.PacketColor.Blue)
+{
+int neighbor = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_shuffle_xor_sync<int>(__gsharp_warp_frame, 0, "SuspendingCallArgumentKernels.cs(17,24)", global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingCallArgumentKernels.FullMask, value, 1);
+int result = (value + neighbor) * (int)scale + (int)color;
+return negate ? -result : result;
+}
+
 }
 }
 

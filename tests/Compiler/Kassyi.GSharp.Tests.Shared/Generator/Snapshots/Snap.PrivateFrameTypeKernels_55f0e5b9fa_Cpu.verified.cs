@@ -817,6 +817,20 @@ return __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__PrivateFramePo
 }
 #pragma warning restore CS8500
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+internal static unsafe int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__PrivateFramePointerOwner__Step(int[] data)
+{
+var pair = new global::Kassyi.GSharp.Tests.Shared.Core.PrivateFramePointerOwner.Pair
+{
+A = data[global::Kassyi.GSharp.Core.ThreadIndex.X] * 5,
+B = 2
+};
+global::Kassyi.GSharp.Tests.Shared.Core.PrivateFramePointerOwner.Pair* p = &pair;
+p->A += 1;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return p->A + pair.B;
+}
+
 }
 }
 
@@ -879,6 +893,17 @@ throw new global::System.InvalidOperationException("The device function state ma
 protected static uint __gsharp_number_frame_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeBase__Scale(ref object? __gsharp_ctx, uint next) => ((__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeBase__Scale)(__gsharp_ctx ??= new __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeBase__Scale())).__gsharp_number_warp_paths(next);
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 protected static bool __gsharp_enter_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeBase__Scale(int[] __gsharp_in_data, ref object? __gsharp_ctx, ref int __gsharp_result) => __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeBase__Scale(__gsharp_in_data, ((__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeBase__Scale)(__gsharp_ctx ??= new __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeBase__Scale())), ref __gsharp_result);
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+protected static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeBase__Scale(int[] data)
+{
+var scaled = new global::Kassyi.GSharp.Tests.Shared.Core.PrivateFrameTypeBase.Scaled
+{
+X = data[global::Kassyi.GSharp.Core.ThreadIndex.X] * 6
+};
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return scaled.X + 1;
+}
 
 }
 }
@@ -3133,6 +3158,17 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+internal static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeKernels__Generic_a1__Step(int[] data, int factor)
+{
+var state = new global::Kassyi.GSharp.Tests.Shared.Core.PrivateFrameTypeKernels.State
+{
+X = data[global::Kassyi.GSharp.Core.ThreadIndex.X]
+};
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return state.X * factor + 100;
+}
+
 }
 }
 }
@@ -3193,6 +3229,17 @@ return true;
 }
 }
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+internal static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeKernels__Nested__Step(int[] data)
+{
+var state = new global::Kassyi.GSharp.Tests.Shared.Core.PrivateFrameTypeKernels.State
+{
+X = data[global::Kassyi.GSharp.Core.ThreadIndex.X] * 3
+};
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return state.X - 1;
 }
 
 }
@@ -3592,6 +3639,77 @@ throw new global::System.InvalidOperationException("The device function state ma
 internal static uint __gsharp_number_frame_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeKernels__Exchange(ref object? __gsharp_ctx, uint next) => ((__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeKernels__Exchange)(__gsharp_ctx ??= new __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeKernels__Exchange())).__gsharp_number_warp_paths(next);
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 internal static bool __gsharp_enter_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeKernels__Exchange(int[] __gsharp_in_data, int __gsharp_in_factor, ref object? __gsharp_ctx, ref int __gsharp_result) => __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeKernels__Exchange(__gsharp_in_data, __gsharp_in_factor, ((__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeKernels__Exchange)(__gsharp_ctx ??= new __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeKernels__Exchange())), ref __gsharp_result);
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+private static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeKernels__Step(int[] data)
+{
+var state = new global::Kassyi.GSharp.Tests.Shared.Core.PrivateFrameTypeKernels.State
+{
+X = data[global::Kassyi.GSharp.Core.ThreadIndex.X] * 2
+};
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return state.X + 1;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+private static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeKernels__StepTwice(int[] data)
+{
+global::Kassyi.GSharp.Tests.Shared.Core.PrivateFrameTypeKernels.State before;
+before.X = data[global::Kassyi.GSharp.Core.ThreadIndex.X];
+var stepped = global::Kassyi.GSharp.Tests.Shared.Core.PrivateFrameTypeKernels.__gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeKernels__Step(data);
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return stepped + before.X * 10;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+private static global::Kassyi.GSharp.Tests.Shared.Core.PrivateFrameTypeKernels.State __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeKernels__Build(int[] data)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return new global::Kassyi.GSharp.Tests.Shared.Core.PrivateFrameTypeKernels.State
+{
+X = data[global::Kassyi.GSharp.Core.ThreadIndex.X] * 2
+};
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+private static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeKernels__Scale(global::Kassyi.GSharp.Tests.Shared.Core.PrivateFrameTypeKernels.State state, int factor)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return state.X * factor + 1;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+internal static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeKernels__SpillWait(int[] data)
+{
+var value = data[global::Kassyi.GSharp.Core.ThreadIndex.X];
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return value;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+internal static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeKernels__SpillFunction(int[] data) => global::Kassyi.GSharp.Tests.Shared.Core.PrivateFrameTypeKernels.SpillUse(global::Kassyi.GSharp.Tests.Shared.Core.PrivateFrameTypeKernels.SpillMake(data), global::Kassyi.GSharp.Tests.Shared.Core.PrivateFrameTypeKernels.__gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeKernels__SpillWait(data));
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+internal static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeKernels__Shared(int[] data)
+{
+var state = new global::Kassyi.GSharp.Tests.Shared.Core.PrivateFrameTypeKernels.State
+{
+X = data[global::Kassyi.GSharp.Core.ThreadIndex.X] * 4
+};
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return state.X + 7;
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+internal static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeKernels__Exchange(int __gsharp_warp_frame, int[] data, int factor)
+{
+var state = new global::Kassyi.GSharp.Tests.Shared.Core.PrivateFrameTypeKernels.State
+{
+X = data[global::Kassyi.GSharp.Core.ThreadIndex.X] * factor
+};
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_shuffle_xor_sync<int>(__gsharp_warp_frame, 0, "PrivateFrameTypeKernels.cs(117,16)", 0xFu, state.X, 1);
+}
 
 }
 }
@@ -5794,6 +5912,15 @@ return true;
 }
 }
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+internal static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeRelay__Relay(int[] data)
+{
+var before = data[global::Kassyi.GSharp.Core.ThreadIndex.X];
+var shared = global::Kassyi.GSharp.Tests.Shared.Core.PrivateFrameTypeKernels.__gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__PrivateFrameTypeKernels__Shared(data);
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return shared * 2 + before;
 }
 
 }

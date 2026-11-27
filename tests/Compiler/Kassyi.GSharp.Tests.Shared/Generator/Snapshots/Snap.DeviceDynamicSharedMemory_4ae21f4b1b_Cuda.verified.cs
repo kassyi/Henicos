@@ -398,6 +398,53 @@ return true;
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
 
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingHelper(int n, int val)
+{
+var inner = new global::Kassyi.GSharp.Core.SharedMemory<int>(n, 0x84b31862e77be173UL, "DeviceDynamicSharedMemoryKernels.cs(16,21)");
+inner[global::Kassyi.GSharp.Core.ThreadIndex.X] = val * 2;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return inner[global::Kassyi.GSharp.Core.ThreadIndex.X];
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper(int n, int val)
+{
+var inner = new global::Kassyi.GSharp.Core.SharedMemory<int>(n, 0x5e40b7025ff4f720UL, "DeviceDynamicSharedMemoryKernels.cs(38,21)");
+inner[global::Kassyi.GSharp.Core.ThreadIndex.X] = val * 2;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return inner[global::Kassyi.GSharp.Core.ThreadIndex.X];
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper(int n, int val, bool write)
+{
+var s = new global::Kassyi.GSharp.Core.SharedMemory<int>(n, 0x8e9b2cbfc1a4ab1eUL, "DeviceDynamicSharedMemoryKernels.cs(88,17)");
+if (write)
+{
+s[global::Kassyi.GSharp.Core.ThreadIndex.X] = val;
+}
+
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return s[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((global::Kassyi.GSharp.Core.ThreadIndex.X + 1), n)];
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_stackmodel_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper(int count, int writeStart, int val)
+{
+int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
+var s = new global::Kassyi.GSharp.Core.SharedMemory<int>(count, 0xa9215b4dd44568e3UL, "DeviceDynamicSharedMemoryKernels.cs(157,17)");
+if (tid >= writeStart && tid < count)
+{
+s[tid] = val * 2;
+}
+
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+int r = tid < count ? s[tid] : 0;
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier();
+return r;
+}
+
 }
 }
 
