@@ -406,7 +406,7 @@ public static partial class ManagedGpuContext
             "G#: internal error: a warp collective of the stack model runs outside a launch " +
             "(please report this G# bug)");
         self.AtWarp = true;
-        ManagedBaton.HandOver(launch.Scheduler, self.Go);
+        ManagedBaton.HandOverNext(self, launch);
         self.AtWarp = false;
         if (launch.Cancelled)
         {
