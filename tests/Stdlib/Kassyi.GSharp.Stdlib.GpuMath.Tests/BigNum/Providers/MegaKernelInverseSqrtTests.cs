@@ -88,10 +88,12 @@ public class MegaKernelInverseSqrtTests
     }
 
     // With iterations = 1 for a 256-bit result (n = 4, margin = 4), the initial guess keeps the top 160 bits (words
-    // 3..7) and clears the low 96 bits (words 0..2). The single Newton iteration updates ResultBuffer, so Kept1 (from
-    // the start of the iteration) is stale when the final floor correction runs. The correction must refresh
-    // Kept1 = T(ResultBuffer) before computing a * x^2 and a * x; otherwise CorrectInverseSqrtSlack sees the stale
-    // slack and fails to converge.
+    // 3..7) and clears the low 96 bits (words 0..2). For every normalized 4-word input (2^126 <= a < 2^128), e0 < 2^96
+    // and x* > 2^192 imply x* - N(x0) <= 1.5 * e0^2 / x* < 1.5, so floor(x*) - x1 is in {0, 1, 2} and the final
+    // correction needs at most 2 steps (independent of the seed). The single Newton iteration updates ResultBuffer, so
+    // Kept1 (from the start of the iteration) is stale when the final floor correction runs; refreshing
+    // Kept1 = T(ResultBuffer) is required before computing a * x^2 and a * x, otherwise CorrectInverseSqrtSlack sees
+    // the stale slack and fails to converge.
     // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:97
     //   `GpuBigIntDivRemKernels.ExecuteNttTransformOperand(core, ops.ResultBuffer, xWords, nttScratch.Kept1);`
     //   -> removed
@@ -127,6 +129,39 @@ public class MegaKernelInverseSqrtTests
         var twoTo2B = BigInteger.One << (2 * PrecisionBits);
 
         Assert.Equal(cpuWords, actualWords);
+        Assert.True(operand * actualValue * actualValue <= twoTo2B, "GPU inverse sqrt exceeds 2^B / sqrt(a)");
+        Assert.True(twoTo2B < operand * (actualValue + 1) * (actualValue + 1), "GPU inverse sqrt below floor");
+    }
+
+    // Coverage witness on the default-iteration path: with a wide margin (n = 1, margin = 30, B = 992), the default
+    // count is 6 iterations. For a = 0xB0000001, iteration 5 leaves floor(x*) - x5 = 10 and iteration 6 moves x to
+    // floor(x*), so Kept1 = T(x5) is stale when CorrectInverseSqrtFinal runs. Without the final Kept1 refresh, the
+    // correction computes delta = +10 from the stale slack and returns floor(x*) + 10.
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:97
+    //   `GpuBigIntDivRemKernels.ExecuteNttTransformOperand(core, ops.ResultBuffer, xWords, nttScratch.Kept1);`
+    //   -> removed
+    // input: numWords = 1, marginWords = 30, a = 0xB0000001 (default 6 iterations)
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void InverseSqrt_DefaultIterationsWideMargin_FinalCorrectionRefreshesKeptTransform()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        const int NumWords = 1;
+        const int MarginWords = 30;
+        const int PrecisionBits = (NumWords + MarginWords) * 32;
+        uint[] operandWords = [0xB0000001u];
+        var operand = MegaKernelBlockSizeInvarianceTests.FromWords(operandWords);
+
+        using var workspace = new GpuWorkspace((NumWords + MarginWords) * 8, GpuExecutionEngine.GSharpAot);
+        using var gpuOperand = new GpuBigUInt(workspace, operandWords);
+        using var gpuResult = new GpuBigUInt(workspace, NumWords + MarginWords);
+
+        GpuBigIntDivRem.InverseSqrt(gpuOperand, gpuResult, MarginWords);
+
+        var actualValue = MegaKernelBlockSizeInvarianceTests.FromWords(gpuResult.ToHostArray());
+        var twoTo2B = BigInteger.One << (2 * PrecisionBits);
+
         Assert.True(operand * actualValue * actualValue <= twoTo2B, "GPU inverse sqrt exceeds 2^B / sqrt(a)");
         Assert.True(twoTo2B < operand * (actualValue + 1) * (actualValue + 1), "GPU inverse sqrt below floor");
     }
