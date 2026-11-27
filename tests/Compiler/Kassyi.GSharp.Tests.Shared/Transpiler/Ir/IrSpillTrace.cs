@@ -65,7 +65,10 @@ internal static class IrSpillTrace
     /// conditional written as an <c>if</c> before the rest of its statement or branch, except <c>??</c>, which they do
     /// not lower. They make no check either.
     /// </summary>
-    public static List<Token> AsSyntaxPassesDo(ImmutableArray<IrSpillStep> steps, SourceText text)
+    public static List<Token> AsSyntaxPassesDo(
+        ImmutableArray<IrSpillStep> steps,
+        SourceText text,
+        HashSet<IrExpression>? structDeviceReceivers = null)
     {
         var conditionals = new List<Token>();
         var rest = new List<Token>();
@@ -73,7 +76,7 @@ internal static class IrSpillTrace
         {
             switch (step)
             {
-                case IrSpillValue spill when IsMadeBySyntaxPasses(spill):
+                case IrSpillValue spill when IsMadeBySyntaxPasses(spill, structDeviceReceivers):
                     rest.Add(Leaf("spill", step.Node.Source.Span, text));
                     break;
                 case IrSpillSplit:
@@ -81,11 +84,13 @@ internal static class IrSpillTrace
                     break;
                 case IrSpillConditional { Node: IrCoalesce } coalesce:
                     // The syntax passes do not lower ??: its right operand runs unconditionally, in place
-                    rest.AddRange(AsSyntaxPassesDo(coalesce.Branches[0], text));
+                    rest.AddRange(AsSyntaxPassesDo(coalesce.Branches[0], text, structDeviceReceivers));
                     break;
                 case IrSpillConditional conditional:
                     conditionals.Add(Conditional(
-                        conditional.Branches.Select(branch => AsSyntaxPassesDo(branch, text)).ToList(),
+                        conditional.Branches
+                            .Select(branch => AsSyntaxPassesDo(branch, text, structDeviceReceivers))
+                            .ToList(),
                         step.Node.Source.Span));
                     break;
             }
@@ -95,8 +100,117 @@ internal static class IrSpillTrace
     }
 
     /// <summary>Whether the syntax-based passes make the spill of this step.</summary>
-    public static bool IsMadeBySyntaxPasses(IrSpillValue step) =>
-        step.Role is IrSpillRole.SplitArgument or IrSpillRole.LeftOperand && !step.ForcedByConditional;
+    public static bool IsMadeBySyntaxPasses(
+        IrSpillValue step,
+        HashSet<IrExpression>? structDeviceReceivers = null) =>
+        !step.ForcedByConditional &&
+        (step.Role is IrSpillRole.SplitArgument or IrSpillRole.LeftOperand ||
+         (step.Role is IrSpillRole.EarlierOperand or IrSpillRole.TargetPart &&
+          structDeviceReceivers != null &&
+          structDeviceReceivers.Contains(step.Node)));
+
+    /// <summary>
+    /// Collects the receivers (and location parts of address receivers) and earlier operands before the last
+    /// split-holding argument of non-splitting struct instance <c>[GpuDeviceFunction]</c> calls in
+    /// <paramref name="statement"/>, which the syntax passes spill.
+    /// </summary>
+    public static HashSet<IrExpression> CollectStructDeviceReceivers(IrStatement statement)
+    {
+        var receivers = new HashSet<IrExpression>();
+        foreach (var node in IrNodeChildren.DescendantsAndSelf(statement))
+        {
+            if (node is IrCall
+                {
+                    Receiver: { } receiver,
+                    Classification.Split.IsSplit: false,
+                    Method:
+                    {
+                        MethodKind: MethodKind.Ordinary,
+                        IsStatic: false,
+                        ReducedFrom: null,
+                        ContainingType.IsValueType: true
+                    } method
+                } call &&
+                method.OriginalDefinition.HasAttribute(KnownAttributes.GpuDeviceFunction))
+            {
+                AddReceiverParts(receiver, receivers);
+                var ordered = call.Arguments.OrderBy(static a => a.EvaluationIndex).ToArray();
+                var lastSplit = Array.FindLastIndex(ordered, static a => ContainsUnconditionalSplit(a.Value));
+                for (var i = 0; i < lastSplit; i++)
+                {
+                    var value = ordered[i].Value;
+                    if (value.Category is IrCategory.Location or IrCategory.ReadOnlyLocation)
+                    {
+                        AddLocationParts(value, receivers);
+                    }
+                    else
+                    {
+                        receivers.Add(value);
+                        if (value is IrConversion { IsImplicit: true } conversion)
+                        {
+                            receivers.Add(conversion.Operand);
+                        }
+                    }
+                }
+            }
+        }
+
+        return receivers;
+    }
+
+    private static bool ContainsUnconditionalSplit(IrNode node)
+    {
+        if (node is IrCall { Classification.Split.IsSplit: true })
+        {
+            return true;
+        }
+
+        foreach (var child in IrNodeChildren.Of(node))
+        {
+            if (!IrSplitMarks.IsConditionalOperand(node, child) &&
+                ContainsUnconditionalSplit(child))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static void AddReceiverParts(IrExpression receiver, HashSet<IrExpression> parts)
+    {
+        parts.Add(receiver);
+        AddLocationParts(receiver, parts);
+    }
+
+    private static void AddLocationParts(IrExpression location, HashSet<IrExpression> parts)
+    {
+        switch (location)
+        {
+            case IrConversion conversion:
+                parts.Add(conversion.Operand);
+                AddLocationParts(conversion.Operand, parts);
+                break;
+            case IrElementReference element:
+                parts.Add(element.Receiver);
+                parts.Add(element.Index);
+                AddLocationParts(element.Receiver, parts);
+                break;
+            case IrFieldReference { Receiver: { } inner }:
+                parts.Add(inner);
+                AddLocationParts(inner, parts);
+                break;
+            case IrPropertyReference { Property.IsIndexer: true, Receiver.Type.IsRefLikeType: true } spanElement:
+                parts.Add(spanElement.Receiver);
+                AddLocationParts(spanElement.Receiver, parts);
+                foreach (var argument in spanElement.Arguments)
+                {
+                    parts.Add(argument.Value);
+                }
+
+                break;
+        }
+    }
 
     /// <summary>
     /// The tokens of a list of statements put out by the syntax-based passes, in the order they run. The tokens of

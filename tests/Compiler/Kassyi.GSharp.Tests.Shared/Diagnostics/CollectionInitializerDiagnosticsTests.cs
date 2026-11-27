@@ -4,8 +4,8 @@ namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 
 /// <summary>
 /// A collection initializer in GPU code whose <c>Add</c> G# cannot call reports what a written call of the same method
-/// reports (GSH0107), at the element, instead of dropping the element (#1899); an instance method of a struct has no
-/// device form yet (#451). An index initializer of a struct indexer keeps GSH0003: the indexer setter is a member G#
+/// reports (GSH0107), at the element, instead of dropping the element (#1899); an unmarked instance method of a struct
+/// misses <c>[GpuDeviceFunction]</c> (#451). An index initializer of a struct indexer keeps GSH0003: the indexer setter is a member G#
 /// emits, but an element access of a struct indexer has no C++ form yet (#1033).
 /// </summary>
 [Category(TestCategory.Compiler)]
@@ -35,7 +35,7 @@ public class CollectionInitializerDiagnosticsTests
     }
 
     [Theory]
-    [InlineData(59, "'InstanceBag.Add'", "instance methods of structs are not supported in GPU code yet")]
+    [InlineData(59, "'InstanceBag.Add'", "add [GpuDeviceFunction]")]
     [InlineData(61, "'UnmarkedBagExtensions.Add'", "add [GpuDeviceFunction]")]
     [Scenario(TestScenario.SadPath)]
     public async Task UnsupportedAdd_DiagnosticMessage_NamesTheMethodCSharpCalls(
