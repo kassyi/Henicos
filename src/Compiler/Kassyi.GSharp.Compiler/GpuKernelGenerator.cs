@@ -787,8 +787,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
         NativeModuleAssembler.GetDistinctDeviceMethods(deviceMethods);
 
     // GSH0003 at the ref locals that the CPU state machines would keep in their frames (HeldRefLocalSite), GSH0039 and
-    // GSH0121; a device function's sites once, however many results it has. A CUDA build emits managed state machines
-    // only for the device functions it exports, so it reports only their GSH0121 (ChainedLabelJumpChecks)
+    // GSH0121 (which only the generator reports); a device function's sites once, however many results it has. A CUDA build emits managed state machines
+    // only for the device functions it exports, so it reports only their GSH0121 (ChainedLabelJumpChecks.FindReported)
     private static void ReportHeldRefLocals(SourceProductionContext context,
         ImmutableArray<EquatableArray<HeldRefLocalSite>> kernels,
         ImmutableArray<EquatableArray<HeldRefLocalSite>> devices,

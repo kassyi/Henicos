@@ -7,8 +7,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <see cref="Create"/> is the only place that decides whether a device function suspends and the only place that decides
 /// to lower a method, so every output sees the same decision and the method is lowered at most once. The lowering runs
 /// when an output first needs the state machine, so a caller that emits only for hardware threads
-/// (<see cref="TranspilerFailureCheck"/>) never lowers; <see cref="ChainedLabelJumpChecks"/> reads
-/// <see cref="Lowered"/> only for a method with chained labels (GSH0121). A plan lives within one generator transform
+/// (<see cref="TranspilerFailureCheck"/>) never lowers; the generator reports GSH0121 from
+/// <see cref="Lowered"/> only for a method with chained labels (<see cref="ChainedLabelJumpChecks"/>). A plan lives within one generator transform
 /// or analyzer callback; it is not part of the incremental pipeline models.
 /// </remarks>
 internal readonly struct MethodEmissionPlan
