@@ -324,7 +324,12 @@ public struct Emitter(
         LocalVariableOverrides.TryGet(name, symbol, out value);
 
     /// <summary>
-    /// Resets AST identifier and statement temporary counters between kernel emission passes.
+    /// Resets AST identifier, statement temporary counters, and per-form discard/shared-memory tables between kernel emission passes.
     /// </summary>
-    public void ResetMethodCounters() => Counters = default;
+    public void ResetMethodCounters()
+    {
+        Counters = default;
+        DiscardStorages.Clear();
+        SharedMemoryLifts.Clear();
+    }
 }
